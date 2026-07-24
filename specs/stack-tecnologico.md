@@ -1,6 +1,6 @@
 # Agenda Familiar — Stack Tecnológico
 
-**Versión:** 0.1
+**Versión:** 0.2
 **Fecha:** 24 de julio de 2026
 **Documentos complementarios:** Especificación Funcional · Modelo de Datos y Flujos · Propuesta de Experiencia de Usuario · Plan Semanal por WhatsApp · Despachador de mensajes de WhatsApp
 **Alcance:** define **con qué** se construye la Agenda Familiar —cliente, backend, sincronización, autenticación y entrega—. No redefine el **qué** ni el **cómo funcional**, que quedan cerrados en los documentos complementarios. Toda decisión de este documento se justifica por un requisito ya establecido allí.
@@ -32,7 +32,8 @@ Cuatro requisitos, tomados de las specs funcionales y de UX, gobiernan el stack 
 | Almacén local | IndexedDB vía Dexie | Caché offline del subconjunto del usuario y cola de mutaciones |
 | Backend | Cloudflare Worker | API de sincronización y de lectura; punto único de autoridad |
 | Persistencia | Cloudflare D1 (SQLite) | Registro canónico de todas las entidades |
-| Autenticación | Capa abstraída → Sign in with Apple | Identidad de las personas con cuenta |
+| Pasarela de IA | Endpoint en el mismo Worker | Reenviar llamadas a la API de Claude sin exponer la clave |
+| Autenticación | Sign in with Apple (capa abstraída) | Identidad de las personas con cuenta |
 
 El principio de acoplamiento es deliberado: **el cliente es autónomo y optimista; el servidor es la autoridad y el filtro.** El cliente nunca espera al servidor para operar, y el servidor nunca confía en el cliente para decidir qué puede ver cada quien.
 
@@ -152,17 +153,35 @@ Este es el motivo por el que se rechazaron los motores de replicación total (El
 
 ## 7. Autenticación
 
-La identidad definitiva es **Sign in with Apple**, coherente con «iOS nativo» y con el registro de personas del modelo de datos (`identificador_apple`). Como la cuenta de desarrollador de Apple aún no está activa, se construye desde el principio una **capa de autenticación abstraída**:
+La identidad definitiva es **Sign in with Apple**, coherente con «iOS nativo» y con el registro de personas del modelo de datos (`identificador_apple`). La cuenta de desarrollador de Apple **ya está activa**, de modo que Sign in with Apple es el camino real desde el arranque, no un objetivo diferido.
 
-- **Interfaz estable de identidad** en el cliente y en el Worker: emite y valida un token de sesión propio, independiente del proveedor que lo respalde.
-- **Proveedor de desarrollo (stub)** ahora: un login simple que asigna la sesión a una persona con cuenta del registro semilla, suficiente para desarrollar toda la sincronización y la visibilidad.
-- **Sign in with Apple después**, conectado como proveedor detrás de la misma interfaz, sin reescribir la lógica de sesión, sync ni visibilidad. Funciona tanto en la app iOS (plugin nativo de Capacitor) como en la PWA (Sign in with Apple JS).
+- **Sign in with Apple como proveedor de identidad.** Funciona tanto en la app iOS (plugin nativo de Capacitor) como en la PWA (Sign in with Apple JS). El Worker valida el token de identidad de Apple, comprueba su firma y audiencia, y a partir de ahí emite un **token de sesión propio**.
+- **Interfaz estable de identidad**, abstraída del proveedor. El cliente y el Worker trabajan siempre contra el token de sesión propio; Apple queda detrás de esa interfaz. Esto mantiene abierta la puerta a un método adicional en el futuro (por ejemplo, enlace mágico por correo si alguien de la familia no usa iPhone) sin tocar la lógica de sesión, sync ni visibilidad.
+- **Proveedor de desarrollo (stub)** para el entorno local, detrás de la misma interfaz: un login simple que asigna la sesión a una persona con cuenta del registro semilla, para desarrollar sin depender de Apple en cada iteración. No se despliega en producción.
 
 El servidor asocia cada sesión a una Persona con cuenta, y de ahí derivan tanto el `autor` de las mutaciones como el filtro de visibilidad. Las personas sin cuenta (familia extendida) nunca autentican: existen como destinatarios y sujetos, según ya fija la spec.
 
+Esta identidad de sesión es, además, la que autoriza la pasarela de IA del apartado 8: solo una persona con cuenta autenticada puede provocar una llamada a la API de Claude.
+
 ---
 
-## 8. Entrega y despliegue
+## 8. Pasarela a la API de Claude
+
+Algunas funciones de la aplicación se apoyarán en la **API de Claude** (por ejemplo, redactar o pulir el texto del plan semanal, sugerir ideas de regalo a partir de la ficha de una persona, o resumir el anecdotario). El requisito es explícito: **la clave de la API nunca debe salir del servidor ni viajar al dispositivo.**
+
+La solución encaja con el resto del stack sin piezas nuevas: **el mismo Worker expone un endpoint de IA que actúa de pasarela** hacia `api.anthropic.com`.
+
+- **La clave vive como secreto del Worker** (`wrangler secret put ANTHROPIC_API_KEY`), nunca en el cliente, en el repositorio ni en el bundle. El cliente no la ve jamás.
+- **El acceso está autenticado.** El endpoint de IA exige el token de sesión del apartado 7: solo una persona con cuenta puede consumirlo. Esto impide que un tercero use la pasarela —y la factura— como un proxy abierto.
+- **El Worker construye y reenvía la petición** a la API de Claude, añade la cabecera `x-api-key` con el secreto, y **retransmite la respuesta al cliente** (con streaming SSE cuando la función lo requiera, para no bloquear la interfaz).
+- **Control de gasto.** La API de Claude es de pago sobre la clave del hogar, así que la pasarela es el punto natural para acotar el consumo: límite de peticiones por persona y por día, tope de `max_tokens` por función y elección del modelo según el caso de uso. El endpoint no acepta que el cliente fije modelo o parámetros arbitrarios; cada función de la app mapea a una configuración cerrada en el Worker.
+- **Modelo por caso de uso.** El identificador del modelo se decide en el servidor. Para trabajo de calidad el predeterminado es `claude-opus-5`; para funciones ligeras y de alto volumen puede bajarse a un modelo más económico (`claude-sonnet-5` o `claude-haiku-4-5`). La app no codifica ningún identificador de modelo.
+
+**Encaje con el offline-first.** Las funciones de IA son **online-only por naturaleza**: requieren red y no se encolan como las mutaciones de datos. La interfaz las degrada con elegancia —se ofrecen cuando hay conexión y se ocultan o deshabilitan sin red—, sin contaminar el camino principal de escritura local, que sigue siendo instantáneo y offline.
+
+---
+
+## 9. Entrega y despliegue
 
 | Artefacto | Dónde | Cómo |
 |---|---|---|
@@ -175,7 +194,7 @@ Un único acto de publicación del bundle JS alcanza la PWA y la app iOS a la ve
 
 ---
 
-## 9. Encaje con el despachador de WhatsApp
+## 10. Encaje con el despachador de WhatsApp
 
 El Plan Semanal se genera desde un workflow de GitHub Actions (documentos *Plan Semanal* y *Despachador*). Su decisión abierta sobre el origen del contenido se resuelve así con este stack: **el generador del plan lee la agenda desde una lectura autenticada del Worker** (un endpoint de solo lectura, con token propio, que devuelve los eventos de la semana entrante ya resueltos). D1 es la fuente canónica; el Worker es su única puerta.
 
@@ -183,9 +202,11 @@ Esto mantiene la separación de responsabilidades ya descrita: la app escribe y 
 
 ---
 
-## 10. Costes, límites y decisiones futuras
+## 11. Costes, límites y decisiones futuras
 
-**Coste.** A escala familiar, todos los componentes caben holgadamente en los planes gratuitos: Workers y D1 (lecturas/escrituras diarias muy por debajo de los límites), Pages (hosting estático), GitHub Actions (el despachador consume minutos irrelevantes), y OTA autoalojado (sin servicio de pago). No hay factura recurrente.
+**Coste.** A escala familiar, todos los componentes de infraestructura caben holgadamente en los planes gratuitos: Workers y D1 (lecturas/escrituras diarias muy por debajo de los límites), Pages (hosting estático), GitHub Actions (el despachador consume minutos irrelevantes), y OTA autoalojado (sin servicio de pago). No hay factura recurrente por la infraestructura.
+
+**La única partida de pago es la API de Claude** (apartado 8), facturada por uso sobre la clave del hogar. Por eso el gasto se contiene en la pasarela —límites por persona, tope de `max_tokens` y modelo económico en las funciones de alto volumen— y no en el cliente. El resto del sistema sigue a coste cero.
 
 **Decisiones diferidas, previstas pero no implementadas en v1:**
 
@@ -196,7 +217,7 @@ Esto mantiene la separación de responsabilidades ya descrita: la app escribe y 
 
 ---
 
-## 11. Resumen de decisiones
+## 12. Resumen de decisiones
 
 | Decisión | Elección | Requisito que la justifica |
 |---|---|---|
@@ -207,4 +228,5 @@ Esto mantiene la separación de responsabilidades ya descrita: la app escribe y 
 | Persistencia | Cloudflare D1 | Registro canónico; IDs locales, auditoría, borrado lógico |
 | Sincronización | Cola propia + last-write-wins | Offline-first con cambios encolados; concurrencia baja |
 | Visibilidad | Filtrado en servidor | Ocultación de sorpresas indetectable |
-| Autenticación | Capa abstraída → Sign in with Apple | Identidad; Apple ID cuando esté activo |
+| IA | Pasarela en el Worker con la clave como secreto | Usar la API de Claude sin exponer la clave |
+| Autenticación | Sign in with Apple (Apple ID ya activo) | Identidad de las personas con cuenta |
