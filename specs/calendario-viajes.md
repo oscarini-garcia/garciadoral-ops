@@ -29,7 +29,7 @@ El calendario se consume como un **feed iCalendar (`.ics`)** publicado por Googl
 
 **La granularidad es la de un calendario, no la de una agenda personal.** El feed entrega todos los eventos del calendario de viajes, sin distinguir participantes ni aplicar más filtro que el propio calendario. Lo que se decide incluir en él es una decisión que se toma en Google, no en la aplicación.
 
-Existe una alternativa técnica —la API de Google Calendar mediante OAuth—, que reduciría la latencia y permitiría notificaciones de cambio, a cambio de un coste de integración y de gestión de credenciales mayor. Se documenta como decisión pendiente en el apartado 10; la presente especificación se construye sobre el feed iCal, que es el mecanismo del que se dispone.
+Se consideró la alternativa de la API de Google Calendar mediante OAuth, que reduciría la latencia y permitiría notificaciones de cambio a cambio de un coste de integración y de gestión de credenciales mayor. **La decisión está tomada: la integración se construye sobre el feed iCal**, cuya simplicidad se ajusta a un calendario que informa de planes y no de cambios inmediatos. La latencia de regeneración se asume como propiedad conocida de la fuente, no como carencia por resolver.
 
 ---
 
@@ -170,8 +170,9 @@ El estado de la sincronización se refleja en el indicador discreto y permanente
 
 ## 10. Decisiones pendientes
 
-1. **Mecanismo de conexión.** Confirmar el feed iCal como vía definitiva o adoptar la API de Google Calendar (OAuth), que reduciría la latencia y habilitaría notificaciones de cambio a cambio de mayor coste de integración y de gestión de credenciales.
-2. **Cadencia de sincronización.** Fijar el intervalo concreto, proporcionado a la latencia de regeneración del feed (apartado 5.4).
-3. **Participantes en eventos importados.** Decidir si se ofrece —y cómo se modela— la asignación manual de participantes del registro de Personas sobre un viaje importado, requisito para vincularle regalos con ocultación por destinatario (apartado 6.2).
-4. **Recurrencia importada.** Definir el tratamiento de un evento importado con `RRULE`. Es un caso improbable en un calendario de viajes, pero el feed puede contenerlo y conviene no dejarlo indefinido.
-5. **Varios calendarios externos.** El modelo admite más de una fila de CalendarioExterno. Si en el futuro se conectan otros calendarios —escolar, deportivo—, cada uno se asocia a su tipo de evento por defecto; no requiere cambios en este diseño, pero conviene confirmarlo cuando llegue el caso.
+El **mecanismo de conexión queda confirmado: feed iCal** (apartado 2). Restan las siguientes:
+
+1. **Cadencia de sincronización.** Fijar el intervalo concreto, proporcionado a la latencia de regeneración del feed (apartado 5.4).
+2. **Participantes en eventos importados.** Decidir si se ofrece —y cómo se modela— la asignación manual de participantes del registro de Personas sobre un viaje importado, requisito para vincularle regalos con ocultación por destinatario (apartado 6.2).
+3. **Recurrencia importada.** Definir el tratamiento de un evento importado con `RRULE`. Es un caso improbable en un calendario de viajes, pero el feed puede contenerlo y conviene no dejarlo indefinido.
+4. **Varios calendarios externos.** El modelo admite más de una fila de CalendarioExterno. Si en el futuro se conectan otros calendarios —escolar, deportivo—, cada uno se asocia a su tipo de evento por defecto; no requiere cambios en este diseño, pero conviene confirmarlo cuando llegue el caso.
