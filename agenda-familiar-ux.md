@@ -1,0 +1,377 @@
+# Agenda Familiar — Propuesta de Experiencia de Usuario
+
+**Versión:** 0.5
+**Fecha:** 24 de julio de 2026
+**Documentos complementarios:** Especificación Funcional v0.6 · Modelo de Datos v0.2
+
+---
+
+## 1. Criterios de evaluación
+
+Las cinco opciones se han construido y contrastado con los mismos criterios, tomados de las guías de referencia del sector y recogidos en el apartado 9.
+
+**Reconocimiento antes que memoria.** El usuario no debe recordar nada para operar. Al asignar un destinatario se muestran las personas con su iniciativa y su próxima ocasión, no un campo de texto en el que escribir un nombre.
+
+**Divulgación progresiva.** Se presenta lo esencial y se difiere lo secundario. La captura de una idea pide un título; el resto de campos aparece solo si se piden.
+
+**Coherencia con la plataforma.** Barra de pestañas para las secciones de primer nivel y nunca para acciones, entre tres y cinco en iPhone, navegación jerárquica para el detalle y presentación modal para las tareas puntuales.
+
+**Prevención del error antes que su mensaje.** Un error bien redactado es peor que un error imposible. En este producto, el error grave es revelar una sorpresa.
+
+**Interfaz optimista.** La escritura es local e inmediata. No hay indicadores de espera en el camino principal, porque una aplicación que hace esperar sin red se percibe como averiada.
+
+**Accesibilidad.** Objetivos táctiles de 44 por 44 puntos, tipografía dinámica y contraste mínimo de 4,5 a 1.
+
+---
+
+## 2. Restricciones propias de este producto
+
+Cuatro circunstancias condicionan el diseño más que cualquier preferencia estética.
+
+**La ocultación debe ser indetectable.** No basta con no mostrar el contenido oculto. No debe haber huecos, numeraciones interrumpidas, contadores que no cuadren ni tiempos de carga distintos. Un adolescente atento deduce mucho de una discontinuidad.
+
+**El uso es marcadamente estacional.** La agenda se consulta cada semana; las ocasiones concentran su actividad en noviembre y diciembre y en torno a cuatro o cinco cumpleaños. Una arquitectura que dé el mismo peso permanente a ambas cosas dedica media pantalla a algo inactivo diez meses al año.
+
+**Conviven dos perfiles muy distintos.** Ana y Oscar coordinan, presupuestan y ocultan. Las hijas consultan, desean y aportan anécdotas. La misma aplicación debe resultar densa para los primeros y ligera para las segundas, sin construir dos productos.
+
+**La captura compite con el mundo real.** Una idea se anota en una tienda, en una conversación o al bajar del coche. Si registrarla cuesta más de diez segundos, no se registra, y sin captura el resto del sistema carece de contenido.
+
+---
+
+## 3. Decisiones comunes a todas las opciones
+
+Estas resoluciones no dependen de la arquitectura elegida y deberían adoptarse en cualquier caso.
+
+**Captura en un gesto.** Un mismo punto de entrada, siempre accesible, que abre un campo de título y un botón de guardar. La clasificación —persona, categoría, precio— se ofrece debajo pero no se reclama. La idea nace incompleta y se enriquece después.
+
+**El botón de crear pertenece a la pantalla, no a la aplicación.** Un único botón flotante cuya acción depende de dónde esté el usuario: en la semana crea un evento, en Regalos una idea, en la ficha de una persona una idea ya orientada a ella, y en el detalle de un evento asocia un regalo entre los de sus participantes. Un botón genérico obligaría a elegir el tipo antes de escribir, que es exactamente la fricción que la captura rápida trata de evitar. En las pantallas sin acción de creación —búsqueda y presupuesto— el botón no aparece.
+
+**Escritura local e indicador discreto.** Toda acción se refleja de inmediato. Un indicador pequeño y permanente informa del estado de sincronización, con una marca de última actualización correcta. Nunca un bloqueo, nunca un modal.
+
+**El panel "Por aquí no se mira".** Sobre el contenido propio, un panel siempre presente con esa leyenda, sin recuento ni fecha. Al ser constante, no informa de nada: ni su aparición ni su desaparición pueden interpretarse.
+
+**Selección por reconocimiento.** Los selectores de persona muestran iniciativa, nombre y próxima ocasión relevante. Los de idea muestran título, precio orientativo y quién la propuso.
+
+**Aprendizaje contextual.** Sin recorrido guiado inicial. Las indicaciones aparecen en el momento en que se necesitan: la advertencia de que las etiquetas no ocultan surge al escribir la primera etiqueta, no en una pantalla de bienvenida.
+
+**Sin imágenes en la primera versión.** Los avatares se generan a partir de las iniciales con un color estable por persona, lo que sostiene el reconocimiento sin infraestructura de archivos.
+
+---
+
+## 4. Recorridos de contraste
+
+Las cinco opciones se evalúan contra los mismos tres recorridos.
+
+**R1 — Captura urgente.** Estás en una tienda y ves algo para tu madre. Diez segundos.
+**R2 — Coordinación de Navidad.** Es noviembre. Ana y tú repartís doce destinatarios, veis qué falta y quién compra qué.
+**R3 — Consulta ligera.** Una hija abre la aplicación el jueves para ver el plan del fin de semana y añadir un deseo.
+
+---
+
+## 5. Opción A — Cuatro pestañas
+
+Cada módulo del modelo se corresponde con una pestaña.
+
+```mermaid
+flowchart TD
+    T[Barra de pestañas] --> A[Agenda]
+    T --> I[Ideas]
+    T --> O[Ocasiones]
+    T --> F[Familia]
+    A --> A1[Detalle de evento]
+    I --> I1[Detalle de idea]
+    O --> O1[Listas por persona]
+    F --> F1[Ficha de persona]
+    F --> F2[Anecdotario]
+```
+
+**Pantalla de inicio:** la agenda en vista de lista cronológica.
+
+```
+┌────────────────────────────┐
+│ Agenda                  ⟳  │
+├────────────────────────────┤
+│ ESTE FIN DE SEMANA         │
+│  sáb  Torneo de hípica     │
+│  dom  Comida con los abuelos│
+│                            │
+│ PRÓXIMAMENTE               │
+│  12 nov  Cumpleaños abuela │
+│  25 dic  Navidad           │
+└────────────────────────────┘
+│ Agenda  Ideas  Ocasiones  Familia │
+└────────────────────────────┘
+```
+
+**R1, captura.** Tres toques: pestaña Ideas, botón de añadir, título. Correcto, aunque obliga a cambiar de sección.
+**R2, Navidad.** Excelente. La pestaña de Ocasiones es un espacio dedicado con toda la coordinación reunida.
+**R3, consulta ligera.** Correcto. La agenda abre por defecto y el deseo se añade desde Familia, lo que resulta poco evidente.
+
+**Fortalezas.** Es la arquitectura más predecible y la de menor coste de aprendizaje. Cada cosa está donde su nombre indica. Es también la más barata de construir, porque la interfaz refleja el modelo de datos sin capas intermedias.
+
+**Debilidades.** Refleja la estructura del sistema y no la tarea del usuario. La relación entre Ideas y Ocasiones —que son el mismo objeto en dos momentos de su vida— queda como algo que el usuario debe aprender. La pestaña de Ocasiones permanece prácticamente vacía de febrero a octubre, ocupando un cuarto de la navegación permanente. Y la lista de deseos, que es lo que más usarán las hijas, queda enterrada dentro de Familia.
+
+**A quién conviene.** A una familia que quiera algo inmediatamente comprensible y no le importe que la aplicación sea un archivador correcto antes que un asistente.
+
+---
+
+## 6. Opción B — El momento
+
+La pantalla principal compone lo que importa ahora. Ideas y Ocasiones se unifican en una sola sección, porque son el mismo objeto en dos estados.
+
+```mermaid
+flowchart TD
+    T[Barra de pestañas] --> H[Hoy]
+    T --> R[Regalos]
+    T --> F[Familia]
+    T --> B[Buscar]
+    H --> A1[Agenda completa]
+    H --> O1[Ocasión abierta]
+    R --> R1[Banco de ideas]
+    R --> R2[Campañas]
+    F --> F1[Ficha de persona]
+    F --> F2[Anecdotario]
+```
+
+**Pantalla de inicio:** una composición que cambia con la estación.
+
+```
+┌────────────────────────────┐
+│ Hoy                     ⟳  │
+├────────────────────────────┤
+│ ESTE FIN DE SEMANA         │
+│  sáb  Torneo de hípica     │
+│  dom  Comida con los abuelos│
+│                            │
+│ NAVIDAD 2026               │
+│  12 personas · 4 sin idea  │
+│  Tú tienes 3 por comprar   │
+│                            │
+│ ÚLTIMAS IDEAS              │
+│  Zapatillas de trail       │
+│  Curso de cerámica         │
+└────────────────────────────┘
+│  Hoy   Regalos   Familia   🔍 │
+└────────────────────────────┘
+```
+
+En marzo, el bloque de Navidad no aparece y su espacio lo ocupan el próximo cumpleaños y las ideas recientes. La aplicación cambia de forma tres veces al año sin que nadie la configure.
+
+**R1, captura.** Óptimo si el botón de captura reside en la capa global de la barra inferior, accesible desde cualquier pestaña. Dos toques.
+**R2, Navidad.** Muy bueno. El bloque de la pantalla de inicio lleva directamente al reparto, y la sección de Regalos ofrece el detalle.
+**R3, consulta ligera.** Óptimo. El fin de semana es lo primero que se ve al abrir.
+
+**Fortalezas.** Se ajusta al ritmo real de uso. Reduce la navegación a tres destinos y una búsqueda, dentro de la horquilla recomendada. Unificar Ideas y Ocasiones bajo Regalos elimina la distinción conceptual que en la opción A el usuario debía aprender: hay un banco y hay campañas, y una idea pasa de uno a otra.
+
+**Debilidades.** Una pantalla compuesta es más difícil de acertar y más costosa de construir: hay que decidir qué se muestra, en qué orden y con qué umbrales. Existe el riesgo conocido de que un panel de resumen deje de leerse. Y la composición estacional debe apoyarse en reglas explícitas, o la pantalla resultará impredecible.
+
+**A quién conviene.** A una familia que use la aplicación con regularidad y valore que le presente lo pertinente sin pedírselo. Es la opción con mayor techo y también con mayor riesgo de ejecución.
+
+---
+
+## 7. Opción C — Las personas
+
+El eje organizador es la persona. La pantalla principal es la familia, y cada persona reúne todo lo que le concierne.
+
+```mermaid
+flowchart TD
+    T[Barra de pestañas] --> P[Personas]
+    T --> A[Agenda]
+    T --> B[Buscar]
+    P --> P1[Ficha de persona]
+    P1 --> D1[Su cumpleaños]
+    P1 --> D2[Su lista de deseos]
+    P1 --> D3[Ideas orientadas a ella]
+    P1 --> D4[Regalos en curso]
+    P1 --> D5[Histórico]
+    P1 --> D6[Sus anécdotas]
+```
+
+**Pantalla de inicio:** la familia.
+
+```
+┌────────────────────────────┐
+│ Personas                ⟳  │
+├────────────────────────────┤
+│   (AG)   (MG)   (LG)       │
+│   Ana    ...    ...        │
+│                            │
+│   (JG)   (CG)   (RG)       │
+│   Abuelo Abuela Sobrino    │
+│                            │
+│ Cumpleaños en 12 días: abuela│
+└────────────────────────────┘
+│   Personas    Agenda     🔍 │
+└────────────────────────────┘
+```
+
+**R1, captura.** Bueno si el botón global está presente; algo peor si obliga a entrar antes en la persona.
+**R2, Navidad.** El punto débil. Coordinar doce destinatarios exige recorrer doce fichas, y la visión de conjunto del presupuesto no tiene un lugar natural.
+**R3, consulta ligera.** Regular. La agenda pasa a segundo plano y el plan del fin de semana requiere un toque adicional.
+
+**Fortalezas.** Es la arquitectura que mejor refleja cómo se piensa un regalo, que siempre parte de una persona y no de una categoría. Concentra el valor acumulado de la ficha: tallas, preferencias, histórico y anécdotas juntos. Y resuelve con naturalidad la ocultación, porque la ficha propia es simplemente la que muestra el panel reservado.
+
+**Debilidades.** Los eventos con varios participantes encajan mal en una estructura centrada en el individuo. La coordinación de una campaña con muchos destinatarios resulta laboriosa. Y la agenda, que es el uso más frecuente, queda relegada.
+
+**A quién conviene.** A una familia cuyo interés principal sea el archivo de personas más que la coordinación. Como arquitectura principal es arriesgada; como pantalla dentro de otra opción, es valiosa.
+
+---
+
+## 8. Opción D — La semana
+
+La semana abre la aplicación. No es una lista de lo próximo, sino un marco fijo de siete filas que se repite siempre igual.
+
+```mermaid
+flowchart TD
+    T[Barra de pestañas] --> S[Semana]
+    T --> R[Regalos]
+    T --> F[Familia]
+    T --> B[Buscar]
+    S --> V1[Vista de semana]
+    S --> V2[Vista de mes]
+    S --> V3[Vista de lista]
+    S --> E1[Detalle de evento]
+```
+
+```
+┌────────────────────────────┐
+│ Semana                     │
+│ [semana] [mes] [lista]     │
+│ ‹   20 – 26 de julio    ›  │
+├────────────────────────────┤
+│ L 20 │ Reunión del colegio │
+│ M 21 │ Libre               │
+│ X 22 │ Libre               │
+│ J 23 │ Entreno de hípica   │
+│ V 24 │ Libre               │
+│ S 25 │ Torneo de hípica    │
+│ D 26 │ Comida con abuelos  │
+└────────────────────────────┘
+│  Semana  Regalos  Familia  🔍│
+└────────────────────────────┘
+```
+
+**R1, captura.** Bueno, con el botón global.
+**R2, Navidad.** Correcto. La coordinación existe pero queda en segundo plano.
+**R3, consulta ligera.** Excelente. Es literalmente la primera pantalla.
+
+**Fortalezas.** La semana es la unidad real de la vida familiar: la pregunta que más veces se formula en casa es qué hay este fin de semana. Al ser un marco fijo, se aprende dónde cae cada día y la lectura se vuelve casi automática, sin necesidad de interpretar una lista que cambia de forma cada vez. Los días vacíos son información y no espacio desperdiciado: enseñan la forma de la semana, que es justo lo que se quiere ver al planificar.
+
+**Debilidades.** Una semana sin nada resulta desangelada, y en esta familia habrá bastantes. La maquinaria de regalos, que es la parte más compleja del producto, queda relegada a una pestaña secundaria. Y una vista de semana es más costosa de construir bien que una lista, sobre todo con eventos de varios días.
+
+**A quién conviene.** A una familia con actividad semanal regular —entrenamientos, competiciones, turnos— para la que la agenda sea el uso dominante y los regalos una actividad estacional.
+
+---
+
+## 9. Opción E — Dos mundos
+
+La aplicación se parte en dos mitades con ritmos y públicos distintos. Un conmutador superior elige el mundo; la barra inferior cambia de contenido según cuál esté activo.
+
+```mermaid
+flowchart TD
+    M{Conmutador} --> F[Mundo Familia]
+    M --> R[Mundo Regalos]
+    F --> F1[Semana]
+    F --> F2[Personas]
+    F --> F3[Anécdotas]
+    R --> R1[Campañas]
+    R --> R2[Banco de ideas]
+    R --> R3[Presupuesto]
+```
+
+**R1, captura.** Bueno, aunque exige estar en el mundo correcto o usar el botón global.
+**R2, Navidad.** Excelente. Es la única opción que da al presupuesto un lugar propio.
+**R3, consulta ligera.** Muy bueno. Una hija vive prácticamente siempre en el mundo Familia.
+
+**Fortalezas.** Reconoce algo cierto del producto: sus dos mitades tienen ritmos y públicos distintos. La secretividad queda confinada a un mundo, lo que simplifica el modelo mental —dentro de Regalos uno sabe que hay cosas que no le corresponden—. Y permite tres secciones por mundo sin sobrecargar la barra inferior, lo que da sitio al presupuesto, que en las demás opciones queda escondido.
+
+**Debilidades.** Se aparta de la convención de iOS, que sitúa la navegación principal abajo. Añade una decisión antes de cada tarea: primero el mundo, después la sección. Y quien use la aplicación de forma esporádica puede no descubrir nunca el segundo mundo.
+
+**A quién conviene.** A una familia en la que dos personas asuman de verdad la gestión de los regalos, con presupuesto y seguimiento, mientras el resto vive en la mitad cotidiana.
+
+---
+
+## 10. La vista de semana como componente
+
+Con independencia de la arquitectura elegida, la agenda debe ofrecer tres vistas sobre los mismos datos, conmutables desde la propia pantalla:
+
+- **Semana**, marco fijo de siete días, incluidos los vacíos. Vista por defecto.
+- **Mes**, retícula con marcas en los días con contenido y el detalle del día seleccionado debajo.
+- **Lista**, orden cronológico agrupado por proximidad, que es la única que funciona bien cuando lo próximo está a cinco meses.
+
+Las tres son necesarias porque responden a preguntas distintas: qué hay estos días, cómo se reparte el mes, y qué viene a continuación.
+
+### 10.1 El formulario de evento
+
+La creación tiene dos niveles. La hoja rápida pide título y día, y con eso guarda. El formulario completo se abre desde ella o al editar un evento existente, y agrupa los campos en seis bloques: cuándo, quién, dónde, qué es, reserva y más.
+
+Tres decisiones merecen mención.
+
+**El tipo va después de la fecha, no antes.** Podría defenderse lo contrario, ya que el tipo determina el emoji y algunos valores por defecto. Se ha situado después porque quien crea un evento tiene en la cabeza el qué y el cuándo, no la taxonomía; obligarle a clasificar antes de escribir invierte el orden natural.
+
+**«De quién es» y «quién va» son campos distintos.** El primero determina a quién se le ocultan los regalos del evento y qué ideas se proponen al asociarlos; el segundo es informativo. La diferencia se explica bajo los campos, en lenguaje llano, porque no es evidente y sus consecuencias son importantes.
+
+**La reserva se expresa como acción, no como categoría.** El control dice «ocultarlo a alguien» en lugar de «asignar categoría restringida», y al activarse explica qué implica: el evento desaparece por completo de la agenda de esas personas, sin dejar hueco ni llegar a su dispositivo.
+
+### 10.2 Densidad: varios eventos en un mismo día
+
+Es el punto donde la vista de semana se rompe. Si cada fila crece con su contenido, un sábado cargado desplaza el domingo fuera de la pantalla y se pierde exactamente aquello que justifica la vista, que es abarcar los siete días de una vez. Se resuelve con cuatro reglas.
+
+**Filas de una sola línea.** Cada evento ocupa una línea: hora, título recortado. La tarjeta amplia se reserva para la vista de día y para el detalle.
+
+**Techo de tres eventos por día.** A partir del cuarto aparece un enlace con el resto, que abre la vista de día. El marco de siete filas se conserva intacto en cualquier semana realista.
+
+**Vista de día como segundo nivel.** Tocar la fecha o el enlace de desbordamiento abre el día completo, con todos sus eventos en formato amplio. La semana resume; el día detalla.
+
+**Eventos de varios días con barra continua.** Un viaje o un torneo de dos jornadas se marca con una banda vertical en el margen izquierdo de cada día afectado, y las jornadas posteriores a la primera se señalan como continuación en lugar de repetir el evento como si fuera nuevo.
+
+**Consecuencia sobre los permisos.** El recuento del enlace de desbordamiento se calcula sobre los eventos visibles para quien mira. Si un evento pertenece a una categoría reservada, no cuenta. Un enlace que anuncie dos eventos más y muestre solo uno al abrirlo revela la existencia de lo que se pretendía ocultar, que es justamente el fallo que este diseño trata de impedir.
+
+---
+
+## 11. Comparación y recomendación
+
+| Criterio | A. Pestañas | B. El momento | C. Personas | D. La semana | E. Dos mundos |
+|---|---|---|---|---|---|
+| Coste de aprendizaje | Muy bajo | Bajo | Medio | Muy bajo | Medio |
+| R1 Captura | Correcto | Óptimo | Bueno | Bueno | Bueno |
+| R2 Navidad | Excelente | Muy bueno | Débil | Correcto | Excelente |
+| R3 Consulta ligera | Correcto | Óptimo | Regular | Excelente | Muy bueno |
+| Ajuste a la estacionalidad | Débil | Fuerte | Medio | Medio | Fuerte |
+| Coste de construcción | Bajo | Medio | Medio | Medio | Alto |
+| Riesgo de ejecución | Bajo | Medio | Alto | Bajo | Medio |
+
+**Dirección elegida: la opción D**, con la ficha de persona de la opción C como pantalla de detalle y el bloque estacional de la B incorporado dentro de la semana.
+
+La semana abre la aplicación. Es la unidad real de la vida familiar y el marco fijo hace que la lectura sea casi automática. La coordinación de regalos vive en su propia pestaña, que es donde debe estar: se visita con intención, no de paso.
+
+Lo que sigue recoge el análisis previo a esa decisión.
+
+**Alternativa: la opción B**, con una precisión importante.
+
+La unificación de Ideas y Ocasiones bajo una sola sección es la decisión de mayor rendimiento del conjunto, porque suprime una distinción que existe en el modelo de datos y no en la cabeza del usuario. La composición estacional de la pantalla de inicio es lo que hace que la aplicación resulte útil en marzo y no solo en diciembre.
+
+La precisión es que **la ficha de persona de la opción C debe adoptarse dentro de la opción B**, como pantalla de detalle dentro de Familia. Es el mejor elemento de las cinco propuestas y no exige renunciar a nada: reúne el histórico derivado, los atributos acumulados y las anécdotas en el lugar donde se consultan de verdad, que es cuando alguien se pregunta qué regalar a esa persona concreta.
+
+Si se prefiere reducir el riesgo, la opción A es una primera versión legítima que puede evolucionar hacia la B: la pantalla de inicio compuesta se añade después sin rehacer nada, porque la navegación por pestañas permanece.
+
+**Sobre la opción D.** Es la mejor candidata si la agenda va a ser el uso dominante, y su riesgo de ejecución es el más bajo de las cinco después de la A. Cabe además una síntesis con la B: conservar la pantalla compuesta como inicio y situar la semana inmediatamente detrás, en la primera pestaña. Se obtiene el resumen estacional sin renunciar al marco fijo.
+
+**Sobre la opción E.** Es la única que da al presupuesto un lugar propio, y su separación de mundos encaja con la realidad de que dos personas gestionan y el resto consulta. El precio es apartarse de la convención de iOS y añadir una decisión antes de cada tarea. La recomendaría solo si la gestión de regalos va a tener más peso del previsto.
+
+---
+
+## 12. Fuentes
+
+- Apple, *Human Interface Guidelines*: barras de pestañas, navegación y presentación modal.
+- Nielsen Norman Group: las diez heurísticas de usabilidad, divulgación progresiva y reconocimiento frente a memoria.
+- Documentación sectorial sobre patrones de diseño sin conexión: interfaz optimista, colas de sincronización e indicadores de estado.
+
+---
+
+## 13. Cuestiones abiertas
+
+1. Confirmar la opción de arquitectura antes de detallar pantallas.
+2. Decidir si el botón de captura reside en la capa global inferior o en cada sección.
+3. Definir las reglas explícitas de composición de la pantalla de inicio en la opción B: qué bloques, con qué umbrales y en qué orden.
+4. Determinar si el Anecdotario merece pestaña propia o vive dentro de Familia, lo que depende de su especificación pendiente.
