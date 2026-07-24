@@ -23,7 +23,7 @@ Tres piezas, con responsabilidades separadas:
 
 | Pieza | Responsabilidad |
 |---|---|
-| Agenda Familiar (app iOS) | Registro canónico de eventos, almacenado en un JSONBin compartido. Se consulta y se edita. |
+| Agenda Familiar (app iOS) | Registro canónico de eventos. Se consulta y se edita. |
 | Este documento | Define el resumen semanal: qué contiene y qué reglas lo gobiernan. |
 | Despachador de WhatsApp | Transporte. Entrega el mensaje al grupo vía CallMeBot. |
 
@@ -45,7 +45,7 @@ La ventana de «tarde del domingo» es suficiente. Igual que en el resto del sis
 
 ## 4. Origen del contenido
 
-El contenido procede de una única fuente: los eventos de la Agenda Familiar cuya fecha cae dentro de la semana entrante. Esa fuente es el registro canónico de la agenda —un JSONBin compartido con la aplicación, consultable por HTTPS—, que se lee en el momento del envío (apartado 9). No hay composición manual ni edición previa; el mensaje es un derivado mecánico del estado de la agenda en el instante de generarse.
+El contenido procede de una única fuente: los eventos de la Agenda Familiar cuya fecha cae dentro de la semana entrante. Esa fuente es el registro canónico de la agenda, que se lee en el momento del envío (apartado 9); el almacenamiento concreto se decide por separado. No hay composición manual ni edición previa; el mensaje es un derivado mecánico del estado de la agenda en el instante de generarse.
 
 Se incluyen los eventos de cualquier origen —manual, derivado o importado— sin distinción, porque para el lector la procedencia es irrelevante: un cumpleaños generado a partir de una fecha de nacimiento y una cita creada a mano son, en el plan, la misma clase de línea.
 
@@ -135,18 +135,16 @@ Es justamente por incluir a las hijas por lo que la regla del apartado 5 no es n
 
 ## 9. Integración con el despachador
 
-La cuestión que este apartado dejaba abierta —dónde se genera el texto y con cuánta frescura respecto de los cambios de última hora— queda resuelta por la arquitectura del backend. El registro canónico de la agenda no reside como fuente última en el dispositivo, sino en un **JSONBin compartido**, el mismo patrón de almacenamiento que el resto de las aplicaciones del hogar: un documento JSON alojado, accesible por HTTPS con una clave. Ese hecho decide la integración, porque el contenido de la agenda es consultable desde el propio workflow, sin depender de que un dispositivo lo componga por adelantado ni de encolarlo congelado.
+La generación del plan no depende de ningún dispositivo: vive en un **generador de servidor de confianza**, programado para el domingo y hermano del despachador. Con independencia de dónde se almacene la agenda —cuestión que se decide por separado (apartado 12)—, su forma es:
 
-**La forma resultante.** Un segundo workflow programado para el domingo —hermano del despachador, en el mismo repositorio— hace, en este orden:
-
-1. **Lee** el bin de la agenda desde JSONBin. La clave de acceso se guarda como secreto de repositorio, junto a `RECIPIENTS_JSON`; basta una clave de **solo lectura**, porque el plan nunca escribe en la agenda.
+1. **Lee** el registro canónico de la agenda desde su fuente.
 2. **Selecciona** los eventos cuya fecha cae en la semana entrante.
 3. Para **cada destinatario**, aplica la función de visibilidad con esa persona como observador y compone su texto (apartado 5).
 4. **Envía** un mensaje individual a cada uno por CallMeBot, reutilizando el mapa `RECIPIENTS_JSON` del despachador.
 
 ```mermaid
 flowchart LR
-    A[(JSONBin · agenda)] -->|GET solo lectura| B[Workflow del domingo]
+    A[(Registro canónico<br/>de la agenda)] -->|lectura| B[Workflow del domingo]
     B --> C[Eventos de la semana entrante]
     C --> D{Por cada destinatario}
     D --> E[Función de visibilidad<br/>como observador]
@@ -154,11 +152,11 @@ flowchart LR
     F -->|CallMeBot · RECIPIENTS_JSON| G[WhatsApp del destinatario]
 ```
 
-**Por qué no pasa por `queue.json`.** La cola del despachador está pensada para mensajes que un humano compone y programa. El plan no es eso: es un derivado que se recalcula por persona cada domingo a partir del estado vivo de la agenda. Se reutiliza el **transporte** del despachador —el mapa de destinatarios y el envío por CallMeBot—, no su cola. Leer el bin en el momento del envío da además la máxima frescura: un cambio en la agenda el sábado por la noche se refleja en el plan del domingo, sin nada congelado. La opción de pre-generar desde la app y encolar, que se barajó mientras el backend era incierto, queda descartada: sobra en cuanto la fuente es consultable desde el workflow.
+**Por qué no pasa por `queue.json`.** La cola del despachador está pensada para mensajes que un humano compone y programa. El plan no es eso: es un derivado que se recalcula por persona cada domingo a partir del estado vivo de la agenda. Se reutiliza el **transporte** del despachador —el mapa de destinatarios y el envío por CallMeBot—, no su cola. Leer la fuente en el momento del envío da además la máxima frescura: un cambio en la agenda el sábado por la noche se refleja en el plan del domingo, sin nada congelado.
 
 **La regla de visibilidad se aplica en la generación**, nunca después: el texto que sale es el artefacto final, sin capa de presentación posterior donde filtrar. Es coherente con el principio del sistema de no dejar que un dato oculto llegue siquiera a componerse en un mensaje que va a salir.
 
-**Una distinción que conviene no pasar por alto.** El generador del plan es un **lector de servidor de confianza**, no el dispositivo de un miembro. Que lea el bin entero y filtre por destinatario es, por tanto, correcto y seguro: el filtrado ocurre en un entorno controlado antes de que nada salga hacia WhatsApp. Es un modelo distinto del de los dispositivos de la aplicación, a los que el requisito de «filtrar antes de transmitir» (especificación funcional, apartado 9) prohíbe descargar siquiera lo que su titular no puede ver. Cómo se satisface *ese* requisito cuando la fuente es un único JSONBin compartido —que por sí mismo no filtra por lector— es una cuestión del backend de la agenda, ajena a este documento. Aquí basta con constatar que el generador del plan no la plantea, por ser servidor y no cliente.
+**Una distinción que conviene no pasar por alto.** El generador del plan es un **lector de servidor de confianza**, no el dispositivo de un miembro. Que lea la fuente entera y filtre por destinatario es, por tanto, correcto y seguro: el filtrado ocurre en un entorno controlado antes de que nada salga hacia WhatsApp. Es un modelo distinto del de los dispositivos de la aplicación, a los que el requisito de «filtrar antes de transmitir» (especificación funcional, apartado 9) prohíbe descargar siquiera lo que su titular no puede ver. Cómo se satisface *ese* requisito depende del almacenamiento que se elija para la agenda y de si este hace cumplir el acceso por lector; esa elección se aborda por separado. Aquí basta con constatar que el generador del plan no la plantea, por ser servidor y no cliente.
 
 ---
 
@@ -166,7 +164,7 @@ flowchart LR
 
 **Envío perdido.** Si el envío del domingo falla o el sondeo se retrasa, se aplica una ventana de gracia acotada, como en el despachador. Un plan semanal que llegara el martes, con dos días de la semana ya consumidos, pierde su sentido; la gracia debe cubrir un retraso de horas, no de días. Un domingo perdido no es catastrófico: la aplicación sigue siendo la fuente completa y el envío se reanuda al domingo siguiente.
 
-**Fuente no disponible.** Si en el momento de generar no se puede leer el bin de la agenda —JSONBin inaccesible o clave revocada—, no se envía un mensaje vacío ni erróneo: se omite el envío de esa semana y queda constancia en la traza. Un mensaje incorrecto es peor que un mensaje ausente, sobre todo si el error consistiera en incluir algo que debía excluirse.
+**Fuente no disponible.** Si en el momento de generar no se puede leer el registro canónico de la agenda, no se envía un mensaje vacío ni erróneo: se omite el envío de esa semana y queda constancia en la traza. Un mensaje incorrecto es peor que un mensaje ausente, sobre todo si el error consistiera en incluir algo que debía excluirse.
 
 **Auditoría.** Igual que en el despachador, el historial de ejecuciones es la auditoría: qué semana se envió, con qué contenido y con qué resultado, sin instrumentación adicional.
 
@@ -183,8 +181,8 @@ flowchart LR
 
 ## 12. Decisiones pendientes
 
-1. **La integración con el despachador queda decidida** (apartado 9): el backend de la agenda es un JSONBin compartido, y el plan se genera en un workflow del domingo que lo lee, compone por destinatario y envía por CallMeBot. Restan tres puntos operativos: aprovisionar una clave de JSONBin de solo lectura como secreto de repositorio; fijar qué campos del bin lee el generador —dependiente de la estructura que la aplicación escriba—; y decidir si el workflow del plan reside en el repositorio del despachador o en el suyo.
-2. Cómo se satisface el requisito de «filtrar antes de transmitir» de la agenda (especificación funcional, apartado 9) cuando el registro canónico es un único JSONBin compartido que no filtra por lector. Excede este documento —es del backend de la agenda—, pero conviene resolverlo antes de confiar la ocultación a esa capa.
+1. **El almacenamiento del registro canónico de la agenda y su modelo de control de acceso por lector**, que se decide por separado. De esa elección depende cómo se satisface el requisito de «filtrar antes de transmitir» (especificación funcional, apartado 9) en los dispositivos de la aplicación; el generador del plan, por ser servidor de confianza, es indiferente a ella (apartado 9). La forma de la integración —generador del domingo que lee la fuente, compone por destinatario y envía por CallMeBot— no cambia con el almacenamiento.
+2. Si el workflow del plan reside en el repositorio del despachador o en el suyo propio.
 3. La hora concreta del domingo y la amplitud de la ventana de gracia.
 4. El marcador exacto de los días vacíos y el texto de la semana sin eventos, sujetos a prueba con mensajes reales en un cliente de WhatsApp.
 5. Si el plan debe distinguir de algún modo los eventos de varios días —un torneo o un viaje que cruza varias jornadas— o basta con repetir la línea en cada día afectado.
