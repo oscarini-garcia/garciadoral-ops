@@ -1,6 +1,6 @@
 # Plan Semanal por WhatsApp — Especificación Funcional
 
-**Versión:** 0.2
+**Versión:** 0.3
 **Fecha:** 24 de julio de 2026
 **Documentos complementarios:** Despachador de mensajes de WhatsApp con GitHub Actions · Agenda Familiar — Especificación Funcional · Agenda Familiar — Modelo de Datos y Flujos
 **Alcance:** el envío automático, cada domingo, de un resumen de la semana entrante al grupo familiar de WhatsApp. Este documento define **qué** se envía, con **qué reglas** y **de dónde** procede el contenido. La infraestructura de despacho —cola, workflow, CallMeBot— se especifica en el documento del despachador y aquí se da por conocida. La forma concreta de acoplamiento con esa infraestructura queda como decisión abierta y se trata, sin cerrarse, en el apartado 9.
@@ -79,6 +79,8 @@ El mensaje reproduce en texto el marco fijo de siete días de la vista de semana
 
 WhatsApp admite texto plano con saltos de línea y un marcado ligero (`*negrita*`). El generador se limita a eso; no hay tablas ni alineaciones que un cliente móvil rompería.
 
+**Texto plano, no monoespaciado.** Se descarta envolver la parte de días en un bloque de código (triple acento grave), aunque alinearía las columnas. WhatsApp pinta ese bloque en una tipografía pequeña de estilo «código» que resta calidez a un mensaje familiar, y en fuente proporcional el marco de siete días ya se lee sin dificultad. La alineación imperfecta de las columnas es un precio menor que se acepta a cambio de un texto cálido y legible.
+
 Esquema:
 
 ```
@@ -96,13 +98,20 @@ D  3  🍽️ Comida con los abuelos · 14:00
 
 Decisiones de formato:
 
-- **Una línea por evento.** Emoji, título recortado, hora si la tiene. El emoji cumple aquí la misma función que en la agenda: permite reconocer un evento sin leerlo y convierte la semana en algo que se abarca de un vistazo.
-- **Días vacíos con un guion.** Presentes y marcados, nunca omitidos.
+- **Una línea por evento.** Emoji, título recortado, hora si la tiene. El emoji cumple aquí la misma función que en la agenda: permite reconocer un evento sin leerlo y convierte la semana en algo que se abarca de un vistazo. **El recorte del título no es cosmético:** una línea larga se parte en la pantalla del móvil y la continuación cae al margen izquierdo, sin sangría, lo que rompe el «una línea por evento». El título se recorta a lo que quepa en una línea; no se cambia de tipografía para evitarlo.
+- **Días vacíos con un guion.** Presentes y marcados con `—`, nunca omitidos.
 - **Techo de tres eventos por día.** A partir del cuarto, una línea de resumen —«y 2 más»— en lugar de un muro de texto. El recuento de ese resumen se calcula, igual que en la aplicación, solo sobre los eventos visibles: nunca debe delatar la existencia de un evento reservado que se excluyó.
 - **Sin enlaces ni identificadores.** El mensaje es de lectura, no de navegación. Quien quiera actuar abre la aplicación.
 - **Emojis de tipo, no libres.** Se reutiliza la asignación por defecto de la agenda, acotada. La variedad ilimitada convertiría el mensaje en un mosaico ruidoso.
 
 El conjunto debe caber en una pantalla de móvil sin desplazamiento en una semana normal. Es un resumen, no un boletín.
+
+**Comprobado en un cliente real.** El formato se ha validado enviando el ejemplo de arriba por CallMeBot a un WhatsApp:
+
+- La cabecera `*Plan de la semana*` se muestra en **negrita**, y los emojis de tipo (🏇, 🩺, 🎂, 🍽️) y los saltos de línea se conservan.
+- Los días vacíos con `—` se leen con claridad como «ese día, nada».
+- El sistema operativo del móvil **subraya las horas y fechas** (`10:00`, `27 jul`) como datos accionables —los *data detectors* de iOS, que ofrecen crear un evento al tocarlos—. No es marcado nuestro ni se puede desactivar desde el mensaje; es inofensivo y hasta útil, y se asume tal cual.
+- El mensaje llega desde el número del bot, identificado como cuenta de empresa, en coherencia con las limitaciones asumidas.
 
 ---
 
