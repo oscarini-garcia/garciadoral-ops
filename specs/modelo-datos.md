@@ -1,8 +1,8 @@
 # Agenda Familiar — Modelo de Datos y Flujos
 
-**Versión:** 0.3
+**Versión:** 0.4
 **Fecha:** 24 de julio de 2026
-**Documento complementario de:** Agenda Familiar — Especificación Funcional v0.6
+**Documento complementario de:** Agenda Familiar — Especificación Funcional
 **Alcance:** entidades, relaciones, ciclos de estado y flujos de información. El módulo Anecdotario, aunque forma parte del alcance de la primera versión, se modelará cuando se cierre su especificación funcional.
 
 ---
@@ -72,7 +72,7 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 
 ### 2.4 Agenda
 
-**TipoEvento.** Catálogo configurable. Contenido inicial: cumpleaños, aniversario, viaje, competición, entreno, celebración, fecha escolar, cita médica y otro. Cada tipo lleva asociados un emoji por defecto y un indicador de si los eventos de ese tipo suelen llevar regalos, que fija el valor propuesto en el formulario.
+**TipoEvento.** Catálogo configurable. Contenido inicial: cumpleaños, santo, aniversario, viaje, competición, entreno, celebración, fecha escolar, cita médica y otro. Cada tipo lleva asociados un emoji por defecto y un indicador de si los eventos de ese tipo suelen llevar regalos, que fija el valor propuesto en el formulario.
 
 **Evento.** Título, tipo, emoji propio opcional que sustituye al del tipo, fechas de inicio y fin, indicador de jornada completa, ubicación, notas, regla de recurrencia —sin repetición, semanal, mensual o anual, con fecha de fin opcional—, indicador de si lleva regalos, categoría opcional para los eventos que son en sí una sorpresa, y origen.
 
@@ -86,7 +86,7 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 
 ### 2.5 Ocasiones y regalos
 
-**Ocasión.** Nombre, fecha, estado —abierta o cerrada— y vínculo opcional con un evento de la agenda. No incorpora importe global: el total se obtiene por suma de los presupuestos individuales.
+**Ocasión.** Nombre, fecha, estado —abierta o cerrada— y vínculo opcional con un evento de la agenda mediante un `evento_id` opcional. El vínculo reside en la Ocasión, no en el Evento: así, la creación automática de la ocasión al asociar el primer regalo desde un evento no obliga a modificar el evento, que permanece ajeno a la maquinaria de regalos. No incorpora importe global: el total se obtiene por suma de los presupuestos individuales.
 
 **ParticipanteOcasión.** Relación entre ocasión y persona destinataria. Es la relación que se copia al duplicar una ocasión del año anterior; ni los presupuestos ni los regalos se trasladan.
 
@@ -328,5 +328,4 @@ Para un observador dado, el bloque se construye tomando los regalos de la ocasi�
 ## 8. Decisiones de modelado pendientes
 
 1. Modelar el Anecdotario cuando se cierre su especificación funcional, incluida la estructura de la importación desde el export de Facebook.
-2. Determinar si el vínculo entre evento y ocasión debe residir en el evento o en la ocasión. La cardinalidad uno a uno lo permite en cualquiera de los dos extremos; la creación automática de la ocasión desde el evento sugiere alojarlo en la ocasión.
-3. Definir el mecanismo de propagación de la fusión de etiquetas a los dispositivos que estuvieran sin conexión en el momento de ejecutarse.
+2. Definir el mecanismo de propagación de la fusión de etiquetas a los dispositivos que estuvieran sin conexión en el momento de ejecutarse.

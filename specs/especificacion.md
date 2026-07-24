@@ -1,6 +1,6 @@
 # Agenda Familiar — Especificación Funcional
 
-**Versión:** 0.8
+**Versión:** 0.9
 **Fecha:** 24 de julio de 2026
 **Documento complementario:** Agenda Familiar — Modelo de Datos y Flujos
 **Alcance:** definición conceptual y funcional. El stack técnico queda fuera de este documento.
@@ -26,6 +26,8 @@ El sistema mantiene un **registro único de Personas** que incluye a todo aquel 
 **Personas sin cuenta.** Padres, sobrinos y demás familia extendida. Existen como destinatarios y como sujetos de eventos —su cumpleaños aparece en la agenda—, pero no acceden a la aplicación.
 
 La carga inicial del registro es manual. El volumen es reducido y una importación desde los contactos del teléfono arrastraría duplicados y datos irrelevantes que después habría que depurar uno a uno.
+
+El presente documento fija la estructura del registro —roles, atributos y reglas—, pero no su contenido concreto. Los datos del registro semilla, que incluyen nombres y fechas de nacimiento de menores, se aprovisionan en el despliegue y se mantienen fuera de la especificación versionada.
 
 La ficha de cada persona acumula información que gana valor con el tiempo: fecha de nacimiento, parentesco, tallas, preferencias y restricciones. Estos atributos se introducen como pares de clave y valor de creación libre, con sugerencias a partir de los ya empleados en el hogar. Un catálogo cerrado envejecería mal, porque lo que conviene recordar de un sobrino de ocho años no se parece a lo que conviene recordar de un padre de setenta.
 
@@ -107,7 +109,7 @@ Concentra los eventos familiares con relevancia compartida. La agenda es autóno
 
 ### 4.1 Evento
 
-Cada evento registra título, tipo, fecha de inicio y fin, indicador de jornada completa, ubicación, personas implicadas, notas y regla de recurrencia. El catálogo inicial de tipos comprende cumpleaños, aniversario, viaje, competición, entreno, celebración, fecha escolar, cita médica y otro, y es ampliable por los administradores.
+Cada evento registra título, tipo, fecha de inicio y fin, indicador de jornada completa, ubicación, personas implicadas, notas y regla de recurrencia. El catálogo inicial de tipos comprende cumpleaños, santo, aniversario, viaje, competición, entreno, celebración, fecha escolar, cita médica y otro, y es ampliable por los administradores.
 
 Los cumpleaños se generan de forma automática a partir de las fechas de nacimiento del registro de Personas, incluidas las de quienes no tienen cuenta. Estos eventos no se editan directamente: se corrigen desde la ficha de la persona, de modo que el dato maestro y su reflejo en la agenda no puedan divergir.
 
@@ -143,7 +145,7 @@ Al no ser el emoji el único portador de significado —el título siempre está
 
 ### 4.4 Regalos asociados a un evento
 
-**No todos los eventos llevan regalos.** El formulario plantea la pregunta de forma explícita, y solo cuando la respuesta es afirmativa aparecen los campos correspondientes: ocasión vinculada, destinatario y regalos asociados. La respuesta se propone según el tipo —afirmativa en cumpleaños, aniversarios y celebraciones; negativa en entrenos, fechas escolares y citas— y siempre puede corregirse. Un entreno o una revisión del coche no deben mostrar campos que nunca se van a rellenar.
+**No todos los eventos llevan regalos.** El formulario plantea la pregunta de forma explícita, y solo cuando la respuesta es afirmativa aparecen los campos correspondientes: ocasión vinculada, destinatario y regalos asociados. La respuesta se propone según el tipo —afirmativa en cumpleaños, santos, aniversarios y celebraciones; negativa en entrenos, fechas escolares y citas— y siempre puede corregirse. Un entreno o una revisión del coche no deben mostrar campos que nunca se van a rellenar.
 
 Cualquier miembro puede asociar regalos a un evento. El selector propone las ideas del banco orientadas a las personas participantes, lo que acota la búsqueda sin impedir la selección de cualquier otra idea.
 
@@ -303,6 +305,6 @@ Se ofrecen dos mecanismos de salvaguarda: una exportación completa bajo demanda
 
 ## 11. Decisiones pendientes
 
-1. Composición del registro inicial de Personas: quiénes entran, con cuenta y sin ella, y con qué fechas de nacimiento.
-2. Especificación de detalle del módulo Anecdotario, incluida la estructura de la importación desde Facebook.
-3. Confirmación del catálogo inicial de tipos de evento y de categorías propuestos en los apartados 4.1 y 3.1.
+1. Especificación de detalle del módulo Anecdotario, incluida la estructura de la importación desde Facebook.
+
+Los catálogos iniciales de tipos de evento y de categorías (apartados 4.1 y 3.1) quedan confirmados. La composición concreta del registro de Personas no es una decisión de esta especificación: su estructura se fija en el apartado 2 y sus datos se aprovisionan fuera del documento versionado.
