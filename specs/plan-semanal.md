@@ -53,23 +53,23 @@ De cada evento, el mensaje toma únicamente su **cara pública**: día, hora si 
 
 ---
 
-## 5. La regla de visibilidad — consideración crítica
+## 5. Composición por destinatario y visibilidad — consideración crítica
 
 Es el apartado que justifica que este resumen merezca un documento propio y no una nota al pie en el del despachador. Un error aquí no produce un fallo visible: **arruina una sorpresa**, que es el modo de fallo grave de todo el sistema.
 
-**El problema.** Dentro de la aplicación, el bloque de regalos de un evento se compone para cada observador: Ana ve los regalos de la hija, la hija ve el aviso «Por aquí no se mira». Esa protección se apoya en que cada dispositivo recibe una vista distinta. **El mensaje de WhatsApp no admite esa composición.** Es una difusión única: el mismo texto llega a la vez a todos los miembros del grupo, incluidas las hijas, que son precisamente las personas a quienes hay que ocultar las sorpresas. No hay un mensaje por persona; hay un mensaje.
+**El canal admite un mensaje por persona.** El despachador no reparte una difusión compartida: entrega a cada destinatario de forma individual, con su propio teléfono y su propia clave de CallMeBot. Nada obliga a que el texto sea el mismo para todos. Por tanto el plan **se compone por destinatario**, exactamente igual que la vista de semana se compone para cada dispositivo dentro de la aplicación. La restricción que en un primer análisis parecía inherente al canal —un único mensaje para todos— no existe.
 
-**La consecuencia.** Al no poder componerse por destinatario, el plan solo puede contener aquello que sea seguro para **el lector más restringido** del grupo. Lo que en la aplicación se resuelve mostrando cosas distintas a cada uno, aquí se resuelve mostrando a todos únicamente la **intersección** de lo que cada uno puede ver.
+**La regla.** Para cada destinatario, el generador construye su plan aplicando la misma función de visibilidad del sistema (modelo de datos, apartado 6) con esa persona como observador. Cada uno recibe su propia semana:
 
-De ahí dos reglas, que el generador aplica sin excepción:
+- Ana y Oscar reciben los eventos reservados a los que tienen acceso —la preparación de una celebración sorpresa, por ejemplo—, porque para ellos son visibles.
+- Las hijas reciben la misma semana **sin** esos eventos: no se sustituyen por un hueco ni por una línea genérica, desaparecen, igual que desaparecen de su agenda en la aplicación. Su sola presencia, aun sin detalle, sería información.
+- Los cumpleaños y demás eventos públicos llegan a todos, incluida la persona que cumple años: un cumpleaños no es un secreto. Lo que nunca entra en el canal es la dimensión de regalos —ocasiones, destinatarios, presupuestos, estado de compra—, que vive en otro módulo y no se lee para componer el plan. La fuente del mensaje es la agenda de eventos.
 
-**Primera: los regalos no existen en este canal.** El plan no menciona jamás una ocasión, un regalo, un destinatario de regalo, un presupuesto ni un estado de compra. No se recorta esa información: sencillamente no se lee. La fuente del mensaje es la agenda de eventos, no el módulo de Ocasiones.
+**Consecuencia sobre la completitud.** Al componerse por persona, el plan de cada miembro es tan completo como su vista de semana dentro de la aplicación. No se paga el peaje de un mínimo común: nadie deja de ver algo que le corresponde para proteger a otro. La protección la ejerce la propia función de visibilidad, destinatario a destinatario.
 
-**Segunda: los eventos reservados se excluyen por completo.** Un evento que pertenece a una categoría restringida o privada —los que son *en sí mismos* una sorpresa, como la planificación de una celebración— no aparece en el plan. No se sustituye por un hueco ni por una línea genérica: desaparece, exactamente igual que desaparece en la agenda de quien no debe verlo. Su sola presencia, aun sin detalle, sería información.
+**Dónde está ahora el riesgo.** Ya no está en la imposibilidad de componer, sino en componer bien. El texto que sale es el artefacto final: no hay una capa de presentación posterior donde filtrar. Por eso **el filtrado se produce en la generación**, nunca después, y con una cautela concreta: cada plan se renderiza para su observador y **no se reutiliza jamás un cuerpo ya compuesto para enviarlo a otra persona**. Un mensaje correcto para Ana, remitido por error a la hija, es una filtración consumada e irreversible —ya se ha entregado— sin posibilidad de retirarlo. La correspondencia entre observador y texto es el punto que la implementación debe blindar.
 
-**Lo que sí aparece, y conviene no confundir.** Un cumpleaños es un evento público: figura en la agenda de todos, incluida la persona que cumple años. Por tanto **sí** aparece en el plan —«sábado, cumpleaños de la abuela»—. Lo que no aparece es lo que cuelga de él por el lado de los regalos, que vive en otro módulo y nunca se lee. La cara pública del evento es segura; la dimensión de regalos no entra en el canal. Distinguir ambas cosas es lo que permite que el plan sea a la vez útil y hermético.
-
-**Formulación operativa.** Un evento entra en el plan si, y solo si, su categoría es pública. La comprobación es la misma función de visibilidad del sistema, evaluada con un observador que representa al conjunto del grupo: si el evento estuviera oculto para *cualquiera* de los destinatarios, no entra. Como no se puede afinar por persona, se toma el mínimo común. El plan es, por diseño, **menos completo que la vista semanal que cada miembro ve dentro de la aplicación**, y esa incompletitud es correcta: es el precio de un canal de difusión única, y se paga a favor de la seguridad.
+**Destinatarios sin cuenta.** Un abuelo que recibe el plan por WhatsApp no es un observador del modelo de la aplicación. Se le compone la **vista pública**: eventos públicos, sin dimensión de regalos y sin ningún evento reservado, ya que un evento reservado podría ser una sorpresa que le concierne a él mismo. Es la vista más conservadora, y es la adecuada para quien está fuera del círculo de coordinación.
 
 ---
 
@@ -108,7 +108,7 @@ El conjunto debe caber en una pantalla de móvil sin desplazamiento en una seman
 
 ## 7. La semana sin eventos
 
-Cuando la semana entrante no tiene ningún evento público, **el mensaje se envía igualmente**, con una línea que lo declara:
+La semana vacía se evalúa por destinatario: la semana de una hija puede no tener nada visible mientras la de sus padres contiene la preparación de una sorpresa. Cuando la semana entrante no tiene ningún evento visible **para un destinatario dado**, su mensaje se envía igualmente, con una línea que lo declara:
 
 ```
 *Plan de la semana*
@@ -119,27 +119,29 @@ Sin nada en el calendario esta semana.
 
 Se envía siempre por la misma razón por la que el aviso «Por aquí no se mira» está siempre presente: la regularidad construye el hábito. Si el mensaje solo llegara las semanas con contenido, su ausencia una tarde de domingo sería ambigua —¿semana vacía o envío fallido?— y la familia dejaría de confiar en él. Un canal en el que se confía llega también para decir que no hay nada.
 
-Hay además una razón de hermetismo: una semana que se salta el envío por «no tener nada visible» podría, en el límite, delatar que lo único que contenía era un evento reservado que se excluyó. Enviar siempre cierra esa vía.
+Hay además una razón de hermetismo, y es la que hace que enviar siempre no sea opcional. Si el plan de una hija se saltara por «no tener nada visible», su ausencia podría delatar que lo único que contenía su semana era un evento reservado que se le ocultó —la sorpresa que se prepara para ella—. Enviar siempre, también a quien esa semana no tiene nada, cierra esa vía.
 
 ---
 
 ## 8. Destinatarios
 
-El mensaje se dirige al conjunto de la familia mediante el mapa `RECIPIENTS_JSON` que ya emplea el despachador. El campo `to` admite una lista, de modo que un mismo texto se reparte entre todos los destinatarios en una sola entrada.
+El plan se dirige al grupo familiar completo, hijas incluidas, y a los destinatarios sin cuenta que se desee —los abuelos—. El mapa de destinatarios y sus claves son los del despachador, `RECIPIENTS_JSON`.
 
-El destinatario natural es el grupo familiar completo, hijas incluidas. Es justamente por incluirlas por lo que la regla del apartado 5 no es negociable: el plan se diseña seguro para ellas, no se les oculta el plan.
+A cada uno se le entrega **su propio texto**, compuesto según el apartado 5. Aquí reside la diferencia con un mensaje ordinario de la cola: aquel reparte un mismo `text` entre varios `to`, mientras que el plan produce un cuerpo distinto por persona. Esa asimetría condiciona la integración (apartado 9): la lista `to` compartida no sirve para el plan, porque cada destinatario no comparte contenido con los demás.
+
+Es justamente por incluir a las hijas por lo que la regla del apartado 5 no es negociable: no se les oculta el plan, se les compone el suyo.
 
 ---
 
 ## 9. Integración con el despachador *(decisión abierta)*
 
-Este apartado enmarca la integración sin cerrarla; su resolución es la primera de las decisiones pendientes. La cuestión de fondo es **dónde se genera el texto** y **cuánta antelación** media entre generarlo y enviarlo, porque de esa antelación depende que el plan refleje o no los cambios de última hora en la agenda.
+Este apartado enmarca la integración sin cerrarla; su resolución es la primera de las decisiones pendientes. La cuestión de fondo es **dónde se genera el texto** y **cuánta antelación** media entre generarlo y enviarlo, porque de esa antelación depende que el plan refleje o no los cambios de última hora en la agenda. La composición por destinatario (apartado 5) añade una segunda condición: sea cual sea la opción, hay que producir un cuerpo distinto por persona, de modo que la entrada de cola con `text` único y varios `to` no encaja para el plan.
 
-**Opción A — Pre-generación desde la app y encolado.** Un dispositivo designado compone el texto del plan y lo escribe en `queue.json` con `send_at` en el próximo domingo y `repeat: "semanal"`. El despachador lo trata como un mensaje más. *A favor:* no exige infraestructura nueva; reutiliza el despachador tal cual. *En contra:* el contenido queda congelado en el momento de encolarlo; si la semana cambia entre el jueves y el domingo, el mensaje sale desactualizado. Además ata la generación a que un dispositivo concreto se ejecute, lo que contradice la premisa del despachador de mantener el teléfono fuera del camino crítico.
+**Opción A — Pre-generación desde la app y encolado.** Un dispositivo designado compone el plan **de cada destinatario** y escribe **una entrada por persona** en `queue.json` —cada una con su propio `text` y un único `to`—, con `send_at` en el próximo domingo y `repeat: "semanal"`. El despachador las trata como mensajes cualesquiera. *A favor:* no exige infraestructura nueva; reutiliza el despachador tal cual. *En contra:* el contenido queda congelado al encolarlo; si la semana cambia entre el jueves y el domingo, el mensaje sale desactualizado. Además ata la generación a que un dispositivo concreto se ejecute, lo que contradice la premisa del despachador de mantener el teléfono fuera del camino crítico, y ese dispositivo debe poder componer la vista de *todos* los observadores, no solo la propia.
 
-**Opción B — Generación en el momento del envío, desde el registro canónico.** Un segundo workflow programado para el domingo lee los eventos de la semana entrante del registro canónico de la agenda, aplica la regla de visibilidad, compone el texto y lo entrega. *A favor:* el plan refleja el estado real de la agenda en el instante del envío; nada se congela. *En contra:* exige que el backend canónico de la agenda exponga de forma consultable los eventos públicos de un rango de fechas, interfaz que hoy no está especificada.
+**Opción B — Generación en el momento del envío, desde el registro canónico.** Un segundo workflow programado para el domingo lee los eventos de la semana entrante del registro canónico de la agenda, aplica la función de visibilidad **por destinatario**, compone el texto de cada persona y envía un mensaje individual a cada una. *A favor:* el plan refleja el estado real de la agenda en el instante del envío, nada se congela, y la composición por observador queda del lado del sistema que ya conoce la función de visibilidad. *En contra:* exige que el backend canónico de la agenda exponga de forma consultable los eventos de un rango de fechas evaluables por observador, interfaz que hoy no está especificada.
 
-**Opción C — Híbrida (dirección recomendada).** La **generación** vive con el registro canónico (como en B), porque el contenido es automático y sensible a los cambios de última hora; la **entrega** reutiliza el transporte del despachador —`RECIPIENTS_JSON` y el envío por CallMeBot— pero no su cola, que está pensada para mensajes que un humano compone y programa. El plan no es eso: es un derivado que se recalcula cada semana. Separar generación de transporte deja cada pieza en su sitio.
+**Opción C — Híbrida (dirección recomendada).** La **generación** vive con el registro canónico (como en B), porque el contenido es automático, sensible a los cambios de última hora y debe componerse por observador con la misma función de visibilidad del sistema; la **entrega** reutiliza el transporte del despachador —`RECIPIENTS_JSON` y el envío individual por CallMeBot— pero no su cola, que está pensada para mensajes que un humano compone y programa. El plan no es eso: es un derivado que se recalcula por persona cada semana. Separar generación de transporte deja cada pieza en su sitio.
 
 La recomendación es la opción C, con una salvedad de calendario: mientras el backend canónico no exponga la consulta de eventos por rango, la opción A es un puente legítimo que permite arrancar sin bloquear, a cambio de asumir la desactualización. La elección definitiva se pospone —«luego miramos cómo integrarlo»— y depende del estado del backend cuando se aborde la construcción.
 
@@ -160,7 +162,7 @@ Sea cual sea la opción, **la regla de visibilidad del apartado 5 se aplica en l
 ## 11. Limitaciones asumidas
 
 - Precisión de «la tarde del domingo», no al minuto. Adecuada para un resumen semanal.
-- El plan es deliberadamente menos completo que la vista semanal de cada miembro dentro de la aplicación: solo contiene eventos públicos. Es el precio del canal de difusión única y se paga a favor del hermetismo.
+- La corrección del plan reposa por completo en aplicar la función de visibilidad por destinatario en la generación. Un fallo de composición —reutilizar el cuerpo de una persona para otra— es una filtración irreversible, no un error recuperable: el mensaje ya se ha entregado.
 - El mensaje es de lectura. No permite editar ni confirmar; para actuar se abre la aplicación.
 - Hereda las limitaciones del transporte: CallMeBot es un servicio gratuito de un tercero sin compromiso de disponibilidad, y los mensajes llegan desde el número del bot.
 
