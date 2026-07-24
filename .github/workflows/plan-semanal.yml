@@ -1,0 +1,66 @@
+name: plan-semanal
+
+# El plan de la semana entrante, compuesto por destinatario y entregado por
+# CallMeBot (specs/plan-semanal.md). No pasa por queue.json: es un derivado que
+# se recalcula cada domingo a partir del estado vivo de la agenda.
+#
+# La ventana de envío es la tarde del domingo (17:00–23:00 en Europe/Madrid) y
+# la comprueba el propio script, no el cron: GitHub programa en UTC y el
+# desplazamiento cambia con el horario de verano. Los cuatro sondeos caen dentro
+# de la ventana tanto en CET como en CEST, y el registro de estado impide que un
+# segundo sondeo reenvíe lo ya entregado.
+
+on:
+  schedule:
+    - cron: '11 15 * * 0'
+    - cron: '11 17 * * 0'
+    - cron: '11 19 * * 0'
+    - cron: '11 21 * * 0'
+  workflow_dispatch:
+    inputs:
+      simulacro:
+        description: 'Componer e imprimir los planes sin enviarlos'
+        type: boolean
+        default: false
+      forzar:
+        description: 'Ignorar la ventana del domingo y la semana ya enviada'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plan-semanal
+  cancel-in-progress: false
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Componer y enviar el plan de la semana entrante
+        env:
+          RECIPIENTS_JSON: ${{ secrets.RECIPIENTS_JSON }}
+          AGENDA_URL: ${{ secrets.AGENDA_URL }}
+          AGENDA_TOKEN: ${{ secrets.AGENDA_TOKEN }}
+        run: |
+          opciones=()
+          if [[ "${{ inputs.simulacro }}" == "true" ]]; then opciones+=(--simulacro); fi
+          if [[ "${{ inputs.forzar }}"    == "true" ]]; then opciones+=(--forzar);    fi
+          python3 scripts/plan_semanal.py "${opciones[@]}"
+
+      - name: Persistir el registro de envío
+        if: always()
+        run: |
+          if [[ -n "$(git status --porcelain estado/plan-semanal.json)" ]]; then
+            git config user.name  "plan-semanal"
+            git config user.email "actions@users.noreply.github.com"
+            git add estado/plan-semanal.json
+            git commit -m "chore: registra el envío del plan semanal"
+            git pull --rebase --autostash
+            git push
+          fi

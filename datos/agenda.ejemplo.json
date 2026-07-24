@@ -1,0 +1,175 @@
+{
+  "_nota": "Registro de ejemplo, con personas y fechas inventadas. El registro real se aprovisiona en el despliegue y se mantiene fuera del repositorio (specs/especificacion.md §2); copie este fichero a datos/agenda.json y sustituya su contenido.",
+  "personas": [
+    {
+      "id": "p-ana",
+      "nombre": "Ana",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1980-05-12",
+      "parentesco": "madre",
+      "tiene_cuenta": true,
+      "rol": "administrador"
+    },
+    {
+      "id": "p-oscar",
+      "nombre": "Óscar",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1978-11-03",
+      "parentesco": "padre",
+      "tiene_cuenta": true,
+      "rol": "administrador"
+    },
+    {
+      "id": "p-marta",
+      "nombre": "Marta",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "2010-08-01",
+      "parentesco": "hija",
+      "tiene_cuenta": true,
+      "rol": "miembro"
+    },
+    {
+      "id": "p-lucia",
+      "nombre": "Lucía",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "2013-02-19",
+      "parentesco": "hija",
+      "tiene_cuenta": true,
+      "rol": "miembro"
+    },
+    {
+      "id": "p-abuela",
+      "nombre": "la abuela",
+      "fecha_nacimiento": "1949-07-30",
+      "parentesco": "abuela",
+      "tiene_cuenta": false
+    },
+    {
+      "id": "p-abuelo",
+      "nombre": "el abuelo",
+      "fecha_nacimiento": "1947-03-05",
+      "parentesco": "abuelo",
+      "tiene_cuenta": false
+    }
+  ],
+  "atributos_persona": [
+    { "persona_id": "p-marta", "clave": "talla de calzado", "valor": "39" },
+    { "persona_id": "p-abuela", "clave": "alergias", "valor": "frutos secos" }
+  ],
+  "etiquetas": [
+    { "id": "e-adolescente", "nombre": "adolescente" },
+    { "id": "e-cocina", "nombre": "aficionado a la cocina" }
+  ],
+  "eventos": [
+    {
+      "id": "ev-entreno-hipica",
+      "titulo": "Entreno de hípica",
+      "tipo_id": "entreno",
+      "emoji": "🏇",
+      "inicio": "2026-01-12T18:00:00",
+      "fin": "2026-01-12T19:30:00",
+      "repeticion": "semanal",
+      "repeticion_hasta": "2026-12-21",
+      "participantes": [{ "persona_id": "p-marta", "rol": "asistente" }]
+    },
+    {
+      "id": "ev-dentista",
+      "titulo": "Dentista",
+      "tipo_id": "cita_medica",
+      "inicio": "2026-07-30T10:00:00",
+      "fin": "2026-07-30T11:00:00",
+      "participantes": [{ "persona_id": "p-ana", "rol": "protagonista" }]
+    },
+    {
+      "id": "ev-torneo",
+      "titulo": "Torneo de hípica",
+      "tipo_id": "competicion",
+      "inicio": "2026-08-01",
+      "fin": "2026-08-02",
+      "jornada_completa": true,
+      "participantes": [{ "persona_id": "p-marta", "rol": "asistente" }]
+    },
+    {
+      "id": "ev-comida-abuelos",
+      "titulo": "Comida con los abuelos",
+      "tipo_id": "celebracion",
+      "emoji": "🍽️",
+      "inicio": "2026-08-02T14:00:00",
+      "lleva_regalos": false,
+      "participantes": [
+        { "persona_id": "p-abuela", "rol": "asistente" },
+        { "persona_id": "p-abuelo", "rol": "asistente" }
+      ]
+    },
+    {
+      "id": "ev-sorpresa-marta",
+      "titulo": "Preparar la fiesta de Marta",
+      "tipo_id": "otro",
+      "inicio": "2026-07-31T17:00:00",
+      "categoria_id": "coordinacion",
+      "participantes": [
+        { "persona_id": "p-ana", "rol": "asistente" },
+        { "persona_id": "p-oscar", "rol": "asistente" }
+      ]
+    }
+  ],
+  "ideas": [
+    {
+      "id": "id-botas",
+      "titulo": "Botas de montar",
+      "autor_id": "p-ana",
+      "categoria_id": "deporte",
+      "precio_min": 80,
+      "precio_max": 120,
+      "estado": "en_curso",
+      "orientaciones": [{ "persona_id": "p-marta" }]
+    },
+    {
+      "id": "id-ceramica",
+      "titulo": "Curso de cerámica",
+      "autor_id": "p-oscar",
+      "categoria_id": "experiencias",
+      "orientaciones": [{ "etiqueta_id": "e-cocina" }]
+    },
+    {
+      "id": "id-auriculares",
+      "titulo": "Auriculares con cancelación de ruido",
+      "autor_id": "p-marta",
+      "tipo": "deseo",
+      "categoria_id": "tecnologia",
+      "orientaciones": [{ "persona_id": "p-marta" }]
+    }
+  ],
+  "ocasiones": [
+    {
+      "id": "oc-cumple-marta-2026",
+      "nombre": "Cumpleaños de Marta 2026",
+      "fecha": "2026-08-01",
+      "estado": "abierta",
+      "participantes": ["p-marta"],
+      "presupuestos": [{ "persona_id": "p-marta", "importe": 150 }]
+    }
+  ],
+  "regalos": [
+    {
+      "id": "rg-botas",
+      "ocasion_id": "oc-cumple-marta-2026",
+      "idea_id": "id-botas",
+      "destinatario_principal_id": "p-marta",
+      "responsable_id": "p-ana",
+      "estado": "comprado",
+      "coste_real": 96.5,
+      "categoria_id": "deporte"
+    }
+  ],
+  "comentarios": [
+    {
+      "id": "cm-1",
+      "objeto_tipo": "regalo",
+      "objeto_id": "rg-botas",
+      "autor_id": "p-oscar",
+      "texto": "Confirmada la talla con la tienda.",
+      "fecha": "2026-07-20T19:12:00"
+    }
+  ]
+}

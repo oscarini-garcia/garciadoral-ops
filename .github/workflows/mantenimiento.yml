@@ -1,0 +1,28 @@
+name: mantenimiento
+
+# GitHub deshabilita los workflows programados tras sesenta días sin commits en
+# la rama por defecto, y solo los commits reinician el contador. Cada despacho
+# escribe el estado de vuelta al repositorio, de modo que esta tarea solo hace
+# falta si se prevén periodos largos sin ningún envío (specs/despachador.md §9).
+
+on:
+  schedule:
+    - cron: '13 4 1 * *'   # el día 1 de cada mes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  latido:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          date -u +%FT%TZ > .github/latido
+          git config user.name  "mantenimiento"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/latido
+          git commit -m "chore: latido de actividad"
+          git push
