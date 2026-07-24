@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda Familiar — Regalos · Prototipo 0.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bench:#131A21; --bench-2:#1C252E; --bench-3:#26313B; --rule:#2F3B46;
+  --bench-text:#93A4B2; --bench-hi:#E6EDF3; --live:#4FD1A5;
+  --paper:#FBF9F5; --paper-2:#F2EFE8; --ink:#1C2B33; --ink-soft:#5F7280; --ink-faint:#93A3AD;
+  --tinta:#0E6E62; --regalo:#8E3B5E; --line:#E2DED4;
+  --sello-bg:#E9EEF3; --sello-line:rgba(110,134,158,.22); --sello-text:#5B7288;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bench);color:var(--bench-text);
+  font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:20px 16px 56px;display:flex;flex-direction:column;align-items:center;gap:18px}
+
+.bench-head{width:100%;max-width:460px}
+.eyebrow{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;opacity:.7}
+.bench-head h1{font-family:'Newsreader',Georgia,'Times New Roman',serif;font-weight:400;font-size:26px;line-height:1.15;
+  color:var(--bench-hi);margin:8px 0 6px;letter-spacing:-.01em}
+.bench-head p{font-size:13.5px;line-height:1.5;max-width:46ch}
+
+.controls{width:100%;max-width:460px;display:flex;flex-direction:column;gap:12px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field-label{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.13em;
+  text-transform:uppercase;opacity:.65}
+.seg{display:flex;flex-wrap:wrap;background:var(--bench-2);border:1px solid var(--rule);
+  border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1 1 84px;min-height:44px;background:none;border:0;border-radius:8px;cursor:pointer;
+  color:var(--bench-text);font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.25;
+  padding:6px 4px;transition:background .18s,color .18s}
+.seg button b{display:block;font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9.5px;
+  letter-spacing:.1em;opacity:.6;font-weight:500;margin-bottom:2px}
+.seg button[aria-pressed="true"]{background:var(--bench-3);color:var(--bench-hi)}
+.seg button:focus-visible{outline:2px solid var(--live);outline-offset:2px}
+.seg button .star{color:var(--live)}
+.obs-note{font-size:12px;line-height:1.45;opacity:.85}
+.obs-note em{color:var(--live);font-style:normal}
+
+.stage{width:100%;max-width:400px;display:flex;justify-content:center}
+.phone{width:100%;max-width:372px;height:min(740px,78vh);min-height:540px;background:var(--paper);
+  border-radius:38px;border:1px solid #33404B;
+  box-shadow:0 0 0 8px #0D1318,0 26px 60px rgba(0,0,0,.55);
+  position:relative;overflow:hidden;display:flex;flex-direction:column;color:var(--ink)}
+.notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:96px;height:24px;
+  background:#0D1318;border-radius:14px;z-index:40}
+.statusbar{height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;z-index:30}
+.sync{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--ink-faint)}
+.sync i{width:6px;height:6px;border-radius:50%;background:var(--tinta);display:inline-block}
+.screen{flex:1;overflow-y:auto;padding:2px 20px 100px}
+.screen::-webkit-scrollbar{width:0}
+
+.navrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:6px 0 12px}
+.title{font-family:'Newsreader',Georgia,'Times New Roman',serif;font-weight:500;font-size:28px;letter-spacing:-.015em}
+.back{background:none;border:0;color:var(--tinta);font-size:15px;cursor:pointer;
+  padding:10px 10px 10px 0;font-family:inherit}
+.back:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
+
+.eyebrow-app{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-faint);margin:18px 0 9px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.eyebrow-app:first-child{margin-top:4px}
+.eyebrow-app button{background:none;border:0;color:var(--tinta);font-family:inherit;font-size:11px;cursor:pointer;
+  letter-spacing:0;text-transform:none}
+
+.vistas{display:flex;gap:4px;background:var(--paper-2);border:1px solid var(--line);
+  border-radius:10px;padding:3px;margin-bottom:12px}
+.vistas button{flex:1;min-height:36px;border:0;border-radius:7px;background:none;cursor:pointer;
+  font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.vistas button[aria-pressed="true"]{background:#fff;color:var(--tinta)}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:8px;
+  display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;cursor:pointer;
+  font-family:inherit;color:inherit;transition:transform .12s}
+.card.plain{cursor:default}
+.card:active{transform:scale(.985)}
+.card:focus-visible{outline:2px solid var(--tinta);outline-offset:2px}
+.card .when{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;color:var(--ink-faint);
+  text-transform:uppercase;letter-spacing:.08em;padding-top:2px;min-width:34px}
+.card .body{flex:1;min-width:0}
+.card .name{display:block;font-size:14.5px;line-height:1.3;font-weight:500}
+.card .meta{display:block;font-size:12px;color:var(--ink-soft);margin-top:3px;line-height:1.35}
+.card .arw{color:var(--ink-faint);font-size:17px;align-self:center}
+.chip{display:inline-block;font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9px;letter-spacing:.07em;
+  text-transform:uppercase;padding:3px 7px;border-radius:99px;margin-top:6px}
+.chip.comprado{background:rgba(14,110,98,.1);color:var(--tinta)}
+.chip.pendiente{background:rgba(142,59,94,.1);color:var(--regalo)}
+.chip.envuelto{background:rgba(162,113,43,.14);color:#8A5B18}
+.chip.entregado{background:rgba(95,114,128,.14);color:var(--ink-soft)}
+.chip.deseo{background:rgba(28,43,51,.07);color:var(--ink-soft)}
+.chip.encurso{background:rgba(14,110,98,.1);color:var(--tinta)}
+
+.panel{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:8px}
+.panel h3{font-family:'Newsreader',Georgia,'Times New Roman',serif;font-weight:500;font-size:19px;margin-bottom:3px}
+.panel p{font-size:12.5px;color:var(--ink-soft);line-height:1.45}
+.panel .big{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--regalo);
+  letter-spacing:.05em;margin-top:9px;display:block}
+.panel .cta{display:block;width:100%;margin-top:12px;min-height:44px;border-radius:11px;border:0;
+  background:var(--tinta);color:#fff;font-family:inherit;font-size:14px;cursor:pointer}
+.pills{display:flex;gap:14px;margin-top:8px}
+.pills .pill b{display:block;font-family:'Newsreader',serif;font-size:22px;color:var(--ink);line-height:1}
+.pills .pill span{font-size:10.5px;color:var(--ink-soft)}
+.bar{height:8px;border-radius:99px;background:#fff;overflow:hidden;margin:11px 0 5px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--tinta)}
+.bar.over i{background:var(--regalo)}
+.budget-note{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:10px;color:var(--ink-soft);letter-spacing:.03em}
+
+.fila{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.fila:first-of-type{border-top:0}
+.fila b{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-weight:500;font-size:12px;color:var(--ink-soft)}
+
+.sello{position:relative;border-radius:14px;padding:26px 18px;margin-bottom:8px;text-align:center;
+  border:1px solid #D4DEE6;
+  background:repeating-linear-gradient(45deg,transparent 0 7px,var(--sello-line) 7px 8px),
+    repeating-linear-gradient(-45deg,transparent 0 7px,var(--sello-line) 7px 8px),var(--sello-bg);
+  animation:sellar .34s cubic-bezier(.2,.8,.3,1)}
+@keyframes sellar{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.sello .lema{font-family:'Newsreader',Georgia,'Times New Roman',serif;font-size:19px;color:#3E5568}
+.sello .sub{font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--sello-text);margin-top:7px;opacity:.85}
+
+.faces{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
+.face{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 6px 11px;
+  cursor:pointer;font-family:inherit;color:inherit;text-align:center;transition:transform .12s;position:relative}
+.face:active{transform:scale(.97)}
+.ini{width:42px;height:42px;border-radius:50%;margin:0 auto 8px;display:grid;place-items:center;
+  font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:#fff}
+.face .n{font-size:12.5px;line-height:1.2}
+.face .r{font-size:10px;color:var(--ink-faint);margin-top:2px}
+.face .badge{position:absolute;top:8px;right:8px;font-family:'IBM Plex Mono',monospace;font-size:9px;
+  background:var(--regalo);color:#fff;border-radius:99px;padding:1px 6px}
+.face .badge.ok{background:var(--tinta)}
+.searchbox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  font-size:14px;color:var(--ink-faint);margin-bottom:12px}
+
+.step{display:flex;margin:14px 0 6px}
+.step .s{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;
+  background:none;border:0;cursor:pointer;font-family:inherit}
+.step .s::before{content:'';position:absolute;top:8px;left:-50%;width:100%;height:2px;background:var(--line);z-index:0}
+.step .s:first-child::before{display:none}
+.step .s.on::before{background:var(--tinta)}
+.step .dot{width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--line);z-index:1}
+.step .s.on .dot{background:var(--tinta);border-color:var(--tinta)}
+.step .lab{font-family:'IBM Plex Mono',monospace;font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--ink-faint)}
+.step .s.on .lab{color:var(--tinta)}
+
+.tabbar{position:absolute;left:12px;right:12px;bottom:12px;height:62px;z-index:30;
+  background:rgba(251,249,245,.96);backdrop-filter:blur(18px) saturate(1.6);
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);
+  border:1px solid rgba(226,222,212,.9);border-radius:22px;
+  box-shadow:0 6px 20px rgba(28,43,51,.09);display:flex;align-items:center;padding:0 4px}
+.tab{flex:1;min-height:44px;background:none;border:0;cursor:pointer;font-family:inherit;
+  color:var(--ink-faint);font-size:10.5px;display:flex;flex-direction:column;align-items:center;
+  gap:4px;padding:6px 2px;border-radius:14px}
+.tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-selected="true"]{color:var(--tinta)}
+.fab{position:absolute;right:20px;bottom:88px;width:52px;height:52px;border-radius:50%;
+  background:var(--tinta);color:#fff;border:0;cursor:pointer;z-index:31;
+  box-shadow:0 8px 20px rgba(14,110,98,.35);display:grid;place-items:center}
+.fab svg{width:22px;height:22px;stroke:#fff;stroke-width:1.9;fill:none;stroke-linecap:round}
+
+.sheet-wrap{position:absolute;inset:0;z-index:50;display:none}
+.sheet-wrap.open{display:block}
+.scrim{position:absolute;inset:0;background:rgba(28,43,51,.35);animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:22px 22px 0 0;
+  padding:20px 20px 26px;animation:subir .26s cubic-bezier(.2,.8,.3,1)}
+@keyframes subir{from{transform:translateY(100%)}to{transform:none}}
+.grabber{width:36px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 16px}
+.sheet h3{font-family:'Newsreader',Georgia,'Times New Roman',serif;font-weight:500;font-size:21px;margin-bottom:4px}
+.sheet .hint{font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;line-height:1.45}
+.fakeinput{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;
+  font-size:15px;color:var(--ink-faint);margin-bottom:10px}
+.more{font-size:12.5px;color:var(--tinta);margin-bottom:16px}
+.aviso{font-size:12px;color:var(--sello-text);background:var(--sello-bg);border:1px solid #D4DEE6;
+  border-radius:10px;padding:9px 11px;margin-bottom:14px;line-height:1.4}
+.sheetbtns{display:flex;gap:10px}
+.btn{flex:1;min-height:46px;border-radius:12px;border:1px solid var(--line);background:#fff;
+  font-family:inherit;font-size:14.5px;cursor:pointer;color:var(--ink)}
+.btn.primary{background:var(--tinta);color:#fff;border-color:var(--tinta)}
+
+.coment{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.coment .cab{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.coment .cab .ini{width:24px;height:24px;margin:0;font-size:9px}
+.coment .quien{font-size:13px;font-weight:500}
+.coment .cuando{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:9.5px;
+  color:var(--ink-faint);margin-left:auto}
+.coment p{font-size:13.5px;line-height:1.45;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:8px 12px;
+  min-height:38px;font-family:inherit;font-size:12.5px;cursor:pointer;color:var(--ink-soft)}
+.chips button[aria-pressed="true"]{border-color:var(--tinta);color:var(--tinta);background:rgba(14,110,98,.07)}
+
+.notes{width:100%;max-width:460px;background:var(--bench-2);border:1px solid var(--rule);
+  border-radius:14px;padding:16px 17px}
+.notes h2{font-family:'Newsreader',Georgia,'Times New Roman',serif;font-weight:500;font-size:19px;color:var(--bench-hi);margin-bottom:6px}
+.notes p{font-size:13px;line-height:1.55}
+.verdicts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:13px}
+.v{background:var(--bench);border:1px solid var(--rule);border-radius:10px;padding:9px 8px}
+.v span{display:block;font-family:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;font-size:8px;letter-spacing:.08em;
+  text-transform:uppercase;opacity:.6;margin-bottom:3px}
+.v b{font-size:11px;font-weight:500;color:var(--bench-hi)}
+footer{width:100%;max-width:460px;font-size:11.5px;line-height:1.5;opacity:.6}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="bench-head">
+  <div class="eyebrow">Agenda Familiar · UX de Regalos · Prototipo 0.1</div>
+  <h1>Cómo organizar la pestaña Regalos</h1>
+  <p>Cuatro maneras de ordenar por dentro la sección que unifica banco de ideas, campañas, deseos, presupuesto e histórico. Cambia de organización y de sesión: la ocultación por destinatario se recalcula en tiempo real, incluso para los administradores.</p>
+</div>
+
+<div class="controls">
+  <div class="field">
+    <div class="field-label">Organización de la sección</div>
+    <div class="seg" id="segOrg" role="group" aria-label="Organización"></div>
+  </div>
+  <div class="field">
+    <div class="field-label">Ver como</div>
+    <div class="seg" id="segObs" role="group" aria-label="Observador"></div>
+    <div class="obs-note" id="obsNote"></div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar">
+      <span id="clock">21:40</span>
+      <span class="sync"><i></i> <span id="syncTxt">Al día</span></span>
+    </div>
+    <div class="screen" id="screen"></div>
+    <button class="fab" id="fab" aria-label="Añadir"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="tabbar" id="tabbar" role="tablist"></div>
+    <div class="sheet-wrap" id="sheetWrap">
+      <div class="scrim" id="scrim"></div>
+      <div class="sheet" id="sheet"></div>
+    </div>
+  </div>
+</div>
+
+<div class="notes" id="notes"></div>
+<footer>Los nombres de las hijas son marcadores de posición. La ocultación se calcula con la función de visibilidad del modelo de datos v0.3 (§6). Los importes y estados que toques se guardan solo en esta sesión del navegador.</footer>
+
+<script>
+/* ---------- Personas ---------- */
+const P={
+  ana:{n:'Ana',ini:'AG',c:true,rol:'admin',col:'#0E6E62',rel:'Madre'},
+  oscar:{n:'Óscar',ini:'OG',c:true,rol:'admin',col:'#1C2B33',rel:'Padre'},
+  marta:{n:'Marta',ini:'MG',c:true,rol:'miembro',col:'#8E3B5E',rel:'Hija'},
+  nora:{n:'Nora',ini:'NG',c:true,rol:'miembro',col:'#A2712B',rel:'Hija'},
+  abuela:{n:'Abuela',ini:'CB',c:false,rol:null,col:'#5F7280',rel:'Sin cuenta'},
+  abuelo:{n:'Abuelo',ini:'JB',c:false,rol:null,col:'#5F7280',rel:'Sin cuenta'},
+  sobrino:{n:'Sobrino',ini:'PT',c:false,rol:null,col:'#5F7280',rel:'Sin cuenta'}
+};
+const ORDEN=['ana','oscar','marta','nora','abuela','abuelo','sobrino'];
+
+/* ---------- Contenido ---------- */
+const IDEAS=[
+ {id:'i1',t:'Zapatillas de trail',autor:'ana',dest:['oscar'],cat:'publica',pre:'90–130 €',est:'en_curso'},
+ {id:'i2',t:'Curso de cerámica',autor:'oscar',dest:['ana'],cat:'publica',pre:'180 €',est:'en_curso'},
+ {id:'i3',t:'Libro de fotografía ecuestre',autor:'ana',dest:['marta'],cat:'publica',pre:'45 €',est:'en_curso'},
+ {id:'i4',t:'Auriculares con cancelación',autor:'oscar',dest:['nora'],cat:'publica',pre:'150 €',est:'en_curso'},
+ {id:'i5',t:'Manta de lana',autor:'ana',dest:['abuela'],cat:'publica',pre:'60 €',est:'en_curso'},
+ {id:'i6',t:'Juego de mesa cooperativo',autor:'marta',dest:[],cat:'publica',pre:'35 €',etq:'adolescente',est:'activa'},
+ {id:'i8',t:'Delantal de cocina bordado',autor:'nora',dest:['abuela'],cat:'publica',pre:'25 €',est:'activa'},
+ {id:'i9',t:'Cuchillo japonés',autor:'ana',dest:[],cat:'publica',pre:'80 €',etq:'cocina',est:'activa'},
+ {id:'i7',t:'Escapada a Lisboa',autor:'oscar',dest:['ana'],cat:'privada',pre:'—',est:'activa'}
+];
+const DESEOS=[
+ {id:'w1',t:'Botas de montar nuevas',autor:'marta',pre:'~120 €'},
+ {id:'w2',t:'Entradas del concierto de agosto',autor:'nora',pre:'—'},
+ {id:'w3',t:'Sartén de hierro colado',autor:'ana',pre:'40 €'}
+];
+const REGALOS=[
+ {id:'r1',t:'Manta de lana',dest:'abuela',co:[],resp:'ana',est:'comprado',cat:'publica',prev:60,real:58},
+ {id:'r2',t:'Puzzle de 2000 piezas',dest:'abuelo',co:[],resp:null,est:'pendiente',cat:'publica',prev:40,real:null},
+ {id:'r3',t:'Libro de fotografía ecuestre',dest:'marta',co:[],resp:'oscar',est:'pendiente',cat:'publica',prev:45,real:null},
+ {id:'r4',t:'Auriculares con cancelación',dest:'nora',co:[],resp:'ana',est:'comprado',cat:'publica',prev:150,real:139},
+ {id:'r5',t:'Curso de cerámica',dest:'ana',co:[],resp:'oscar',est:'pendiente',cat:'publica',prev:180,real:null},
+ {id:'r6',t:'Zapatillas de trail',dest:'oscar',co:[],resp:'ana',est:'envuelto',cat:'publica',prev:120,real:112},
+ {id:'r7',t:'Consola portátil',dest:'marta',co:['nora'],resp:'ana',est:'pendiente',cat:'publica',prev:300,real:null}
+];
+const HIST={
+ abuela:[['Bufanda de seda',2025],['Libro de jardinería',2024]],
+ abuelo:[['Vino de reserva',2025],['Guantes de piel',2024]],
+ marta:[['Casco de equitación',2025],['Cámara instantánea',2024]],
+ nora:[['Altavoz portátil',2025],['Zapatillas',2024]],
+ ana:[['Bufanda',2025]], oscar:[['Reloj de correr',2025]], sobrino:[['Lego',2025]]
+};
+const ATRIB={
+ abuela:['Le gusta tejer','No usa tecnología'], abuelo:['Colecciona vinos'],
+ marta:['Talla calzado 39','Monta a caballo'], nora:['Talla M','Toca la guitarra'],
+ ana:['Talla 38'], oscar:['Corre maratones'], sobrino:['8 años']
+};
+const COMENT={
+ r7:[{a:'oscar',t:'La compramos entre las dos familias, hablo con los tíos.',c:'ayer'},
+     {a:'ana',t:'Yo me encargo del pedido esta semana.',c:'hace 2 días'}],
+ r5:[{a:'oscar',t:'Confirmo plaza en el taller de los sábados.',c:'hace 3 días'}]
+};
+const OCASIONES=[
+ {id:'navidad',n:'Navidad 2026',fecha:'25 dic',personas:7,abierta:true},
+ {id:'cumpleNora',n:'Cumpleaños de Nora',fecha:'3 ago',personas:1,abierta:true}
+];
+const ORDEST=['pendiente','comprado','envuelto','entregado'];
+const ESTLAB={pendiente:'Pendiente',comprado:'Comprado',envuelto:'Envuelto',entregado:'Entregado'};
+
+/* ---------- Overrides de sesión (coordinación en vivo) ---------- */
+const OVR_EST={}, OVR_RESP={};
+const estDe=r=>OVR_EST[r.id]||r.est;
+const respDe=r=>OVR_RESP[r.id]!==undefined?OVR_RESP[r.id]:r.resp;
+
+/* ---------- Visibilidad (modelo v0.3 §6) ---------- */
+function visibleIdea(i,obs){
+  const p=P[obs]; if(!p||!p.c) return false;
+  if(i.cat==='privada'&&p.rol!=='admin') return false;
+  if((i.dest||[]).includes(obs)) return false;   // las etiquetas no ocultan
+  return true;
+}
+function visibleReg(r,obs){
+  const p=P[obs]; if(!p||!p.c) return false;
+  if(r.cat==='privada'&&p.rol!=='admin') return false;
+  if(r.dest===obs||(r.co||[]).includes(obs)) return false;
+  return true;
+}
+const ideasVis=obs=>IDEAS.filter(i=>visibleIdea(i,obs));
+const regalosVis=obs=>REGALOS.filter(r=>visibleReg(r,obs));
+const ocultosCuenta=obs=>IDEAS.filter(i=>!visibleIdea(i,obs)).length+REGALOS.filter(r=>!visibleReg(r,obs)).length;
+
+/* ---------- Estado de UI ---------- */
+let S={org:'3', obs:'ana', stack:[], seg1:'campana', rvista:'persona', epoca:'dic', lfilt:'todos'};
+
+const NOTAS={
+ '1':{nom:'Banco y campañas',h:'Opción 1 · Banco y Campañas',
+   p:'Un control segmentado parte la sección en las dos entidades del modelo. Es la más barata y la de menor coste de aprendizaje, pero refleja la estructura del sistema y no la tarea: sigue habiendo dos pestañas dentro de una pestaña, y desear, coordinar y recordar no tienen primera línea.',
+   v:['Indif.','Correcto','Regular','Bueno','Débil']},
+ '2':{nom:'La persona',h:'Opción 2 · La persona',
+   p:'Regalos abre con la familia y todo lo de alguien vive en su ficha. Refleja cómo se piensa un regalo y resuelve la ocultación con naturalidad, pero coordinar doce destinatarios exige recorrer doce fichas y el presupuesto no encuentra sitio.',
+   v:['Bueno','Débil','Excel.','Bueno','Excel.']},
+ '3':{nom:'La campaña viva',h:'Opción 3 · La campaña viva  ★ recomendada',
+   p:'La sección compone alrededor de la ocasión pertinente y cambia de forma con la estación (prueba el conmutador diciembre/marzo). Es la única que aloja el presupuesto en un lugar propio y realiza de verdad la unificación buscada. La ficha de persona es su pantalla de detalle; la lista única, la lente del tablero.',
+   v:['Indif.','Óptimo','Correcto','Óptimo','Correcto']},
+ '4':{nom:'El tablero',h:'Opción 4 · El tablero',
+   p:'La sección se ordena por el avance del regalo. Hace visible el trabajo de coordinación como ninguna otra, pero es un instrumento de gestión que sirve a Ana y Óscar y resulta ajeno a las hijas, y no tiene lugar para el banco ni para el histórico.',
+   v:['Indif.','Muy bueno','Débil','Óptimo','Débil']}
+};
+const VLAB=['G1 Captura','G2 Navidad','G3 Deseo','G4 Promo','G5 Memoria'];
+
+const ICON={
+ regalos:'<path d="M4 10h16v10.5H4zM3 6.5h18V10H3zM12 6.5v14M12 6.5S10.5 3 8.5 3a2 2 0 0 0 0 4M12 6.5S13.5 3 15.5 3a2 2 0 0 1 0 4"/>',
+ personas:'<path d="M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2.5 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 6.5a2.5 2.5 0 1 1 0 5M17.5 14c2.2.5 4 2.5 4 5"/>',
+ agenda:'<path d="M7 3v3M17 3v3M3.5 9h17M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 19 20.5H5A1.5 1.5 0 0 1 3.5 19V7A1.5 1.5 0 0 1 5 5.5z"/>',
+ buscar:'<path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM16.2 16.2 21 21"/>'
+};
+
+/* ---------- Utilidades ---------- */
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const avatar=k=>`<span class="ini" style="background:${P[k].col}">${P[k].ini}</span>`;
+const sello=s=>`<div class="sello"><div class="lema">Por aquí no se mira</div><div class="sub">${s||'Contenido reservado'}</div></div>`;
+function tarjeta(w,n,m,c,attr,arw){
+  return `<button class="card ${attr?'':'plain'}" ${attr||''}>${w?`<span class="when">${esc(w)}</span>`:''}
+   <span class="body"><span class="name">${esc(n)}</span>${m?`<span class="meta">${esc(m)}</span>`:''}
+   ${c?`<span class="chip ${c[0]}">${c[1]}</span>`:''}</span>${arw?'<span class="arw">›</span>':''}</button>`;
+}
+const chipEst=r=>{const e=estDe(r);return[e==='pendiente'?'pendiente':e,ESTLAB[e]];};
+const metaReg=r=>{const rs=respDe(r);return (rs?'Compra '+P[rs].n:'Sin responsable')+((r.co&&r.co.length)?' · comparten '+r.co.map(x=>P[x].n).join(', '):'');};
+const titulo=t=>`<div class="navrow"><span class="title">${t}</span></div>`;
+const cab=t=>`<button class="back" data-back="1">‹ Volver</button><div class="navrow"><span class="title">${esc(t)}</span></div>`;
+const push=v=>{S.stack.push(v)};
+const cur=()=>S.stack[S.stack.length-1]||null;
+
+/* ---------- Estadísticas de campaña (según observador) ---------- */
+function stats(obs){
+  const rs=regalosVis(obs);
+  const conRegalo={}; rs.forEach(r=>conRegalo[r.dest]=true);
+  const participa=['ana','oscar','marta','nora','abuela','abuelo','sobrino'];
+  const sinIdea=participa.filter(k=>k!==obs&&!conRegalo[k]).length;
+  const mios=rs.filter(r=>respDe(r)===obs&&estDe(r)==='pendiente').length;
+  const sinResp=rs.filter(r=>!respDe(r)).length;
+  let prev=0,real=0,sinImporte=0;
+  rs.forEach(r=>{prev+=r.prev; if(r.real!==null)real+=r.real; else sinImporte++;});
+  return {rs,sinIdea,mios,sinResp,prev,real,sinImporte,personas:participa.length};
+}
+
+/* ---------- Componentes ---------- */
+function cabeceraCampana(oc,obs,cta){
+  const st=stats(obs), admin=P[obs].rol==='admin';
+  let h=`<div class="panel"><h3>${oc.n}</h3>
+    <p>${oc.fecha} · ${st.personas} personas en la lista</p>
+    <div class="pills">
+      <div class="pill"><b>${st.sinIdea}</b><span>sin idea</span></div>
+      <div class="pill"><b>${st.mios}</b><span>tú, por comprar</span></div>
+      <div class="pill"><b>${st.sinResp}</b><span>sin responsable</span></div>
+    </div>`;
+  if(admin){
+    const pct=Math.min(100,Math.round(st.real/9)); // presupuesto ~900
+    h+=`<div class="bar ${st.real>900?'over':''}"><i style="width:${pct}%"></i></div>
+      <span class="budget-note">${st.real} € registrado de 900 € · ${st.sinImporte} regalos aún sin importe</span>`;
+  }
+  if(cta) h+=`<button class="cta" data-open="reparto:${oc.id}">Abrir el reparto</button>`;
+  h+=`</div>`;
+  return h;
+}
+function tiraBanco(obs,limite){
+  const is=ideasVis(obs);
+  let h=`<div class="eyebrow-app">Banco de ideas${limite?`<button data-open="banco">ver todo · ${is.length}</button>`:` · ${is.length}`}</div>`;
+  (limite?is.slice(0,3):is).forEach(i=>{
+    const para=i.dest.length?'Para '+P[i.dest[0]].n:(i.etq?'Perfil: '+i.etq:'Sin destinatario');
+    const chip=i.est==='en_curso'?['encurso','En curso']:null;
+    h+=tarjeta(null,i.t,`${para} · ${i.pre}`,chip,`data-promote="${i.id}"`,true);
+  });
+  return h;
+}
+function bloqueDeseosPropios(obs){
+  let h=`<div class="eyebrow-app">Tu lista de deseos</div>`;
+  const m=DESEOS.filter(d=>d.autor===obs);
+  if(m.length)m.forEach(d=>h+=tarjeta(null,d.t,d.pre+' · la ven todos menos quien te regale',['deseo','Deseo']));
+  else h+=tarjeta(null,'Todavía no has pedido nada','Toca + para añadir un deseo');
+  return h;
+}
+
+/* ---------- Reparto de una campaña ---------- */
+function pantReparto(ocId){
+  const oc=OCASIONES.find(o=>o.id===ocId), obs=S.obs, admin=P[obs].rol==='admin';
+  let h=cab(oc.n);
+  h+=cabeceraCampana(oc,obs,false);
+  h+=`<div class="vistas">
+    <button data-rvista="persona" aria-pressed="${S.rvista==='persona'}">Por persona</button>
+    <button data-rvista="lista" aria-pressed="${S.rvista==='lista'}">Lista única</button></div>`;
+  if(admin) h+=tarjeta(null,'Ver presupuesto','Previsto por persona y gasto registrado',null,'data-open="presupuesto"',true);
+  const rs=regalosVis(obs);
+  if(S.rvista==='persona'){
+    const pp={}; rs.forEach(r=>{(pp[r.dest]=pp[r.dest]||[]).push(r); (r.co||[]).forEach(()=>{})});
+    ORDEN.forEach(k=>{
+      if(k===obs){h+=`<div class="eyebrow-app">${P[k].n} · tú</div>`+sello('Tu lista de esta campaña');return;}
+      if(!pp[k])return;
+      h+=`<div class="eyebrow-app">${P[k].n}<button data-open="per:${k}">ver ficha ›</button></div>`;
+      pp[k].forEach(r=>h+=tarjeta(null,r.t,metaReg(r),chipEst(r),`data-open="regalo:${r.id}"`,true));
+    });
+  } else {
+    h+=`<div class="chips">`+['todos','pendiente','comprado','envuelto'].map(f=>
+      `<button data-lfilt="${f}" aria-pressed="${S.lfilt===f}">${f==='todos'?'Todos':ESTLAB[f]}</button>`).join('')+`</div>`;
+    const fl=rs.filter(r=>S.lfilt==='todos'||estDe(r)===S.lfilt);
+    if(!fl.length)h+=`<div class="panel"><p>Ningún regalo en ese estado.</p></div>`;
+    fl.forEach(r=>h+=tarjeta(null,r.t,`Para ${P[r.dest].n} · ${metaReg(r)}`,chipEst(r),`data-open="regalo:${r.id}"`,true));
+  }
+  return h;
+}
+
+/* ---------- Detalle de regalo ---------- */
+function pantRegalo(id){
+  const r=REGALOS.find(x=>x.id===id), obs=S.obs;
+  let h=cab(r.t);
+  h+=`<div class="eyebrow-app">Regalo · Navidad 2026</div>`;
+  h+=`<div class="panel"><div class="fila"><span>Para</span><b style="color:var(--ink)">${P[r.dest].n}${r.co&&r.co.length?' y '+r.co.map(x=>P[x].n).join(', '):''}</b></div>
+    <div class="fila"><span>Precio orientativo</span><b>${r.prev} €</b></div></div>`;
+  const est=estDe(r);
+  h+=`<div class="eyebrow-app">Avance · toca para adelantar</div>`;
+  h+=`<div class="step">`+ORDEST.map((e,ix)=>{
+    const on=ORDEST.indexOf(est)>=ix;
+    return `<button class="s ${on?'on':''}" data-est="${r.id}:${e}"><span class="dot"></span><span class="lab">${ESTLAB[e]}</span></button>`;
+  }).join('')+`</div>`;
+  h+=tarjeta(null,'Coste real',r.real?r.real+' €':'Sin registrar (opcional)',null,null);
+  const rs=respDe(r);
+  h+=`<div class="eyebrow-app">Coordinación</div>`;
+  h+=tarjeta(null,'Responsable de compra',rs?P[rs].n+(rs===obs?' · tú':''):'Sin asignar — toca para asignártelo',null,`data-resp="${r.id}"`,true);
+  if(rs&&rs!==obs) h+=`<div style="font-size:11.5px;color:var(--ink-faint);margin:-2px 2px 10px;line-height:1.4">Ya lo lleva ${P[rs].n}. La coordinación es visible para Ana y Óscar y opaca para quien lo recibe.</div>`;
+  const cs=COMENT[r.id]||[];
+  h+=`<div class="eyebrow-app">Comentarios · ${cs.length}</div>`;
+  if(!cs.length)h+=`<div class="panel"><p>Sin comentarios. El hilo viajó con la idea al promoverla.</p></div>`;
+  cs.forEach(c=>h+=`<div class="coment"><div class="cab">${avatar(c.a)}<span class="quien">${P[c.a].n}</span>
+    <span class="cuando">${c.c}</span></div><p>${esc(c.t)}</p></div>`);
+  return h;
+}
+
+/* ---------- Ficha de persona ---------- */
+function pantPersona(k){
+  const obs=S.obs, propio=(k===obs);
+  let h=cab(P[k].n);
+  h+=`<div class="eyebrow-app">${P[k].c?'Con cuenta':'Sin cuenta'} · ${P[k].rel}</div>`;
+  h+=`<div class="eyebrow-app">Deseos</div>`;
+  const ds=DESEOS.filter(d=>d.autor===k);
+  if(ds.length)ds.forEach(d=>h+=tarjeta(null,d.t,(propio?'Los ve todos menos quien te regale':'Lo pidió '+P[k].n)+' · '+d.pre,['deseo','Deseo']));
+  else h+=tarjeta(null,'Sin deseos anotados',P[k].c?'Puede añadirlos desde su cuenta':'No tiene cuenta');
+  h+=`<div class="eyebrow-app">Ideas y regalos en curso</div>`;
+  if(propio){h+=sello('Lo que otros han pensado para ti');}
+  else{
+    const is=IDEAS.filter(i=>i.dest.includes(k)&&visibleIdea(i,obs));
+    const rs=regalosVis(obs).filter(r=>r.dest===k||(r.co||[]).includes(k));
+    if(!is.length&&!rs.length)h+=tarjeta(null,'Nada anotado todavía','Toca + para añadir una idea');
+    is.forEach(i=>h+=tarjeta(null,i.t,`Idea · ${i.pre} · propuso ${P[i.autor].n}`,i.est==='en_curso'?['encurso','En curso']:null,`data-promote="${i.id}"`,true));
+    rs.forEach(r=>h+=tarjeta(null,r.t,'Navidad · '+metaReg(r),chipEst(r),`data-open="regalo:${r.id}"`,true));
+  }
+  h+=`<div class="eyebrow-app">Histórico</div>`;
+  (HIST[k]||[]).forEach(([t,a])=>h+=tarjeta(String(a),t,'Entregado',null));
+  if(!(HIST[k]||[]).length)h+=`<div class="panel"><p>Sin regalos registrados en años anteriores.</p></div>`;
+  h+=`<div class="eyebrow-app">Anotaciones</div><div class="panel">`;
+  (ATRIB[k]||['—']).forEach((a,ix)=>h+=`<div class="fila"><span>${esc(a)}</span></div>`);
+  h+=`</div>`;
+  return h;
+}
+
+/* ---------- Presupuesto ---------- */
+function pantPresupuesto(){
+  let h=cab('Presupuesto');
+  if(P[S.obs].rol!=='admin')return h+sello('Panel reservado a administradores');
+  const rs=regalosVis(S.obs); let prev=0,real=0,sin=0; const pp={};
+  rs.forEach(r=>{prev+=r.prev; if(r.real!==null)real+=r.real; else sin++;
+    pp[r.dest]=pp[r.dest]||{p:0,r:0}; pp[r.dest].p+=r.prev; pp[r.dest].r+=(r.real||0);});
+  h+=`<div class="panel"><h3>Navidad 2026</h3>
+    <p>Previsto ${prev} € · registrado ${real} €.</p>
+    <span class="big">${sin} regalos sin importe: el gasto real es mayor</span></div>`;
+  h+=`<div class="eyebrow-app">Por persona</div><div class="panel">`;
+  ORDEN.forEach(k=>{if(!pp[k])return;
+    h+=`<div class="fila"><span>${P[k].n}</span><b>${pp[k].r} / ${pp[k].p} €</b></div>`;});
+  h+=`</div><div style="font-size:11.5px;color:var(--ink-faint);margin:8px 2px;line-height:1.4">Tu propio regalo no figura: te está oculto como a cualquiera. Por eso el total que ve Óscar y el que ves tú no coinciden.</div>`;
+  return h;
+}
+
+/* ---------- Banco completo ---------- */
+function pantBanco(){
+  const obs=S.obs;
+  let h=cab('Banco de ideas');
+  h+=`<div class="chips">`+['Todas','Por persona','Precio','Categoría'].map((f,ix)=>
+    `<button aria-pressed="${ix===0}">${f}</button>`).join('')+`</div>`;
+  h+=`<div class="eyebrow-app">${ideasVis(obs).length} ideas visibles</div>`;
+  ideasVis(obs).forEach(i=>{
+    const para=i.dest.length?'Para '+P[i.dest[0]].n:(i.etq?'Perfil: '+i.etq:'Sin destinatario');
+    h+=tarjeta(null,i.t,`${para} · ${i.pre} · propuso ${P[i.autor].n}`,i.est==='en_curso'?['encurso','En curso']:null,`data-promote="${i.id}"`,true);
+  });
+  h+=bloqueDeseosPropios(obs);
+  return h;
+}
+
+/* ---------- Raíces por organización ---------- */
+function raiz(){
+  const obs=S.obs;
+  /* --- 1. Banco y campañas --- */
+  if(S.org==='1'){
+    let h=titulo('Regalos');
+    h+=`<div class="vistas">
+      <button data-seg1="banco" aria-pressed="${S.seg1==='banco'}">Banco</button>
+      <button data-seg1="campana" aria-pressed="${S.seg1==='campana'}">Campañas</button></div>`;
+    if(S.seg1==='banco'){ h+=pantBancoInline(); }
+    else{
+      h+=`<div class="eyebrow-app">Campañas abiertas</div>`;
+      OCASIONES.forEach(o=>h+=tarjeta(o.fecha,o.n,`${o.personas} ${o.personas===1?'persona':'personas'} · abierta`,null,`data-open="reparto:${o.id}"`,true));
+      h+=`<div class="eyebrow-app">Cerradas</div>`;
+      h+=tarjeta('2025','Navidad 2025','7 personas · consultable',null,null);
+    }
+    return h;
+  }
+  /* --- 2. La persona --- */
+  if(S.org==='2'){
+    let h=titulo('Regalos');
+    h+=`<div class="chips"><button aria-pressed="true">Todas las campañas</button><button>Solo Navidad</button></div>`;
+    h+=`<div class="faces">`;
+    ORDEN.forEach(k=>{
+      const rs=regalosVis(obs).filter(r=>r.dest===k||(r.co||[]).includes(k)).length;
+      const badge=k===obs?`<span class="badge ok">tú</span>`:(rs?`<span class="badge">${rs}</span>`:'');
+      h+=`<button class="face" data-open="per:${k}">${badge}${avatar(k)}
+        <span class="n">${P[k].n}</span><span class="r">${P[k].rel}</span></button>`;
+    });
+    h+=`</div><div style="font-size:11.5px;color:var(--ink-faint);margin:6px 2px;line-height:1.4">El número es cuántos regalos hay en curso para cada persona, calculado sobre lo que tú puedes ver.</div>`;
+    return h;
+  }
+  /* --- 3. La campaña viva (recomendada) --- */
+  if(S.org==='3'){
+    let h=titulo('Regalos');
+    h+=`<div class="vistas" style="max-width:220px">
+      <button data-epoca="dic" aria-pressed="${S.epoca==='dic'}">Diciembre</button>
+      <button data-epoca="mar" aria-pressed="${S.epoca==='mar'}">Marzo</button></div>`;
+    if(S.epoca==='dic'){
+      h+=`<div class="eyebrow-app">Campaña viva</div>`;
+      h+=cabeceraCampana(OCASIONES[0],obs,true);
+      h+=tiraBanco(obs,true);
+    }else{
+      h+=`<div class="eyebrow-app">Próxima ocasión</div>`;
+      h+=`<div class="panel"><h3>Cumpleaños de Nora</h3><p>En tres semanas · aún sin campaña abierta.</p>
+        <button class="cta" data-open="reparto:cumpleNora">Abrir la campaña</button></div>`;
+      h+=tiraBanco(obs,false);
+      h+=bloqueDeseosPropios(obs);
+    }
+    return h;
+  }
+  /* --- 4. El tablero --- */
+  if(S.org==='4'){
+    let h=titulo('Regalos');
+    h+=`<div class="chips"><button aria-pressed="true">Navidad 2026</button><button>Cumple de Nora</button></div>`;
+    const rs=regalosVis(obs);
+    const cols=[['pendiente','Por comprar'],['comprado','Comprado'],['envuelto','Envuelto'],['entregado','Entregado']];
+    cols.forEach(([e,lab])=>{
+      const g=rs.filter(r=>estDe(r)===e);
+      h+=`<div class="eyebrow-app">${lab} · ${g.length}</div>`;
+      if(!g.length)h+=`<div class="panel"><p>Nada aquí.</p></div>`;
+      g.forEach(r=>h+=tarjeta(null,r.t,`→ ${P[r.dest].n} · ${respDe(r)?P[respDe(r)].n:'sin responsable'}`,null,`data-open="regalo:${r.id}"`,true));
+    });
+    return h;
+  }
+}
+function pantBancoInline(){
+  const obs=S.obs;let h='';
+  h+=`<div class="eyebrow-app">Ideas · ${ideasVis(obs).length}</div>`;
+  ideasVis(obs).forEach(i=>{
+    const para=i.dest.length?'Para '+P[i.dest[0]].n:(i.etq?'Perfil: '+i.etq:'Sin destinatario');
+    h+=tarjeta(null,i.t,`${para} · ${i.pre}`,i.est==='en_curso'?['encurso','En curso']:null,`data-promote="${i.id}"`,true);
+  });
+  h+=bloqueDeseosPropios(obs);
+  return h;
+}
+
+/* ---------- FAB contextual ---------- */
+function accionFab(){
+  const c=cur();
+  if(c&&c.startsWith('regalo'))return null;
+  if(c&&c.startsWith('presupuesto'))return null;
+  if(c&&c.startsWith('per:')){const k=c.slice(4);return k===S.obs?null:{tipo:'idea-para',k};}
+  if(c&&c.startsWith('reparto'))return {tipo:'regalo-libre'};
+  return {tipo:'idea'};
+}
+
+/* ---------- Render ---------- */
+function render(){
+  const tabs=[['regalos','Regalos'],['agenda','Semana'],['personas','Familia'],['buscar','Buscar']];
+  document.getElementById('tabbar').innerHTML=tabs.map(([k,l])=>
+    `<button class="tab" role="tab" aria-selected="${k==='regalos'&&!cur()}">
+      <svg viewBox="0 0 24 24">${ICON[k]}</svg><span>${l}</span></button>`).join('');
+
+  const c=cur(); let html='';
+  if(!c)html=raiz();
+  else if(c.startsWith('reparto:'))html=pantReparto(c.slice(8));
+  else if(c.startsWith('regalo:'))html=pantRegalo(c.slice(7));
+  else if(c.startsWith('per:'))html=pantPersona(c.slice(4));
+  else if(c.startsWith('presupuesto'))html=pantPresupuesto();
+  else if(c.startsWith('banco'))html=pantBanco();
+  document.getElementById('screen').innerHTML=html;
+
+  document.getElementById('segOrg').innerHTML=Object.entries(NOTAS).map(([k,v])=>
+    `<button data-org="${k}" aria-pressed="${S.org===k}"><b>${k==='3'?'<span class="star">★</span> ':''}OPCIÓN ${k}</b>${v.nom}</button>`).join('');
+  document.getElementById('segObs').innerHTML=['ana','oscar','marta','nora'].map(k=>
+    `<button data-obs="${k}" aria-pressed="${S.obs===k}"><b>${P[k].rol==='admin'?'Admin':'Miembro'}</b>${P[k].n}</button>`).join('');
+  document.getElementById('obsNote').innerHTML=
+    `Con la sesión de ${P[S.obs].n}, <em>${ocultosCuenta(S.obs)} elementos</em> no llegan siquiera a su dispositivo.`;
+
+  const acc=accionFab(),fab=document.getElementById('fab');
+  fab.style.display=acc?'grid':'none';
+
+  const n=NOTAS[S.org];
+  document.getElementById('notes').innerHTML=`<h2>${n.h}</h2><p>${n.p}</p>
+    <div class="verdicts">`+n.v.map((x,ix)=>`<div class="v"><span>${VLAB[ix]}</span><b>${x}</b></div>`).join('')+`</div>`;
+}
+
+/* ---------- Hojas ---------- */
+function hoja(a){
+  let t,hint,campos,more,aviso='',btn='Guardar';
+  if(a.tipo==='idea'){t='Nueva idea';hint='Con el título basta. Lo demás puede esperar.';
+    campos=['Manta de lana'];more='+ Para quién · Categoría · Precio · Enlace';btn='Guardar idea';}
+  else if(a.tipo==='idea-para'){t='Nueva idea para '+P[a.k].n;hint='Ya sabemos para quién. Solo falta qué.';
+    campos=['Manta de lana'];more='+ Categoría · Precio · Enlace';btn='Guardar idea';
+    aviso=P[a.k].c?'Quedará oculta para '+P[a.k].n+', también en su dispositivo.':P[a.k].n+' no tiene cuenta: la verá toda la familia.';}
+  else if(a.tipo==='regalo-libre'){t='Añadir un regalo';hint='Elige una idea del banco o escribe una nueva.';
+    campos=['Puzzle de 2000 piezas','Para el abuelo'];more='+ Responsable · Precio orientativo';btn='Añadir';}
+  else if(a.tipo==='promote'){const i=IDEAS.find(x=>x.id===a.id);t='Promover a una campaña';
+    hint='La idea pasa a ser el regalo de una ocasión. Ahora sí se pide la descripción.';
+    campos=[i.t,'Navidad 2026'+(i.dest.length?' · lista de '+P[i.dest[0]].n:''),'Descripción (se exige al promover)'];
+    more='+ Responsable de compra · Precio orientativo';btn='Promover';
+    aviso='Su estado pasará a «en curso» de forma automática. Nadie lo fija a mano.';}
+  return `<div class="grabber"></div><h3>${t}</h3><p class="hint">${hint}</p>`+
+    campos.map(c=>`<div class="fakeinput">${c}</div>`).join('')+
+    `<div class="more">${more}</div>`+(aviso?`<div class="aviso">${aviso}</div>`:'')+
+    `<div class="sheetbtns"><button class="btn" data-cerrar="1">Cancelar</button>
+      <button class="btn primary" data-cerrar="1" data-toast="1">${btn}</button></div>`;
+}
+
+/* ---------- Interacción ---------- */
+const sheetWrap=document.getElementById('sheetWrap');
+function abreHoja(a){document.getElementById('sheet').innerHTML=hoja(a);sheetWrap.classList.add('open');}
+function toast(m){const t=document.getElementById('syncTxt');t.textContent=m||'Guardado sin conexión';
+  setTimeout(()=>t.textContent='Al día',2000);}
+
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('[data-org],[data-obs],[data-open],[data-back],[data-seg1],[data-rvista],[data-lfilt],[data-epoca],[data-est],[data-resp],[data-promote],[data-cerrar],[data-toast]');
+  if(!t)return;const d=t.dataset;
+  if(d.cerrar!==undefined){sheetWrap.classList.remove('open');if(d.toast!==undefined)toast();return;}
+  if(d.org){S.org=d.org;S.stack=[];S.seg1='campana';S.rvista='persona';S.epoca='dic';}
+  else if(d.obs){S.obs=d.obs;}
+  else if(d.open){push(d.open);}
+  else if(d.back!==undefined){S.stack.pop();}
+  else if(d.seg1){S.seg1=d.seg1;}
+  else if(d.rvista){S.rvista=d.rvista;}
+  else if(d.lfilt){S.lfilt=d.lfilt;}
+  else if(d.epoca){S.epoca=d.epoca;}
+  else if(d.promote){abreHoja({tipo:'promote',id:d.promote});return;}
+  else if(d.est){const[id,e]=d.est.split(':');OVR_EST[id]=e;render();toast('Estado actualizado');return;}
+  else if(d.resp){const r=REGALOS.find(x=>x.id===d.resp);const rs=respDe(r);
+    OVR_RESP[d.resp]=(rs===S.obs)?null:S.obs;render();toast(OVR_RESP[d.resp]?'Te has asignado la compra':'Compra liberada');return;}
+  render();
+  if(d.org||d.open||d.back!==undefined||d.obs)document.getElementById('screen').scrollTop=0;
+});
+document.getElementById('scrim').onclick=()=>sheetWrap.classList.remove('open');
+document.getElementById('fab').onclick=()=>{const a=accionFab();if(a)abreHoja(a);};
+
+const reloj=()=>{const d=new Date();
+  document.getElementById('clock').textContent=
+    String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+reloj();setInterval(reloj,30000);
+render();
+</script>
+</body>
+</html>
