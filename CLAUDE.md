@@ -13,17 +13,14 @@ caracteres acentuados y especiales se muestren correctamente como artefactos UTF
 - No sustituyas caracteres acentuados (á, é, í, ó, ú, ñ, ¿, ¡, …) por entidades ni
   por versiones sin acento; deben conservarse tal cual en UTF-8.
 
-## HTML autocontenido (inline)
+## Mostrar los ficheros en la conversación (inline)
 
-Los archivos `.html` que se generen para specs, prototipos y documentos similares
-deben ser **autocontenidos (inline)**: todo el CSS y el JavaScript van incrustados
-en el propio archivo, sin dependencias externas.
+Los archivos `.md` y `.html` que se generen para specs, prototipos y documentos
+similares deben **mostrarse (renderizarse) inline en la propia conversación de
+Claude**, además de guardarse en el repositorio. No basta con escribirlos en disco:
+el usuario debe poder verlos directamente en el chat.
 
-- Incluye el CSS en una etiqueta `<style>` dentro del `<head>` (no uses `<link>` a
-  hojas de estilo externas).
-- Incluye el JavaScript en etiquetas `<script>` dentro del propio archivo (no uses
-  `<script src="...">` a archivos externos).
-- No enlaces a recursos externos (CDNs, fuentes, imágenes remotas, etc.); si hace
-  falta un recurso, incrústalo (por ejemplo, imágenes como `data:` URI).
-- El objetivo es que cada `.html` se pueda abrir y compartir como un único archivo
-  independiente.
+- Renderiza el contenido en la conversación cuando generes o actualices uno de
+  estos ficheros (por ejemplo, mostrando el `.html` como artefacto o el `.md`
+  renderizado), para que se pueda revisar sin abrir el archivo aparte.
+- Mantén el archivo mostrado y el guardado en el repositorio con el mismo contenido.
