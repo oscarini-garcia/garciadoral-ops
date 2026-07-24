@@ -1,6 +1,6 @@
 # Agenda Familiar — Calendario de Viajes (Integración)
 
-**Versión:** 0.1
+**Versión:** 0.2
 **Fecha:** 24 de julio de 2026
 **Documentos complementarios de:** Especificación Funcional · Modelo de Datos y Flujos · Propuesta de Experiencia de Usuario
 **Alcance:** especificación funcional y de datos de la primera fuente de eventos importados, un calendario de viajes de Google. Define qué se importa, cómo se corresponde con el modelo existente y cómo se sincroniza. El stack técnico queda fuera del documento.
@@ -11,7 +11,9 @@
 
 El calendario de viajes es la primera materialización del origen **Importado** descrito en el apartado 4.2 de la Especificación Funcional. No introduce un concepto nuevo: el modelo ya prevé la entidad **CalendarioExterno** (modelo de datos, 2.4), el origen **importado** del evento y el tipo de evento **viaje** con su emoji de avión. Este documento cierra el detalle que aquellos dejaban abierto.
 
-La familia mantiene ya sus viajes en un calendario de Google compartido. El objetivo no es trasladar esa gestión a la aplicación, sino **reflejarla**: que los viajes aparezcan en la semana junto al resto de la vida familiar, y que sobre ellos puedan colgarse los datos propios de esta aplicación —regalos, avisos, emoji—. La planificación del viaje sigue ocurriendo en Google; la agenda lo muestra.
+El calendario contiene, en esta primera versión, los **viajes de Oscar**. El objetivo no es trasladar su gestión a la aplicación, sino **reflejarlos**: que aparezcan en la semana junto al resto de la vida familiar, de modo que en casa se sepa cuándo viaja sin necesidad de preguntarlo. La planificación del viaje sigue ocurriendo en Google; la agenda lo muestra.
+
+Son, por tanto, eventos **puramente informativos**: no llevan participantes ni regalos asociados (apartado 6). Los datos propios de la aplicación que sí tienen sentido sobre ellos son el emoji y la configuración de avisos. Esta decisión es de esta versión, no del modelo: el modelo sigue admitiendo que un evento importado lleve regalos, de modo que habilitarlo más adelante no exige rehacer nada.
 
 El principio rector es que **la fuente externa es la única autoridad sobre el contenido del evento**. Título, fechas, lugar y descripción se corrigen en Google y la aplicación los reproduce. Cualquier edición de esos campos dentro de la aplicación se perdería en la siguiente sincronización, por lo que sencillamente no se ofrece.
 
@@ -73,12 +75,12 @@ La traducción de una entrada iCalendar a un Evento se fija de forma explícita 
 | `VALUE=DATE` en `DTSTART` | indicador de jornada completa | Un viaje suele expresarse como fechas sin hora |
 | `LOCATION` | ubicación | Puede venir vacío |
 | `DESCRIPTION` | notas | Texto libre, tal cual |
-| `RRULE` | regla de recurrencia | Poco frecuente en viajes; se contempla en el apartado 10 |
+| `RRULE` | — | **Se ignora**: de un evento recurrente se importa solo su primera aparición (apartado 5.5) |
 | `STATUS:CANCELLED` | evento inactivo | Se trata como una baja (apartado 5.2) |
 | `SEQUENCE` / `LAST-MODIFIED` | — | Se emplean para detectar cambios, no se almacenan como contenido |
 | — | emoji | El del tipo **viaje** (avión). Sustituible en la aplicación, como dato propio (apartado 6) |
 | — | tipo de evento | **viaje**, heredado del CalendarioExterno |
-| — | participantes | **No se derivan del feed** (apartado 6.2) |
+| — | participantes | **No se derivan del feed**, y en esta versión no se asignan (apartado 6.2) |
 | — | categoría | Pública. Un calendario importado no porta reglas de visibilidad |
 
 **Zonas horarias.** Las entradas con hora llegan referidas a una zona (`TZID`) o en UTC (`Z`). La conversión a la zona local debe realizarse en la importación y no en la presentación, para que la fecha con la que un evento se sitúa en la semana sea inequívoca. Los eventos de jornada completa carecen de zona: son fechas flotantes y no deben desplazarse por conversión alguna.
@@ -109,33 +111,31 @@ Si el feed resulta inalcanzable, llega incompleto o no se puede interpretar, la 
 
 ### 5.4 Cadencia
 
-La frecuencia de sincronización debe guardar proporción con la latencia de la propia fuente: descargar cada pocos minutos un feed que Google regenera cada varias horas no aporta frescura y sí carga inútil. Una cadencia del orden de unas pocas horas, con la posibilidad de una sincronización a petición desde la configuración del calendario, cubre el uso real. El valor concreto queda como decisión pendiente (apartado 10).
+La sincronización automática se ejecuta **una vez al día**. La frecuencia guarda proporción con la latencia de la propia fuente —Google regenera el feed cada varias horas y los viajes se planifican con antelación—, de modo que un intervalo diario cubre el uso real sin carga inútil. Se complementa con una **sincronización a petición** desde la configuración del calendario, para el caso en que se quiera ver un cambio recién hecho sin esperar al ciclo diario.
+
+### 5.5 Recurrencia
+
+De un evento importado con regla de recurrencia (`RRULE`) se importa **únicamente su primera aparición**; las repeticiones se ignoran. Es un caso que no se espera en un calendario de viajes, y resolverlo así evita la complejidad de expandir instancias o de reconciliar una serie, a cambio de una pérdida de información sin relevancia práctica. Si en el futuro un calendario externo trajera recurrencias significativas, el tratamiento se revisaría entonces.
 
 ---
 
 ## 6. Datos propios sobre un evento importado
 
-Un evento importado es un objeto de doble naturaleza: su **contenido** pertenece a Google y sus **datos propios de la aplicación** pertenecen a la familia. La sincronización actualiza lo primero sin tocar lo segundo.
+Un evento importado es un objeto de doble naturaleza: su **contenido** pertenece a Google y sus **datos propios de la aplicación** pertenecen al hogar. La sincronización actualiza lo primero sin tocar lo segundo.
 
 ### 6.1 Qué es editable
 
-Sobre un evento importado, y conforme al apartado 4.2 de la Especificación Funcional, son editables únicamente:
+Sobre un evento importado, y conforme al apartado 4.2 de la Especificación Funcional, son editables el emoji, la asociación de regalos y la configuración de avisos. Para este calendario de viajes, sin embargo, **solo el emoji y los avisos entran en juego**: los viajes son informativos y no se les asocian regalos (apartado 6.2).
 
-- el **emoji**, que por defecto es el del tipo viaje;
-- la **asociación de regalos**, es decir, el vínculo con una ocasión y los regalos que cuelguen de ella;
-- la **configuración de avisos**.
+Estos datos se guardan asociados al **identificador externo** del evento, no a un identificador interno que la reconciliación pudiera recrear. Así sobreviven a las sucesivas sincronizaciones: si Google cambia el título o las fechas del viaje, el emoji elegido y la configuración de avisos permanecen.
 
-Estos datos se guardan asociados al **identificador externo** del evento, no a un identificador interno que la reconciliación pudiera recrear. Así sobreviven a las sucesivas sincronizaciones: si Google cambia el título del viaje, el emoji elegido, la ocasión vinculada y los avisos permanecen.
+### 6.2 Sin participantes ni regalos
 
-### 6.2 Participantes y su consecuencia sobre la ocultación
+En esta versión los viajes importados son **puramente informativos**. No llevan participantes ni regalos asociados, por dos razones convergentes.
 
-El feed no identifica a las personas del viaje en términos que puedan corresponderse con el registro de Personas. Por tanto, **un evento importado no lleva participantes de forma automática**.
+La primera es de la fuente: el feed no identifica a las personas del viaje en términos que puedan corresponderse con el registro de Personas, de modo que **no hay participantes que derivar**. La segunda es de uso: el calendario recoge los viajes de Oscar, que no son ocasión de regalo. No se ofrece, por tanto, la asignación manual de participantes sobre un viaje importado.
 
-Esto tiene una consecuencia que conviene explicitar, porque afecta a la pieza más delicada del sistema. La composición del bloque de regalos de un evento y la ocultación por destinatario se apoyan en los participantes del evento (Especificación Funcional, 4.4). Un viaje importado sin participantes no propone destinatarios en el selector de regalos ni acota nada; la protección sigue residiendo, como siempre, en la función de visibilidad aplicada a cada regalo, no en el evento. Un miembro que quiera vincular regalos a un viaje —por ejemplo, un regalo de aniversario que se entrega durante el viaje— puede asignar los participantes manualmente, y esa asignación es un dato propio de la aplicación, editable y persistente. El modelado de esa asignación manual sobre eventos importados queda como decisión pendiente (apartado 10).
-
-### 6.3 Baja en origen con datos propios asociados
-
-Si un viaje se elimina en Google pero tenía una ocasión vinculada con regalos, el evento se marca inactivo (5.2) y **la ocasión persiste**. Es coherente con el modelo: el regalo reside en la ocasión, que es su única fuente, y el evento se limita a mostrarlo (Especificación Funcional, 6.4). Perder los regalos porque un viaje se reprograma en Google sería destruir trabajo de coordinación por un cambio ajeno a él.
+La consecuencia es que la maquinaria de ocultación por destinatario no interviene aquí: sin destinatarios, no hay nada que ocultar. Los viajes son visibles para el hogar, que es el comportamiento buscado. Habilitar más adelante la asociación de regalos —si algún viaje llegara a serlo— no exige cambios en el modelo, que ya lo contempla; sí exigiría resolver antes la asignación de participantes, que hoy queda fuera de alcance.
 
 ---
 
@@ -168,11 +168,14 @@ El estado de la sincronización se refleja en el indicador discreto y permanente
 
 ---
 
-## 10. Decisiones pendientes
+## 10. Decisiones cerradas
 
-El **mecanismo de conexión queda confirmado: feed iCal** (apartado 2). Restan las siguientes:
+Las decisiones que este documento dejaba abiertas quedan resueltas:
 
-1. **Cadencia de sincronización.** Fijar el intervalo concreto, proporcionado a la latencia de regeneración del feed (apartado 5.4).
-2. **Participantes en eventos importados.** Decidir si se ofrece —y cómo se modela— la asignación manual de participantes del registro de Personas sobre un viaje importado, requisito para vincularle regalos con ocultación por destinatario (apartado 6.2).
-3. **Recurrencia importada.** Definir el tratamiento de un evento importado con `RRULE`. Es un caso improbable en un calendario de viajes, pero el feed puede contenerlo y conviene no dejarlo indefinido.
-4. **Varios calendarios externos.** El modelo admite más de una fila de CalendarioExterno. Si en el futuro se conectan otros calendarios —escolar, deportivo—, cada uno se asocia a su tipo de evento por defecto; no requiere cambios en este diseño, pero conviene confirmarlo cuando llegue el caso.
+1. **Mecanismo de conexión: feed iCal** (apartado 2), frente a la API de Google Calendar.
+2. **Cadencia: sincronización diaria**, más sincronización a petición (apartado 5.4).
+3. **Recurrencia: se ignora**; de un evento recurrente se importa solo la primera aparición (apartado 5.5).
+4. **Participantes y regalos: ninguno.** Los viajes importados son informativos en esta versión (apartado 6.2).
+5. **Alcance: solo el calendario de viajes.** El modelo admite varias fuentes, pero no se conecta ni se generaliza ninguna otra por ahora. Si en el futuro se añade un calendario escolar o deportivo, cada uno se asociará a su tipo de evento por defecto sin cambios en este diseño; se revisará entonces.
+
+No restan decisiones abiertas en esta iteración.
