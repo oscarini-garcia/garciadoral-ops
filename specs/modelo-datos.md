@@ -2,7 +2,7 @@
 
 **Versión:** 0.3
 **Fecha:** 24 de julio de 2026
-**Documento complementario de:** Agenda Familiar — Especificación Funcional v0.6
+**Documento complementario de:** Agenda Familiar — Especificación Funcional
 **Alcance:** entidades, relaciones, ciclos de estado y flujos de información. El módulo Anecdotario, aunque forma parte del alcance de la primera versión, se modelará cuando se cierre su especificación funcional.
 
 ---

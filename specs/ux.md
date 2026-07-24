@@ -2,7 +2,7 @@
 
 **Versión:** 0.5
 **Fecha:** 24 de julio de 2026
-**Documentos complementarios:** Especificación Funcional v0.6 · Modelo de Datos v0.2
+**Documentos complementarios:** Especificación Funcional · Modelo de Datos y Flujos
 
 ---
 
