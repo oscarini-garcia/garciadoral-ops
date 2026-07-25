@@ -24,8 +24,8 @@ ORIGENES_PERMITIDOS = "https://garciadoral-ops.galoopa.store,http://localhost:87
 
 # Audiencias admitidas del token de Apple: el Services ID de la web y el
 # identificador del paquete de la app iOS.
-APPLE_AUD_WEB = "com.garciadoral.garciadoral-ops.web"
-APPLE_AUD_IOS = "com.garciadoral.garciadoral-ops"
+APPLE_AUD_WEB = "com.garciadoral.ops.web"
+APPLE_AUD_IOS = "com.garciadoral.ops"
 
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones

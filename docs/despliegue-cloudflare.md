@@ -9,8 +9,8 @@ Los nombres propios de esta instalación ya están fijados en el repositorio:
 | Qué | Valor | Dónde se declara |
 |---|---|---|
 | Dominio de la aplicación web | `garciadoral-ops.galoopa.store` | `pwa/publico/config.json`, `api/wrangler.toml` |
-| Identificador del paquete de iOS (App ID) | `com.garciadoral.garciadoral-ops` | `pwa/capacitor.config.json`, `APPLE_AUD_IOS` |
-| Identificador de servicio de la web (Services ID) | `com.garciadoral.garciadoral-ops.web` | `config.json`, `APPLE_AUD_WEB` |
+| Identificador del paquete de iOS (App ID) | `com.garciadoral.ops` | `pwa/capacitor.config.json`, `APPLE_AUD_IOS` |
+| Identificador de servicio de la web (Services ID) | `com.garciadoral.ops.web` | `config.json`, `APPLE_AUD_WEB` |
 
 Queda un único marcador por sustituir, porque depende de la cuenta de Cloudflare
 y no se conoce hasta el paso 2:
@@ -122,8 +122,8 @@ esta instalación; compruébelo antes de desplegar:
 
 ```toml
 ORIGENES_PERMITIDOS = "https://garciadoral-ops.galoopa.store,http://localhost:8788"
-APPLE_AUD_WEB = "com.garciadoral.garciadoral-ops.web"
-APPLE_AUD_IOS = "com.garciadoral.garciadoral-ops"
+APPLE_AUD_WEB = "com.garciadoral.ops.web"
+APPLE_AUD_IOS = "com.garciadoral.ops"
 ```
 
 `ORIGENES_PERMITIDOS` es lo que decide qué webs pueden hablar con la API. Sin
@@ -174,7 +174,7 @@ espera tiene: los cambios de dominio tardan unos minutos en propagarse.
 1. **Certificates, Identifiers & Profiles → Identifiers → +**
 2. Tipo **App IDs → App**.
 3. Description: `Garcia Doral Ops`. Bundle ID **explícito**:
-   `com.garciadoral.garciadoral-ops`.
+   `com.garciadoral.ops`.
 4. En Capabilities marque **Sign in with Apple** y también **Push
    Notifications**.
 5. Guarde.
@@ -188,6 +188,13 @@ espera tiene: los cambios de dominio tardan unos minutos en propagarse.
 
 Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `pwa/capacitor.config.json`.
 
+> **Sin guiones, aunque Apple los admita.** Apple acepta guiones en un Bundle ID,
+> pero el CLI de Capacitor no: valida el `appId` con las reglas comunes a iOS y
+> Android —forma de paquete Java— y rechaza `cap add`, `cap sync` y `cap copy` por
+> igual, aunque el proyecto solo tenga iOS. Y un Bundle ID no se puede renombrar
+> en Apple: si se descubre tarde, hay que registrar otro identificador y volver a
+> enlazar el Services ID. Lo comprueba `tests/test_configuracion.py`.
+
 ### 4.2 Identificador de servicio (Services ID), para la web
 
 Haga antes el paso 5: el dominio tiene que estar sirviendo por HTTPS y con el
@@ -195,7 +202,7 @@ certificado emitido para que Apple pueda verificarlo.
 
 1. **Identifiers → + → Services IDs**.
 2. Description: `Garcia Doral Ops Web`. Identifier:
-   `com.garciadoral.garciadoral-ops.web`.
+   `com.garciadoral.ops.web`.
 3. Guarde, vuelva a abrirlo y marque **Sign in with Apple → Configure**:
    - **Primary App ID**: el del paso 4.1.
    - **Domains and Subdomains**: `garciadoral-ops.galoopa.store`
@@ -278,7 +285,7 @@ Antes de publicar, sustituya `EJEMPLO` por el subdominio real del Worker en
 ```json
 {
   "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
-  "appleClienteWeb": "com.garciadoral.garciadoral-ops.web",
+  "appleClienteWeb": "com.garciadoral.ops.web",
   "redireccion": "https://garciadoral-ops.galoopa.store",
   "otaManifiesto": "https://github.com/oscarini-garcia/garciadoral-ops/releases/latest/download/latest.json"
 }
@@ -521,7 +528,7 @@ llegan a los teléfonos por OTA sin pasar por revisión.
 La identidad ya está puesta en `pwa/capacitor.config.json`:
 
 ```json
-{ "appId": "com.garciadoral.garciadoral-ops", "appName": "Agenda", "webDir": "publico" }
+{ "appId": "com.garciadoral.ops", "appName": "Agenda", "webDir": "publico" }
 ```
 
 `appId` es **el mismo** App ID del paso 4.1 y el mismo valor que `APPLE_AUD_IOS`
