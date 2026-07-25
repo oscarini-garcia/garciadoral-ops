@@ -2,6 +2,35 @@
 
 Guía para trabajar en este repositorio.
 
+## Orientarse sin leerse la aplicación
+
+Al abrir una sesión, el hook `SessionStart` inyecta el mapa del repositorio
+—módulos y qué hace cada uno, rutas de la API, workflows, correspondencia con
+`specs/`, variables de entorno, pruebas— más el estado de la rama. Se genera en
+ese momento con `herramientas/mapa.py`, así que describe el código de ese
+instante y no puede desfasarse.
+
+Con eso basta para saber **dónde mirar**; el detalle se lee bajo demanda. No
+hace falta recorrer la aplicación entera al empezar.
+
+- `docs/mapa.md` es ese mismo texto, versionado. **Es generado: no se edita a
+  mano.** Se regenera con `python3 herramientas/mapa.py` y `pruebas.yml`
+  comprueba que corresponde al código de su commit.
+- Si un módulo nuevo no aparece bien descrito en el mapa, lo que falta es su
+  docstring, no una entrada en el mapa: la primera frase del docstring es lo que
+  se publica ahí. Lo mismo con la correspondencia con `specs/`, que se lee de las
+  citas a `specs/…md §N` que el código lleva en sus comentarios.
+
+## En curso
+
+Lo único de todo esto que se escribe a mano, porque no se deduce del código.
+Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
+pendiente. El hook lo inyecta al final del mapa.
+
+- Nada abierto ahora mismo. Lo pendiente de construir está en el apartado 7 del
+  `README`: los calendarios externos, la copia periódica de salvaguarda y la
+  parte configurable del recordatorio previo.
+
 ## Codificación de archivos generados
 
 Todos los archivos `.md` y `.html` que se generen para especificaciones (specs) y
