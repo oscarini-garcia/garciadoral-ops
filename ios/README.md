@@ -69,8 +69,14 @@ conocer todos los campos de la entidad que toca.
 
 - `Info.plist` → `AgendaAPI`: la URL del Worker. Se cambia sin tocar código.
 - `AgendaFamiliar.entitlements` declara Sign in with Apple.
-- El identificador del paquete (`com.EJEMPLO.agenda`) debe coincidir con
+- El identificador del paquete (`store.galoopa.agenda`) debe coincidir con
   `APPLE_AUD_IOS` en la configuración del Worker.
+- **El dominio de la web no interviene aquí.** En iOS, Sign in with Apple valida
+  contra el identificador del paquete, no contra un dominio verificado. Que la
+  PWA viva en `agenda.galoopa.store` no obliga a tocar nada de este proyecto ni
+  del proceso de distribución por TestFlight. Solo haría falta declarar el
+  dominio —como *Associated Domain*, con su `apple-app-site-association`— si
+  algún día se quisieran enlaces universales, que hoy no se usan.
 
 Los pasos de alta en Apple Developer y en Cloudflare están en
 `docs/despliegue-cloudflare.md`.

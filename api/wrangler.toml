@@ -11,12 +11,12 @@ database_id = "PENDIENTE-DE-RELLENAR"
 [vars]
 # Orígenes desde los que se admite la PWA. Sin coincidencia no se emiten
 # cabeceras CORS, de modo que una web ajena no puede hablar con esta API.
-ORIGENES_PERMITIDOS = "https://agenda.EJEMPLO.com,http://localhost:8788"
+ORIGENES_PERMITIDOS = "https://agenda.galoopa.store,http://localhost:8788"
 
 # Audiencias admitidas del token de Apple: el Services ID de la web y el
 # identificador del paquete de la app iOS.
-APPLE_AUD_WEB = "com.EJEMPLO.agenda.web"
-APPLE_AUD_IOS = "com.EJEMPLO.agenda"
+APPLE_AUD_WEB = "store.galoopa.agenda.web"
+APPLE_AUD_IOS = "store.galoopa.agenda"
 
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
