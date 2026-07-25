@@ -1,7 +1,11 @@
-# Agenda Familiar — aplicación web
+# Agenda Familiar — la aplicación
 
-PWA instalable, sin proceso de compilación: módulos ES nativos, CSS propio y
-service worker. Lo que se publica es literalmente el contenido de `publico/`.
+Una sola base de código para las dos formas de usarla:
+
+- **La web**, una PWA instalable sin proceso de compilación: módulos ES nativos,
+  CSS propio y service worker. Lo que se publica es el contenido de `publico/`.
+- **La app de iOS**, una cáscara de Capacitor con esa misma web empaquetada
+  dentro, que se actualiza **por OTA** sin pasar por Apple cada vez.
 
 La arquitectura es la **opción D** de `specs/ux.md`: la semana abre la
 aplicación, los regalos viven en su propia pestaña y la ficha de persona de la
@@ -28,15 +32,19 @@ lo que su titular no puede ver. La copia de la función de visibilidad de
 ## Cómo está organizada
 
 ```
+package.json            · versión (la que dispara el OTA) y dependencias nativas
+capacitor.config.json   · identidad de la app y ajustes de los plugins
+scripts/patch-ios.mjs   · quita el rebote del scroll en el proyecto generado
 publico/
   index.html            · armazón: acceso, cabecera, pantalla, pestañas
-  config.json           · API y Services ID de Apple; se lee en caliente
-  manifest.webmanifest  · instalación
+  config.json           · API, Services ID de Apple y manifiesto OTA
+  manifest.webmanifest  · instalación como PWA
   sw.js                 · caché del armazón; la API nunca se cachea
   _headers              · cabeceras de Cloudflare Pages
   css/estilos.css       · dos temas completos, no una inversión del claro
   js/
     app.js              · arranque, pestañas y botón de crear contextual
+    native.js           · puente con la cáscara: háptica, compartir y OTA
     sesion.js           · Sign in with Apple en la web
     almacen.js          · IndexedDB: instantánea y cola de cambios
     sincronizacion.js   · escritura optimista y subida diferida
@@ -45,6 +53,7 @@ publico/
     demo.js             · solo para la demostración
     vistas/             · semana · regalos · familia · buscar
   demo/, iconos/        · generados por herramientas/preparar-pwa.py
+ios/                    · lo genera `cap add ios` en el Mac; no se versiona
 ```
 
 ## Decisiones que conviene conocer
@@ -66,6 +75,64 @@ titulares. Lo que se cachea es el armazón; los datos viven en IndexedDB.
 
 **El botón de crear pertenece a la pantalla.** En la semana crea un evento, en
 Regalos y en Familia apunta una idea, y en Buscar no aparece.
+
+---
+
+## La app de iOS
+
+El binario nativo casi nunca cambia: se sube a Apple la primera vez y solo se
+vuelve a subir cuando se toca algo nativo —un plugin, los iconos, los permisos—.
+Todo lo demás viaja por OTA.
+
+```bash
+cd pwa
+npm install
+npx cap add ios          # solo en el Mac: hace pod install
+npm run sync:ios         # copia la web, sincroniza y aplica el parche del scroll
+npm run assets:ios       # iconos y splash desde una fuente de 1024×1024
+npm run open:ios
+```
+
+En Xcode: *Signing & Capabilities* → su equipo, y el identificador del paquete
+igual que `appId` en `capacitor.config.json` y que `APPLE_AUD_IOS` en el Worker.
+Después, *Any iOS Device* → **Product ▸ Archive** → **Distribute App**.
+
+### Publicar una actualización
+
+1. Cambie lo que sea de `pwa/publico`.
+2. **Suba la versión** en `pwa/package.json`.
+3. Mergee a `main`.
+
+El workflow `bundle OTA` empaqueta `publico/` en un `bundle.zip`, calcula su
+`sha256`, escribe `latest.json` y crea el release `ota-v<versión>`. Las apps leen
+ese manifiesto al abrir y, si hay versión nueva, la descargan y la aplican en la
+**siguiente** apertura. Si no cambia la versión, no se publica nada: un empujón
+normal a `main` es inofensivo.
+
+Antes de publicar, el workflow comprueba que `config.json` no tenga marcadores
+`EJEMPLO`. Un bundle con ellos dejaría a todos los teléfonos apuntando a una API
+que no existe, y encima se aplicaría solo.
+
+### Tres detalles que conviene conocer
+
+**El puente no necesita empaquetador.** La receta importa `@capacitor/core`, lo
+que obligaría a meter Vite solo para eso. Como esta webapp son módulos ES
+servidos tal cual, `native.js` habla con los plugins a través del puente global
+que la propia cáscara inyecta (`window.Capacitor.Plugins`). Los paquetes de npm
+siguen haciendo falta para que `cap sync` instale los pods; lo que cambia es cómo
+los llama la web. Fuera de la cáscara todo son operaciones nulas, así que la PWA
+y las pruebas no se enteran.
+
+**El service worker no se registra dentro de la app.** Allí el armazón ya viene
+empaquetado y quien decide cuándo cambia es el OTA. Dos cachés compitiendo por lo
+mismo solo producen pantallas viejas que nadie sabe por qué no se van.
+
+**Háptica y compartir no son adorno.** Son las capacidades nativas que sostienen
+que esto sea una aplicación y no una web envuelta, que es lo que mira la guía 4.2
+de Apple. Compartir un evento saca solo su cara pública: ni una palabra de la
+dimensión de regalos.
+
+---
 
 ## Despliegue
 

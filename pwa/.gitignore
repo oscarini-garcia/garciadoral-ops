@@ -1,0 +1,7 @@
+# El proyecto nativo lo genera `npx cap add ios` en el Mac: `pod install` no
+# funciona en Linux ni en CI, así que no se versiona.
+ios/
+
+node_modules/
+bundle.zip
+latest.json

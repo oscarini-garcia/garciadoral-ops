@@ -26,8 +26,11 @@ Sustituya en todo el documento:
   ser suyo.
 - **Apple Developer Program**, 99 € al año. Necesario para firmar la aplicación
   iOS y para Sign in with Apple. Sin él puede desplegar la PWA y usarla, pero no
-  habrá acceso con Apple ni aplicación nativa.
+  habrá acceso con Apple ni aplicación en el teléfono.
 - **Node 20 o posterior** y `npm` en su máquina.
+- Para la app de iOS, además: un **Mac con Xcode** y **CocoaPods**
+  (`brew install cocoapods`). `npx cap add ios` hace `pod install`, que no
+  funciona en Linux ni en CI.
 - Acceso de escritura a este repositorio de GitHub.
 
 ```bash
@@ -145,7 +148,7 @@ espera tiene: los cambios de dominio tardan unos minutos en propagarse.
 4. En Capabilities marque **Sign in with Apple**.
 5. Guarde.
 
-Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `ios/project.yml`.
+Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `pwa/capacitor.config.json`.
 
 ### 4.2 Identificador de servicio (Services ID), para la web
 
@@ -186,7 +189,8 @@ Antes de publicar, deje la configuración apuntando a lo suyo. Edite
 {
   "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
   "appleClienteWeb": "com.example.agenda.web",
-  "redireccion": "https://agenda.example.com"
+  "redireccion": "https://agenda.example.com",
+  "otaManifiesto": "https://github.com/oscarini-garcia/garciadoral-ops/releases/latest/download/latest.json"
 }
 ```
 
@@ -296,27 +300,66 @@ teléfono.
 
 ## 8. La aplicación iOS
 
+No hay una aplicación nativa aparte: la de iOS es una **cáscara de Capacitor**
+con la misma web dentro. El binario casi nunca cambia —se sube a Apple la primera
+vez y solo se vuelve a subir cuando se toca algo nativo—, y los cambios de web
+llegan a los teléfonos por OTA sin pasar por revisión.
+
+Primero, deje la identidad puesta en `pwa/capacitor.config.json`:
+
+```json
+{ "appId": "com.example.agenda", "appName": "Agenda", "webDir": "publico" }
+```
+
+`appId` tiene que ser **el mismo** App ID del paso 4.1 y el mismo valor que
+`APPLE_AUD_IOS` en el Worker. Cambiarlo después es un lío, así que elíjalo bien.
+
+En el Mac:
+
 ```bash
-brew install xcodegen
-cd ios
-xcodegen generate
-open AgendaFamiliar.xcodeproj
+cd pwa
+npm install
+npx cap add ios          # hace pod install; solo funciona en macOS
+npm run sync:ios         # copia la web, sincroniza y aplica el parche del scroll
+npm run assets:ios       # iconos y splash desde una fuente opaca de 1024×1024
+npm run open:ios
 ```
 
 En Xcode:
 
-1. Target **AgendaFamiliar → Signing & Capabilities**: elija su equipo. Debería
-   aparecer ya **Sign in with Apple**, que viene del fichero de *entitlements*.
-2. Compruebe que el Bundle Identifier coincide con el App ID del paso 4.1 y con
-   `APPLE_AUD_IOS`.
-3. En `App/AgendaFamiliar/Info.plist`, la clave `AgendaAPI` debe apuntar a la URL
-   del Worker.
-4. Ejecute en un dispositivo real: Sign in with Apple no funciona bien en el
-   simulador sin una cuenta de iCloud configurada.
+1. **Signing & Capabilities** → elija su *Team* y confirme el bundle id.
+2. Añada la capacidad **Sign in with Apple**.
+3. *Any iOS Device* → **Product ▸ Archive** → **Distribute App ▸ App Store
+   Connect ▸ Upload**.
+4. Pruebe en **TestFlight** (interno, casi sin revisión) antes de enviar a la
+   App Store.
 
-Para instalarla en los teléfonos de casa sin pasar por App Store, use TestFlight:
-Xcode → Product → Archive → Distribute App → TestFlight. Con *internal testing*
-basta y no pasa por revisión.
+Ejecute en un teléfono real: Sign in with Apple no funciona bien en el simulador
+sin una cuenta de iCloud configurada.
+
+> `pwa/ios/` **no se versiona**: lo regenera `cap add ios`, y `pod install`
+> necesita macOS. Está en `pwa/.gitignore`.
+
+### 8.1 El día a día: publicar una actualización
+
+Esta es la parte que ahorra el trámite con Apple.
+
+1. Cambie lo que sea de `pwa/publico`.
+2. **Suba la versión** en `pwa/package.json` (por ejemplo `1.0.0 → 1.0.1`).
+3. Mergee a `main`.
+
+El workflow `bundle OTA` empaqueta el contenido de `publico/` en un `bundle.zip`,
+calcula su `sha256`, escribe `latest.json` y crea el release `ota-v<versión>`.
+Las apps leen ese manifiesto al abrir y, si hay versión nueva, la descargan y la
+aplican en la **siguiente** apertura.
+
+Si no cambia la versión, no se publica nada: un empujón normal a `main` es
+inofensivo. Y si `config.json` todavía tiene marcadores `EJEMPLO`, el workflow
+falla a propósito antes de publicar: un bundle con ellos dejaría a todos los
+teléfonos apuntando a una API que no existe, y encima se aplicaría solo.
+
+Solo hay que volver a Xcode cuando cambie algo **nativo**: un plugin nuevo, los
+iconos, los permisos o la versión de Capacitor.
 
 ---
 
@@ -339,6 +382,8 @@ error visible: es arruinar una sorpresa.
 - [ ] Ejecutar el plan semanal en simulacro y leer los siete mensajes.
 - [ ] Encolar un mensaje de prueba en `queue.json` con `send_at` a diez minutos y
       verificar que llega.
+- [ ] En la app de iOS, subir la versión de `pwa/package.json`, mergear y
+      comprobar que el cambio entra al abrirla por segunda vez.
 
 ---
 
@@ -363,6 +408,10 @@ error visible: es arruinar una sorpresa.
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
 | Todo daba 401 de repente | Cambió `SESION_SECRETO`; hay que volver a entrar |
 | El plan del domingo no sale | Mire la traza en Actions. Lo más común es `AGENDA_URL` sin `/api/registro` al final, o `AGENDA_TOKEN` distinto de `TOKEN_SERVICIO` |
+| **Pantalla negra** al abrir la app | El `MainViewController.swift` existe pero no quedó registrado en el `.pbxproj`, así que no compila | `npm run patch:ios` lo registra; si avisa de que no ha sabido, añádalo a mano en Xcode (clic derecho en App → Add Files, target App) |
+| El OTA no baja | Manifiesto inaccesible, o la versión no cambió | Compruebe `otaManifiesto` en `config.json`, que el release exista y que subió la versión en `pwa/package.json` |
+| El bundle OTA carga en blanco | `index.html` no quedó en la raíz del zip | Se empaqueta el **contenido** de `publico/`, no la carpeta; el workflow ya lo hace así |
+| La app revierte la actualización sola | No se llamó a `notifyAppReady()` | Lo hace `iniciarNativo()` al arrancar; compruebe que `app.js` lo sigue llamando |
 | El despachador dejó de ejecutarse | GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por defecto. Reactívelo desde Actions y active el workflow `mantenimiento` |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
 
@@ -402,5 +451,7 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 6. Proyecto de Pages con salida `pwa/publico` y `config.json` relleno.
 7. Entrar, copiar el identificador de Apple a la ficha, volver a entrar.
 8. Secretos de GitHub y simulacro del plan semanal.
-9. `xcodegen generate` y TestFlight.
+9. En el Mac: `npx cap add ios` → `npm run sync:ios` → assets → Xcode → TestFlight.
 10. Recorrer la lista de comprobaciones del apartado 9.
+11. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
+    la app dos veces.

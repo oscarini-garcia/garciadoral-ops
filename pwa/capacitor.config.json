@@ -1,0 +1,13 @@
+{
+  "appId": "com.EJEMPLO.agenda",
+  "appName": "Agenda",
+  "webDir": "publico",
+  "ios": {
+    "scrollEnabled": true,
+    "contentInset": "never"
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "CapacitorUpdater": { "autoUpdate": false, "resetWhenUpdate": true }
+  }
+}
