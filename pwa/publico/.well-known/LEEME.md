@@ -15,7 +15,7 @@ de Pages, que republica en cada empujón a `main`.
 Antes de pulsar *Verify* en Apple, compruebe que se sirve de verdad:
 
 ```bash
-curl -i https://agenda.galoopa.store/.well-known/apple-developer-domain-association.txt
+curl -i https://garciadoral-ops.galoopa.store/.well-known/apple-developer-domain-association.txt
 ```
 
 Debe responder `200` con el contenido en texto plano y **sin redirección**. Si

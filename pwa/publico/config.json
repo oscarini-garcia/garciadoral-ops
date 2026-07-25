@@ -2,5 +2,5 @@
   "_nota": "Configuración del despliegue. Se lee en caliente, de modo que cambiarla no exige reconstruir nada. Queda por sustituir EJEMPLO por el subdominio real de workers.dev; consulte docs/despliegue-cloudflare.md.",
   "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
   "appleClienteWeb": "store.galoopa.agenda.web",
-  "redireccion": "https://agenda.galoopa.store"
+  "redireccion": "https://garciadoral-ops.galoopa.store"
 }

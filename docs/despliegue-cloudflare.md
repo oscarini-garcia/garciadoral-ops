@@ -8,7 +8,7 @@ Los nombres propios de esta instalación ya están fijados en el repositorio:
 
 | Qué | Valor | Dónde se declara |
 |---|---|---|
-| Dominio de la aplicación web | `agenda.galoopa.store` | `pwa/publico/config.json`, `api/wrangler.toml` |
+| Dominio de la aplicación web | `garciadoral-ops.galoopa.store` | `pwa/publico/config.json`, `api/wrangler.toml` |
 | Identificador del paquete de iOS (App ID) | `store.galoopa.agenda` | `ios/project.yml`, `APPLE_AUD_IOS` |
 | Identificador de servicio de la web (Services ID) | `store.galoopa.agenda.web` | `config.json`, `APPLE_AUD_WEB` |
 
@@ -27,9 +27,9 @@ y no se conoce hasta el paso 2:
   5 GB y 5 millones de lecturas de fila al día, y Workers 100.000 peticiones
   diarias. Un hogar no se acerca ni de lejos.
 - **Un dominio propio.** Aquí es `galoopa.store`, del que se usa únicamente el
-  subdominio `agenda.galoopa.store`. No es obligatorio para desplegar —Pages da
-  una dirección del tipo `agenda-familiar.pages.dev` y la aplicación funciona
-  igual—, pero sí para usar Sign in with Apple en la web: Apple no admite
+  subdominio `garciadoral-ops.galoopa.store`. No es obligatorio para desplegar
+  —Pages da una dirección del tipo `agenda-familiar.pages.dev` y la aplicación
+  funciona igual—, pero sí para usar Sign in with Apple en la web: Apple no admite
   `*.pages.dev` ni ningún otro dominio de terceros como URL de retorno, así que
   el dominio ha de ser suyo y verificable. Cómo se apunta a Pages está en el
   paso 5.2.
@@ -99,7 +99,7 @@ El bloque `[vars]` de `api/wrangler.toml` ya viene relleno con los nombres de
 esta instalación; compruébelo antes de desplegar:
 
 ```toml
-ORIGENES_PERMITIDOS = "https://agenda.galoopa.store,http://localhost:8788"
+ORIGENES_PERMITIDOS = "https://garciadoral-ops.galoopa.store,http://localhost:8788"
 APPLE_AUD_WEB = "store.galoopa.agenda.web"
 APPLE_AUD_IOS = "store.galoopa.agenda"
 ```
@@ -166,10 +166,11 @@ certificado emitido para que Apple pueda verificarlo.
 2. Description: `Agenda Familiar Web`. Identifier: `store.galoopa.agenda.web`.
 3. Guarde, vuelva a abrirlo y marque **Sign in with Apple → Configure**:
    - **Primary App ID**: el del paso 4.1.
-   - **Domains and Subdomains**: `agenda.galoopa.store`
-   - **Return URLs**: `https://agenda.galoopa.store`
+   - **Domains and Subdomains**: `garciadoral-ops.galoopa.store`
+   - **Return URLs**: `https://garciadoral-ops.galoopa.store`
 4. Guarde. Apple pedirá verificar el dominio descargando un fichero y
-   publicándolo en `https://agenda.galoopa.store/.well-known/apple-developer-domain-association.txt`.
+   publicándolo en la ruta
+   `/.well-known/apple-developer-domain-association.txt` del dominio.
    Descárguelo y colóquelo en `pwa/publico/.well-known/` antes de continuar; se
    publicará con el siguiente empujón a `main`. Compruébelo con `curl` antes de
    pulsar *Verify* —el paso 5.3 explica qué mirar y qué hacer si da 404—.
@@ -215,7 +216,7 @@ Antes de publicar, sustituya `EJEMPLO` por el subdominio real del Worker en
 {
   "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
   "appleClienteWeb": "store.galoopa.agenda.web",
-  "redireccion": "https://agenda.galoopa.store"
+  "redireccion": "https://garciadoral-ops.galoopa.store"
 }
 ```
 
@@ -243,7 +244,7 @@ No hay proceso de compilación: lo que se publica es literalmente el contenido d
 Anote la dirección que le asigna Pages —`agenda-familiar.pages.dev` o parecida—:
 hace falta en el paso siguiente.
 
-### 5.2 Apuntar `agenda.galoopa.store` a Pages
+### 5.2 Apuntar `garciadoral-ops.galoopa.store` a Pages
 
 `galoopa.store` no está alojado en Cloudflare: sus servidores de nombres son los
 de Google Cloud DNS (`ns-cloud-d1…d4.googledomains.com`), heredados de Google
@@ -259,22 +260,22 @@ Cloudflare, y basta con un registro.
 > exactamente igual.
 
 1. En el proyecto de Pages: **Custom domains → Set up a custom domain** →
-   `agenda.galoopa.store`. Como el dominio no está en Cloudflare, la interfaz le
-   dirá que cree el registro usted y le mostrará el destino.
+   `garciadoral-ops.galoopa.store`. Como el dominio no está en Cloudflare, la
+   interfaz le dirá que cree el registro usted y le mostrará el destino.
 2. En el panel de DNS del dominio, un único registro nuevo:
 
    | Tipo | Nombre | Valor | TTL |
    |---|---|---|---|
-   | CNAME | `agenda` | `<su-proyecto>.pages.dev` | 300 mientras prueba |
+   | CNAME | `garciadoral-ops` | `<su-proyecto>.pages.dev` | 300 mientras prueba |
 
 3. Cloudflare detecta el CNAME, valida y emite el certificado solo. De unos
    minutos a una hora. No siga hasta que el dominio figure como **Active** en
    *Custom domains*: si Apple intenta verificar antes de que haya certificado,
    falla y hay que reintentarlo.
 
-Comprobación: abra `https://agenda.galoopa.store` y pulse **Ver una demostración
-con datos de ejemplo**. Si la semana aparece con sus siete filas, la parte
-estática está bien.
+Comprobación: abra `https://garciadoral-ops.galoopa.store` y pulse **Ver una
+demostración con datos de ejemplo**. Si la semana aparece con sus siete filas,
+la parte estática está bien.
 
 > **Mover la zona entera a Cloudflare** —añadir el sitio y cambiar los
 > servidores de nombres en el registrador— es más cómodo a la larga: Pages
@@ -288,7 +289,7 @@ El `.txt` que entrega Apple (paso 4.2) va en `pwa/publico/.well-known/`, que ya
 existe en el repositorio con sus instrucciones. Tras el empujón que lo publique:
 
 ```bash
-curl -i https://agenda.galoopa.store/.well-known/apple-developer-domain-association.txt
+curl -i https://garciadoral-ops.galoopa.store/.well-known/apple-developer-domain-association.txt
 ```
 
 Debe responder `200`, en texto plano y **sin redirección** por el camino.
@@ -475,7 +476,7 @@ error visible: es arruinar una sorpresa.
 | La web carga pero el botón de Apple no hace nada | El dominio no está verificado en el Services ID, o `appleClienteWeb` no coincide con él |
 | Apple responde `invalid_client` | La *Return URL* del Services ID y el campo `redireccion` de `config.json` no son idénticos. Compare carácter a carácter, incluida la barra final |
 | Apple no consigue verificar el dominio | El `.txt` no se está sirviendo. Lance el `curl` del paso 5.3: si da 404, aplique la reescritura con `_redirects` que allí se explica. Si da 301 o 302, Apple tampoco lo acepta |
-| El dominio propio no sale de «pending» en Pages | El CNAME no ha propagado o apunta a otro proyecto. `dig agenda.galoopa.store CNAME` debe devolver su `pages.dev` |
+| El dominio propio no sale de «pending» en Pages | El CNAME no ha propagado o apunta a otro proyecto. `dig garciadoral-ops.galoopa.store CNAME` debe devolver su `pages.dev` |
 | Se rompió la tienda de `galoopa.store` | Nada de este despliegue toca el apex. Revise si al añadir el CNAME se modificó por error el registro `A` que apunta a Shopify |
 | «Este identificador de Apple todavía no está vinculado» | Es el comportamiento correcto la primera vez: copie el identificador a la ficha (paso 6) |
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
