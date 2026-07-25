@@ -7,10 +7,12 @@
   Permissions-Policy: geolocation=(), camera=(), microphone=(), interest-cohort=()
   Cross-Origin-Opener-Policy: same-origin-allow-popups
 
-# Descomente la política de contenido tras sustituir EJEMPLO por el subdominio
-# real del Worker. Con `connect-src` mal puesto la aplicación deja de hablar con
-# la API, así que conviene activarla y comprobar el acceso en el mismo paso.
-#  Content-Security-Policy: default-src 'self'; script-src 'self' https://appleid.cdn-apple.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://agenda-familiar-api.EJEMPLO.workers.dev https://appleid.apple.com; frame-src https://appleid.apple.com; base-uri 'none'; form-action 'self'
+# La política de contenido, ya con el subdominio real del Worker. Queda
+# comentada a propósito: actívela cuando el acceso con Apple funcione, y
+# compruébelo en el mismo paso. Con `connect-src` mal puesto la aplicación deja
+# de hablar con la API, y ese fallo se parece mucho a otros.
+# Para activarla basta con quitar la almohadilla de la línea siguiente.
+#  Content-Security-Policy: default-src 'self'; script-src 'self' https://appleid.cdn-apple.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://agenda-familiar-api.oscarini.workers.dev https://appleid.apple.com; frame-src https://appleid.apple.com; base-uri 'none'; form-action 'self'
 
 # El armazón lo gestiona el service worker; estos dos deben poder cambiar sin
 # esperar a que caduque ninguna caché intermedia.

@@ -68,6 +68,13 @@ class Configuracion(unittest.TestCase):
         self.assertFalse(redireccion.endswith("/"), redireccion)
         self.assertEqual(redireccion, redireccion.lower(), redireccion)
 
+    def test_no_quedan_marcadores_de_ejemplo(self):
+        """Un bundle con marcadores dejaría los teléfonos apuntando a una API
+        inexistente, y el OTA se aplica solo. El workflow `ota` también lo
+        comprueba, pero allí ya es tarde: falla después de mergear.
+        """
+        self.assertNotIn("EJEMPLO", CONFIG_PWA.read_text(encoding="utf-8"))
+
     def test_los_identificadores_de_apple_son_admisibles(self):
         """Letras, dígitos, guiones y puntos; ni vacíos ni con espacios."""
         for clave in ("APPLE_AUD_WEB", "APPLE_AUD_IOS"):

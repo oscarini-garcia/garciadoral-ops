@@ -2,6 +2,13 @@ name = "agenda-familiar-api"
 main = "src/index.js"
 compatibility_date = "2026-05-01"
 
+# La PWA llama al Worker por su dirección de workers.dev, así que esa ruta se
+# declara explícitamente en lugar de dejar que wrangler la active por omisión.
+# Las URL de vista previa, en cambio, sobran: publicarían cada versión en una
+# dirección propia que nadie usa y que también atendería peticiones.
+workers_dev = true
+preview_urls = false
+
 # El binding es `DB` a propósito: es el nombre con el que el Worker la busca
 # (`env.DB`). No copie el que sugiere `wrangler d1 create`, que deriva del nombre
 # de la base de datos y dejaría al Worker sin encontrarla.

@@ -1,6 +1,6 @@
 {
-  "_nota": "Configuración del despliegue. Se lee en caliente, de modo que cambiarla no exige reconstruir nada. Queda por sustituir EJEMPLO por el subdominio real de workers.dev; consulte docs/despliegue-cloudflare.md.",
-  "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
+  "_nota": "Configuración del despliegue. Se lee en caliente, de modo que cambiarla no exige reconstruir nada; consulte docs/despliegue-cloudflare.md.",
+  "api": "https://agenda-familiar-api.oscarini.workers.dev",
   "appleClienteWeb": "store.galoopa.agenda.web",
   "redireccion": "https://garciadoral-ops.galoopa.store",
   "otaManifiesto": "https://github.com/oscarini-garcia/garciadoral-ops/releases/latest/download/latest.json"
