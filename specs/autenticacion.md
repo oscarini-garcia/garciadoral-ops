@@ -75,7 +75,7 @@ el interesado al retirar su solicitud, o el tiempo al caducarla; y *con cuenta �
 desconocido* es la baja que ya existe (`darDeBajaCuenta`), que deshace el vínculo
 con Apple y devuelve a esa persona a la puerta.
 
-No hay estado intermedio entre rechazado y desconocido: pasados noventa días la
+No hay estado intermedio entre rechazado y desconocido: pasados treinta días la
 solicitud rechazada se borra y, si esa persona vuelve a intentarlo, vuelve a
 aparecer en la bandeja. Un rechazo es un «ahora no», no una lista negra
 perpetua, y guardar para siempre el correo de alguien a quien se dijo que no es
@@ -110,12 +110,17 @@ al pintarlo y se limita en longitud. Quien lo lee es un administrador que decide
 sobre esa base, y conviene que la interfaz sea explícita en que ese nombre lo ha
 escrito el solicitante, no Apple.
 
-**Ningún cambio en `persona`.** El correo del solicitante no se copia a su ficha
-al aprobar: la solicitud se marca como aprobada y el dato se va con ella cuando
-se purgue. No se guarda porque no se usa —este sistema no envía correo a nadie— y
-guardar un dato personal «por si acaso» es exactamente la clase de acumulación
-que el resto del diseño evita. Si algún día hace falta, `atributo_persona` existe
-para eso y no requiere migración.
+**Ningún cambio en el esquema de `persona`.** De lo que trae la solicitud, al
+aprobar se conserva una sola cosa: la nota, que pasa a ser un `atributo_persona`
+con clave «cómo nos conocemos». Es el dato que dentro de dos años nadie
+recordará y que explica por qué esa persona está en la lista, y la entidad ya
+existe precisamente para atributos que no merecen columna propia
+(`specs/modelo-datos.md` §2.1).
+
+El correo, en cambio, **no se copia**: se va con la solicitud cuando se purgue.
+No se guarda porque no se usa —este sistema no envía correo a nadie— y conservar
+un dato personal «por si acaso» es la clase de acumulación que el resto del
+diseño evita.
 
 ---
 
@@ -146,6 +151,13 @@ aplicación y lo ve. Montar avisos remotos para esto exigiría APNs, credenciale
 nuevas y un servicio que hoy no existe, y todo para un acontecimiento que ocurre
 una vez en la vida de cada usuario.
 
+Y una tercera acción, discreta, al pie: **ver la demostración**. Le da algo que
+mirar mientras espera, y sobre todo resuelve el problema del revisor de la App
+Store, que es exactamente quien va a quedarse en esta pantalla (§11). La
+demostración ya advierte por su cuenta de que los datos son inventados y de que
+nada de lo que se haga allí sale del dispositivo, que es lo que evita la
+confusión entre lo de mentira y lo de verdad.
+
 **Si lo aprueban**, el siguiente arranque entra directamente. **Si lo rechazan**,
 un mensaje sin explicación —«de momento no hay acceso para esta cuenta»— y el
 botón de retirar. La aplicación no inventa motivos ni promete revisiones.
@@ -158,6 +170,13 @@ El aviso vive **dentro de la aplicación**, y solo ahí. La pantalla de Familia
 lleva un contador de solicitudes pendientes, visible únicamente para los
 administradores, que abre la bandeja.
 
+**Resuelve cualquier administrador**, sin distinción entre ellos. Es lo que ya
+hace el resto de la configuración del hogar —`comprobarPermiso` trata a los
+administradores como equivalentes— y no introduce la figura del dueño, que
+sería un concepto nuevo en el modelo y un punto único de fallo: si quien tuviera
+esa condición se ausenta o se da de baja, las solicitudes se quedarían sin nadie
+que las mirase.
+
 Cada solicitud muestra el nombre declarado, la nota, el correo —marcado como
 buzón de reenvío cuando lo sea— y la fecha. Y ofrece tres salidas:
 
@@ -169,8 +188,8 @@ buzón de reenvío cuando lo sea— y la fecha. Y ofrece tres salidas:
 3. **Rechazar.**
 
 La aprobación es una sola operación indivisible: crea o localiza la persona, le
-pone `tiene_cuenta`, rol e identificador de Apple, y marca la solicitud. Si algo
-falla, no queda a medias.
+pone `tiene_cuenta`, rol e identificador de Apple, guarda la nota como atributo
+y marca la solicitud. Si algo falla, no queda a medias.
 
 **Dos casos que la operación tiene que rechazar con un mensaje claro**, porque
 ocurrirán: que la solicitud ya la haya resuelto el otro administrador mientras
@@ -272,15 +291,25 @@ La aplicación estará en la App Store y cualquiera puede descargarla, así que
 cualquiera puede llamar a la puerta. Tres frenos, ninguno complicado:
 
 - **Una solicitud por identificador de Apple.** Insistir no multiplica nada.
-- **Un tope de pendientes simultáneas.** Superado, las nuevas se rechazan con un
-  mensaje neutro. Un techo bajo —del orden de veinte— es más que suficiente para
-  un hogar y convierte cualquier intento de inundación en ruido acotado.
+- **Diez pendientes simultáneas como mucho.** Superado el tope, las nuevas se
+  rechazan con un mensaje neutro. Es un techo deliberadamente bajo: en un hogar
+  llegarán tres solicitudes al año, y con ese margen cualquier intento de
+  inundar la bandeja se queda en ruido acotado. El precio es que, si alguna vez
+  se junta un grupo de verdad, hay que ir resolviendo para que quepan los
+  siguientes.
 - **El coste de entrada.** Cada solicitud exige una autorización real de Apple.
   No es una barrera infranqueable, pero descarta el abuso trivial.
 
-**Caducidad.** Las pendientes sin resolver se borran a los treinta días; las
-rechazadas, a los noventa. Se hace en la misma pasada de mantenimiento que ya
+**Caducidad.** Las pendientes sin resolver se borran a los catorce días; las
+rechazadas, a los treinta. Se hace en la misma pasada de mantenimiento que ya
 existe (`.github/workflows/mantenimiento.yml`), no con un proceso nuevo.
+
+Catorce días son pocos a propósito: los datos de alguien que quizá nunca entre
+duran lo mínimo, y una solicitud que lleva dos semanas sin mirarse ya no es una
+solicitud, es un descuido. La consecuencia hay que asumirla y decirla en la sala
+de espera: quien tarde más de dos semanas en avisarte por otra vía tendrá que
+volver a pedirlo. Como la vuelta a pedirlo cuesta un botón, el descuido se
+corrige solo.
 
 **Privacidad.** Se guarda el correo y el nombre declarado de gente que quizá
 nunca entre. Es poco, y es temporal, pero es dato personal de terceros y toca
@@ -312,11 +341,14 @@ la pantalla de baja lo diga con esas palabras.
 
 **La revisión de la App Store.** El revisor entrará con su propio Apple ID y
 acabará en la sala de espera, que desde fuera es indistinguible de una
-aplicación rota. Es una causa de rechazo perfectamente evitable: el modo de
-demostración ya existe y funciona sin cuenta, así que basta con que el botón sea
-visible en la pantalla de acceso —lo es— y con decirlo explícitamente en las
-notas de revisión. Conviene además que la propia sala de espera recuerde que se
-puede ver la demostración mientras tanto.
+aplicación rota. Es una causa de rechazo perfectamente evitable, y se cubre por
+dos vías a la vez: el botón de demostración está en la pantalla de acceso y
+vuelve a estar en la sala de espera (§5), de modo que no hay forma de quedarse
+encallado sin salida visible; y las notas de revisión lo dicen con todas las
+letras —que el alta requiere aprobación de una persona, y que la funcionalidad
+completa se evalúa desde la demostración—. Ninguna de las dos sobra: la primera
+sirve al revisor que no lee las notas, la segunda al que se pregunta si eso es
+un fallo.
 
 **Quedarse sin administradores.** Ya está el aviso en el registro cuando se da de
 baja la última cuenta administradora, pero con este flujo el efecto se agrava:
@@ -346,12 +378,28 @@ que es: una sentencia contra D1 desde `wrangler`, en
 
 ---
 
-## 13. Decisiones pendientes
+## 13. Qué toca al implementar
 
-1. **El tope de pendientes simultáneas.** Se propone veinte.
-2. **Si la nota debe llegar también a la ficha de la persona al aprobarla.** Hoy
-   se descarta con la solicitud; podría conservarse como `atributo_persona`, y
-   quizá merezca la pena para un «es el primo de Ana» que dentro de dos años ya
-   no recordará nadie.
-3. **Si la sala de espera debe ofrecer la demostración**, o si mezclar ambas
-   cosas confunde más que ayuda.
+Ningún punto de diseño queda abierto. El trabajo se reparte así:
+
+| Dónde | Qué |
+|---|---|
+| `api/migraciones/` | Tabla `solicitud_acceso` |
+| `api/src/apple.js` | Normalizar `email_verified`; recoger `is_private_email` |
+| `api/src/sesion.js` | El `tipo` del token y la sesión de espera |
+| `api/src/index.js` | Las cinco rutas nuevas y el estado de `/api/sesion` |
+| `api/src/repositorio.js` | Aprobar y rechazar, en una sola transacción |
+| `api/src/filtrado.js` | El recuento de pendientes, solo para administradores |
+| `pwa/publico/js/sesion.js`, `native.js` | Añadir `email` al ámbito de Apple |
+| `pwa/publico/js/app.js` | Formulario de solicitud y sala de espera |
+| `pwa/publico/js/vistas/familia.js` | La bandeja; retirar el campo del identificador |
+| `pwa/publico/privacidad.html` | Qué se guarda de quien solicita, y cuánto dura |
+| `docs/despliegue-cloudflare.md` | Recuperación si no queda ningún administrador |
+| `.github/workflows/mantenimiento.yml` | La purga de caducadas |
+
+El campo «Identificador de Apple» de la ficha de persona desaparece de la
+interfaz. Era la contrapartida del flujo antiguo —el hueco donde se pegaba la
+cadena que el recién llegado había copiado— y con la bandeja no tiene ya ningún
+uso legítimo: el vínculo lo establece la aprobación, que es la única operación
+que sabe hacerlo sin romper la unicidad. La columna se queda; el campo editable,
+no.
