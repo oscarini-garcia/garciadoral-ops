@@ -16,7 +16,12 @@ import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, seleccion } from './u
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
 import { detener, estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
-import { cargarConfiguracion, entrarConApple } from './sesion.js';
+import {
+  cargarConfiguracion,
+  codigoDeAutorizacion,
+  eliminarLaCuenta,
+  entrarConApple,
+} from './sesion.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
 import {
   HORIZONTE_RECORDATORIOS_DIAS,
@@ -304,6 +309,7 @@ function abrirAjustes() {
     cuerpo.append(campo('Aspecto', tema));
 
     cuerpo.append(bloqueDeVersion());
+    cuerpo.append(bloqueLegal());
 
     const demostracion = estado().estado === 'demostracion';
     cuerpo.append(el('div', { class: 'acciones' }, [
@@ -312,7 +318,97 @@ function abrirAjustes() {
         onclick: () => salir(),
       }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
     ]));
+
+    // La baja no está en la demostración porque allí no hay cuenta que dar de
+    // baja: nada de lo que se ve ha salido nunca de este navegador.
+    if (!demostracion) {
+      cuerpo.append(el('button', {
+        class: 'enlace-discreto', type: 'button',
+        onclick: () => confirmarBaja(),
+      }, ['Eliminar mi cuenta']));
+    }
   });
+}
+
+/**
+ * Enlaces a la política de privacidad y al soporte.
+ *
+ * Van al dominio público y en pestaña nueva a propósito. Dentro de la cáscara,
+ * navegar a otra página se llevaría por delante la aplicación —no hay barra de
+ * direcciones ni botón de volver—, mientras que un enlace externo lo abre el
+ * sistema en Safari y la agenda se queda donde estaba.
+ */
+function bloqueLegal() {
+  const sitio = (configuracion.redireccion || window.location.origin).replace(/\/$/, '');
+  const enlace = (ruta, texto) => el('a', {
+    class: 'enlace-discreto', href: `${sitio}${ruta}`, target: '_blank', rel: 'noopener',
+  }, [texto]);
+
+  return el('p', { class: 'pista' }, [
+    enlace('/privacidad.html', 'Privacidad'),
+    ' · ',
+    enlace('/soporte.html', 'Ayuda y contacto'),
+  ]);
+}
+
+/**
+ * Eliminar la cuenta: qué se va, qué se queda y una confirmación.
+ *
+ * Tiene que poder hacerse desde aquí y sin escribir a nadie —es la directriz
+ * 5.1.1(v) de la App Store—, pero también tiene que contar la verdad. En un
+ * registro compartido, «mi cuenta» y «yo» no son lo mismo: se va el acceso, y
+ * quien se queda es la persona, con su cumpleaños y sus regalos, porque eso lo
+ * escribió el hogar y no es de uno solo.
+ */
+function confirmarBaja() {
+  const persona = sesionActual?.persona;
+
+  abrirHoja('Eliminar mi cuenta', (cuerpo) => {
+    cuerpo.append(el('p', {
+      texto: 'Se elimina tu acceso a la agenda: el vínculo con tu Apple ID, tus dispositivos, tus avisos y los permisos que tengas concedidos. Se avisa además a Apple para que deje de reconocer esta aplicación entre las tuyas.',
+    }));
+    cuerpo.append(el('p', {
+      class: 'pista',
+      texto: `Seguirás en la familia como ${persona?.nombre || 'miembro'} sin cuenta: tu cumpleaños, los regalos y lo que otras personas hayan escrito contigo se quedan, porque son del hogar y no solo tuyos. Para volver a entrar, alguien con permisos de administración tendrá que vincularte de nuevo.`,
+    }));
+
+    if (persona?.rol === 'administrador') {
+      cuerpo.append(el('p', {
+        class: 'pista', 'data-tono': 'aviso',
+        texto: 'Tienes permisos de administración. Si eres la única persona que los tiene, después de esto no quedará nadie que pueda vincular cuentas desde la aplicación.',
+      }));
+    }
+
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button', onclick: () => cerrarHoja(),
+      }, ['Cancelar']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+        onclick: (evento) => ejecutarBaja(evento.currentTarget),
+      }, ['Eliminar mi cuenta']),
+    ]));
+  });
+}
+
+async function ejecutarBaja(boton) {
+  boton.disabled = true;
+  boton.textContent = 'Eliminando…';
+
+  try {
+    // El código de autorización es lo único con lo que el Worker puede pedirle
+    // a Apple que revoque el vínculo. Si no se consigue —hoja cancelada, cáscara
+    // antigua sin el complemento—, la baja sigue: lo que no puede pasar es que
+    // alguien se quede sin poder darse de baja.
+    const codigo = await codigoDeAutorizacion(configuracion);
+    await eliminarLaCuenta(configuracion, sesionActual.token, codigo);
+    await salir();
+    avisar('Cuenta eliminada');
+  } catch (error) {
+    boton.disabled = false;
+    boton.textContent = 'Eliminar mi cuenta';
+    avisar(error.message || 'No se ha podido eliminar la cuenta.');
+  }
 }
 
 /**

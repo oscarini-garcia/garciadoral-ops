@@ -27,9 +27,23 @@ ORIGENES_PERMITIDOS = "https://garciadoral-ops.galoopa.store,http://localhost:87
 APPLE_AUD_WEB = "com.garciadoral.ops.web"
 APPLE_AUD_IOS = "com.garciadoral.ops"
 
+# La URL de retorno que la web declara ante Apple. Se repite aquí porque el
+# canje del código de autorización —el de la baja de cuenta— exige presentarla
+# otra vez, carácter a carácter. Debe ser idéntica a `redireccion` en
+# pwa/publico/config.json; `tests/test_configuracion.py` lo comprueba.
+REDIRECCION_WEB = "https://garciadoral-ops.galoopa.store"
+
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
 #   TOKEN_SERVICIO  · credencial del generador del plan semanal (AGENDA_TOKEN)
+#
+# Y los tres de la revocación ante Apple, que solo se usan al darse de baja. Sin
+# ellos la baja funciona igual —se deshace el vínculo aquí—, pero no se le avisa
+# a Apple, que es la mitad de la directriz 5.1.1(v) que no se ve. Consulte
+# docs/despliegue-cloudflare.md §4.5.
+#   APPLE_CLAVE_P8  · contenido del fichero .p8 de Sign in with Apple
+#   APPLE_CLAVE_ID  · identificador de esa clave (Key ID)
+#   APPLE_EQUIPO    · identificador del equipo de Apple Developer (Team ID)
 
 [observability]
 enabled = true

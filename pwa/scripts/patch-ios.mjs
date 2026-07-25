@@ -84,7 +84,36 @@ if (existsSync(rutaProyecto)) {
   }
 }
 
-// 3) Apuntar el storyboard al controlador nuevo.
+// 3) Declarar el cumplimiento de exportación en el Info.plist.
+//
+// Esta aplicación solo usa HTTPS, que es criptografía exenta, pero si no se
+// declara, App Store Connect pregunta por ella en **cada** subida y deja la
+// build retenida hasta que alguien conteste. Contestarlo aquí, una vez, ahorra
+// ese paso en todas las siguientes.
+//
+// Va en el parche y no a mano en Xcode porque `ios/` no se versiona: escrito a
+// mano se perdería en el siguiente `cap add ios`, y volvería la pregunta sin
+// que nadie recuerde por qué.
+const rutaPlist = join(APP_IOS, 'Info.plist');
+
+if (existsSync(rutaPlist)) {
+  const plist = readFileSync(rutaPlist, 'utf8');
+
+  if (plist.includes('ITSAppUsesNonExemptEncryption')) {
+    console.log('[patch-ios] El cumplimiento de exportación ya estaba declarado.');
+  } else {
+    const cierre = plist.lastIndexOf('</dict>');
+    if (cierre === -1) {
+      console.warn('[patch-ios] ⚠ Info.plist no tiene la forma esperada; declare la exportación en Xcode.');
+    } else {
+      const declaracion = '\t<key>ITSAppUsesNonExemptEncryption</key>\n\t<false/>\n';
+      writeFileSync(rutaPlist, plist.slice(0, cierre) + declaracion + plist.slice(cierre));
+      console.log('[patch-ios] Cumplimiento de exportación declarado ✅');
+    }
+  }
+}
+
+// 4) Apuntar el storyboard al controlador nuevo.
 const rutaStoryboard = join(APP_IOS, 'Base.lproj', 'Main.storyboard');
 
 if (existsSync(rutaStoryboard)) {

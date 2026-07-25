@@ -117,6 +117,11 @@ wrangler secret put SESION_SECRETO
 wrangler secret put TOKEN_SERVICIO
 ```
 
+Hay tres secretos más —`APPLE_CLAVE_P8`, `APPLE_CLAVE_ID` y `APPLE_EQUIPO`— que
+solo intervienen cuando alguien elimina su cuenta y que se registran en el paso
+4.5, porque salen de la cuenta de Apple Developer. Todo lo demás funciona sin
+ellos.
+
 El bloque `[vars]` de `api/wrangler.toml` ya viene relleno con los nombres de
 esta instalación; compruébelo antes de desplegar:
 
@@ -266,12 +271,54 @@ mal, la misma persona recibe dos identificadores y hay que vincular los dos.
 > una compilación nueva» y no deja entrar por mucho que se actualice la web. Si
 > ya hay versiones en TestFlight, esta es de las que obligan a subir binario.
 
-### 4.4 Nada de claves privadas
+### 4.4 Entrar no necesita ninguna clave privada
 
-Este diseño **no** necesita la clave `.p8` de Sign in with Apple ni el flujo de
+Para **el acceso**, este diseño no necesita la clave `.p8` ni el flujo de
 `client_secret`: el Worker verifica el `id_token` contra las claves públicas de
 Apple (`https://appleid.apple.com/auth/keys`) y con eso le basta. Un secreto
-menos que rotar.
+menos que rotar, y ningún fallo de firma posible en el camino por el que entra
+todo el mundo todos los días.
+
+Hay exactamente una cosa que sí la necesita, y es la del apartado siguiente.
+
+### 4.5 La clave para revocar, que solo se usa al darse de baja
+
+Apple no se conforma con que la aplicación olvide a quien elimina su cuenta:
+exige que **se le avise a Apple**, mediante el endpoint de revocación de su API
+REST, para que esta aplicación desaparezca de la lista de «Apps que usan tu
+Apple ID». Es la mitad invisible de la directriz 5.1.1(v) y el único punto del
+sistema que pide una clave privada.
+
+1. En <https://developer.apple.com/account> → **Certificates, Identifiers &
+   Profiles → Keys → +**.
+2. Nómbrela «Agenda Familiar — revocación», marque **Sign in with Apple** y en
+   *Configure* elija como *Primary App ID* el `com.garciadoral.ops` del paso 4.1.
+3. Descargue el `.p8`. **Solo se descarga una vez**; si lo pierde hay que
+   revocar la clave y crear otra.
+4. Anote el **Key ID** que muestra la ficha y el **Team ID**, que está arriba a
+   la derecha de la cuenta.
+
+```bash
+cd api
+wrangler secret put APPLE_CLAVE_P8   # pegue el contenido entero del .p8, cabeceras incluidas
+wrangler secret put APPLE_CLAVE_ID   # el Key ID: diez caracteres
+wrangler secret put APPLE_EQUIPO     # el Team ID: diez caracteres
+```
+
+> **La baja funciona igual sin estos tres secretos.** Si faltan, el Worker
+> deshace el vínculo aquí y anota en su log que no pudo avisar a Apple. Es
+> deliberado: la regla que no se puede incumplir es que eliminar la cuenta sea
+> siempre posible, y un servidor ajeno que no responde no puede impedirlo. Pero
+> configúrelos antes de enviar a revisión: sin ellos se cumple media directriz.
+
+**Por qué el código de autorización se pide al darse de baja y no al entrar.**
+Para revocar hace falta un `refresh_token`, y para obtenerlo hay que canjear un
+código de autorización de Apple. Lo natural sería canjearlo al iniciar sesión y
+guardarlo, lo que significaría meter una llamada de red más —y un fallo más— en
+el camino más frágil del sistema, y guardar en la base un secreto de larga vida
+por cada persona. Como darse de baja es raro, la aplicación abre la hoja de
+Apple en ese momento: el acceso no se toca, no se almacena nada, y volver a
+identificarse justo antes de una acción irreversible es lo que uno espera.
 
 ---
 
@@ -639,6 +686,126 @@ persona, su aviso pendiente desaparece con él.
 > valor por defecto para todo el mundo y con la misma antelación. Poder
 > configurarlo por evento, como pide la especificación, es el paso siguiente.
 
+### 8.3 Enviar a la App Store
+
+Subir el binario **no es publicarlo**: lo deja en App Store Connect esperando
+una ficha. Este apartado es esa ficha, y las tres cosas de esta aplicación en
+concreto que hacen que la revisión se tuerza.
+
+#### Lo que ya está resuelto en el repositorio
+
+| Requisito | Dónde |
+|---|---|
+| Eliminar la cuenta desde la app (5.1.1(v)) | Ajustes → **Eliminar mi cuenta** |
+| Revocación del token ante Apple | Paso 4.5; sin la clave, la baja funciona pero no avisa |
+| Política de privacidad | `/privacidad.html`, servida por Pages |
+| Página de soporte | `/soporte.html` |
+| Cumplimiento de exportación | `patch-ios.mjs` lo declara en el `Info.plist` |
+
+Antes de archivar, revise que el correo de contacto de `soporte.html` es el que
+quiere hacer público: esa página la lee cualquiera.
+
+#### El obstáculo de verdad: el revisor no puede entrar
+
+Aquí el acceso es por invitación. Quien pulsa «Entrar con Apple» con un
+identificador que no está vinculado a ninguna persona recibe `sin_vincular`, y
+eso es exactamente lo que le va a pasar al equipo de revisión. Sin más, es un
+rechazo por la directriz 2.1 con el texto de siempre: «no pudimos acceder a la
+funcionalidad de la aplicación».
+
+La salida está construida desde el principio y es el **modo de demostración**:
+datos inventados, sin servidor, con el recorte por titular funcionando a la
+vista. Va dentro del binario porque `npm run sync:ios` ejecuta antes
+`preparar-pwa.py`. Lo único que hay que hacer es decirlo en las notas de
+revisión, y decirlo en inglés, que es lo que lee quien revisa:
+
+> This is a private family organiser. Accounts are not self-service: a household
+> administrator links an Apple ID to a family member before that person can sign
+> in, so there is no demo account we can provide.
+>
+> To review the full app without an account, tap **"Ver una demostración con
+> datos de ejemplo"** on the sign-in screen and pick any of the family members.
+> The same week shows different content depending on who is looking — that is
+> the core feature: gift plans stay hidden from their recipient.
+>
+> Account deletion (guideline 5.1.1(v)) lives in **Settings (gear icon, top
+> right) → "Eliminar mi cuenta"**. It requires a signed-in account, so it is not
+> reachable from the demo. It unlinks the Apple ID, deletes devices,
+> notification preferences and permissions, and calls the Sign in with Apple
+> REST API to revoke the token.
+>
+> Native capabilities in use: Sign in with Apple (native sheet), haptics, the
+> system share sheet, and local notifications scheduled on-device — reminders
+> never leave the phone.
+
+Ese último párrafo no es relleno: la **4.2** (funcionalidad mínima) es el otro
+riesgo real de una aplicación que por dentro es una web, y conviene ponerle
+delante la lista de lo que sí es nativo antes de que la busquen.
+
+#### La ficha, campo a campo
+
+- **Nombre**: «Agenda Familiar». **Subtítulo**: la semana, los regalos y la gente.
+- **Categoría**: Productividad; secundaria, Estilo de vida.
+- **URL de política de privacidad**:
+  `https://garciadoral-ops.galoopa.store/privacidad.html`.
+- **URL de soporte**: `https://garciadoral-ops.galoopa.store/soporte.html`.
+  Las dos son obligatorias y Apple las comprueba: un 404 aquí es un rechazo sin
+  llegar a revisión. `tests/test_configuracion.py` comprueba que los ficheros
+  existen; que Pages los sirva, compruébelo con `curl` una vez desplegado.
+- **Clasificación por edades**: sin contenido sensible; 4+.
+- **Capturas**: obligatorias las de 6,9″. Sáquelas del **modo de demostración**,
+  nunca de la agenda real: son públicas y con datos del hogar dejarían de serlo.
+- **Derechos de autor** y **datos de contacto**: los suyos.
+
+#### Privacidad de la ficha (*App Privacy*)
+
+Se declara lo que realmente se recoge, que es poco:
+
+| Dato | Uso | ¿Vinculado a la identidad? | ¿Rastreo? |
+|---|---|---|---|
+| Identificador de usuario (el `sub` de Apple) | Funcionalidad de la app | Sí | No |
+| Otro contenido del usuario (la agenda) | Funcionalidad de la app | Sí | No |
+
+No se recoge correo electrónico —el token se pide con `scope: 'name'` y el
+Worker no guarda el que venga—, no hay analítica, no hay publicidad y no hay
+rastreo, de modo que no hace falta *App Tracking Transparency*. La aplicación
+tampoco recoge identificador de dispositivo: la columna `dispositivo` se rellena
+con un valor derivado de la propia persona.
+
+#### Números de versión
+
+`pwa/package.json` gobierna el **OTA** y no toca el binario. Los de la ficha son
+los de Xcode, y son otros dos:
+
+- `MARKETING_VERSION` (*Version*): lo que ve el público, `1.0` la primera vez.
+- `CURRENT_PROJECT_VERSION` (*Build*): tiene que **subir en cada subida**, aunque
+  no cambie nada más. App Store Connect rechaza una build repetida.
+
+Conviene que la versión de marketing acompañe a la del bundle cuando se suba
+binario, para que un informe de fallos se pueda situar.
+
+#### El orden
+
+1. TestFlight interno primero, en un iPhone real: la hoja nativa de Apple no se
+   comporta igual en el simulador.
+2. Recorra desde el teléfono: entrar, sincronizar, un aviso local, compartir un
+   evento y **eliminar la cuenta**. Después vuelva a vincularse con el `UPDATE`
+   del paso 6, que es también el ensayo de la recuperación.
+3. Rellene la ficha, adjunte las notas de revisión de arriba y envíe.
+4. La primera revisión suele tardar entre uno y tres días.
+
+Si llega un rechazo, casi siempre es de los dos de este apartado —2.1 porque no
+supieron entrar, 4.2 porque les pareció una web envuelta—. Los dos se responden
+en el mismo hilo de *Resolution Center* señalando el modo de demostración y la
+lista de capacidades nativas; no hace falta subir binario nuevo para contestar.
+
+#### Después
+
+Publicada la aplicación, el trámite desaparece del día a día: los cambios de la
+parte web siguen yendo por OTA sin pasar por revisión (apartado 8.1), y solo un
+cambio nativo obliga a volver por aquí. Cuando eso ocurra, la revisión de una
+actualización es bastante más rápida que la primera.
+
 ---
 
 ## 9. Comprobaciones finales
@@ -753,3 +920,5 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 12. Recorrer la lista de comprobaciones del apartado 9.
 13. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
     la app dos veces.
+14. Para publicar: los tres secretos de revocación del paso 4.5, la ficha de App
+    Store Connect y las notas de revisión del apartado 8.3.

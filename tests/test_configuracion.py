@@ -68,6 +68,17 @@ class Configuracion(unittest.TestCase):
         self.assertFalse(redireccion.endswith("/"), redireccion)
         self.assertEqual(redireccion, redireccion.lower(), redireccion)
 
+    def test_la_url_de_retorno_es_la_misma_en_la_web_y_en_el_worker(self):
+        """El canje del código de autorización la vuelve a exigir.
+
+        Al darse de baja, el Worker presenta esta URL ante Apple para canjear el
+        código y poder revocar el vínculo. Apple la compara entera con la que se
+        usó al firmar; si las dos copias divergen, la baja funciona —el vínculo
+        se deshace aquí— pero la revocación falla en silencio, que es justo la
+        mitad de la directriz 5.1.1(v) que nadie ve fallar.
+        """
+        self.assertEqual(self.pwa["redireccion"], self.vars["REDIRECCION_WEB"])
+
     def test_no_quedan_marcadores_de_ejemplo(self):
         """Un bundle con marcadores dejaría los teléfonos apuntando a una API
         inexistente, y el OTA se aplica solo. El workflow `ota` también lo
@@ -96,6 +107,38 @@ class Configuracion(unittest.TestCase):
             r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$",
             self.capacitor["appId"],
         )
+
+
+class PaginasDeLaFicha(unittest.TestCase):
+    """Las dos páginas que la ficha de la App Store enlaza.
+
+    App Store Connect exige una URL de política de privacidad y una de soporte, y
+    las comprueba: si alguna devuelve 404 el envío se rechaza sin llegar a
+    revisarse. Son ficheros estáticos que nadie visita durante el desarrollo, de
+    modo que renombrarlos o moverlos no rompe nada visible hasta el peor momento.
+    """
+
+    PAGINAS = ("privacidad.html", "soporte.html")
+
+    def test_las_paginas_enlazadas_desde_la_ficha_existen(self):
+        for nombre in self.PAGINAS:
+            with self.subTest(nombre):
+                self.assertTrue((RAIZ / "pwa" / "publico" / nombre).is_file(), nombre)
+
+    def test_las_paginas_estan_en_utf8_y_lo_declaran(self):
+        """Los acentos deben llegar al navegador como los escribimos."""
+        for nombre in self.PAGINAS:
+            with self.subTest(nombre):
+                texto = (RAIZ / "pwa" / "publico" / nombre).read_text(encoding="utf-8")
+                self.assertIn('<meta charset="utf-8">', texto)
+
+    def test_la_privacidad_explica_como_eliminar_la_cuenta(self):
+        """La directriz 5.1.1(v) exige que se pueda eliminar la cuenta desde la
+        aplicación, y la revisión busca dónde se dice. Aquí solo se comprueba que
+        el documento no se ha quedado sin esa parte.
+        """
+        texto = (RAIZ / "pwa" / "publico" / "privacidad.html").read_text(encoding="utf-8")
+        self.assertIn("Eliminar mi cuenta", texto)
 
 
 if __name__ == "__main__":
