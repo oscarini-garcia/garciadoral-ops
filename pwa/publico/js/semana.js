@@ -13,9 +13,12 @@
 
 export const INICIALES_DIA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+// Los meses van con mayúscula inicial: en la aplicación no aparecen dentro de
+// una frase sino como rótulo —«20 – 26 de Julio de 2026», «Julio de 2026»—, y
+// ahí la mayúscula los separa del resto de la línea de un vistazo.
 export const MESES_LARGOS = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
 export const TECHO_EVENTOS_DIA = 3;

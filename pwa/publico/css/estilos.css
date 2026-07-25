@@ -166,19 +166,21 @@ button { background: none; border: 0; cursor: pointer; }
   border-bottom: 1px solid var(--line);
   padding: max(10px, env(safe-area-inset-top)) 20px 0;
 }
-.cabecera-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-/* El título se queda con el hueco sobrante y empuja al indicador y a los
-   ajustes contra el borde, que es donde se buscan. */
-.cabecera-fila .titulo-pantalla { margin-right: auto; }
+.cabecera-fila { display: flex; align-items: baseline; gap: 12px; }
 .titulo-pantalla {
   font-family: var(--serif);
   font-weight: 500; font-size: 26px; letter-spacing: -.01em;
 }
+/* La agenda no pone título: allí la cabecera se queda con el indicador y los
+   ajustes, que van igualmente contra el borde porque quien empuja es el
+   indicador y no el título. */
+.titulo-pantalla:empty { display: none; }
 .subcabecera { display: flex; align-items: center; gap: 8px; padding: 8px 0 10px; flex-wrap: wrap; }
 .subcabecera:empty { padding: 0 0 10px; }
 
 .sync {
   display: inline-flex; align-items: center; gap: 6px;
+  margin-left: auto;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
   color: var(--ink-faint);
 }
@@ -266,6 +268,14 @@ button { background: none; border: 0; cursor: pointer; }
    número del día, solo, no dice en qué punto del calendario está uno. */
 .agenda-controles { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .periodo { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.vistas { display: flex; align-items: center; gap: 8px; }
+/* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
+.boton-hoy {
+  min-height: 36px; padding: 5px 15px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper-2);
+  font-size: 14.5px; color: var(--ink-soft);
+}
+.boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
 .periodo-titulo {
   font-family: var(--serif);
   font-weight: 500; font-size: 20px; letter-spacing: -.01em;
@@ -295,12 +305,12 @@ button { background: none; border: 0; cursor: pointer; }
 .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .dia[data-hoy="si"] .dia-numero { color: var(--tinta); }
 .dia-contenido { display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: center; }
-/* El hueco de un día vacío ocupa la fila entera: es la superficie sobre la que
-   se hace el doble clic que crea el evento de ese día. */
+/* El hueco de un día vacío ocupa todo su lado de la fila, que entera es la
+   superficie del doble toque con el que se crea el evento de ese día. */
 .dia-vacio {
   align-self: stretch;
   display: flex; align-items: center;
-  min-height: 28px; width: 100%; text-align: left;
+  min-height: 28px;
   color: var(--ink-faint); font-size: 15px;
 }
 

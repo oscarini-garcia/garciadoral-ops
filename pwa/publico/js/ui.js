@@ -111,7 +111,8 @@ export const hayHojaAbierta = () => Boolean(cerrarActual);
  * eso, deslizar desde encima de un evento abriría su detalle al soltar.
  */
 export function deslizarHorizontal(nodo, alDeslizar) {
-  const MINIMO = 48;
+  // Recorrido mínimo para que cuente como gesto y no como un toque con pulso.
+  const MINIMO = 24;
   const DOMINANCIA = 1.4;
   const GRACIA = 400;
 
@@ -137,6 +138,28 @@ export function deslizarHorizontal(nodo, alDeslizar) {
     evento.stopPropagation();
   }, true);
 
+  return nodo;
+}
+
+/**
+ * Doble toque sobre un nodo, contando los clics a mano.
+ *
+ * No se usa el evento `dblclick`: en la cáscara de iOS no llega —el doble toque
+ * lo consume el propio sistema, que ya tiene el zoom desactivado— y lo que sí
+ * llega, siempre y en todas partes, son dos `click` seguidos. Se cuelga del
+ * contenedor y no de cada hijo, de modo que los dos toques cuentan aunque el
+ * segundo caiga unos píxeles más allá, sobre otra pieza de la misma fila.
+ */
+export function dobleToque(nodo, accion, { ventana = 400 } = {}) {
+  let anterior = 0;
+  nodo.addEventListener('click', (evento) => {
+    // El teclado no tiene doble clic: Enter y Espacio llegan como un clic sin
+    // botón detrás (`detail` a cero) y valen por sí solos.
+    if (evento.detail === 0) { accion(); return; }
+    const ahora = performance.now();
+    if (ahora - anterior < ventana) { anterior = 0; accion(); return; }
+    anterior = ahora;
+  });
   return nodo;
 }
 

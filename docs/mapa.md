@@ -88,7 +88,7 @@ tener que recorrer la aplicación entera cada vez.
   listarSolicitudes · resolverSolicitud · sincronizar
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · abrirHoja · cerrarHoja · hayHojaAbierta
-  deslizarHorizontal · avisar · …y 4 más
+  deslizarHorizontal · dobleToque · …y 5 más
 
 ### `pwa/publico/js/vistas/` · Las cuatro secciones de la aplicación
 

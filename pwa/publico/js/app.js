@@ -42,7 +42,10 @@ import { pintarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
-  semana: { titulo: 'Semana', pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
+  // La agenda no repite su nombre en la cabecera: la vista en la que se está
+  // ya se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es
+  // lo único de esa pantalla que cambia.
+  semana: { titulo: '', pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirCapturaDeIdea(ctx) },
   familia: { titulo: 'Familia', pintar: pintarFamilia, fab: (ctx) => abrirCapturaDeIdea(ctx) },
   // En las pantallas sin acción de creación el botón no aparece.
