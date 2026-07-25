@@ -239,12 +239,18 @@ despachador, del que reutiliza el transporte y el mapa de destinatarios.
 afectada y las posteriores a la primera llevan `(cont.)`, que es la misma regla
 que la vista de semana de la aplicación (`ux.md` §10.2).
 
-**El almacenamiento del registro canónico** (§12.1) sigue abierto, y por eso la
-lectura está aislada en `agenda/fuente.py`: admite fichero o URL, y fijar el
-almacenamiento más adelante no toca nada más. El generador del plan es un lector
-de servidor de confianza, de modo que leer la fuente entera y filtrar por
-destinatario es correcto; el requisito de «filtrar antes de transmitir» afecta a
-los dispositivos de la aplicación, no a él.
+**El almacenamiento del registro canónico** (§12.1) quedó cerrado al construir la
+API: el registro vive en D1 y el Worker lo sirve entero en `GET /api/registro`,
+de donde lo lee el generador del plan apuntando `AGENDA_URL` a esa ruta. Haber
+aislado la lectura en `agenda/fuente.py` es justo lo que hizo barato el cambio:
+el módulo admite fichero o URL y no hubo que tocar nada más. El generador del
+plan es un lector de servidor de confianza, de modo que leer la fuente entera y
+filtrar por destinatario es correcto; el requisito de «filtrar antes de
+transmitir» afecta a los dispositivos de la aplicación, no a él.
+
+`specs/plan-semanal.md` §12 sigue listando esta decisión, y las otras dos de ese
+apartado, como pendientes. Es el estado del documento cuando se escribió; las
+tres se resolvieron después y lo resuelto es lo que hay en este apartado.
 
 **El ancho de línea del mensaje** no estaba fijado. Se recorta a unas 42
 columnas, contando los emojis como dos: una línea más larga se parte en la
@@ -294,6 +300,14 @@ ocupa la jornada completa. Lo que falta es la parte configurable —la tabla
 `preferencia_notificacion` existe en el esquema pero ni se sirve al cliente ni
 hay pantalla para tocarla—, de modo que hoy vale su valor por defecto: el
 recordatorio activo y los avisos de modificación desactivados.
+
+**Los conflictos se conservan pero no se señalan.** Cuando dos personas escriben
+a la vez sobre el responsable de compra o el estado de un regalo, el Worker
+guarda la versión descartada en `conflicto` y la sirve en `GET /api/conflictos` a
+quien administra. Ahí se acaba el camino: ninguna vista de la aplicación consume
+esa ruta. La especificación pide conservar **y señalar para revisión**
+(`specs/especificacion.md` §9); hoy solo se cumple la primera mitad, de modo que
+un conflicto queda registrado donde nadie lo mira. Falta la pantalla, no el dato.
 
 La cáscara de iOS no se ha generado aquí: `npx cap add ios` hace `pod install` y
 eso solo funciona en macOS. Los pasos están en `pwa/README.md` y en el apartado 8
