@@ -13,7 +13,6 @@
 
 export const INICIALES_DIA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-export const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 export const MESES_LARGOS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
@@ -61,12 +60,26 @@ export function diasDeLaSemana(lunes) {
   return Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
 }
 
+/**
+ * Rango de la semana, con el mes escrito entero y el año.
+ *
+ * El mes va con su nombre completo y no abreviado: «20 – 26 de julio de 2026»
+ * se lee de un vistazo, mientras que «jul» hay que descifrarlo. Y el año
+ * importa, porque sin él el rótulo no dice de cuándo se está hablando en cuanto
+ * uno se aleja unos meses del presente; se escribe una sola vez salvo que la
+ * semana cambie de año, que es el único caso en que hacen falta los dos.
+ */
 export function formatearRango(lunes) {
   const domingo = sumarDias(lunes, 6);
-  if (lunes.getMonth() === domingo.getMonth()) {
-    return `${lunes.getDate()} – ${domingo.getDate()} ${MESES[domingo.getMonth()]}`;
+  const mes = (fecha) => MESES_LARGOS[fecha.getMonth()];
+  if (lunes.getFullYear() !== domingo.getFullYear()) {
+    return `${lunes.getDate()} de ${mes(lunes)} de ${lunes.getFullYear()}`
+      + ` – ${domingo.getDate()} de ${mes(domingo)} de ${domingo.getFullYear()}`;
   }
-  return `${lunes.getDate()} ${MESES[lunes.getMonth()]} – ${domingo.getDate()} ${MESES[domingo.getMonth()]}`;
+  if (lunes.getMonth() === domingo.getMonth()) {
+    return `${lunes.getDate()} – ${domingo.getDate()} de ${mes(domingo)} de ${domingo.getFullYear()}`;
+  }
+  return `${lunes.getDate()} de ${mes(lunes)} – ${domingo.getDate()} de ${mes(domingo)} de ${domingo.getFullYear()}`;
 }
 
 export function formatearHora(momento) {
