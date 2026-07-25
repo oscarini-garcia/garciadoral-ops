@@ -19,6 +19,13 @@ y no se conoce hasta el paso 2:
 |---|---|---|
 | `EJEMPLO` | Su subdominio de `workers.dev` | `garciadoral` |
 
+Que esos tres ficheros sigan contando la misma historia lo comprueba
+`tests/test_configuracion.py` en cada empujón: el Services ID de la web contra el
+que admite el Worker, el identificador del paquete contra el suyo, y la URL de
+retorno contra los orígenes admitidos. Es una discrepancia que no rompe nada al
+desplegar y aparece más tarde, en el dispositivo, como un `invalid_client` o un
+error de CORS sin explicación.
+
 ---
 
 ## 0. Lo que hace falta antes de empezar
@@ -199,32 +206,36 @@ Ese Services ID es el que va en `APPLE_AUD_WEB` y en `pwa/publico/config.json`.
 > porque en nativo la audiencia es el identificador del paquete y no hace falta
 > dominio ninguno.
 
-### 4.3 Pendiente: el acceso con Apple dentro de la cáscara de iOS
+### 4.3 Dos caminos hacia el mismo token
 
-Esto está sin resolver y conviene saberlo antes de subir nada a TestFlight.
+Conviene entenderlo antes de depurar el primer acceso, porque el botón es el
+mismo pero por dentro no lo es.
 
-En el navegador, el acceso funciona: la web pide el token con el SDK de Apple en
-ventana emergente, desde el origen `https://garciadoral-ops.galoopa.store`, que
-es el que se declara arriba. Dentro de la cáscara de Capacitor, en cambio, la
-misma web se sirve desde el origen `capacitor://localhost`, y `app.js` llama al
-mismo `entrarConApple` de `sesion.js`. Ese origen no se puede registrar como
-*Return URL* en Apple, así que el flujo de ventana emergente no tiene a dónde
-volver.
+En el navegador, la web pide el token con el SDK de Apple en ventana emergente,
+con el Services ID como cliente y `https://garciadoral-ops.galoopa.store` como
+URL de retorno. Dentro de la cáscara de iOS ese camino no cabe: allí la web se
+sirve desde el origen `capacitor://localhost`, que Apple no admite como *Return
+URL*, de modo que la ventana emergente no tendría a dónde volver. La cáscara usa
+la hoja nativa, que no necesita origen ni dominio verificado porque se identifica
+con el paquete.
 
-El repositorio no trae hoy ningún complemento nativo de Sign in with Apple —las
-dependencias de `pwa/package.json` son háptica, compartir y el actualizador—, de
-modo que el botón, tal cual, fallará en el teléfono aunque funcione en el
-navegador.
+`sesion.js` elige solo según `esNativo()`, y el canje contra la API es el mismo
+en los dos casos. La diferencia se ve en las trazas del Worker:
 
-Las salidas, de menor a mayor cambio: añadir un complemento nativo de Sign in
-with Apple y usarlo cuando `esNativo()` sea cierto, que es lo que se suele hacer;
-o cambiar el flujo web al de redirección en lugar de ventana emergente; o hacer
-que la cáscara cargue la web del dominio con `server.url`, lo que devolvería el
-origen correcto pero renunciaría al bundle local y al OTA. No es una decisión de
-despliegue, así que aquí solo queda anotada.
+| Dónde | Cliente ante Apple | Audiencia del token |
+|---|---|---|
+| Navegador | Services ID | `APPLE_AUD_WEB` |
+| Cáscara de iOS | el paquete, implícito | `APPLE_AUD_IOS` |
 
-Nada de esto afecta al acceso desde el navegador, que es lo que se pone en marcha
-en los pasos 4 y 5.
+Las dos audiencias están admitidas y desembocan en el **mismo** `sub`, siempre
+que el Services ID tenga ese App ID como *Primary* (paso 4.2). Si se configura
+mal, la misma persona recibe dos identificadores y hay que vincular los dos.
+
+> **El acceso nativo no llega por OTA.** El complemento
+> `@capacitor-community/apple-sign-in` es código nativo: entra en el binario, no
+> en el bundle web. Una cáscara compilada sin él enseña el mensaje «hace falta
+> una compilación nueva» y no deja entrar por mucho que se actualice la web. Si
+> ya hay versiones en TestFlight, esta es de las que obligan a subir binario.
 
 ### 4.4 Nada de claves privadas
 
@@ -340,13 +351,12 @@ existe en el repositorio con sus instrucciones. Tras el empujón que lo publique
 curl -i https://garciadoral-ops.galoopa.store/.well-known/apple-developer-domain-association.txt
 ```
 
-> **Aquí `200` no basta, y este es el error que más tiempo hace perder.** Este
-> proyecto de Pages no tiene `404.html`, de modo que **cualquier ruta que no
-> exista devuelve `200` con el `index.html` de la aplicación**. Compruébelo:
-> `curl -o /dev/null -w '%{http_code}\n' https://garciadoral-ops.galoopa.store/esto-no-existe`
-> también responde `200`.
->
-> Lo que hay que mirar en la respuesta es la cabecera **`content-type`**:
+> **Mire el `content-type`, no solo el `200`.** Sin un `404.html`, Pages
+> devuelve `200` con el `index.html` de la aplicación para **cualquier** ruta que
+> no exista, y entonces esta comprobación da un falso positivo redondo: parece
+> que el fichero está publicado cuando no lo está. El repositorio incluye ya un
+> `pwa/publico/404.html` justamente para que eso no pase, pero la comprobación
+> fiable sigue siendo la misma, y vale con cualquier despliegue:
 >
 > - `text/plain` → el fichero se está sirviendo de verdad. Adelante.
 > - `text/html` → el fichero **no** está; le están devolviendo la aplicación.
@@ -510,7 +520,9 @@ npm run open:ios
 En Xcode:
 
 1. **Signing & Capabilities** → elija su *Team* y confirme el bundle id.
-2. Añada la capacidad **Sign in with Apple**.
+2. Añada la capacidad **Sign in with Apple**. No es opcional: sin ella el
+   complemento nativo del paso 4.3 falla al abrir la hoja, y el acceso desde el
+   teléfono no funciona aunque en el navegador vaya perfecto.
 3. *Any iOS Device* → **Product ▸ Archive** → **Distribute App ▸ App Store
    Connect ▸ Upload**.
 4. Pruebe en **TestFlight** (interno, casi sin revisión) antes de enviar a la
@@ -518,6 +530,12 @@ En Xcode:
 
 Ejecute en un teléfono real: Sign in with Apple no funciona bien en el simulador
 sin una cuenta de iCloud configurada.
+
+Comprobación de que el acceso nativo está bien montado: pulse **Entrar con
+Apple** en el teléfono. Debe salir la hoja del sistema —con Face ID o la
+contraseña de Apple—, no una ventana de navegador. Si aparece el mensaje «esta
+versión no trae el acceso con Apple», el complemento no entró en el binario:
+repita `npm install` y `npm run sync:ios` y vuelva a archivar.
 
 > `pwa/ios/` **no se versiona**: lo regenera `cap add ios`, y `pod install`
 > necesita macOS. Está en `pwa/.gitignore`.
@@ -539,6 +557,13 @@ Si no cambia la versión, no se publica nada: un empujón normal a `main` es
 inofensivo. Y si `config.json` todavía tiene marcadores `EJEMPLO`, el workflow
 falla a propósito antes de publicar: un bundle con ellos dejaría a todos los
 teléfonos apuntando a una API que no existe, y encima se aplicaría solo.
+
+**Lo que no viaja por OTA** es todo lo nativo: los complementos de Capacitor
+—háptica, compartir, el actualizador y el acceso con Apple—, los permisos, los
+iconos y cualquier cambio en `capacitor.config.json`. Añadir o quitar un
+complemento obliga a `npm install`, `npm run sync:ios` y una subida nueva a
+TestFlight. El código JavaScript que los invoca, en cambio, sí viaja: cambiar
+cómo se usa un complemento ya instalado es una actualización web normal.
 
 Solo hay que volver a Xcode cuando cambie algo **nativo**: un plugin nuevo, los
 iconos, los permisos o la versión de Capacitor.
@@ -566,6 +591,12 @@ error visible: es arruinar una sorpresa.
       verificar que llega.
 - [ ] En la app de iOS, subir la versión de `pwa/package.json`, mergear y
       comprobar que el cambio entra al abrirla por segunda vez.
+- [ ] Entrar con Apple **desde el navegador** y **desde el teléfono**, con la
+      misma cuenta, y comprobar que caen en la misma persona. Si el teléfono pide
+      vincular un identificador distinto, el Services ID no tiene ese App ID como
+      *Primary* (paso 4.2) y hay que corregirlo antes de dar de alta a nadie más.
+- [ ] Pedir una ruta que no exista —`/loquesea`— y comprobar que responde `404`,
+      no la aplicación con un `200`.
 
 ---
 

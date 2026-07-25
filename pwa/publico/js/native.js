@@ -137,6 +137,40 @@ export async function versionInstalada() {
   }
 }
 
+// ------------------------------------------------- Acceso con Apple --------
+
+/**
+ * Pide el token de identidad de Apple por la vía nativa.
+ *
+ * Dentro de la cáscara, la web se sirve desde el origen `capacitor://localhost`,
+ * que Apple no admite como *Return URL*: el flujo de ventana emergente que usa
+ * el navegador no tiene a dónde volver. La hoja nativa no necesita origen ni
+ * dominio verificado, porque valida contra el identificador del paquete.
+ *
+ * De ahí la diferencia que verá en las trazas del Worker: en el navegador el
+ * token llega con la audiencia del Services ID (`APPLE_AUD_WEB`) y aquí con la
+ * del paquete (`APPLE_AUD_IOS`). Las dos están admitidas y desembocan en el
+ * mismo `sub`, siempre que el Services ID tenga ese App ID como *Primary*.
+ *
+ * Devuelve `null` fuera de la cáscara o si el complemento no está instalado,
+ * para que quien llame pueda caer al camino web sin comprobar la plataforma.
+ */
+export async function tokenDeAppleNativo({ appleClienteWeb, redireccion } = {}) {
+  const acceso = plugin('SignInWithApple');
+  if (!esNativo() || !acceso) return null;
+
+  // En iOS estos dos campos no se usan —la hoja nativa se identifica sola con el
+  // paquete—, pero el complemento los exige en la firma y sí los aprovecha en su
+  // camino web. Se pasan los mismos valores que usaría el navegador.
+  const { response } = await acceso.authorize({
+    clientId: appleClienteWeb,
+    redirectURI: redireccion,
+    scopes: 'name',
+  });
+
+  return response?.identityToken ?? null;
+}
+
 // --------------------------------------------------------------- Arranque --
 
 /**
