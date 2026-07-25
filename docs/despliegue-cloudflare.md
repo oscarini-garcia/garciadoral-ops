@@ -227,8 +227,10 @@ vez que cambien los catálogos—:
 python3 herramientas/preparar-pwa.py
 ```
 
-Después, en el **panel de Cloudflare → Workers & Pages → Create → Pages →
-Connect to Git**:
+Después, en el **panel de Cloudflare → Workers & Pages → Create**. Aquí hay que
+ir con cuidado, porque el asistente ofrece **Workers** por defecto y Pages está
+en una pestaña aparte: **cambie a la pestaña «Pages»** y solo entonces
+*Connect to Git*.
 
 | Campo | Valor |
 |---|---|
@@ -240,6 +242,21 @@ Connect to Git**:
 
 No hay proceso de compilación: lo que se publica es literalmente el contenido de
 `pwa/publico`. Cada empujón a `main` republica.
+
+> **Cómo saber que se ha equivocado de producto.** Si en la configuración
+> aparecen los campos *Deploy command* y *Version command*, o si las pestañas del
+> proyecto son *Bindings*, *Observability* y *Domains*, lo que ha creado es un
+> Worker, no un proyecto de Pages. Un Worker así falla en la compilación con
+> `Could not detect a directory containing static files`: ejecuta
+> `npx wrangler deploy` en la raíz, donde no hay ningún `wrangler.toml` —el único
+> está en `api/`—, y se pone a buscar activos estáticos que en la raíz no existen.
+>
+> No lo arregle añadiendo un `wrangler.toml` con `[assets]`, aunque funcionaría
+> para servir la PWA: los dominios propios de un Worker exigen que la zona entera
+> esté alojada en Cloudflare, que es precisamente lo que aquí no interesa (5.2).
+> Pages, en cambio, admite un CNAME desde un DNS de fuera. Borre el Worker
+> —comparte espacio de nombres con los proyectos de Pages— y vuelva a crearlo en
+> la pestaña correcta.
 
 Anote la dirección que le asigna Pages —`agenda-familiar.pages.dev` o parecida—:
 hace falta en el paso siguiente.
@@ -477,6 +494,7 @@ error visible: es arruinar una sorpresa.
 | Apple responde `invalid_client` | La *Return URL* del Services ID y el campo `redireccion` de `config.json` no son idénticos. Compare carácter a carácter, incluida la barra final |
 | Apple no consigue verificar el dominio | El `.txt` no se está sirviendo. Lance el `curl` del paso 5.3: si da 404, aplique la reescritura con `_redirects` que allí se explica. Si da 301 o 302, Apple tampoco lo acepta |
 | El dominio propio no sale de «pending» en Pages | El CNAME no ha propagado o apunta a otro proyecto. `dig garciadoral-ops.galoopa.store CNAME` debe devolver su `pages.dev` |
+| `Could not detect a directory containing static files` | El proyecto es un Worker y no uno de Pages, o el *Build output directory* no es `pwa/publico`. Vea el aviso del paso 5.1 |
 | Se rompió la tienda de `galoopa.store` | Nada de este despliegue toca el apex. Revise si al añadir el CNAME se modificó por error el registro `A` que apunta a Shopify |
 | «Este identificador de Apple todavía no está vinculado» | Es el comportamiento correcto la primera vez: copie el identificador a la ficha (paso 6) |
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
