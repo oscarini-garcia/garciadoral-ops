@@ -53,7 +53,17 @@ function fijarEstado(estado, ultima = estadoActual.ultima) {
 
 // --------------------------------------------------------------- Arranque --
 
+// Con nombre, y no anónimos, porque `detener` tiene que poder retirarlos: sin
+// eso, cerrar sesión dejaría oyentes de una sesión anterior llamando a
+// `sincronizar` con un token que ya no vale.
+const alVolverLaRed = () => sincronizar();
+const alPerderLaRed = () => fijarEstado('sin-conexion');
+const alCambiarVisibilidad = () => {
+  if (document.visibilityState === 'visible') sincronizar();
+};
+
 export async function iniciar({ base, token, demostracion = false, inicial = null }) {
+  detener();
   configuracion = { base, token, demostracion };
 
   instantaneaActual = inicial || (await leerInstantanea());
@@ -65,14 +75,31 @@ export async function iniciar({ base, token, demostracion = false, inicial = nul
     return instantaneaActual;
   }
 
-  window.addEventListener('online', () => sincronizar());
-  window.addEventListener('offline', () => fijarEstado('sin-conexion'));
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') sincronizar();
-  });
+  window.addEventListener('online', alVolverLaRed);
+  window.addEventListener('offline', alPerderLaRed);
+  document.addEventListener('visibilitychange', alCambiarVisibilidad);
 
   await sincronizar();
   return instantaneaActual;
+}
+
+/**
+ * Deja el motor como recién cargado: sin oyentes, sin instantánea en memoria y
+ * sin suscriptores.
+ *
+ * Lo llama `iniciar` —para que entrar dos veces no apile oyentes ni
+ * suscriptores— y el cierre de sesión, que necesita además que no quede nada de
+ * la persona anterior en memoria. Lo que hay en disco lo borra `olvidarTodo`.
+ */
+export function detener() {
+  window.removeEventListener('online', alVolverLaRed);
+  window.removeEventListener('offline', alPerderLaRed);
+  document.removeEventListener('visibilitychange', alCambiarVisibilidad);
+
+  configuracion = { base: '', token: '', demostracion: false };
+  instantaneaActual = null;
+  estadoActual = { estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null };
+  suscriptores.clear();
 }
 
 // ------------------------------------------------------------- Escrituras --

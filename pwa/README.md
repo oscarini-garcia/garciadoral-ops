@@ -37,6 +37,7 @@ capacitor.config.json   · identidad de la app y ajustes de los plugins
 scripts/patch-ios.mjs   · quita el rebote del scroll en el proyecto generado
 publico/
   index.html            · armazón: acceso, cabecera, pantalla, pestañas
+                          la cabecera lleva el estado de sincronización y los ajustes
   404.html              · para que una ruta inexistente no devuelva la app
   config.json           · API, Services ID de Apple y manifiesto OTA
   manifest.webmanifest  · instalación como PWA
@@ -77,6 +78,11 @@ titulares. Lo que se cachea es el armazón; los datos viven en IndexedDB.
 
 **El botón de crear pertenece a la pantalla.** En la semana crea un evento, en
 Regalos y en Familia apunta una idea, y en Buscar no aparece.
+
+**Los ajustes viven en la cabecera, no en una quinta pestaña.** No son un sitio
+al que se vaya a hacer algo: se entra, se toca una cosa y se sale. Una pestaña
+les daría un peso que no tienen y se lo quitaría a las cuatro que sí. Dentro
+están el aspecto, la actualización de la app y el cierre de sesión.
 
 ---
 

@@ -98,32 +98,61 @@ async function urlDelManifiesto() {
  * Lee el manifiesto y, si hay versión nueva, la descarga y la deja lista para
  * la siguiente apertura. Devuelve el estado para poder enseñarlo en el panel.
  */
-export async function comprobarActualizacion() {
-  const actualizador = plugin('CapacitorUpdater');
-  if (!esNativo() || !actualizador) return { estado: 'no-aplica' };
+export async function comprobarActualizacion({ alAvanzar } = {}) {
+  const paso = (fase, datos = {}) => {
+    try {
+      alAvanzar?.({ fase, ...datos });
+    } catch {
+      /* que un fallo pintando no tumbe la actualización */
+    }
+    return { estado: fase, ...datos };
+  };
 
+  const actualizador = plugin('CapacitorUpdater');
+  if (!esNativo() || !actualizador) return paso('no-aplica');
+
+  let quitarOyente = null;
   try {
+    paso('comprobando');
     const actual = await actualizador.current();
+    const instalada = actual?.bundle?.version ?? null;
+
     const respuesta = await fetch(await urlDelManifiesto(), { cache: 'no-store' });
-    if (!respuesta.ok) return { estado: 'sin-manifiesto' };
+    if (!respuesta.ok) return paso('sin-manifiesto');
 
     const manifiesto = await respuesta.json(); // { version, url, checksum }
-    if (!manifiesto?.version || !manifiesto?.url) return { estado: 'sin-manifiesto' };
-    if (manifiesto.version === actual?.bundle?.version) {
-      return { estado: 'al-dia', version: actual?.bundle?.version };
+    if (!manifiesto?.version || !manifiesto?.url) return paso('sin-manifiesto');
+    if (manifiesto.version === instalada) return paso('al-dia', { version: instalada });
+
+    paso('hay-version', { version: manifiesto.version, instalada });
+
+    // El complemento emite el porcentaje mientras descarga. Es opcional: si esta
+    // versión no lo emite, la descarga sigue igual y solo se pierde el detalle.
+    try {
+      const oyente = await actualizador.addListener?.('download', ({ percent }) => {
+        paso('descargando', { version: manifiesto.version, porcentaje: percent });
+      });
+      quitarOyente = () => oyente?.remove?.();
+    } catch {
+      /* sin porcentaje */
     }
+    paso('descargando', { version: manifiesto.version });
 
     const bundle = await actualizador.download({
       url: manifiesto.url,
       version: manifiesto.version,
       checksum: manifiesto.checksum,
     });
+
+    paso('instalando', { version: manifiesto.version });
     // Se aplica en la próxima carga. `notifyAppReady` en el arranque es lo que
     // impide que la cáscara lo revierta por creerlo defectuoso.
     await actualizador.set(bundle);
-    return { estado: 'descargada', version: manifiesto.version };
+    return paso('descargada', { version: manifiesto.version });
   } catch (error) {
-    return { estado: 'error', detalle: String(error?.message ?? error) };
+    return paso('error', { detalle: String(error?.message ?? error) });
+  } finally {
+    quitarOyente?.();
   }
 }
 
