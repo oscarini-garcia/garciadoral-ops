@@ -2,11 +2,13 @@ name = "agenda-familiar-api"
 main = "src/index.js"
 compatibility_date = "2026-05-01"
 
-# Rellene database_id con el que devuelva `wrangler d1 create agenda-familiar`.
+# El binding es `DB` a propósito: es el nombre con el que el Worker la busca
+# (`env.DB`). No copie el que sugiere `wrangler d1 create`, que deriva del nombre
+# de la base de datos y dejaría al Worker sin encontrarla.
 [[d1_databases]]
 binding = "DB"
 database_name = "agenda-familiar"
-database_id = "PENDIENTE-DE-RELLENAR"
+database_id = "be25fff2-8d9a-4974-81af-331e7f2f1cca"
 
 [vars]
 # Orígenes desde los que se admite la PWA. Sin coincidencia no se emiten
