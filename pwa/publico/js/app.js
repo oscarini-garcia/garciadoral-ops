@@ -12,15 +12,18 @@
  * de evitar.
  */
 
-import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, seleccion } from './ui.js';
+import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, entrada, seleccion } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
 import { detener, estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
 import {
   cargarConfiguracion,
   codigoDeAutorizacion,
+  consultarSolicitud,
   eliminarLaCuenta,
   entrarConApple,
+  pedirEntrar,
+  retirarSolicitud,
 } from './sesion.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
 import {
@@ -61,6 +64,9 @@ async function arrancar() {
   const sesion = leerSesion();
   if (sesion?.demostracion) return arrancarDemostracion(sesion.observador);
   if (sesion?.token) return arrancarAplicacion(sesion);
+  // Quien dejó una solicitud vuelve a su sala de espera sin pasar otra vez por
+  // Apple, y de paso se comprueba sola si ya le han aprobado.
+  if (sesion?.espera) return volverALaEspera(sesion.espera);
   return mostrarAcceso();
 }
 
@@ -82,6 +88,7 @@ function registrarServiceWorker() {
 
 function mostrarAcceso(mensaje = null) {
   document.getElementById('aplicacion').hidden = true;
+  document.getElementById('espera').hidden = true;
   const acceso = document.getElementById('acceso');
   acceso.hidden = false;
 
@@ -92,24 +99,191 @@ function mostrarAcceso(mensaje = null) {
   const boton = document.getElementById('botonApple');
   boton.onclick = async () => {
     try {
-      const { token, persona } = await entrarConApple(configuracion);
+      const respuesta = await entrarConApple(configuracion);
+
+      // Sin cuenta no hay error que mostrar: es el estado normal de quien acaba
+      // de descargarse la aplicación, y lo que toca es la sala de espera.
+      if (respuesta.estado !== 'activa') {
+        acceso.hidden = true;
+        guardarSesion({ espera: respuesta.token_espera });
+        return pintarEspera(respuesta.token_espera, respuesta);
+      }
+
       // Se descarta cualquier instantánea anterior: el almacén local pertenece
       // a un titular concreto y no debe sobrevivir a un cambio de persona.
       await olvidarTodo();
-      guardarSesion({ token, persona });
+      guardarSesion({ token: respuesta.token, persona: respuesta.persona });
       acceso.hidden = true;
-      await arrancarAplicacion({ token, persona });
+      await arrancarAplicacion(respuesta);
     } catch (error) {
-      mostrarAcceso(
-        error.identificador
-          ? `${error.message} El identificador que hay que vincular es ${error.identificador}.`
-          : error.message,
-      );
+      mostrarAcceso(error.message);
     }
   };
   boton.onkeydown = (evento) => { if (evento.key === 'Enter' || evento.key === ' ') boton.click(); };
 
   document.getElementById('botonDemo').onclick = () => elegirObservadorDemo();
+}
+
+// ---------------------------------------------------------- Sala de espera --
+
+/**
+ * Vuelve a la sala de espera al abrir la aplicación, y de paso pregunta.
+ *
+ * Si la aprobación llegó mientras tanto, la API lo dice y aquí solo queda
+ * mandar a esa persona por la puerta de siempre: entrar con Apple otra vez,
+ * ahora ya con cuenta. Si la credencial ha caducado —dura siete días— se vuelve
+ * a la pantalla de acceso sin drama.
+ */
+async function volverALaEspera(token) {
+  try {
+    const situacion = await consultarSolicitud(configuracion, token);
+    if (situacion.estado === 'activa') {
+      borrarSesion();
+      return mostrarAcceso('Ya tienes acceso. Vuelve a entrar con Apple.');
+    }
+    return pintarEspera(token, situacion);
+  } catch {
+    borrarSesion();
+    return mostrarAcceso();
+  }
+}
+
+const TEXTO_ESPERA = {
+  pendiente: {
+    titulo: 'Tu solicitud está hecha.',
+    cuerpo: 'La revisa una persona, así que no hay un plazo. Cuando te aprueben, entra otra vez con Apple y ya estarás dentro.',
+  },
+  rechazada: {
+    titulo: 'De momento, no.',
+    cuerpo: 'Esta cuenta no tiene acceso a la agenda. Si crees que es un error, habla con quien te pasó la aplicación.',
+  },
+};
+
+function pintarEspera(token, situacion) {
+  document.getElementById('aplicacion').hidden = true;
+  document.getElementById('acceso').hidden = true;
+  document.getElementById('espera').hidden = false;
+
+  const marco = vaciar(document.getElementById('esperaMarco'));
+
+  if (situacion.estado === 'sin_solicitud') return pintarFormulario(marco, token, situacion);
+
+  const texto = TEXTO_ESPERA[situacion.estado] || TEXTO_ESPERA.pendiente;
+  marco.append(
+    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
+    el('h1', { texto: texto.titulo }),
+    el('p', { class: 'acceso-texto', texto: texto.cuerpo }),
+  );
+
+  if (situacion.estado === 'pendiente') {
+    marco.append(el('button', {
+      class: 'boton crecer', type: 'button',
+      onclick: async (evento) => {
+        const boton = evento.currentTarget;
+        boton.disabled = true;
+        boton.textContent = 'Comprobando…';
+        await volverALaEspera(token);
+      },
+    }, ['Comprobar si ya está']));
+  }
+
+  // Retirar tiene que estar aquí, y no es una comodidad: desde que se guarda el
+  // correo de alguien, la directriz 5.1.1(v) de la App Store exige que pueda
+  // borrarlo desde dentro de la aplicación, tenga cuenta o no.
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button',
+    onclick: () => confirmarRetirada(token),
+  }, ['Retirar mi solicitud']));
+
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button', onclick: () => elegirObservadorDemo(),
+  }, ['Ver una demostración mientras tanto']));
+}
+
+/**
+ * El formulario de la sala de espera: un campo, el nombre.
+ *
+ * Se pide a mano porque Apple no lo da de forma fiable —solo llega en la
+ * primerísima autorización y nunca en el token—, y porque es lo único que
+ * identifica a quien pide entrar cuando ha elegido ocultar su correo.
+ */
+function pintarFormulario(marco, token, situacion) {
+  const nombre = entrada({ placeholder: 'Marta Ruiz', autocomplete: 'name' });
+
+  marco.append(
+    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
+    el('h1', { texto: 'Casi está.' }),
+    el('p', {
+      class: 'acceso-texto',
+      texto: 'Dinos quién eres y le llegará a quien puede darte acceso.',
+    }),
+    campo('Tu nombre', nombre),
+  );
+
+  if (situacion.correo) {
+    marco.append(el('p', {
+      class: 'pista',
+      texto: situacion.correo_privado
+        ? `Se enviará con ${situacion.correo}, la dirección de reenvío que te ha dado Apple.`
+        : `Se enviará con ${situacion.correo}.`,
+    }));
+  }
+
+  const enviar = el('button', {
+    class: 'boton crecer', type: 'button',
+    onclick: async () => {
+      if (!nombre.value.trim()) { avisar('Falta tu nombre'); return; }
+      enviar.disabled = true;
+      enviar.textContent = 'Enviando…';
+      try {
+        const resultado = await pedirEntrar(configuracion, token, nombre.value.trim());
+        pintarEspera(token, resultado);
+      } catch (error) {
+        enviar.disabled = false;
+        enviar.textContent = 'Pedir acceso';
+        avisar(error.message || 'No se ha podido enviar la solicitud.');
+      }
+    },
+  }, ['Pedir acceso']);
+
+  marco.append(enviar);
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button', onclick: () => salirDeLaEspera(),
+  }, ['Ahora no']));
+}
+
+function confirmarRetirada(token) {
+  abrirHoja('Retirar mi solicitud', (cuerpo) => {
+    cuerpo.append(el('p', {
+      texto: 'Se borra todo lo que hemos guardado de ti: tu nombre, tu correo y el vínculo con tu Apple ID. No queda constancia de que lo hayas pedido.',
+    }));
+    cuerpo.append(el('p', {
+      class: 'pista',
+      texto: 'Puedes volver a solicitarlo cuando quieras, entrando otra vez con Apple.',
+    }));
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+        onclick: async () => {
+          try {
+            await retirarSolicitud(configuracion, token);
+          } catch {
+            /* si ya no estaba, el resultado para quien mira es el mismo */
+          }
+          cerrarHoja();
+          await salirDeLaEspera();
+          avisar('Solicitud retirada');
+        },
+      }, ['Retirar']),
+    ]));
+  });
+}
+
+async function salirDeLaEspera() {
+  borrarSesion();
+  document.getElementById('espera').hidden = true;
+  mostrarAcceso();
 }
 
 async function elegirObservadorDemo() {
@@ -132,8 +306,11 @@ async function elegirObservadorDemo() {
         class: 'tarjeta', type: 'button',
         onclick: async () => {
           cerrarHoja();
+          // La demostración sustituye a la sesión que hubiera, incluida la de
+          // espera: se sale de ella y se vuelve entrando otra vez con Apple.
           guardarSesion({ demostracion: true, observador: persona.id });
           document.getElementById('acceso').hidden = true;
+          document.getElementById('espera').hidden = true;
           await arrancarDemostracion(persona.id);
         },
       }, [

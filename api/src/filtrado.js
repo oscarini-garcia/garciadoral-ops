@@ -76,5 +76,13 @@ export function componerInstantanea(registro, observador) {
     comentarios,
     // Los conflictos de coordinación solo interesan a quien coordina.
     conflictos: esAdministrador ? registro.conflictos || [] : [],
+    // El recuento de quien espera en la puerta, solo para quien puede abrirla.
+    //
+    // La regla de §9 de la especificación funcional prohíbe que un aviso se
+    // genere a partir de un recuento recibido del servidor, pero aquello
+    // hablaba de los regalos ocultos al destinatario, donde el número *es* el
+    // dato que se pretende ocultar. Aquí quien lo recibe es el administrador, y
+    // no hay nada que ocultarle sobre las solicitudes.
+    solicitudes_pendientes: esAdministrador ? registro.solicitudes_pendientes || 0 : 0,
   };
 }

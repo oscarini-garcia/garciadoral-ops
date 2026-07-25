@@ -8,17 +8,28 @@
  * del sistema (spec funcional §9).
  *
  * Rutas:
- *   GET  /api/salud       · comprobación sin autenticar
- *   POST /api/sesion      · canjea un token de Apple por una sesión propia
- *   POST /api/cuenta/baja · elimina la cuenta de quien la pide (App Store 5.1.1)
- *   GET  /api/sync        · instantánea filtrada para el lector autenticado
- *   POST /api/cambios     · aplica la cola de cambios del dispositivo
- *   GET  /api/conflictos  · coordinación pendiente de revisar (administradores)
- *   GET  /api/registro    · registro completo para el generador del plan semanal
+ *   GET    /api/salud       · comprobación sin autenticar
+ *   POST   /api/sesion      · canjea un token de Apple por la sesión que corresponda
+ *   POST   /api/solicitud   · pide entrar (sala de espera)
+ *   GET    /api/solicitud   · en qué ha quedado la solicitud propia
+ *   DELETE /api/solicitud   · retira la solicitud propia (App Store 5.1.1)
+ *   POST   /api/cuenta/baja · elimina la cuenta de quien la pide (App Store 5.1.1)
+ *   GET    /api/sync        · instantánea filtrada para el lector autenticado
+ *   POST   /api/cambios     · aplica la cola de cambios del dispositivo
+ *   GET    /api/conflictos  · coordinación pendiente de revisar (administradores)
+ *   GET    /api/solicitudes · bandeja de quien espera (administradores)
+ *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
+ *   GET    /api/registro    · registro completo para el generador del plan semanal
  */
 
 import { verificarTokenDeApple } from './apple.js';
-import { coincideEnTiempoConstante, emitirSesion, verificarSesion } from './sesion.js';
+import {
+  coincideEnTiempoConstante,
+  emitirEspera,
+  emitirSesion,
+  verificarSesionDeEspera,
+  verificarSesionPlena,
+} from './sesion.js';
 import {
   administradoresRestantes,
   aplicarCambio,
@@ -27,6 +38,17 @@ import {
   personaPorApple,
   personaPorId,
 } from './repositorio.js';
+import {
+  Rechazo,
+  anotarLlegada,
+  aprobarSolicitud,
+  pendientes,
+  purgarCaducadas,
+  rechazarSolicitud,
+  registrarSolicitud,
+  retirarSolicitud,
+  solicitudPorApple,
+} from './solicitudes.js';
 import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
@@ -47,7 +69,7 @@ function cabecerasCors(env, peticion) {
   return {
     'Access-Control-Allow-Origin': origen,
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -59,7 +81,7 @@ function credencial(peticion) {
 }
 
 async function lectorAutenticado(peticion, env) {
-  const sesion = await verificarSesion(env.SESION_SECRETO, credencial(peticion));
+  const sesion = await verificarSesionPlena(env.SESION_SECRETO, credencial(peticion));
   const persona = await personaPorId(env.DB, sesion.sub);
   if (!persona || !persona.tiene_cuenta || !persona.activa) {
     throw new Error('la sesión ya no corresponde a una persona con cuenta activa');
@@ -67,34 +89,129 @@ async function lectorAutenticado(peticion, env) {
   return persona;
 }
 
+async function administradorAutenticado(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (lector.rol !== 'administrador') throw new SinPermiso('reservado a los administradores');
+  return lector;
+}
+
+/** Quien espera en la puerta. Su credencial no vale para nada más, y lleva
+ *  dentro el correo tal como lo dijo Apple. */
+async function enEspera(peticion, env) {
+  return verificarSesionDeEspera(env.SESION_SECRETO, credencial(peticion));
+}
+
+/** Un «no» por falta de permisos, que responde 403 en lugar de 500. */
+class SinPermiso extends Error {}
+
 // ---------------------------------------------------------------------------
 // Rutas
 // ---------------------------------------------------------------------------
 
+/**
+ * Canjea el token de Apple por la credencial que corresponda.
+ *
+ * Responde siempre 200 y dice en qué estado está ese identificador, porque
+ * llegar sin cuenta no es un error de autorización: es el estado normal de
+ * quien acaba de descargarse la aplicación, y el cliente necesita saber qué
+ * pantalla pintar. El identificador de Apple ya no se devuelve a nadie: con la
+ * bandeja no hay que copiarlo a ninguna parte (specs/autenticacion.md §7).
+ */
 async function abrirSesion(peticion, env) {
   const { id_token: idToken, plataforma = 'web' } = await peticion.json();
 
-  const { sub } = await verificarTokenDeApple(idToken, [env.APPLE_AUD_IOS, env.APPLE_AUD_WEB]);
-  const persona = await personaPorApple(env.DB, sub);
+  const { sub, email, correoPrivado } = await verificarTokenDeApple(
+    idToken,
+    [env.APPLE_AUD_IOS, env.APPLE_AUD_WEB],
+  );
 
-  if (!persona) {
-    // La incorporación se produce por invitación de un administrador, que
-    // vincula el identificador a la persona correspondiente (spec funcional §8).
-    return json(
-      {
-        error: 'sin_vincular',
-        mensaje: 'Este identificador de Apple todavía no está vinculado a ninguna persona del hogar.',
-        identificador: sub,
-      },
-      403,
-    );
+  const persona = await personaPorApple(env.DB, sub);
+  if (persona) {
+    const token = await emitirSesion(env.SESION_SECRETO, persona, plataforma);
+    return json({
+      estado: 'activa',
+      token,
+      persona: { id: persona.id, nombre: persona.nombre, rol: persona.rol },
+    });
   }
 
-  const token = await emitirSesion(env.SESION_SECRETO, persona, plataforma);
+  // Quien llama a la puerta es el momento natural para barrer lo caducado.
+  await purgarCaducadas(env.DB);
+
+  const solicitud = await solicitudPorApple(env.DB, sub);
+  if (solicitud) await anotarLlegada(env.DB, sub);
+
   return json({
-    token,
-    persona: { id: persona.id, nombre: persona.nombre, rol: persona.rol },
+    // Solo puede ser 'pendiente' o 'rechazada': la aprobación borra la fila, y
+    // quien la tuviera aprobada ya habría salido por la rama de arriba.
+    estado: solicitud ? solicitud.estado : 'sin_solicitud',
+    token_espera: await emitirEspera(env.SESION_SECRETO, sub, plataforma, {
+      direccion: email,
+      privado: correoPrivado,
+    }),
+    // El correo se devuelve para que la sala de espera pueda decir con cuál se
+    // ha solicitado: es lo único que verá quien decide, y quien lo envía tiene
+    // derecho a saberlo antes de enviarlo.
+    correo: email,
+    correo_privado: correoPrivado,
   });
+}
+
+// ------------------------------------------------------------ Sala de espera --
+
+async function pedirEntrar(peticion, env) {
+  const espera = await enEspera(peticion, env);
+  const { nombre } = await peticion.json().catch(() => ({}));
+
+  // Que ya esté vinculado significa que le aprobaron mientras rellenaba el
+  // formulario. No es un error: se le dice que ya está.
+  if (await personaPorApple(env.DB, espera.sub)) return json({ estado: 'activa' });
+
+  await purgarCaducadas(env.DB);
+  const solicitud = await registrarSolicitud(env.DB, {
+    identificadorApple: espera.sub,
+    correo: espera.correo,
+    correoPrivado: espera.correo_privado,
+    nombre,
+  });
+
+  return json({ estado: solicitud.estado, solicitado_en: solicitud.creado_en });
+}
+
+async function estadoDeLaSolicitud(peticion, env) {
+  const espera = await enEspera(peticion, env);
+  if (await personaPorApple(env.DB, espera.sub)) return json({ estado: 'activa' });
+
+  const solicitud = await solicitudPorApple(env.DB, espera.sub);
+  return json({ estado: solicitud ? solicitud.estado : 'sin_solicitud' });
+}
+
+async function retirar(peticion, env) {
+  const espera = await enEspera(peticion, env);
+  await retirarSolicitud(env.DB, espera.sub);
+  return json({ retirada: true });
+}
+
+// ------------------------------------------------------------------ Bandeja --
+
+async function bandeja(peticion, env) {
+  await administradorAutenticado(peticion, env);
+  await purgarCaducadas(env.DB);
+  return json({ solicitudes: await pendientes(env.DB) });
+}
+
+async function resolverSolicitud(peticion, env) {
+  const actor = await administradorAutenticado(peticion, env);
+  const { id, accion, persona_id: personaId, persona, rol } = await peticion.json();
+
+  if (accion === 'rechazar') {
+    return json(await rechazarSolicitud(env.DB, { id, actorId: actor.id }));
+  }
+  if (accion !== 'aprobar') return json({ error: `acción desconocida: ${accion}` }, 400);
+
+  return json(
+    await aprobarSolicitud(env.DB, { id, personaId, persona, rol }),
+  );
 }
 
 /**
@@ -192,8 +309,7 @@ async function recibirCambios(peticion, env) {
 }
 
 async function conflictosPendientes(peticion, env) {
-  const lector = await lectorAutenticado(peticion, env);
-  if (lector.rol !== 'administrador') return json({ error: 'reservado' }, 403);
+  await administradorAutenticado(peticion, env);
   const { results } = await env.DB.prepare(
     'SELECT * FROM conflicto WHERE revisado = 0 ORDER BY detectado_en DESC',
   ).all();
@@ -218,13 +334,21 @@ async function registroCompleto(peticion, env) {
 
 // ---------------------------------------------------------------------------
 
+// La resolución va por cuerpo y no por ruta con parámetro porque aquí los
+// caminos se comparan enteros. Meter segmentos variables obligaría a reescribir
+// el enrutador para una sola ruta.
 const RUTAS = [
   ['GET', '/api/salud', async () => json({ estado: 'ok', ahora: new Date().toISOString() })],
   ['POST', '/api/sesion', abrirSesion],
+  ['POST', '/api/solicitud', pedirEntrar],
+  ['GET', '/api/solicitud', estadoDeLaSolicitud],
+  ['DELETE', '/api/solicitud', retirar],
   ['POST', '/api/cuenta/baja', darDeBaja],
   ['GET', '/api/sync', sincronizar],
   ['POST', '/api/cambios', recibirCambios],
   ['GET', '/api/conflictos', conflictosPendientes],
+  ['GET', '/api/solicitudes', bandeja],
+  ['POST', '/api/solicitudes/resolver', resolverSolicitud],
   ['GET', '/api/registro', registroCompleto],
 ];
 
@@ -247,6 +371,13 @@ export default {
       return respuesta;
     } catch (error) {
       const mensaje = String(error.message || error);
+      // Un «no» previsible no es una avería: la sala de espera llena, una
+      // solicitud que el otro administrador acaba de resolver o una persona que
+      // ya tiene cuenta son respuestas legítimas, y el cliente tiene que poder
+      // distinguirlas de un fallo del servidor para saber qué decirle a quien
+      // está mirando la pantalla.
+      if (error instanceof SinPermiso) return json({ error: mensaje }, 403, cors);
+      if (error instanceof Rechazo) return json({ error: mensaje }, 409, cors);
       const autenticacion = /sesión|token|firma/i.test(mensaje);
       return json({ error: mensaje }, autenticacion ? 401 : 500, cors);
     }

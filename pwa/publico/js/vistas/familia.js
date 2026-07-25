@@ -10,7 +10,7 @@
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar,
 } from '../ui.js';
-import { guardar } from '../sincronizacion.js';
+import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
 import { formatearImporte, nuevoId } from '../modelo.js';
 import { MESES_LARGOS, hoy, parsearMomento } from '../semana.js';
 import { abrirCapturaDeIdea, abrirDetalleIdea, abrirDetalleRegalo } from './regalos.js';
@@ -43,11 +43,171 @@ export function pintarFamilia(pantalla, subcabecera, ctx) {
   }
 
   if (ctx.vista.esAdministrador()) {
+    const esperando = bloqueDeSolicitudes(ctx);
+    if (esperando) pantalla.append(esperando);
     pantalla.append(el('div', { class: 'grupo' }, [
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: () => abrirFormularioPersona(ctx) }, [
         'Añadir una persona',
       ]),
     ]));
+  }
+}
+
+// ---------------------------------------------------------------- Bandeja --
+
+/**
+ * Quién está esperando a que le abran la puerta.
+ *
+ * El recuento llega con la instantánea, de modo que no hace falta preguntar por
+ * él: si no hay nadie esperando, aquí no aparece nada. Solo al abrir la bandeja
+ * se pide la lista, que es donde están el nombre y el correo.
+ *
+ * Solo lo ven los administradores, y no por discreción sino porque son los
+ * únicos que pueden hacer algo al respecto.
+ */
+function bloqueDeSolicitudes(ctx) {
+  const cuantas = ctx.vista.datos.solicitudes_pendientes || 0;
+  if (!cuantas) return null;
+
+  return el('div', { class: 'grupo' }, [
+    el('button', {
+      class: 'boton crecer', type: 'button', onclick: () => abrirBandeja(ctx),
+    }, [cuantas === 1 ? 'Hay 1 persona esperando' : `Hay ${cuantas} personas esperando`]),
+  ]);
+}
+
+async function abrirBandeja(ctx) {
+  abrirHoja('Quién quiere entrar', (cuerpo) => {
+    cuerpo.append(el('p', { class: 'pista', texto: 'Cargando…' }));
+
+    listarSolicitudes()
+      .then((solicitudes) => {
+        vaciar(cuerpo);
+        if (!solicitudes.length) {
+          cuerpo.append(el('p', { class: 'pista', texto: 'Ya no queda nadie esperando.' }));
+          return;
+        }
+        for (const solicitud of solicitudes) {
+          cuerpo.append(tarjetaDeSolicitud(solicitud, ctx));
+        }
+      })
+      .catch((error) => {
+        vaciar(cuerpo).append(el('p', { class: 'pista', texto: error.message }));
+      });
+  });
+}
+
+function tarjetaDeSolicitud(solicitud, ctx) {
+  const cuando = new Date(`${solicitud.creado_en.replace(' ', 'T')}Z`);
+
+  return el('div', { class: 'tarjeta' }, [
+    el('h3', { texto: solicitud.nombre_declarado }),
+    // El nombre lo ha escrito quien pide entrar, no Apple. Conviene que se note:
+    // es el dato sobre el que se decide y no está verificado por nadie.
+    el('p', { class: 'pista', texto: 'Nombre escrito por quien lo solicita.' }),
+    el('p', {
+      texto: solicitud.correo
+        ? solicitud.correo
+        : 'Sin correo: no lo compartió al entrar con Apple.',
+    }),
+    solicitud.correo_privado
+      ? el('p', {
+          class: 'pista',
+          texto: 'Es una dirección de reenvío de Apple, así que no dice de quién es.',
+        })
+      : null,
+    el('p', {
+      class: 'pista',
+      texto: `Lo pidió el ${cuando.toLocaleDateString('es-ES')}. Caduca a los catorce días.`,
+    }),
+    el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: () => abrirAprobacion(solicitud, ctx),
+      }, ['Darle acceso']),
+      el('button', {
+        class: 'boton', 'data-tono': 'peligro', type: 'button',
+        onclick: async (evento) => {
+          evento.currentTarget.disabled = true;
+          await resolver({ id: solicitud.id, accion: 'rechazar' }, ctx, 'Solicitud rechazada');
+        },
+      }, ['Rechazar']),
+    ]),
+  ]);
+}
+
+/**
+ * Aprobar tiene dos caminos, y el que se olvida es el primero.
+ *
+ * Si esa persona ya figuraba en el registro sin cuenta —la abuela, que cumple
+ * años y recibe regalos—, hay que vincularla a su ficha y no crear una segunda:
+ * así conserva su fecha de nacimiento y todo lo que otros escribieron con ella.
+ */
+function abrirAprobacion(solicitud, ctx) {
+  const candidatas = ctx.vista.personasSinCuenta();
+
+  abrirHoja(`Dar acceso a ${solicitud.nombre_declarado}`, (cuerpo) => {
+    const quien = seleccion(
+      [
+        { valor: '', texto: 'Crear una ficha nueva' },
+        ...candidatas.map((p) => ({ valor: p.id, texto: `Es ${p.nombre}, que ya está` })),
+      ],
+      '',
+    );
+    const rol = seleccion(
+      [{ valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
+      'miembro',
+    );
+    const nombre = entrada({ value: solicitud.nombre_declarado, placeholder: 'Nombre' });
+    const apellidos = entrada({ placeholder: 'Apellidos' });
+
+    const nueva = el('div', {}, [
+      campo('Nombre', nombre),
+      campo('Apellidos', apellidos),
+    ]);
+
+    const ajustar = () => { nueva.hidden = Boolean(quien.value); };
+    quien.addEventListener('change', ajustar);
+    ajustar();
+
+    cuerpo.append(
+      campo('Quién es', quien, 'Si ya estaba en la familia sin cuenta, vincúlala a su ficha: así conserva su cumpleaños y su historial.'),
+      nueva,
+      campo('Acceso', rol, 'Un administrador gestiona personas, categorías y presupuesto. Un miembro usa la agenda.'),
+    );
+
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async (evento) => {
+          if (!quien.value && !nombre.value.trim()) { avisar('Falta el nombre'); return; }
+          evento.currentTarget.disabled = true;
+          await resolver({
+            id: solicitud.id,
+            accion: 'aprobar',
+            rol: rol.value,
+            persona_id: quien.value || null,
+            persona: quien.value
+              ? null
+              : { nombre: nombre.value.trim(), apellidos: apellidos.value.trim() },
+          }, ctx, 'Acceso concedido');
+        },
+      }, ['Dar acceso']),
+      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+    ]));
+  });
+}
+
+async function resolver(cuerpo, ctx, exito) {
+  try {
+    await resolverSolicitud(cuerpo);
+    cerrarHoja();
+    avisar(exito);
+    // La instantánea trae el recuento y, si se ha aprobado, la persona nueva.
+    await sincronizar();
+    ctx.refrescar();
+  } catch (error) {
+    avisar(error.message || 'No se ha podido resolver la solicitud.');
   }
 }
 
@@ -207,16 +367,16 @@ function abrirFormularioPersona(ctx, { id = null } = {}) {
       [{ valor: '', texto: 'Sin cuenta' }, { valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
       persona?.tiene_cuenta ? persona.rol : '',
     );
-    const apple = entrada({ value: persona?.identificador_apple || '', placeholder: '000123.abc…' });
 
     cuerpo.append(
       campo('Nombre', nombre),
       campo('Apellidos', apellidos),
       campo('Fecha de nacimiento', nacimiento, 'De aquí sale su cumpleaños en la agenda, todos los años y sin tocar nada.'),
       campo('Parentesco', parentesco),
-      campo('Acceso', rol),
-      campo('Identificador de Apple', apple,
-        'Se obtiene del error que muestra la pantalla de acceso la primera vez que esa persona intenta entrar.'),
+      campo('Acceso', rol,
+        persona?.tiene_cuenta
+          ? 'Quitarle la cuenta deshace su vínculo con Apple: para volver a entrar tendría que solicitarlo otra vez.'
+          : 'El vínculo con Apple no se escribe aquí: se establece al aprobar una solicitud.'),
     );
 
     cuerpo.append(el('div', { class: 'acciones' }, [
@@ -231,7 +391,11 @@ function abrirFormularioPersona(ctx, { id = null } = {}) {
             parentesco: parentesco.value.trim(),
             tiene_cuenta: rol.value ? 1 : 0,
             rol: rol.value || null,
-            identificador_apple: apple.value.trim() || null,
+            // Dejar a alguien sin cuenta deshace su vínculo con Apple, igual que
+            // hace la baja. Conservarlo dejaría un identificador huérfano que no
+            // abre nada y que, en cambio, impediría aprobar la solicitud de esa
+            // misma persona cuando volviera a pedirlo.
+            ...(rol.value ? {} : { identificador_apple: null }),
             activa: 1,
           });
           cerrarHoja(); avisar('Ficha guardada'); ctx.refrescar();

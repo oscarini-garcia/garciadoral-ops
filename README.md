@@ -87,6 +87,7 @@ que delata a un módulo que dejó de citar su especificación.
 | `specs/especificacion.md` §3.1 y §4.1 | `datos/catalogos.json`, `api/migraciones/0002_catalogos.sql` |
 | `specs/especificacion.md` §3 (visibilidad) | `api/src/visibilidad.js` y `api/src/filtrado.js` |
 | `specs/especificacion.md` §8 (acceso) | `api/src/apple.js` y `pwa/publico/js/sesion.js` |
+| `specs/autenticacion.md` (sala de espera y aprobación) | `api/src/solicitudes.js` |
 | `specs/especificacion.md` §9 (sin conexión) | `pwa/publico/js/sincronizacion.js` y `pwa/publico/js/almacen.js` |
 | `specs/ux.md` §11 (opción D) | `pwa/publico/js/vistas/` |
 

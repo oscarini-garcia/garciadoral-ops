@@ -52,7 +52,12 @@ tener que recorrer la aplicación entera cada vez.
 - **revocacion.js** — Revocación del token de Sign in with Apple al darse de baja.
   hayRevocacionConfigurada · secretoDeCliente · revocarEnApple
 - **sesion.js** — Sesión propia: un JWT HS256 corto que el cliente presenta en cada petición.
-  emitirSesion · verificarSesion · coincideEnTiempoConstante
+  TIPO_PLENA · TIPO_ESPERA · emitirSesion · emitirEspera · verificarSesion
+  verificarSesionPlena · verificarSesionDeEspera · coincideEnTiempoConstante
+- **solicitudes.js** — La sala de espera: quien ha entrado con Apple y todavía no es del hogar.
+  Rechazo · TOPE_PENDIENTES · purgarCaducadas · solicitudPorApple · anotarLlegada
+  contarPendientes · pendientes · registrarSolicitud · retirarSolicitud · rechazarSolicitud
+  …y 1 más
 - **visibilidad.js** — Función de visibilidad, aplicada en el servidor antes de transmitir.
   destinatariosDeIdea · destinatariosDeRegalo · destinatariosDeEvento · visible
   visiblePublicamente
@@ -76,9 +81,11 @@ tener que recorrer la aplicación entera cada vez.
   INICIALES_DIA · NOMBRES_DIA · MESES · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia
   parsearMomento · soloFecha · iso · isoConHora · …y 12 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
-  cargarConfiguracion · entrarConApple · codigoDeAutorizacion · eliminarLaCuenta
+  cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
+  codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
-  instantanea · estado · suscribir · iniciar · detener · guardar · retirar · sincronizar
+  instantanea · estado · suscribir · iniciar · detener · guardar · retirar
+  listarSolicitudes · resolverSolicitud · sincronizar
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · abrirHoja · cerrarHoja · hayHojaAbierta
   avisar · campo · …y 3 más
@@ -107,11 +114,16 @@ tener que recorrer la aplicación entera cada vez.
 ## Rutas de la API
 
 - `GET  /api/salud` — comprobación sin autenticar
-- `POST /api/sesion` — canjea un token de Apple por una sesión propia
+- `POST /api/sesion` — canjea un token de Apple por la sesión que corresponda
+- `POST /api/solicitud` — pide entrar (sala de espera)
+- `GET  /api/solicitud` — en qué ha quedado la solicitud propia
+- `DELETE /api/solicitud` — retira la solicitud propia (App Store 5.1.1)
 - `POST /api/cuenta/baja` — elimina la cuenta de quien la pide (App Store 5.1.1)
 - `GET  /api/sync` — instantánea filtrada para el lector autenticado
 - `POST /api/cambios` — aplica la cola de cambios del dispositivo
 - `GET  /api/conflictos` — coordinación pendiente de revisar (administradores)
+- `GET  /api/solicitudes` — bandeja de quien espera (administradores)
+- `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 
 ## Workflows
@@ -126,6 +138,9 @@ tener que recorrer la aplicación entera cada vez.
 
 Leído de las citas a `specs/` que el código lleva en sus comentarios.
 
+- **`specs/autenticacion.md`**
+  `api/src/index.js` §7 · `api/src/solicitudes.js` §2, §9 · `pwa/publico/js/native.js` §8
+  `pwa/publico/js/sesion.js` §8
 - **`specs/despachador.md`**
   `scripts/agenda/__init__.py` §8 · `scripts/agenda/modelo.py` §5
   `scripts/agenda/semana.py` §8 · `scripts/callmebot.py` §6 · `scripts/despachar.py`
@@ -171,9 +186,9 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**106** en total.
+**121** en total.
 
-- `tests/test_configuracion.py` — 12
+- `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
 - `tests/test_mensaje.py` — 12
 - `tests/test_modelo.py` — 18
@@ -181,6 +196,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
+- `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 
 Lo que ejecuta la integración continua:

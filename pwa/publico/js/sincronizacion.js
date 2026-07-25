@@ -190,8 +190,27 @@ async function peticion(camino, opciones = {}) {
     error.sesionCaducada = true;
     throw error;
   }
-  if (!respuesta.ok) throw new Error(`la API respondió ${respuesta.status}`);
+  if (!respuesta.ok) {
+    // Un «no» previsible —la solicitud que el otro administrador acaba de
+    // resolver, la persona que ya tiene cuenta— viene explicado en el cuerpo, y
+    // ese texto es lo único que se le puede enseñar a quien mira la pantalla.
+    const datos = await respuesta.json().catch(() => ({}));
+    throw new Error(datos.error || `la API respondió ${respuesta.status}`);
+  }
   return respuesta.json();
+}
+
+// ------------------------------------------------------------- Solicitudes --
+
+/** La bandeja de quien espera. Reservada a los administradores por el Worker,
+ *  no por quien llama: aquí no hay ninguna comprobación que valga. */
+export async function listarSolicitudes() {
+  const { solicitudes } = await peticion('/api/solicitudes');
+  return solicitudes || [];
+}
+
+export function resolverSolicitud(cuerpo) {
+  return peticion('/api/solicitudes/resolver', { method: 'POST', body: JSON.stringify(cuerpo) });
 }
 
 export async function sincronizar() {
