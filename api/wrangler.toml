@@ -1,0 +1,26 @@
+name = "agenda-familiar-api"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+
+# Rellene database_id con el que devuelva `wrangler d1 create agenda-familiar`.
+[[d1_databases]]
+binding = "DB"
+database_name = "agenda-familiar"
+database_id = "PENDIENTE-DE-RELLENAR"
+
+[vars]
+# Orígenes desde los que se admite la PWA. Sin coincidencia no se emiten
+# cabeceras CORS, de modo que una web ajena no puede hablar con esta API.
+ORIGENES_PERMITIDOS = "https://agenda.EJEMPLO.com,http://localhost:8788"
+
+# Audiencias admitidas del token de Apple: el Services ID de la web y el
+# identificador del paquete de la app iOS.
+APPLE_AUD_WEB = "com.EJEMPLO.agenda.web"
+APPLE_AUD_IOS = "com.EJEMPLO.agenda"
+
+# Secretos, que NO van aquí. Se registran con `wrangler secret put`:
+#   SESION_SECRETO  · clave con la que este Worker firma las sesiones
+#   TOKEN_SERVICIO  · credencial del generador del plan semanal (AGENDA_TOKEN)
+
+[observability]
+enabled = true

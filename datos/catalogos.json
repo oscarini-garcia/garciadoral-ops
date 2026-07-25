@@ -1,0 +1,29 @@
+{
+  "_nota": "Catálogos iniciales confirmados en specs/especificacion.md §11 (apartados 3.1 y 4.1). Contenido versionado y sin datos personales.",
+  "tipos_evento": [
+    { "id": "cumpleanos", "nombre": "Cumpleaños", "emoji": "🎂", "lleva_regalos": true },
+    { "id": "santo", "nombre": "Santo", "emoji": "✨", "lleva_regalos": true },
+    { "id": "aniversario", "nombre": "Aniversario", "emoji": "💍", "lleva_regalos": true },
+    { "id": "viaje", "nombre": "Viaje", "emoji": "✈️", "lleva_regalos": false },
+    { "id": "competicion", "nombre": "Competición", "emoji": "🏆", "lleva_regalos": false },
+    { "id": "entreno", "nombre": "Entreno", "emoji": "🏃", "lleva_regalos": false },
+    { "id": "celebracion", "nombre": "Celebración", "emoji": "🎉", "lleva_regalos": true },
+    { "id": "fecha_escolar", "nombre": "Fecha escolar", "emoji": "🎒", "lleva_regalos": false },
+    { "id": "cita_medica", "nombre": "Cita médica", "emoji": "🩺", "lleva_regalos": false },
+    { "id": "otro", "nombre": "Otro", "emoji": "📌", "lleva_regalos": false }
+  ],
+  "categorias": [
+    { "id": "general", "nombre": "General", "regla": "publica", "orden": 1 },
+    { "id": "tecnologia", "nombre": "Tecnología", "regla": "publica", "orden": 2 },
+    { "id": "libros_musica", "nombre": "Libros y música", "regla": "publica", "orden": 3 },
+    { "id": "deporte", "nombre": "Deporte", "regla": "publica", "orden": 4 },
+    { "id": "ropa", "nombre": "Ropa y complementos", "regla": "publica", "orden": 5 },
+    { "id": "experiencias", "nombre": "Experiencias", "regla": "publica", "orden": 6 },
+    { "id": "casa_cocina", "nombre": "Casa y cocina", "regla": "publica", "orden": 7 },
+    { "id": "coordinacion", "nombre": "Coordinación", "regla": "privada", "orden": 8 }
+  ],
+  "emojis_permitidos": [
+    "🎂", "✨", "💍", "✈️", "🏆", "🏃", "🎉", "🎒", "🩺", "📌",
+    "🏇", "🍽️", "⚽", "🎓", "🎭", "🎵", "🚗", "🏖️", "🎁", "🐾"
+  ]
+}

@@ -1,0 +1,42 @@
+name: despachador
+
+# Sondeo diario que despacha lo vencido, en lugar de dispararse a la hora exacta
+# del mensaje: GitHub Actions no ofrece acuerdo de nivel de servicio sobre el
+# momento de ejecución (specs/despachador.md §2 y §3).
+
+on:
+  schedule:
+    - cron: '7 7 * * *'   # 07:07 UTC a diario; minuto desplazado de :00 a propósito
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: despachador
+  cancel-in-progress: false
+
+jobs:
+  despachar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Despachar mensajes vencidos
+        env:
+          RECIPIENTS_JSON: ${{ secrets.RECIPIENTS_JSON }}
+        run: python3 scripts/despachar.py
+
+      - name: Persistir el estado de la cola
+        if: always()
+        run: |
+          if [[ -n "$(git status --porcelain queue.json)" ]]; then
+            git config user.name  "despachador"
+            git config user.email "actions@users.noreply.github.com"
+            git add queue.json
+            git commit -m "chore: actualiza el estado de la cola"
+            git pull --rebase --autostash
+            git push
+          fi

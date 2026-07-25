@@ -1,0 +1,120 @@
+/**
+ * Almacén local. Toda lectura y escritura de la aplicación pasa por aquí.
+ *
+ * El modelo es local-first: la interfaz no espera nunca a la red, porque una
+ * aplicación que hace esperar sin red se percibe como averiada (specs/ux.md §1).
+ * Lo que llega del servidor es una instantánea **ya filtrada** para el titular
+ * del dispositivo; aquí no se guarda jamás nada que no venga en ella, de modo
+ * que un elemento que deja de corresponderle desaparece del almacén en la
+ * siguiente sincronización.
+ */
+
+const BASE = 'agenda-familiar';
+const VERSION = 1;
+
+let conexion = null;
+
+function abrir() {
+  if (conexion) return conexion;
+  conexion = new Promise((resolver, rechazar) => {
+    const peticion = indexedDB.open(BASE, VERSION);
+    peticion.onupgradeneeded = () => {
+      const bd = peticion.result;
+      if (!bd.objectStoreNames.contains('documentos')) bd.createObjectStore('documentos');
+      if (!bd.objectStoreNames.contains('cola')) {
+        bd.createObjectStore('cola', { keyPath: 'orden', autoIncrement: true });
+      }
+    };
+    peticion.onsuccess = () => resolver(peticion.result);
+    peticion.onerror = () => rechazar(peticion.error);
+  });
+  return conexion;
+}
+
+function transaccion(almacenes, modo, trabajo) {
+  return abrir().then(
+    (bd) =>
+      new Promise((resolver, rechazar) => {
+        const tx = bd.transaction(almacenes, modo);
+        let resultado;
+        try {
+          resultado = trabajo(tx);
+        } catch (error) {
+          rechazar(error);
+          return;
+        }
+        tx.oncomplete = () => resolver(resultado?.result ?? resultado);
+        tx.onerror = () => rechazar(tx.error);
+        tx.onabort = () => rechazar(tx.error);
+      }),
+  );
+}
+
+// -------------------------------------------------------------- Documentos --
+
+export function guardarDocumento(clave, valor) {
+  return transaccion(['documentos'], 'readwrite', (tx) =>
+    tx.objectStore('documentos').put(valor, clave),
+  );
+}
+
+export function leerDocumento(clave) {
+  return transaccion(['documentos'], 'readonly', (tx) => tx.objectStore('documentos').get(clave));
+}
+
+export const guardarInstantanea = (instantanea) => guardarDocumento('instantanea', instantanea);
+export const leerInstantanea = () => leerDocumento('instantanea');
+
+// -------------------------------------------------------------------- Cola --
+
+/**
+ * Cola de cambios pendientes de subir. Sobrevive al cierre de la aplicación y
+ * a los cortes de red: es la mitad local del flujo de sincronización.
+ */
+export function encolarCambio(cambio) {
+  return transaccion(['cola'], 'readwrite', (tx) => tx.objectStore('cola').add(cambio));
+}
+
+export function leerCola() {
+  return transaccion(['cola'], 'readonly', (tx) => tx.objectStore('cola').getAll());
+}
+
+export function vaciarCola(hastaOrden) {
+  return transaccion(['cola'], 'readwrite', (tx) => {
+    const almacen = tx.objectStore('cola');
+    const cursor = almacen.openCursor();
+    cursor.onsuccess = () => {
+      const actual = cursor.result;
+      if (!actual) return;
+      if (actual.value.orden <= hastaOrden) actual.delete();
+      actual.continue();
+    };
+  });
+}
+
+export function olvidarTodo() {
+  return transaccion(['documentos', 'cola'], 'readwrite', (tx) => {
+    tx.objectStore('documentos').clear();
+    tx.objectStore('cola').clear();
+  });
+}
+
+// ------------------------------------------------------------- Preferencias --
+
+const CLAVE_SESION = 'agenda.sesion';
+
+export function guardarSesion(sesion) {
+  localStorage.setItem(CLAVE_SESION, JSON.stringify(sesion));
+}
+
+export function leerSesion() {
+  try {
+    return JSON.parse(localStorage.getItem(CLAVE_SESION) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+export function borrarSesion() {
+  localStorage.removeItem(CLAVE_SESION);
+}

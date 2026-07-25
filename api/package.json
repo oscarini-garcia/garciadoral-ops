@@ -1,0 +1,17 @@
+{
+  "name": "agenda-familiar-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API de la Agenda Familiar sobre Cloudflare Workers y D1",
+  "scripts": {
+    "dev": "wrangler dev",
+    "desplegar": "wrangler deploy",
+    "migrar:local": "wrangler d1 execute agenda-familiar --local --file=migraciones/0001_esquema.sql && wrangler d1 execute agenda-familiar --local --file=migraciones/0002_catalogos.sql",
+    "migrar:remoto": "wrangler d1 execute agenda-familiar --remote --file=migraciones/0001_esquema.sql && wrangler d1 execute agenda-familiar --remote --file=migraciones/0002_catalogos.sql",
+    "test": "node --test 'test/*.test.js'"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

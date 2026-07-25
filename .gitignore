@@ -1,0 +1,7 @@
+# El registro canónico de la agenda contiene datos personales —nombres y fechas
+# de nacimiento de menores— y se aprovisiona en el despliegue, fuera del
+# repositorio versionado (specs/especificacion.md §2).
+datos/agenda.json
+
+__pycache__/
+*.pyc

@@ -1,0 +1,6 @@
+{
+  "_nota": "Configuración del despliegue. Se lee en caliente, de modo que cambiarla no exige reconstruir nada. Sustituya los valores EJEMPLO por los suyos antes de publicar; consulte docs/despliegue-cloudflare.md.",
+  "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
+  "appleClienteWeb": "com.EJEMPLO.agenda.web",
+  "redireccion": "https://agenda.EJEMPLO.com"
+}

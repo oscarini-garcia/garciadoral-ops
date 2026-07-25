@@ -1,0 +1,46 @@
+name: pruebas
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unittest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Ejecutar las pruebas
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Comprobar que el registro de ejemplo compone los siete planes
+        env:
+          AGENDA_PATH: datos/agenda.ejemplo.json
+        run: python3 scripts/plan_semanal.py --simulacro --fecha 2026-07-26
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Ejecutar las pruebas del Worker
+        working-directory: api
+        run: node --test 'test/*.test.js'
+
+      # Lo que sirve la API y lo que lee el generador del plan son el mismo
+      # documento: si sus formas divergen, el plan del domingo deja de salir.
+      - name: Comprobar que el formato del registro es el mismo en las dos piezas
+        env:
+          AGENDA_PATH: pwa/publico/demo/registro-demo.json
+        run: |
+          python3 herramientas/preparar-pwa.py
+          python3 scripts/plan_semanal.py --simulacro --fecha 2026-07-26 > /dev/null
