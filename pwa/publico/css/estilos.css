@@ -295,12 +295,12 @@ button { background: none; border: 0; cursor: pointer; }
 .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .dia[data-hoy="si"] .dia-numero { color: var(--tinta); }
 .dia-contenido { display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: center; }
-/* El hueco de un día vacío ocupa la fila entera: es la superficie sobre la que
-   se hace el doble clic que crea el evento de ese día. */
+/* El hueco de un día vacío ocupa todo su lado de la fila, que entera es la
+   superficie del doble toque con el que se crea el evento de ese día. */
 .dia-vacio {
   align-self: stretch;
   display: flex; align-items: center;
-  min-height: 28px; width: 100%; text-align: left;
+  min-height: 28px;
   color: var(--ink-faint); font-size: 15px;
 }
 

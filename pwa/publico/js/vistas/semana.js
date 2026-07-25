@@ -15,7 +15,7 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
-  deslizarHorizontal,
+  deslizarHorizontal, dobleToque,
 } from '../ui.js';
 import { guardar, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId } from '../modelo.js';
@@ -116,24 +116,13 @@ function vistaSemana(ctx) {
 
   for (const dia of dias) {
     const apariciones = reparto.get(iso(dia)) || [];
+    const vacio = !apariciones.length;
     const contenido = el('div', { class: 'dia-contenido' });
 
-    if (!apariciones.length) {
+    if (vacio) {
       // Los días vacíos son información y no espacio desperdiciado: enseñan la
       // forma de la semana, que es justo lo que se quiere ver al planificar.
-      // El hueco es además el sitio natural para llenarlo: un doble clic sobre
-      // él abre el formulario con ese día ya puesto. Se pide doble y no
-      // sencillo porque la fila entera está a un dedo de distancia mientras se
-      // recorre la semana, y un toque suelto no puede significar «crear».
-      const crear = () => { toque(); abrirFormularioEvento(ctx, { fecha: dia }); };
-      contenido.append(el('button', {
-        class: 'dia-vacio', type: 'button',
-        'aria-label': `Crear un evento el ${formatearFechaLarga(dia)}`,
-        // El teclado no tiene doble clic: Enter y Espacio llegan como un clic
-        // sin botón detrás (`detail` a cero) y valen por sí solos.
-        onclick: (evento) => { if (evento.detail === 0) crear(); },
-        ondblclick: crear,
-      }, ['—']));
+      contenido.append(el('div', { class: 'dia-vacio', texto: '—' }));
     } else {
       for (const aparicion of apariciones.slice(0, TECHO_EVENTOS_DIA)) {
         contenido.append(lineaDeEvento(aparicion, ctx));
@@ -150,17 +139,31 @@ function vistaSemana(ctx) {
       }
     }
 
-    marco.append(el('div', { class: 'dia', 'data-hoy': iso(dia) === clavehoy ? 'si' : 'no' }, [
+    const fila = el('div', { class: 'dia', 'data-hoy': iso(dia) === clavehoy ? 'si' : 'no' }, [
       el('button', {
         class: 'dia-fecha', type: 'button',
-        'aria-label': `Ver el ${formatearFechaLarga(dia)}`,
-        onclick: () => abrirDia(dia, ctx),
+        'aria-label': vacio
+          ? `Crear un evento el ${formatearFechaLarga(dia)}`
+          : `Ver el ${formatearFechaLarga(dia)}`,
+        // En un día vacío no hay día que abrir: la hoja no tendría más que el
+        // botón de añadir, que es justo lo que hace el doble toque de la fila.
+        onclick: vacio ? null : () => abrirDia(dia, ctx),
       }, [
         el('div', { class: 'dia-inicial', texto: INICIALES_DIA[(dia.getDay() + 6) % 7] }),
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
       ]),
       contenido,
-    ]));
+    ]);
+
+    // El hueco de un día vacío es el sitio natural para llenarlo: un doble
+    // toque en cualquier punto de la fila abre el formulario con ese día ya
+    // puesto. Se pide doble y no sencillo porque la fila entera está a un dedo
+    // de distancia mientras se recorre la semana, y un toque suelto no puede
+    // significar «crear».
+    if (vacio) {
+      dobleToque(fila, () => { toque(); abrirFormularioEvento(ctx, { fecha: dia }); });
+    }
+    marco.append(fila);
   }
   return marco;
 }
