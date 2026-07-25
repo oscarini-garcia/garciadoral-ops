@@ -267,11 +267,19 @@ El módulo **Anecdotario** queda fuera por decisión de la propia especificació
 funcional, que difiere su detalle hasta cerrar la estructura de la importación
 desde el export de Facebook.
 
-De lo demás, tres cosas están modeladas pero no construidas: los **calendarios
+De lo demás, dos cosas están modeladas pero no construidas: los **calendarios
 externos** importados —el modelo los contempla y la interfaz los muestra como
-eventos no editables, pero no hay conector que los traiga—, las **notificaciones**
-del recordatorio previo, y la **copia periódica automática** de salvaguarda; la
-exportación bajo demanda sí funciona (`docs/despliegue-cloudflare.md` §12).
+eventos no editables, pero no hay conector que los traiga— y la **copia
+periódica automática** de salvaguarda; la exportación bajo demanda sí funciona
+(`docs/despliegue-cloudflare.md` §12).
+
+El **recordatorio previo** ya avisa, pero solo dentro de la app de iOS y con la
+misma antelación para todo el mundo: se programa en el dispositivo a partir de la
+instantánea, treinta minutos antes de un evento con hora y la tarde anterior si
+ocupa la jornada completa. Lo que falta es la parte configurable —la tabla
+`preferencia_notificacion` existe en el esquema pero ni se sirve al cliente ni
+hay pantalla para tocarla—, de modo que hoy vale su valor por defecto: el
+recordatorio activo y los avisos de modificación desactivados.
 
 La cáscara de iOS no se ha generado aquí: `npx cap add ios` hace `pod install` y
 eso solo funciona en macOS. Los pasos están en `pwa/README.md` y en el apartado 8

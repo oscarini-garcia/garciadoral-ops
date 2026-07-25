@@ -45,7 +45,8 @@ publico/
   css/estilos.css       · dos temas completos, no una inversión del claro
   js/
     app.js              · arranque, pestañas y botón de crear contextual
-    native.js           · puente con la cáscara: háptica, compartir, OTA y acceso
+    native.js           · puente con la cáscara: háptica, compartir, OTA,
+                          acceso y recordatorios locales
     sesion.js           · Sign in with Apple, por la web o por la hoja nativa
     almacen.js          · IndexedDB: instantánea y cola de cambios
     sincronizacion.js   · escritura optimista y subida diferida
@@ -114,7 +115,17 @@ Antes de publicar, el workflow comprueba que `config.json` no tenga marcadores
 `EJEMPLO`. Un bundle con ellos dejaría a todos los teléfonos apuntando a una API
 que no existe, y encima se aplicaría solo.
 
-### Cuatro detalles que conviene conocer
+### Cinco detalles que conviene conocer
+
+**Los recordatorios los programa el teléfono, no el servidor.** Treinta
+minutos antes de un evento con hora, la tarde anterior si ocupa la jornada
+completa. No pasan por APNs y funcionan sin conexión, pero lo importante es
+otra cosa: como se componen a partir de la instantánea, que el Worker ya ha
+filtrado, **heredan la visibilidad sin que haya que volver a aplicarla**. Se
+cancelan y reprograman enteros en cada sincronización, igual que la
+instantánea se sustituye entera, y por el mismo motivo: así un evento que
+deja de ser visible se lleva su aviso pendiente con él. iOS solo guarda las 64
+más próximas, así que el recorte se hace aquí.
 
 **El acceso con Apple tiene dos caminos, y no es por gusto.** En el navegador va
 por el SDK en ventana emergente, con el Services ID y el dominio de la PWA como
@@ -125,7 +136,6 @@ usa la hoja nativa, que se identifica con el paquete y no necesita dominio.
 Worker admite las dos audiencias y devuelve la misma persona. Consecuencia
 práctica: **el acceso nativo no llega por OTA**, porque el complemento es código
 del binario.
-
 
 **El puente no necesita empaquetador.** La receta importa `@capacitor/core`, lo
 que obligaría a meter Vite solo para eso. Como esta webapp son módulos ES

@@ -171,6 +171,104 @@ export async function tokenDeAppleNativo({ appleClienteWeb, redireccion } = {}) 
   return response?.identityToken ?? null;
 }
 
+// ---------------------------------------------- Recordatorios locales --
+
+/**
+ * El recordatorio previo al evento, que es la única notificación activa por
+ * defecto (specs/especificacion.md §88).
+ *
+ * Se programan **en el dispositivo**, no se envían desde el servidor, y esa
+ * decisión es lo que hace que la regla «las notificaciones heredan la
+ * visibilidad» se cumpla sola: el Worker filtra antes de transmitir, de modo
+ * que la instantánea local nunca contiene lo que su titular no puede ver, y un
+ * aviso compuesto a partir de ella tampoco puede delatarlo. Con avisos remotos
+ * habría que volver a aplicar la regla al componer cada mensaje, y el texto
+ * pasaría además por los servidores de Apple.
+ */
+
+const ANTELACION_MINUTOS = 30;
+const HORA_VISPERA = 20; // los de jornada completa se avisan la tarde anterior
+const HORIZONTE_DIAS = 60;
+
+// iOS solo conserva las 64 notificaciones locales pendientes más próximas y
+// descarta el resto sin avisar. Se recorta aquí para que el corte sea nuestro y
+// no una sorpresa del sistema.
+const TECHO_PENDIENTES = 64;
+
+/** Identificador estable y numérico, que es lo que exige el complemento. */
+function idDeAviso(texto) {
+  let acumulado = 0;
+  for (let i = 0; i < texto.length; i += 1) {
+    acumulado = (acumulado * 31 + texto.charCodeAt(i)) | 0;
+  }
+  return Math.abs(acumulado) % 2147483647;
+}
+
+/** Cuándo avisar de una instancia, o `null` si ya no ha lugar. */
+function momentoDelAviso(instancia, ahora) {
+  const inicio = instancia.inicio;
+  const cuando = instancia.evento.jornada_completa
+    ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() - 1, HORA_VISPERA, 0)
+    : new Date(inicio.getTime() - ANTELACION_MINUTOS * 60 * 1000);
+  return cuando > ahora ? cuando : null;
+}
+
+function textoDelAviso(instancia) {
+  const { evento } = instancia;
+  const cuerpo = evento.jornada_completa
+    ? 'Mañana'
+    : `A las ${String(instancia.inicio.getHours()).padStart(2, '0')}:${String(instancia.inicio.getMinutes()).padStart(2, '0')}`;
+  return {
+    title: `${evento.emoji || '📌'} ${evento.titulo}`,
+    body: evento.ubicacion ? `${cuerpo} · ${evento.ubicacion}` : cuerpo,
+  };
+}
+
+/**
+ * Rehace por completo los recordatorios pendientes a partir de la instantánea.
+ *
+ * Se cancela todo y se vuelve a programar, en lugar de calcular diferencias,
+ * por el mismo motivo por el que la instantánea se sustituye entera: es lo que
+ * hace que la retirada retroactiva funcione sola. Si un evento deja de ser
+ * visible para esta persona, su aviso pendiente desaparece con él.
+ *
+ * Fuera de la cáscara no hace nada: la web no programa notificaciones.
+ */
+export async function programarRecordatorios(instancias) {
+  const notificaciones = plugin('LocalNotifications');
+  if (!esNativo() || !notificaciones) return { estado: 'no-aplica' };
+
+  try {
+    let permiso = await notificaciones.checkPermissions();
+    if (permiso.display === 'prompt' || permiso.display === 'prompt-with-rationale') {
+      permiso = await notificaciones.requestPermissions();
+    }
+    if (permiso.display !== 'granted') return { estado: 'sin-permiso' };
+
+    const pendientes = await notificaciones.getPending();
+    if (pendientes?.notifications?.length) await notificaciones.cancel(pendientes);
+
+    const ahora = new Date();
+    const avisos = instancias
+      .map((instancia) => ({ instancia, cuando: momentoDelAviso(instancia, ahora) }))
+      .filter(({ cuando }) => cuando)
+      .sort((a, b) => a.cuando - b.cuando)
+      .slice(0, TECHO_PENDIENTES)
+      .map(({ instancia, cuando }) => ({
+        id: idDeAviso(`${instancia.evento.id}@${cuando.toISOString()}`),
+        ...textoDelAviso(instancia),
+        schedule: { at: cuando, allowWhileIdle: true },
+      }));
+
+    if (avisos.length) await notificaciones.schedule({ notifications: avisos });
+    return { estado: 'programados', cuantos: avisos.length };
+  } catch (error) {
+    return { estado: 'error', detalle: String(error?.message ?? error) };
+  }
+}
+
+export const HORIZONTE_RECORDATORIOS_DIAS = HORIZONTE_DIAS;
+
 // --------------------------------------------------------------- Arranque --
 
 /**
