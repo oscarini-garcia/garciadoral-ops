@@ -50,9 +50,21 @@ error de CORS sin explicación.
 - Acceso de escritura a este repositorio de GitHub.
 
 ```bash
-npm install -g wrangler
+npm install -g wrangler --allow-scripts=esbuild,workerd
 wrangler login          # abre el navegador y autoriza la cuenta
+wrangler --version
 ```
+
+> **Por qué ese `--allow-scripts`.** Las versiones recientes de npm no ejecutan
+> los scripts de instalación por defecto. Sin ellos, `esbuild` y `workerd` se
+> quedan sin el binario de la plataforma y `wrangler deploy` falla más tarde, con
+> un error que no menciona la instalación. Si prefiere no repetirlo en cada
+> instalación: `npm config set allow-scripts=esbuild,workerd --location=user`.
+>
+> Y cuidado con el aviso que imprime npm: sugiere el comando **sin el nombre del
+> paquete**. Tal cual, npm intenta instalar el paquete del directorio actual, y
+> la raíz de este repositorio no tiene `package.json` —solo lo tienen `api/` y
+> `pwa/`—, de modo que responde `ENOENT ... could not read package.json`.
 
 ---
 
