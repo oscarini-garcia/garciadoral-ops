@@ -131,17 +131,21 @@ def rutas_del_worker() -> tuple[list[tuple[str, str, str]], list[str]]:
     tabla = re.search(r"const RUTAS = \[(.*?)\n\];", fuente, re.S)
     servidas = re.findall(r"\['(\w+)',\s*'([^']+)'", tabla.group(1) if tabla else "")
 
+    # La clave es el par método y camino, no el camino a solas: un mismo camino
+    # puede servir varios métodos —`/api/solicitud` sirve tres— y con el camino
+    # por clave los tres heredarían la glosa del último.
     documentadas = {
-        camino: glosa.strip()
-        for _, camino, glosa in re.findall(
+        (metodo, camino): glosa.strip()
+        for metodo, camino, glosa in re.findall(
             r"\*\s+(GET|POST|PUT|DELETE)\s+(\S+)\s+·\s*(.+)", fuente
         )
     }
 
-    rutas = [(metodo, camino, documentadas.get(camino, "")) for metodo, camino in servidas]
-    caminos = {camino for _, camino in servidas}
-    avisos = [f"`{c}` está documentada en la cabecera pero no en `RUTAS`" for c in documentadas if c not in caminos]
-    avisos += [f"`{c}` se sirve pero no está en la lista de la cabecera" for c in caminos if c not in documentadas]
+    rutas = [(metodo, camino, documentadas.get((metodo, camino), "")) for metodo, camino in servidas]
+    pares = set(servidas)
+    formar = lambda par: f"`{par[0]} {par[1]}`"  # noqa: E731
+    avisos = [f"{formar(p)} está documentada en la cabecera pero no en `RUTAS`" for p in documentadas if p not in pares]
+    avisos += [f"{formar(p)} se sirve pero no está en la lista de la cabecera" for p in pares if p not in documentadas]
     return rutas, sorted(avisos)
 
 
