@@ -742,9 +742,42 @@ Ese último párrafo no es relleno: la **4.2** (funcionalidad mínima) es el otr
 riesgo real de una aplicación que por dentro es una web, y conviene ponerle
 delante la lista de lo que sí es nativo antes de que la busquen.
 
-#### La ficha, campo a campo
+#### Dónde va cada cosa
 
-- **Nombre**: «Agenda Familiar». **Subtítulo**: la semana, los regalos y la gente.
+Se empieza en <https://appstoreconnect.apple.com> → **Apps → ＋ → Nueva app**,
+donde se elige el Bundle ID `com.garciadoral.ops`, el idioma principal y un SKU
+que uno se inventa y que nadie ve (`garciadoral-ops-001` sirve).
+
+Dentro, los metadatos están repartidos en cuatro pantallas distintas, y la
+división no es caprichosa: marca **qué se puede cambiar sin volver a revisión**.
+
+| Dónde | Qué se rellena ahí |
+|---|---|
+| **General → App Information** | Nombre, subtítulo, URL de política de privacidad, categorías, derechos de contenido y clasificación por edades. Valen para todas las versiones |
+| **iOS App → 1.0 Preparar para enviar** | Descripción, texto promocional, palabras clave, URL de soporte y de marketing, capturas, la *build* y, al final del todo, las **notas de revisión**. Es por versión |
+| **General → App Privacy** | Las etiquetas de privacidad, por cuestionario. Pantalla aparte; sin completarla no se puede enviar |
+| **Pricing and Availability** | Gratis y territorios |
+
+Tres cosas que conviene saber antes de empezar a escribir:
+
+- **La *build* solo aparece cuando Apple termina de procesarla**, un rato después
+  de subirla desde Xcode. Hasta entonces el desplegable está vacío y no es que
+  haya fallado la subida.
+- **Con la app ya publicada, solo el texto promocional se cambia en caliente.**
+  Descripción, capturas y palabras clave exigen enviar una versión nueva a
+  revisión. Conviene no dejarlos a medias.
+- **El interruptor «Sign-in required»**, en las notas de revisión, exige usuario y
+  contraseña si se marca — y aquí no existen, porque solo hay Sign in with Apple
+  y por invitación. Déjelo **sin marcar** y explíquelo en las notas: lo que se
+  revisa es la demostración, que no pide cuenta. Marcarlo sin poder rellenar las
+  credenciales es precisamente lo que provoca el rechazo por la 2.1.
+
+Los metadatos son por idioma. Con el español basta; las notas de revisión, en
+inglés de todos modos, que las lee gente que puede no saber español y no es un
+campo público.
+
+#### Lo demás de la ficha
+
 - **Categoría**: Productividad; secundaria, Estilo de vida.
 - **URL de política de privacidad**:
   `https://garciadoral-ops.galoopa.store/privacidad.html`.
@@ -756,6 +789,71 @@ delante la lista de lo que sí es nativo antes de que la busquen.
 - **Capturas**: obligatorias las de 6,9″. Sáquelas del **modo de demostración**,
   nunca de la agenda real: son públicas y con datos del hogar dejarían de serlo.
 - **Derechos de autor** y **datos de contacto**: los suyos.
+
+#### El texto, listo para pegar
+
+**Nombre** (máx. 30) — el de la ficha, que no tiene por qué ser el del icono;
+en el teléfono la app se llama «Agenda», que es lo que cabe debajo:
+
+```
+Agenda Familiar
+```
+
+**Subtítulo** (máx. 30):
+
+```
+La agenda que guarda secretos
+```
+
+**Texto promocional** (máx. 170). Es el único campo editable sin pasar por
+revisión, de modo que sirve para avisar de algo puntual sin tocar la descripción:
+
+```
+La agenda de un hogar: la semana de todos, los regalos que se están preparando y la gente. Lo que es sorpresa no aparece en la semana de quien la va a recibir.
+```
+
+**Palabras clave** (máx. 100 en total, separadas por comas y **sin espacio
+detrás de la coma**, que si no cuenta como carácter). No repita las que ya están
+en el nombre y el subtítulo —«agenda», «secretos»—: Apple ya indexa esos campos y
+repetirlas es desperdiciar sitio:
+
+```
+familia,hogar,calendario,semana,regalos,cumpleaños,compartida,privada,recordatorios,sorpresas
+```
+
+**Descripción** (máx. 4.000). El último apartado no es humildad ni un descargo
+legal: es lo que evita que alguien la descargue creyendo que puede usarla y
+deje una reseña de una estrella, y lo que le enseña a quien revisa que el
+acceso por invitación es el diseño y no un fallo:
+
+```
+La agenda de una familia: la semana de todos, los regalos que se están preparando y la gente del hogar.
+
+Está construida alrededor de una idea sencilla: en una agenda familiar el fallo grave no es un error visible, es estropear una sorpresa. Por eso lo que se prepara para alguien no aparece nunca en su semana. No se tacha ni se difumina: no llega a su teléfono. El recorte lo hace el servidor antes de enviar nada, de modo que en su dispositivo no queda rastro de lo que no le toca ver.
+
+CUATRO PANTALLAS
+
+• Semana — lo que viene, con quién y dónde. Es la que abre la aplicación.
+• Regalos — las ocasiones, quién se encarga de qué y en qué va cada cosa. Se visita con intención, no de paso.
+• Familia — la gente del hogar, sus cumpleaños y las ideas apuntadas para cada cual.
+• Buscar — para cuando se sabe qué se busca pero no cuándo era.
+
+CÓMO FUNCIONA
+
+• Sin conexión. La agenda vive en el dispositivo y se sincroniza cuando hay red; lo que se escribe sin cobertura se sube después, solo.
+• Los recordatorios los programa el propio teléfono: media hora antes de un evento con hora, la tarde anterior si ocupa la jornada completa. No pasan por ningún servidor de notificaciones ni salen del aparato.
+• Aspecto claro y oscuro, los dos completos.
+
+PRIVACIDAD
+
+Sin anuncios, sin analítica, sin rastreo y sin nada que vender. No se pide el correo electrónico. La cuenta se elimina desde los ajustes de la propia aplicación.
+
+ANTES DE DESCARGARLA
+
+Es la agenda privada de un hogar concreto, no un servicio abierto: para entrar hace falta que quien la administra haya vinculado antes su identificador de Apple. Sin esa invitación no se puede usar con datos propios.
+
+Verla entera sí se puede, y sin cuenta: en la pantalla de acceso hay una demostración con datos inventados donde se elige con los ojos de quién se mira. La misma semana se ve distinta según quién la mire, que es exactamente de lo que va esta aplicación.
+```
 
 #### Privacidad de la ficha (*App Privacy*)
 
