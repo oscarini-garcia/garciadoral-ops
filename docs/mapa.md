@@ -73,8 +73,8 @@ tener que recorrer la aplicación entera cada vez.
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
   HORIZONTE_RECORDATORIOS_DIAS · iniciarNativo
 - **semana.js** — La semana como marco fijo de siete días.
-  INICIALES_DIA · NOMBRES_DIA · MESES · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia
-  parsearMomento · soloFecha · iso · isoConHora · …y 12 más
+  INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
+  soloFecha · iso · isoConHora · sumarDias · …y 11 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.

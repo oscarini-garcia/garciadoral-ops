@@ -270,6 +270,9 @@ button { background: none; border: 0; cursor: pointer; }
   font-family: var(--serif);
   font-weight: 500; font-size: 20px; letter-spacing: -.01em;
   font-variant-numeric: tabular-nums;
+  /* Con el mes escrito entero solo desborda la semana que cambia de año, una
+     al año: en lugar de recortar el rótulo siempre, esa se parte en dos. */
+  min-width: 0; text-wrap: balance;
 }
 
 .empujar { margin-left: auto; }

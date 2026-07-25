@@ -47,9 +47,9 @@ export function reiniciarAgenda() {
  */
 function tituloDePeriodo() {
   if (modo === 'semana') return formatearRango(lunesDe(ancla));
-  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} ${ancla.getFullYear()}`;
+  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
   const desde = hoy();
-  return `desde ${MESES_LARGOS[desde.getMonth()]} ${desde.getFullYear()}`;
+  return `desde ${MESES_LARGOS[desde.getMonth()]} de ${desde.getFullYear()}`;
 }
 
 export function pintarAgenda(pantalla, subcabecera, ctx) {
