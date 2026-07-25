@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Agenda Familiar">
+  <rect width="512" height="512" rx="112" fill="#0E6E62"/>
+  <g fill="#FBF9F5">
+    <rect x="96" y="112" width="198" height="24" rx="12"/>
+    <rect x="96" y="161" width="198" height="24" rx="12"/>
+    <rect x="96" y="210" width="320" height="24" rx="12"/>
+    <rect x="96" y="308" width="198" height="24" rx="12"/>
+    <rect x="96" y="357" width="320" height="24" rx="12"/>
+    <rect x="96" y="406" width="198" height="24" rx="12"/>
+  </g>
+  <rect x="96" y="259" width="320" height="24" rx="12" fill="#E48FAE"/>
+</svg>

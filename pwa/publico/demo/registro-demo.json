@@ -1,0 +1,532 @@
+{
+  "_nota": "Registro de demostración generado por herramientas/preparar-pwa.py. Personas y fechas inventadas.",
+  "personas": [
+    {
+      "id": "p-ana",
+      "nombre": "Ana",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1980-05-12",
+      "parentesco": "madre",
+      "tiene_cuenta": true,
+      "rol": "administrador"
+    },
+    {
+      "id": "p-oscar",
+      "nombre": "Óscar",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1978-11-03",
+      "parentesco": "padre",
+      "tiene_cuenta": true,
+      "rol": "administrador"
+    },
+    {
+      "id": "p-marta",
+      "nombre": "Marta",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "2010-08-01",
+      "parentesco": "hija",
+      "tiene_cuenta": true,
+      "rol": "miembro"
+    },
+    {
+      "id": "p-lucia",
+      "nombre": "Lucía",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "2013-02-19",
+      "parentesco": "hija",
+      "tiene_cuenta": true,
+      "rol": "miembro"
+    },
+    {
+      "id": "p-abuela",
+      "nombre": "la abuela",
+      "fecha_nacimiento": "1949-07-30",
+      "parentesco": "abuela",
+      "tiene_cuenta": false
+    },
+    {
+      "id": "p-abuelo",
+      "nombre": "el abuelo",
+      "fecha_nacimiento": "1947-03-05",
+      "parentesco": "abuelo",
+      "tiene_cuenta": false
+    }
+  ],
+  "atributos_persona": [
+    {
+      "persona_id": "p-marta",
+      "clave": "talla de calzado",
+      "valor": "39"
+    },
+    {
+      "persona_id": "p-abuela",
+      "clave": "alergias",
+      "valor": "frutos secos"
+    }
+  ],
+  "categorias": [
+    {
+      "id": "general",
+      "nombre": "General",
+      "regla": "publica",
+      "orden": 1
+    },
+    {
+      "id": "tecnologia",
+      "nombre": "Tecnología",
+      "regla": "publica",
+      "orden": 2
+    },
+    {
+      "id": "libros_musica",
+      "nombre": "Libros y música",
+      "regla": "publica",
+      "orden": 3
+    },
+    {
+      "id": "deporte",
+      "nombre": "Deporte",
+      "regla": "publica",
+      "orden": 4
+    },
+    {
+      "id": "ropa",
+      "nombre": "Ropa y complementos",
+      "regla": "publica",
+      "orden": 5
+    },
+    {
+      "id": "experiencias",
+      "nombre": "Experiencias",
+      "regla": "publica",
+      "orden": 6
+    },
+    {
+      "id": "casa_cocina",
+      "nombre": "Casa y cocina",
+      "regla": "publica",
+      "orden": 7
+    },
+    {
+      "id": "coordinacion",
+      "nombre": "Coordinación",
+      "regla": "privada",
+      "orden": 8
+    }
+  ],
+  "acceso_categoria": [],
+  "etiquetas": [
+    {
+      "id": "e-adolescente",
+      "nombre": "adolescente"
+    },
+    {
+      "id": "e-cocina",
+      "nombre": "aficionado a la cocina"
+    }
+  ],
+  "tipos_evento": [
+    {
+      "id": "cumpleanos",
+      "nombre": "Cumpleaños",
+      "emoji": "🎂",
+      "lleva_regalos": true
+    },
+    {
+      "id": "santo",
+      "nombre": "Santo",
+      "emoji": "✨",
+      "lleva_regalos": true
+    },
+    {
+      "id": "aniversario",
+      "nombre": "Aniversario",
+      "emoji": "💍",
+      "lleva_regalos": true
+    },
+    {
+      "id": "viaje",
+      "nombre": "Viaje",
+      "emoji": "✈️",
+      "lleva_regalos": false
+    },
+    {
+      "id": "competicion",
+      "nombre": "Competición",
+      "emoji": "🏆",
+      "lleva_regalos": false
+    },
+    {
+      "id": "entreno",
+      "nombre": "Entreno",
+      "emoji": "🏃",
+      "lleva_regalos": false
+    },
+    {
+      "id": "celebracion",
+      "nombre": "Celebración",
+      "emoji": "🎉",
+      "lleva_regalos": true
+    },
+    {
+      "id": "fecha_escolar",
+      "nombre": "Fecha escolar",
+      "emoji": "🎒",
+      "lleva_regalos": false
+    },
+    {
+      "id": "cita_medica",
+      "nombre": "Cita médica",
+      "emoji": "🩺",
+      "lleva_regalos": false
+    },
+    {
+      "id": "otro",
+      "nombre": "Otro",
+      "emoji": "📌",
+      "lleva_regalos": false
+    }
+  ],
+  "emojis_permitidos": [
+    "🎂",
+    "✨",
+    "💍",
+    "✈️",
+    "🏆",
+    "🏃",
+    "🎉",
+    "🎒",
+    "🩺",
+    "📌",
+    "🏇",
+    "🍽️",
+    "⚽",
+    "🎓",
+    "🎭",
+    "🎵",
+    "🚗",
+    "🏖️",
+    "🎁",
+    "🐾"
+  ],
+  "eventos": [
+    {
+      "id": "ev-entreno-hipica",
+      "titulo": "Entreno de hípica",
+      "tipo_id": "entreno",
+      "emoji": "🏇",
+      "inicio": "2026-01-12T18:00:00",
+      "fin": "2026-01-12T19:30:00",
+      "repeticion": "semanal",
+      "repeticion_hasta": "2026-12-21",
+      "participantes": [
+        {
+          "persona_id": "p-marta",
+          "rol": "asistente"
+        }
+      ],
+      "jornada_completa": false,
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-dentista",
+      "titulo": "Dentista",
+      "tipo_id": "cita_medica",
+      "inicio": "2026-07-30T10:00:00",
+      "fin": "2026-07-30T11:00:00",
+      "participantes": [
+        {
+          "persona_id": "p-ana",
+          "rol": "protagonista"
+        }
+      ],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-torneo",
+      "titulo": "Torneo de hípica",
+      "tipo_id": "competicion",
+      "inicio": "2026-08-01",
+      "fin": "2026-08-02",
+      "jornada_completa": true,
+      "participantes": [
+        {
+          "persona_id": "p-marta",
+          "rol": "asistente"
+        }
+      ],
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-comida-abuelos",
+      "titulo": "Comida con los abuelos",
+      "tipo_id": "celebracion",
+      "emoji": "🍽️",
+      "inicio": "2026-08-02T14:00:00",
+      "lleva_regalos": false,
+      "participantes": [
+        {
+          "persona_id": "p-abuela",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-abuelo",
+          "rol": "asistente"
+        }
+      ],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-sorpresa-marta",
+      "titulo": "Preparar la fiesta de Marta",
+      "tipo_id": "otro",
+      "inicio": "2026-07-31T17:00:00",
+      "categoria_id": "coordinacion",
+      "participantes": [
+        {
+          "persona_id": "p-ana",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-oscar",
+          "rol": "asistente"
+        }
+      ],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-colegio",
+      "titulo": "Reunión del colegio",
+      "tipo_id": "fecha_escolar",
+      "inicio": "2026-07-20T17:00:00",
+      "participantes": [
+        {
+          "persona_id": "p-ana",
+          "rol": "asistente"
+        }
+      ],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-sorpresa-julio",
+      "titulo": "Ver el sitio para la fiesta",
+      "tipo_id": "otro",
+      "inicio": "2026-07-23T18:00:00",
+      "categoria_id": "coordinacion",
+      "participantes": [
+        {
+          "persona_id": "p-ana",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-oscar",
+          "rol": "asistente"
+        }
+      ],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-peluqueria",
+      "titulo": "Peluquería",
+      "tipo_id": "otro",
+      "inicio": "2026-07-25T10:00:00",
+      "participantes": [],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-compra",
+      "titulo": "Compra grande de la semana",
+      "tipo_id": "otro",
+      "inicio": "2026-07-25T12:00:00",
+      "participantes": [],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-cine",
+      "titulo": "Cine",
+      "tipo_id": "celebracion",
+      "inicio": "2026-07-25T19:00:00",
+      "participantes": [],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-cena",
+      "titulo": "Cena con los vecinos",
+      "tipo_id": "celebracion",
+      "inicio": "2026-07-25T21:30:00",
+      "participantes": [],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-comida-julio",
+      "titulo": "Comida con los abuelos",
+      "tipo_id": "celebracion",
+      "emoji": "🍽️",
+      "inicio": "2026-07-26T14:00:00",
+      "lleva_regalos": false,
+      "participantes": [
+        {
+          "persona_id": "p-abuela",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-abuelo",
+          "rol": "asistente"
+        }
+      ],
+      "jornada_completa": false,
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    },
+    {
+      "id": "ev-viaje",
+      "titulo": "Viaje a la sierra",
+      "tipo_id": "viaje",
+      "inicio": "2026-08-06",
+      "fin": "2026-08-09",
+      "jornada_completa": true,
+      "participantes": [
+        {
+          "persona_id": "p-ana",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-oscar",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-marta",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-lucia",
+          "rol": "asistente"
+        }
+      ],
+      "repeticion": "ninguna",
+      "origen": "manual",
+      "activo": true
+    }
+  ],
+  "ideas": [
+    {
+      "id": "id-botas",
+      "titulo": "Botas de montar",
+      "autor_id": "p-ana",
+      "categoria_id": "deporte",
+      "precio_min": 80,
+      "precio_max": 120,
+      "estado": "en_curso",
+      "orientaciones": [
+        {
+          "persona_id": "p-marta"
+        }
+      ],
+      "tipo": "sugerencia",
+      "activa": true
+    },
+    {
+      "id": "id-ceramica",
+      "titulo": "Curso de cerámica",
+      "autor_id": "p-oscar",
+      "categoria_id": "experiencias",
+      "orientaciones": [
+        {
+          "etiqueta_id": "e-cocina"
+        }
+      ],
+      "tipo": "sugerencia",
+      "estado": "activa",
+      "activa": true
+    },
+    {
+      "id": "id-auriculares",
+      "titulo": "Auriculares con cancelación de ruido",
+      "autor_id": "p-marta",
+      "tipo": "deseo",
+      "categoria_id": "tecnologia",
+      "orientaciones": [
+        {
+          "persona_id": "p-marta"
+        }
+      ],
+      "estado": "activa",
+      "activa": true
+    }
+  ],
+  "ocasiones": [
+    {
+      "id": "oc-cumple-marta-2026",
+      "nombre": "Cumpleaños de Marta 2026",
+      "fecha": "2026-08-01",
+      "estado": "abierta",
+      "participantes": [
+        "p-marta"
+      ],
+      "presupuestos": [
+        {
+          "persona_id": "p-marta",
+          "importe": 150
+        }
+      ],
+      "activa": true
+    }
+  ],
+  "regalos": [
+    {
+      "id": "rg-botas",
+      "ocasion_id": "oc-cumple-marta-2026",
+      "idea_id": "id-botas",
+      "destinatario_principal_id": "p-marta",
+      "responsable_id": "p-ana",
+      "estado": "comprado",
+      "coste_real": 96.5,
+      "categoria_id": "deporte",
+      "compartido": false,
+      "codestinatarios": [],
+      "activo": true
+    }
+  ],
+  "comentarios": [
+    {
+      "id": "cm-1",
+      "objeto_tipo": "regalo",
+      "objeto_id": "rg-botas",
+      "autor_id": "p-oscar",
+      "texto": "Confirmada la talla con la tienda.",
+      "fecha": "2026-07-20T19:12:00"
+    }
+  ],
+  "conflictos": []
+}

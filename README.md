@@ -1,18 +1,42 @@
 # garciadoral-ops
 
-Implementación de las especificaciones de `specs/`: el **despachador de mensajes
-de WhatsApp** y el **plan semanal** que se envía cada domingo, junto con el
-modelo de datos y la función de visibilidad de la Agenda Familiar en los que el
-plan se apoya.
+Implementación de las especificaciones de `specs/`. Cinco piezas que comparten
+un mismo modelo y una misma regla de visibilidad:
 
-Solo biblioteca estándar de Python. Sin `pip install`, sin dependencias que
-mantener y con ejecuciones de pocos segundos.
+| Pieza | Dónde | Qué es |
+|---|---|---|
+| **API** | `api/` | Worker de Cloudflare sobre D1. Guarda el registro canónico y **filtra antes de transmitir** |
+| **Aplicación web** | `pwa/` | PWA instalable, local-first, sin proceso de compilación |
+| **Aplicación iOS** | `ios/` | SwiftUI, con el núcleo en un paquete que se prueba sin simulador |
+| **Plan semanal** | `scripts/plan_semanal.py` | Un mensaje de WhatsApp por persona, cada domingo |
+| **Despachador** | `scripts/despachar.py` | La cola de mensajes programados |
+
+Los pasos de despliegue —Cloudflare, Apple Developer y GitHub— están en
+[`docs/despliegue-cloudflare.md`](docs/despliegue-cloudflare.md).
+
+## La regla que lo gobierna todo
+
+El modo de fallo grave de este sistema no es un error visible: es **arruinar una
+sorpresa**. De ahí que la función de visibilidad (`specs/modelo-datos.md` §6)
+esté implementada tres veces —Python, JavaScript y Swift— y que las tres suites
+de pruebas comprueben exactamente lo mismo. Una divergencia entre ellas
+significaría que la aplicación y el plan semanal ocultan cosas distintas.
+
+Y de ahí, sobre todo, que el filtrado se produzca **en el servidor, antes de
+transmitir**: ningún dispositivo llega a almacenar lo que su titular no puede
+ver, porque en un modelo sin conexión esa información permanecería accesible por
+otras vías. Es el requisito no funcional de mayor importancia del sistema.
 
 ---
 
 ## 1. Qué hay aquí
 
 ```
+api/                  · Worker de Cloudflare y esquema de D1
+pwa/                  · aplicación web instalable
+ios/                  · aplicación SwiftUI y núcleo AgendaFamiliarCore
+docs/                 · guía de despliegue
+herramientas/         · generación de iconos y datos de demostración
 .github/workflows/
   despachador.yml     · sondeo diario que despacha la cola
   plan-semanal.yml    · el plan de la semana entrante, los domingos por la tarde
@@ -46,7 +70,11 @@ tests/                · 77 pruebas sobre las reglas de las especificaciones
 | `specs/modelo-datos.md` §2 y §4 | `scripts/agenda/modelo.py` |
 | `specs/modelo-datos.md` §6 | `scripts/agenda/visibilidad.py` |
 | `specs/modelo-datos.md` §7.4 | `eventos_derivados` en `scripts/agenda/semana.py` |
-| `specs/especificacion.md` §3.1 y §4.1 | `datos/catalogos.json` |
+| `specs/especificacion.md` §3.1 y §4.1 | `datos/catalogos.json`, `api/migraciones/0002_catalogos.sql` |
+| `specs/especificacion.md` §3 (visibilidad) | `api/src/visibilidad.js` y `api/src/filtrado.js` |
+| `specs/especificacion.md` §8 (acceso) | `api/src/apple.js`, `pwa/publico/js/sesion.js`, `ios/App/…/AgendaFamiliarApp.swift` |
+| `specs/especificacion.md` §9 (sin conexión) | `pwa/publico/js/sincronizacion.js`, `ios/Sources/…/Almacen.swift` |
+| `specs/ux.md` §11 (opción D) | `pwa/publico/js/vistas/`, `ios/App/AgendaFamiliar/Vistas/` |
 
 `specs/especificacion.md` §7 (Anecdotario) tiene la especificación diferida y no
 se modela, tal como el propio documento indica.
@@ -220,7 +248,9 @@ principal se extrae a `procesar()` para poder probarlo sin red.
 ## 6. Pruebas
 
 ```bash
-python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s tests -v   # despachador, plan semanal, modelo
+cd api && npm test                         # visibilidad y filtrado del Worker
+cd ios && swift test                       # el núcleo, en un Mac
 ```
 
 Cubren la función de visibilidad —incluidas la ocultación por destinatario, los
@@ -232,15 +262,18 @@ propia prueba.
 
 ---
 
-## 7. Qué no está implementado
-
-La **aplicación iOS de la Agenda Familiar** (`specs/especificacion.md`,
-`specs/modelo-datos.md`, `specs/ux.md`, `specs/prototipo-v6.html`) no forma parte
-de este repositorio: es un producto Swift/SwiftUI que necesita Xcode y un
-proyecto propio. Lo que sí vive aquí es su núcleo lógico —modelo, reglas de
-integridad y función de visibilidad—, que el plan semanal necesita y que sirve de
-referencia ejecutable para la implementación del cliente.
+## 7. Qué falta
 
 El módulo **Anecdotario** queda fuera por decisión de la propia especificación
 funcional, que difiere su detalle hasta cerrar la estructura de la importación
 desde el export de Facebook.
+
+De lo demás, tres cosas están modeladas pero no construidas: los **calendarios
+externos** importados —el modelo los contempla y la interfaz los muestra como
+eventos no editables, pero no hay conector que los traiga—, las **notificaciones**
+del recordatorio previo, y la **copia periódica automática** de salvaguarda; la
+exportación bajo demanda sí funciona (`docs/despliegue-cloudflare.md` §12).
+
+El código de iOS no se ha compilado: se escribió en un entorno sin cadena de
+herramientas de Swift. Conviene pasarle `swift test` y un `xcodegen generate`
+antes de darlo por bueno.
