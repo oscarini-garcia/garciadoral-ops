@@ -69,14 +69,25 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
           paso('›', 1, 'Siguiente'),
         ]),
       ]),
-      el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
-        ...['semana', 'mes', 'lista'].map((nombre) =>
-          el('button', {
-            type: 'button',
-            'aria-pressed': modo === nombre ? 'true' : 'false',
-            onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
-          }, [nombre[0].toUpperCase() + nombre.slice(1)]),
-        ),
+      el('div', { class: 'vistas' }, [
+        el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
+          ...['semana', 'mes', 'lista'].map((nombre) =>
+            el('button', {
+              type: 'button',
+              'aria-pressed': modo === nombre ? 'true' : 'false',
+              onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
+            }, [nombre[0].toUpperCase() + nombre.slice(1)]),
+          ),
+        ]),
+        // Volver es tan necesario como irse: con las flechas y el
+        // deslizamiento, tres gestos distraídos dejan la agenda en un mes que
+        // no le importa a nadie y sin forma evidente de regresar. En la lista
+        // no hace falta, porque siempre arranca en hoy.
+        modo === 'lista' ? null : el('button', {
+          class: 'boton-hoy empujar', type: 'button',
+          'aria-label': 'Volver a hoy',
+          onclick: () => { toque(); ancla = hoy(); ultimoPaso = 0; ctx.refrescar(); },
+        }, ['Hoy']),
       ]),
     ]),
   );
