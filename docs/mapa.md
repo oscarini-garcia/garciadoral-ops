@@ -81,7 +81,7 @@ tener que recorrer la aplicación entera cada vez.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar · sincronizar
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · abrirHoja · cerrarHoja · hayHojaAbierta
-  avisar · campo · …y 3 más
+  deslizarHorizontal · avisar · …y 4 más
 
 ### `pwa/publico/js/vistas/` · Las cuatro secciones de la aplicación
 

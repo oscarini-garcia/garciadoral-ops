@@ -95,6 +95,51 @@ export function cerrarHoja() {
 
 export const hayHojaAbierta = () => Boolean(cerrarActual);
 
+// ------------------------------------------------------------------ Gestos --
+
+/**
+ * Deslizamiento horizontal sobre un nodo, para pasar al periodo anterior o al
+ * siguiente sin buscar las flechas.
+ *
+ * Se escucha con eventos de puntero, que sirven igual al dedo y al ratón. El
+ * desplazamiento vertical manda: si el dedo baja más de lo que se mueve a los
+ * lados, es un desplazamiento de la página y no un gesto, y el navegador
+ * cancela el puntero por su cuenta.
+ *
+ * Un gesto que empieza encima de un botón termina, para el navegador, en un
+ * clic sobre ese botón. Por eso se traga el clic inmediatamente posterior: sin
+ * eso, deslizar desde encima de un evento abriría su detalle al soltar.
+ */
+export function deslizarHorizontal(nodo, alDeslizar) {
+  const MINIMO = 48;
+  const DOMINANCIA = 1.4;
+  const GRACIA = 400;
+
+  let origen = null;
+  let sordoHasta = 0;
+
+  nodo.addEventListener('pointerdown', (evento) => {
+    origen = evento.isPrimary ? { x: evento.clientX, y: evento.clientY } : null;
+  });
+  nodo.addEventListener('pointercancel', () => { origen = null; });
+  nodo.addEventListener('pointerup', (evento) => {
+    if (!origen) return;
+    const dx = evento.clientX - origen.x;
+    const dy = evento.clientY - origen.y;
+    origen = null;
+    if (Math.abs(dx) < MINIMO || Math.abs(dx) < Math.abs(dy) * DOMINANCIA) return;
+    sordoHasta = performance.now() + GRACIA;
+    alDeslizar(dx < 0 ? 1 : -1);
+  });
+  nodo.addEventListener('click', (evento) => {
+    if (performance.now() >= sordoHasta) return;
+    evento.preventDefault();
+    evento.stopPropagation();
+  }, true);
+
+  return nodo;
+}
+
 // ------------------------------------------------------------------ Avisos --
 
 export function avisar(texto) {

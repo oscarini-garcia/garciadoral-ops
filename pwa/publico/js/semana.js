@@ -61,12 +61,22 @@ export function diasDeLaSemana(lunes) {
   return Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
 }
 
+/**
+ * Rango de la semana con su año. El año importa: sin él, «20 – 26 jul» no dice
+ * de cuándo se está hablando en cuanto uno se aleja unos meses del presente. Se
+ * escribe una sola vez salvo que la semana cambie de año, que es el único caso
+ * en que hacen falta los dos.
+ */
 export function formatearRango(lunes) {
   const domingo = sumarDias(lunes, 6);
-  if (lunes.getMonth() === domingo.getMonth()) {
-    return `${lunes.getDate()} – ${domingo.getDate()} ${MESES[domingo.getMonth()]}`;
+  if (lunes.getFullYear() !== domingo.getFullYear()) {
+    return `${lunes.getDate()} ${MESES[lunes.getMonth()]} ${lunes.getFullYear()}`
+      + ` – ${domingo.getDate()} ${MESES[domingo.getMonth()]} ${domingo.getFullYear()}`;
   }
-  return `${lunes.getDate()} ${MESES[lunes.getMonth()]} – ${domingo.getDate()} ${MESES[domingo.getMonth()]}`;
+  if (lunes.getMonth() === domingo.getMonth()) {
+    return `${lunes.getDate()} – ${domingo.getDate()} ${MESES[domingo.getMonth()]} ${domingo.getFullYear()}`;
+  }
+  return `${lunes.getDate()} ${MESES[lunes.getMonth()]} – ${domingo.getDate()} ${MESES[domingo.getMonth()]} ${domingo.getFullYear()}`;
 }
 
 export function formatearHora(momento) {

@@ -5,9 +5,18 @@
  * hay estos días, cómo se reparte el mes y qué viene a continuación
  * (specs/ux.md §10). La de semana es la de por defecto y la que abre la
  * aplicación.
+ *
+ * Sobre las tres se navega igual: el encabezado dice de cuándo se habla —mes y
+ * año incluidos—, las flechas pasan al periodo anterior o al siguiente y el
+ * deslizamiento lateral hace lo mismo sin buscarlas. Lo que pasa el gesto es el
+ * periodo que se esté mirando: la semana, el mes o, dentro de la hoja de día,
+ * el día.
  */
 
-import { el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar } from '../ui.js';
+import {
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
+  deslizarHorizontal,
+} from '../ui.js';
 import { guardar, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId } from '../modelo.js';
 import {
@@ -20,40 +29,81 @@ import { compartir, toque } from '../native.js';
 
 let modo = 'semana';
 let ancla = hoy();
+// Dirección del último cambio de periodo, para que lo que entra lo haga por el
+// lado del que se viene. Se consume al pintar.
+let ultimoPaso = 0;
 
 export function reiniciarAgenda() {
   modo = 'semana';
   ancla = hoy();
+  ultimoPaso = 0;
+}
+
+/**
+ * Encabezado de la agenda: de cuándo se está hablando, y luego con qué vista se
+ * mira. El periodo va primero y en grande porque es la pregunta que se hace
+ * quien llega —«¿qué semana es esta?»— y porque el número del día suelto, sin
+ * mes ni año, no la responde.
+ */
+function tituloDePeriodo() {
+  if (modo === 'semana') return formatearRango(lunesDe(ancla));
+  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} ${ancla.getFullYear()}`;
+  const desde = hoy();
+  return `desde ${MESES_LARGOS[desde.getMonth()]} ${desde.getFullYear()}`;
 }
 
 export function pintarAgenda(pantalla, subcabecera, ctx) {
+  const paso = (rotulo, pasos, etiqueta) => el('button', {
+    type: 'button', 'aria-label': etiqueta,
+    onclick: () => { mover(pasos); ctx.refrescar(); },
+  }, [rotulo]);
+
   vaciar(subcabecera).append(
-    el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
-      ...['semana', 'mes', 'lista'].map((nombre) =>
-        el('button', {
-          type: 'button',
-          'aria-pressed': modo === nombre ? 'true' : 'false',
-          onclick: () => { modo = nombre; ctx.refrescar(); },
-        }, [nombre[0].toUpperCase() + nombre.slice(1)]),
-      ),
-    ]),
-    modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
-      el('button', { type: 'button', 'aria-label': 'Anterior', onclick: () => { mover(-1); ctx.refrescar(); } }, ['‹']),
-      el('span', { class: 'rango', texto: modo === 'semana' ? formatearRango(lunesDe(ancla)) : `${MESES_LARGOS[ancla.getMonth()]} ${ancla.getFullYear()}` }),
-      el('button', { type: 'button', 'aria-label': 'Siguiente', onclick: () => { mover(1); ctx.refrescar(); } }, ['›']),
+    el('div', { class: 'agenda-controles' }, [
+      el('div', { class: 'periodo' }, [
+        el('h2', { class: 'periodo-titulo', texto: tituloDePeriodo() }),
+        // La lista arranca siempre en hoy y llega hasta donde llegue: no hay
+        // periodo anterior ni siguiente al que saltar.
+        modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
+          paso('‹', -1, 'Anterior'),
+          paso('›', 1, 'Siguiente'),
+        ]),
+      ]),
+      el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
+        ...['semana', 'mes', 'lista'].map((nombre) =>
+          el('button', {
+            type: 'button',
+            'aria-pressed': modo === nombre ? 'true' : 'false',
+            onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
+          }, [nombre[0].toUpperCase() + nombre.slice(1)]),
+        ),
+      ]),
     ]),
   );
 
   vaciar(pantalla);
-  if (modo === 'semana') pantalla.append(vistaSemana(ctx));
-  else if (modo === 'mes') pantalla.append(vistaMes(ctx));
-  else pantalla.append(vistaLista(ctx));
+  let cuerpo;
+  if (modo === 'semana') cuerpo = vistaSemana(ctx);
+  else if (modo === 'mes') cuerpo = vistaMes(ctx);
+  else cuerpo = vistaLista(ctx);
+
+  // El deslizamiento se cuelga del cuerpo de la vista, que se construye entero
+  // en cada pintado: así no quedan escuchadores viejos sobre la pantalla.
+  if (modo !== 'lista') {
+    deslizarHorizontal(cuerpo, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
+  }
+  if (ultimoPaso) {
+    cuerpo.classList.add(ultimoPaso > 0 ? 'entra-derecha' : 'entra-izquierda');
+    ultimoPaso = 0;
+  }
+  pantalla.append(cuerpo);
 }
 
 function mover(pasos) {
   ancla = modo === 'semana'
     ? sumarDias(ancla, 7 * pasos)
     : new Date(ancla.getFullYear(), ancla.getMonth() + pasos, 1);
+  ultimoPaso = pasos;
 }
 
 // --------------------------------------------------------------- Semana --
@@ -71,7 +121,19 @@ function vistaSemana(ctx) {
     if (!apariciones.length) {
       // Los días vacíos son información y no espacio desperdiciado: enseñan la
       // forma de la semana, que es justo lo que se quiere ver al planificar.
-      contenido.append(el('div', { class: 'dia-vacio', texto: '—' }));
+      // El hueco es además el sitio natural para llenarlo: un doble clic sobre
+      // él abre el formulario con ese día ya puesto. Se pide doble y no
+      // sencillo porque la fila entera está a un dedo de distancia mientras se
+      // recorre la semana, y un toque suelto no puede significar «crear».
+      const crear = () => { toque(); abrirFormularioEvento(ctx, { fecha: dia }); };
+      contenido.append(el('button', {
+        class: 'dia-vacio', type: 'button',
+        'aria-label': `Crear un evento el ${formatearFechaLarga(dia)}`,
+        // El teclado no tiene doble clic: Enter y Espacio llegan como un clic
+        // sin botón detrás (`detail` a cero) y valen por sí solos.
+        onclick: (evento) => { if (evento.detail === 0) crear(); },
+        ondblclick: crear,
+      }, ['—']));
     } else {
       for (const aparicion of apariciones.slice(0, TECHO_EVENTOS_DIA)) {
         contenido.append(lineaDeEvento(aparicion, ctx));
@@ -221,7 +283,7 @@ export function abrirDia(fecha, ctx) {
   const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, fecha, fecha), [fecha]);
   const apariciones = reparto.get(iso(fecha)) || [];
 
-  abrirHoja(formatearFechaLarga(fecha), (cuerpo) => {
+  const contenido = abrirHoja(formatearFechaLarga(fecha), (cuerpo) => {
     if (!apariciones.length) cuerpo.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
     for (const aparicion of apariciones) cuerpo.append(tarjetaDeEvento(aparicion, ctx));
     cuerpo.append(el('button', {
@@ -229,6 +291,10 @@ export function abrirDia(fecha, ctx) {
       onclick: () => abrirFormularioEvento(ctx, { fecha }),
     }, ['Añadir un evento este día']));
   });
+
+  // El mismo gesto que en la semana y en el mes, un piso más abajo: aquí lo que
+  // pasa es el día. Se cuelga del cuerpo, que la hoja rehace en cada apertura.
+  deslizarHorizontal(contenido, (pasos) => { toque(); abrirDia(sumarDias(fecha, pasos), ctx); });
 }
 
 // -------------------------------------------------------- Detalle de evento --
