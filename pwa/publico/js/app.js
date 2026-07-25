@@ -18,7 +18,16 @@ import { crearVista } from './modelo.js';
 import { estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
 import { cargarConfiguracion, entrarConApple } from './sesion.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
-import { comprobarActualizacion, esNativo, iniciarNativo, toque, versionInstalada } from './native.js';
+import {
+  HORIZONTE_RECORDATORIOS_DIAS,
+  comprobarActualizacion,
+  esNativo,
+  iniciarNativo,
+  programarRecordatorios,
+  toque,
+  versionInstalada,
+} from './native.js';
+import { hoy, instanciasEn, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
 import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
@@ -165,6 +174,8 @@ function prepararInterfaz() {
 
   document.getElementById('indicadorSync').onclick = abrirPanelDeSincronizacion;
 
+  let ultimaInstantanea = null;
+
   suscribir((datos, situacion) => {
     if (situacion.estado === 'sesion-caducada') {
       borrarSesion();
@@ -172,10 +183,33 @@ function prepararInterfaz() {
       return;
     }
     pintarIndicador(situacion);
-    if (datos) refrescar();
+    if (!datos) return;
+    refrescar();
+
+    // La instantánea se sustituye entera en cada sincronización correcta, de
+    // modo que basta comparar la referencia para no reprogramar los avisos en
+    // cada cambio de estado de la sincronización.
+    if (datos !== ultimaInstantanea) {
+      ultimaInstantanea = datos;
+      refrescarRecordatorios(datos);
+    }
   });
 
   refrescar();
+}
+
+/**
+ * Reprograma los recordatorios previos con lo que hay en la instantánea.
+ *
+ * Se expande la recurrencia igual que para pintar la agenda, porque un
+ * cumpleaños anual o una actividad semanal tienen que avisar en cada
+ * aparición, no solo en la primera. Fuera de la cáscara no hace nada.
+ */
+function refrescarRecordatorios(datos) {
+  if (!esNativo()) return;
+  const desde = hoy();
+  const instancias = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS));
+  programarRecordatorios(instancias);
 }
 
 // -------------------------------------------------------------- Pintado --

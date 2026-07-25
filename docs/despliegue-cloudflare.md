@@ -175,8 +175,16 @@ espera tiene: los cambios de dominio tardan unos minutos en propagarse.
 2. Tipo **App IDs → App**.
 3. Description: `Garcia Doral Ops`. Bundle ID **explícito**:
    `com.garciadoral.garciadoral-ops`.
-4. En Capabilities marque **Sign in with Apple**.
+4. En Capabilities marque **Sign in with Apple** y también **Push
+   Notifications**.
 5. Guarde.
+
+> **Por qué Push Notifications si los avisos son locales.** Hoy no hace falta:
+> los recordatorios se programan en el dispositivo y no pasan por APNs. Se marca
+> igualmente porque activarla ahora no cuesta nada y no obliga a usarla, mientras
+> que añadirla más tarde obliga a regenerar los perfiles de aprovisionamiento y a
+> volver a firmar. Si algún día se quieren avisos que nazcan en el servidor, la
+> capacidad ya estará puesta.
 
 Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `pwa/capacitor.config.json`.
 
@@ -536,7 +544,8 @@ En Xcode:
 1. **Signing & Capabilities** → elija su *Team* y confirme el bundle id.
 2. Añada la capacidad **Sign in with Apple**. No es opcional: sin ella el
    complemento nativo del paso 4.3 falla al abrir la hoja, y el acceso desde el
-   teléfono no funciona aunque en el navegador vaya perfecto.
+   teléfono no funciona aunque en el navegador vaya perfecto. Añada también
+   **Push Notifications**, por lo dicho en el paso 4.1.
 3. *Any iOS Device* → **Product ▸ Archive** → **Distribute App ▸ App Store
    Connect ▸ Upload**.
 4. Pruebe en **TestFlight** (interno, casi sin revisión) antes de enviar a la
@@ -582,6 +591,47 @@ cómo se usa un complemento ya instalado es una actualización web normal.
 Solo hay que volver a Xcode cuando cambie algo **nativo**: un plugin nuevo, los
 iconos, los permisos o la versión de Capacitor.
 
+### 8.2 Los recordatorios
+
+El recordatorio previo al evento —la única notificación activa por defecto según
+la especificación funcional— lo programa **el propio teléfono**, no el servidor.
+No pasa por APNs, no hay claves que rotar y funciona sin conexión.
+
+Esa decisión no es de comodidad: es lo que hace que se cumpla sola la regla de
+que **las notificaciones heredan la visibilidad**. El Worker filtra antes de
+transmitir, de modo que la instantánea del dispositivo no contiene lo que su
+titular no puede ver, y un aviso compuesto a partir de ella tampoco puede
+delatarlo. Con avisos remotos habría que volver a aplicar la regla al componer
+cada mensaje, y el texto pasaría además por los servidores de Apple.
+
+Cuándo avisa, con los valores de hoy:
+
+| Evento | Aviso |
+|---|---|
+| Con hora | 30 minutos antes |
+| De jornada completa | la tarde anterior, a las 20:00 |
+
+La primera vez que la app sincroniza, iOS pide permiso. Si se deniega, no pasa
+nada más: la agenda funciona igual y no vuelve a insistir. Se puede conceder
+después desde Ajustes → Agenda → Notificaciones.
+
+Los avisos se rehacen enteros en cada sincronización, en lugar de calcular
+diferencias. Es lo mismo que hace la instantánea, y por el mismo motivo: así la
+retirada retroactiva funciona sola. Si un evento deja de ser visible para esa
+persona, su aviso pendiente desaparece con él.
+
+> **Dos límites que conviene conocer.** iOS solo conserva las **64**
+> notificaciones locales pendientes más próximas; el resto las descarta sin
+> avisar, así que el recorte se hace en el código para que sea nuestro y no una
+> sorpresa. Y el horizonte de programación son 60 días: un evento más lejano no
+> tiene aviso hasta que alguna sincronización posterior lo acerque.
+>
+> **Lo que falta.** La tabla `preferencia_notificacion` existe en el esquema,
+> con el recordatorio activo y los avisos de modificación desactivados, pero ni
+> se sirve al cliente ni hay pantalla para tocarla. Hoy, por tanto, rige ese
+> valor por defecto para todo el mundo y con la misma antelación. Poder
+> configurarlo por evento, como pide la especificación, es el paso siguiente.
+
 ---
 
 ## 9. Comprobaciones finales
@@ -611,6 +661,11 @@ error visible: es arruinar una sorpresa.
       *Primary* (paso 4.2) y hay que corregirlo antes de dar de alta a nadie más.
 - [ ] Pedir una ruta que no exista —`/loquesea`— y comprobar que responde `404`,
       no la aplicación con un `200`.
+- [ ] En el teléfono, aceptar el permiso de notificaciones, crear un evento
+      dentro de la próxima hora y comprobar que el aviso llega 30 minutos antes.
+- [ ] Y la que de verdad importa: crear un evento reservado que una hija no deba
+      ver, y comprobar **desde su teléfono** que no le llega recordatorio. Es el
+      mismo modo de fallo del resto del sistema, por otra puerta.
 
 ---
 
