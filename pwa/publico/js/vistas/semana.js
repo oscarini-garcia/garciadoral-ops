@@ -16,6 +16,7 @@ import {
   isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import { abrirDetalleRegalo, abrirSelectorDeRegalo } from './regalos.js';
+import { compartir, toque } from '../native.js';
 
 let modo = 'semana';
 let ancla = hoy();
@@ -293,6 +294,22 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
         class: 'boton crecer', type: 'button',
         onclick: () => abrirFormularioEvento(ctx, { id: evento.id }),
       }, ['Editar']),
+      // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
+      // `navigator.share` —o al portapapeles— en el navegador. Solo sale la
+      // cara pública del evento: ni una palabra de la dimensión de regalos.
+      el('button', {
+        class: 'boton', 'data-tono': 'discreto', type: 'button',
+        onclick: async () => {
+          toque();
+          const enviado = await compartir({
+            titulo: evento.titulo,
+            texto: `${ctx.vista.emojiDe(evento)} ${evento.titulo}\n${formatearFechaLarga(aparicion ? aparicion.dia : inicio)}`
+              + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
+              + (evento.ubicacion ? `\n${evento.ubicacion}` : ''),
+          });
+          if (!enviado) avisar('No he podido compartirlo');
+        },
+      }, ['Compartir']),
       el('button', {
         class: 'boton', 'data-tono': 'discreto', type: 'button',
         onclick: () => abrirSelectorDeEmoji(evento, ctx),
@@ -514,6 +531,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
             ],
           };
           await guardar('evento', existente ? existente.id : nuevoId(), campos);
+          toque('media');
           cerrarHoja();
           avisar(existente ? 'Evento actualizado' : 'Evento creado');
           ctx.refrescar();

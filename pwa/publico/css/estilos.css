@@ -78,17 +78,27 @@
    interceptando los toques con el diálogo cerrado. */
 [hidden] { display: none !important; }
 
+/* Que se sienta aplicación y no página: sin destello al tocar, sin zoom por
+   doble toque, sin menú al mantener pulsado y sin selección accidental. El
+   rebote del scroll lo remata la cáscara nativa (scripts/patch-ios.mjs). */
+* { -webkit-tap-highlight-color: transparent; }
+
 html, body {
   background: var(--paper);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   color: var(--ink);
   font-family: var(--sans);
   font-size: 16px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
 }
 
 button, input, select, textarea { font: inherit; color: inherit; }
+input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
 button { background: none; border: 0; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 4px; }
 

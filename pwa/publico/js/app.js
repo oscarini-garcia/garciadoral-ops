@@ -18,6 +18,7 @@ import { crearVista } from './modelo.js';
 import { estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
 import { cargarConfiguracion, entrarConApple } from './sesion.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
+import { comprobarActualizacion, esNativo, iniciarNativo, toque, versionInstalada } from './native.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
 import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
@@ -39,6 +40,7 @@ arrancar();
 
 async function arrancar() {
   registrarServiceWorker();
+  iniciarNativo();
   configuracion = await cargarConfiguracion();
 
   const sesion = leerSesion();
@@ -47,8 +49,15 @@ async function arrancar() {
   return mostrarAcceso();
 }
 
+/**
+ * En el navegador, el service worker guarda el armazón para que la aplicación
+ * abra sin red. Dentro de la cáscara de iOS **no se registra**: allí el armazón
+ * ya viene empaquetado y quien decide cuándo cambia es el mecanismo de
+ * actualización por OTA. Dos cachés compitiendo por lo mismo solo producen
+ * pantallas viejas que nadie sabe por qué no se van.
+ */
 function registrarServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
+  if (!('serviceWorker' in navigator) || esNativo()) return;
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => { /* sin caché, pero funcional */ });
   });
@@ -149,7 +158,9 @@ function prepararInterfaz() {
 
   document.getElementById('fab').onclick = () => {
     const accion = PESTANAS[pestana].fab;
-    if (accion) accion(ctx);
+    if (!accion) return;
+    toque();
+    accion(ctx);
   };
 
   document.getElementById('indicadorSync').onclick = abrirPanelDeSincronizacion;
@@ -225,6 +236,8 @@ function abrirPanelDeSincronizacion() {
     tema.addEventListener('change', () => aplicarTema(tema.value));
     cuerpo.append(campo('Aspecto', tema));
 
+    if (esNativo()) cuerpo.append(bloqueDeVersion());
+
     cuerpo.append(el('div', { class: 'acciones' }, [
       situacion.estado === 'demostracion' ? null : el('button', {
         class: 'boton crecer', type: 'button',
@@ -242,6 +255,42 @@ function abrirPanelDeSincronizacion() {
       }, [situacion.estado === 'demostracion' ? 'Salir de la demostración' : 'Cerrar sesión']),
     ]));
   });
+}
+
+/**
+ * Versión instalada y comprobación manual, solo dentro de la cáscara.
+ *
+ * La comprobación automática ya ocurre al arrancar; este botón existe para
+ * poder forzarla cuando alguien pregunta si tiene lo último. La actualización
+ * se aplica al volver a abrir la aplicación, nunca a media sesión.
+ */
+function bloqueDeVersion() {
+  const linea = el('p', { class: 'pista', texto: 'Comprobando la versión…' });
+  versionInstalada().then((version) => {
+    linea.textContent = version ? `Versión instalada: ${version}.` : 'Versión instalada: la de origen.';
+  });
+
+  const boton = el('button', {
+    class: 'boton', 'data-tono': 'discreto', type: 'button',
+    onclick: async () => {
+      boton.disabled = true;
+      const resultado = await comprobarActualizacion();
+      boton.disabled = false;
+      avisar({
+        descargada: 'Actualización lista: se aplicará al volver a abrir.',
+        'al-dia': 'Ya tienes la última versión.',
+        'sin-manifiesto': 'No he podido leer si hay versión nueva.',
+        error: 'No he podido comprobarlo.',
+        'no-aplica': 'Aquí no hay nada que actualizar.',
+      }[resultado.estado] || resultado.estado);
+    },
+  }, ['Buscar actualización']);
+
+  return el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: 'Aplicación' }),
+    linea,
+    boton,
+  ]);
 }
 
 function aplicarTema(valor) {

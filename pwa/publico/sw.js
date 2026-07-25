@@ -11,7 +11,7 @@
  * copia vieja que pudiera contener algo ya retirado.
  */
 
-const VERSION = 'agenda-v1';
+const VERSION = 'agenda-v2';
 
 const ARMAZON = [
   '/',
@@ -22,6 +22,7 @@ const ARMAZON = [
   '/js/almacen.js',
   '/js/demo.js',
   '/js/modelo.js',
+  '/js/native.js',
   '/js/semana.js',
   '/js/sesion.js',
   '/js/sincronizacion.js',
