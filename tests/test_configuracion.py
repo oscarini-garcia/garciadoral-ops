@@ -82,6 +82,21 @@ class Configuracion(unittest.TestCase):
             self.assertTrue(valor, clave)
             self.assertRegex(valor, r"^[A-Za-z0-9][A-Za-z0-9.-]*$", clave)
 
+    def test_el_identificador_del_paquete_lo_admite_capacitor(self):
+        """Apple admite guiones en un Bundle ID; Capacitor no.
+
+        Su CLI valida el `appId` con las reglas comunes a iOS y Android —forma de
+        paquete Java, sin guiones— aunque el proyecto solo tenga iOS, y rechaza
+        `cap add`, `cap sync` y `cap copy` por igual. Como el Bundle ID no se
+        puede renombrar en Apple una vez creado, descubrirlo tarde obliga a
+        registrar otro identificador.
+        """
+        self.assertRegex(
+            self.capacitor["appId"],
+            r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$",
+            self.capacitor["appId"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
