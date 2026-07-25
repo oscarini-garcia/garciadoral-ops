@@ -12,10 +12,10 @@
  * de evitar.
  */
 
-import { el, abrirHoja, cerrarHoja, avisar, campo, seleccion } from './ui.js';
+import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, seleccion } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
-import { estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
+import { detener, estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
 import { cargarConfiguracion, entrarConApple } from './sesion.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
 import {
@@ -43,6 +43,7 @@ const PESTANAS = {
 
 let pestana = 'semana';
 let configuracion = {};
+let sesionActual = null;
 const ctx = { vista: null, refrescar };
 
 arrancar();
@@ -147,6 +148,7 @@ async function arrancarDemostracion(observadorId) {
 }
 
 async function arrancarAplicacion(sesion) {
+  sesionActual = sesion;
   await iniciar({ base: configuracion.api || '', token: sesion.token });
   prepararInterfaz();
 }
@@ -173,6 +175,7 @@ function prepararInterfaz() {
   };
 
   document.getElementById('indicadorSync').onclick = abrirPanelDeSincronizacion;
+  document.getElementById('botonAjustes').onclick = abrirAjustes;
 
   let ultimaInstantanea = null;
 
@@ -263,6 +266,36 @@ function abrirPanelDeSincronizacion() {
       }));
     }
 
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      situacion.estado === 'demostracion' ? null : el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async () => { await sincronizar(); avisar('Sincronizado'); },
+      }, ['Sincronizar ahora']),
+      situacion.estado === 'demostracion' ? el('button', {
+        class: 'boton', 'data-tono': 'peligro', type: 'button',
+        onclick: () => salir(),
+      }, ['Salir de la demostración']) : null,
+    ]));
+  });
+}
+
+/**
+ * Ajustes: lo que es de esta instalación y de esta persona, no de la pantalla
+ * en la que se esté.
+ *
+ * Vive en la cabecera y no en una pestaña porque no es un sitio al que se vaya
+ * a hacer algo: se entra, se toca una cosa y se sale. Una quinta pestaña le
+ * daría un peso que no tiene y le quitaría sitio a las cuatro que sí.
+ */
+function abrirAjustes() {
+  abrirHoja('Ajustes', (cuerpo) => {
+    if (sesionActual?.persona?.nombre) {
+      cuerpo.append(el('p', {
+        class: 'pista',
+        texto: `Sesión iniciada como ${sesionActual.persona.nombre}.`,
+      }));
+    }
+
     const tema = seleccion(
       [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
       localStorage.getItem('agenda.tema') || 'auto',
@@ -270,25 +303,35 @@ function abrirPanelDeSincronizacion() {
     tema.addEventListener('change', () => aplicarTema(tema.value));
     cuerpo.append(campo('Aspecto', tema));
 
-    if (esNativo()) cuerpo.append(bloqueDeVersion());
+    cuerpo.append(bloqueDeVersion());
 
+    const demostracion = estado().estado === 'demostracion';
     cuerpo.append(el('div', { class: 'acciones' }, [
-      situacion.estado === 'demostracion' ? null : el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: async () => { await sincronizar(); avisar('Sincronizado'); },
-      }, ['Sincronizar ahora']),
       el('button', {
-        class: 'boton', 'data-tono': 'peligro', type: 'button',
-        onclick: async () => {
-          await olvidarTodo();
-          borrarSesion();
-          reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda();
-          cerrarHoja();
-          location.reload();
-        },
-      }, [situacion.estado === 'demostracion' ? 'Salir de la demostración' : 'Cerrar sesión']),
+        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+        onclick: () => salir(),
+      }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
     ]));
   });
+}
+
+/**
+ * Cierra la sesión y devuelve a la pantalla de acceso.
+ *
+ * Se borra todo lo local, y no solo la credencial: la instantánea pertenece a
+ * un titular concreto y no debe sobrevivir a un cambio de persona. `detener`
+ * deja además el motor sin oyentes ni suscriptores, que es lo que permite
+ * volver a la pantalla de acceso sin recargar la página.
+ */
+async function salir() {
+  cerrarHoja();
+  detener();
+  await olvidarTodo();
+  borrarSesion();
+  sesionActual = null;
+  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda();
+  document.getElementById('aplicacion').hidden = true;
+  mostrarAcceso();
 }
 
 /**
@@ -299,24 +342,93 @@ function abrirPanelDeSincronizacion() {
  * se aplica al volver a abrir la aplicación, nunca a media sesión.
  */
 function bloqueDeVersion() {
-  const linea = el('p', { class: 'pista', texto: 'Comprobando la versión…' });
-  versionInstalada().then((version) => {
-    linea.textContent = version ? `Versión instalada: ${version}.` : 'Versión instalada: la de origen.';
-  });
+  const linea = el('p', { class: 'pista' });
+  const progreso = el('ul', { class: 'progreso' });
+
+  const ponerVersion = () => {
+    linea.textContent = 'Comprobando la versión…';
+    versionInstalada().then((version) => {
+      linea.textContent = version
+        ? `Versión instalada: ${version}.`
+        : 'Versión instalada: la de origen.';
+    });
+  };
+
+  // En el navegador no hay bundle que actualizar: la versión es la que sirva
+  // Pages en cada recarga, y ofrecer un botón que solo puede responder «aquí no
+  // hay nada que actualizar» sería ruido.
+  if (!esNativo()) {
+    return el('div', { class: 'grupo' }, [
+      el('p', { class: 'grupo-titulo', texto: 'Aplicación' }),
+      el('p', { class: 'pista', texto: 'Estás en la versión web, que se actualiza sola al recargar.' }),
+    ]);
+  }
+  ponerVersion();
+
+  const paso = (texto, estado) => el('li', { 'data-estado': estado }, [
+    el('span', {
+      class: 'progreso-marca',
+      texto: { hecho: '✓', curso: '·', fallo: '×' }[estado] || '·',
+    }),
+    texto,
+  ]);
+
+  // Cada fase cierra la anterior, de modo que la lista se lee de arriba abajo
+  // como lo que ha ido pasando y no como una promesa de lo que pasará.
+  const RELATO = {
+    comprobando: () => [paso('Buscando si hay versión nueva…', 'curso')],
+    'al-dia': ({ version }) => [
+      paso('Buscada la última versión', 'hecho'),
+      paso(`Ya tienes lo último${version ? ` (${version})` : ''}`, 'hecho'),
+    ],
+    'hay-version': ({ version }) => [
+      paso('Buscada la última versión', 'hecho'),
+      paso(`Hay una versión nueva: ${version}`, 'hecho'),
+    ],
+    descargando: ({ version, porcentaje }) => [
+      paso('Buscada la última versión', 'hecho'),
+      paso(`Hay una versión nueva: ${version}`, 'hecho'),
+      paso(
+        porcentaje === undefined || porcentaje === null
+          ? 'Descargando…'
+          : `Descargando… ${Math.round(porcentaje)} %`,
+        'curso',
+      ),
+    ],
+    instalando: ({ version }) => [
+      paso('Buscada la última versión', 'hecho'),
+      paso(`Hay una versión nueva: ${version}`, 'hecho'),
+      paso('Descargada', 'hecho'),
+      paso('Instalando…', 'curso'),
+    ],
+    descargada: ({ version }) => [
+      paso('Buscada la última versión', 'hecho'),
+      paso(`Versión ${version} instalada`, 'hecho'),
+      paso('Se aplicará al volver a abrir la aplicación', 'hecho'),
+    ],
+    'sin-manifiesto': () => [paso('No he podido leer si hay versión nueva', 'fallo')],
+    error: ({ detalle }) => [paso(`No he podido actualizar: ${detalle || 'error'}`, 'fallo')],
+    'no-aplica': () => [paso('Aquí no hay nada que actualizar', 'hecho')],
+  };
 
   const boton = el('button', {
     class: 'boton', 'data-tono': 'discreto', type: 'button',
     onclick: async () => {
       boton.disabled = true;
-      const resultado = await comprobarActualizacion();
+      boton.textContent = 'Actualizando…';
+
+      const contar = (avance) => {
+        const construir = RELATO[avance.fase];
+        if (!construir) return;
+        vaciar(progreso).append(...construir(avance));
+      };
+
+      const resultado = await comprobarActualizacion({ alAvanzar: contar });
+      contar(resultado);
+
       boton.disabled = false;
-      avisar({
-        descargada: 'Actualización lista: se aplicará al volver a abrir.',
-        'al-dia': 'Ya tienes la última versión.',
-        'sin-manifiesto': 'No he podido leer si hay versión nueva.',
-        error: 'No he podido comprobarlo.',
-        'no-aplica': 'Aquí no hay nada que actualizar.',
-      }[resultado.estado] || resultado.estado);
+      boton.textContent = 'Buscar actualización';
+      if (resultado.estado === 'descargada') ponerVersion();
     },
   }, ['Buscar actualización']);
 
@@ -324,6 +436,7 @@ function bloqueDeVersion() {
     el('p', { class: 'grupo-titulo', texto: 'Aplicación' }),
     linea,
     boton,
+    progreso,
   ]);
 }
 

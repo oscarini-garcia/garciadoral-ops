@@ -164,6 +164,9 @@ button { background: none; border: 0; cursor: pointer; }
   padding: max(10px, env(safe-area-inset-top)) 20px 0;
 }
 .cabecera-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+/* El título se queda con el hueco sobrante y empuja al indicador y a los
+   ajustes contra el borde, que es donde se buscan. */
+.cabecera-fila .titulo-pantalla { margin-right: auto; }
 .titulo-pantalla {
   font-family: var(--serif);
   font-weight: 500; font-size: 24px; letter-spacing: -.01em;
@@ -182,6 +185,28 @@ button { background: none; border: 0; cursor: pointer; }
 .sync[data-estado="error"] i { background: var(--regalo); }
 @keyframes latido { 50% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .sync[data-estado="sincronizando"] i { animation: none; } }
+
+.icono-cabecera {
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: center;
+  width: 32px; height: 32px; margin: -6px -6px -6px 0;
+  border-radius: 50%;
+  color: var(--ink-faint);
+}
+.icono-cabecera:hover, .icono-cabecera:focus-visible { color: var(--ink-soft); background: var(--paper-2); }
+
+/* Progreso de la actualización: una línea por fase, con la que está en curso
+   destacada. Se sustituye entera en cada paso. */
+.progreso { margin: 10px 0 0; display: grid; gap: 6px; }
+.progreso li {
+  display: flex; align-items: baseline; gap: 8px;
+  font-size: 14px; color: var(--ink-faint);
+  list-style: none;
+}
+.progreso li[data-estado="hecho"] { color: var(--ink-soft); }
+.progreso li[data-estado="curso"] { color: var(--ink); font-weight: 500; }
+.progreso li[data-estado="fallo"] { color: var(--regalo); }
+.progreso-marca { font-family: var(--mono); font-size: 12px; width: 1.2em; flex: none; }
 
 .pantalla {
   flex: 1;
