@@ -10,6 +10,7 @@
  * Rutas:
  *   GET  /api/salud       · comprobación sin autenticar
  *   POST /api/sesion      · canjea un token de Apple por una sesión propia
+ *   POST /api/cuenta/baja · elimina la cuenta de quien la pide (App Store 5.1.1)
  *   GET  /api/sync        · instantánea filtrada para el lector autenticado
  *   POST /api/cambios     · aplica la cola de cambios del dispositivo
  *   GET  /api/conflictos  · coordinación pendiente de revisar (administradores)
@@ -18,7 +19,15 @@
 
 import { verificarTokenDeApple } from './apple.js';
 import { coincideEnTiempoConstante, emitirSesion, verificarSesion } from './sesion.js';
-import { aplicarCambio, leerRegistro, personaPorApple, personaPorId } from './repositorio.js';
+import {
+  administradoresRestantes,
+  aplicarCambio,
+  darDeBajaCuenta,
+  leerRegistro,
+  personaPorApple,
+  personaPorId,
+} from './repositorio.js';
+import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
 
@@ -85,6 +94,57 @@ async function abrirSesion(peticion, env) {
   return json({
     token,
     persona: { id: persona.id, nombre: persona.nombre, rol: persona.rol },
+  });
+}
+
+/**
+ * Baja de la cuenta, a petición de su titular.
+ *
+ * La directriz 5.1.1(v) de la App Store exige que quien puede crear una cuenta
+ * pueda eliminarla **desde dentro de la aplicación**, sin escribir a nadie. Aquí
+ * la cuenta es el vínculo entre un identificador de Apple y una persona del
+ * registro, y eliminarla es deshacer ese vínculo: `darDeBajaCuenta` explica qué
+ * se va y qué se queda.
+ *
+ * El orden importa. Primero se avisa a Apple, mientras todavía se sabe por
+ * dónde entró esta persona, y después se deshace el vínculo; al revés, un fallo
+ * a mitad dejaría una cuenta viva ante Apple sin nada aquí que la identifique.
+ * Que la revocación falle, en cambio, no detiene nada: lo que no puede ocurrir
+ * es que alguien se quede sin poder darse de baja porque un servidor ajeno no
+ * respondió.
+ */
+async function darDeBaja(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { plataforma } = await verificarSesion(env.SESION_SECRETO, credencial(peticion));
+  const { codigo_apple: codigo } = await peticion.json().catch(() => ({}));
+
+  const revocacion = await revocarEnApple(env, {
+    codigo,
+    plataforma,
+    redireccion: env.REDIRECCION_WEB || (env.ORIGENES_PERMITIDOS || '').split(',')[0].trim(),
+  });
+
+  if (!revocacion.revocado) {
+    console.warn(`baja de ${lector.id}: no se revocó en Apple (${revocacion.motivo})`, revocacion.detalle || '');
+  }
+
+  // Se cuenta antes de la baja, mientras esta persona todavía figura. Que se
+  // vaya la última administradora es legítimo —impedir la baja no lo es— pero
+  // deja el hogar sin nadie que pueda vincular cuentas desde la aplicación, y
+  // cuando eso se note nadie recordará que ocurrió: queda dicho en el log.
+  const restantes = await administradoresRestantes(env.DB, lector.id);
+  if (lector.rol === 'administrador' && restantes === 0) {
+    console.warn(`baja de ${lector.id}: era la última cuenta administradora del hogar`);
+  }
+
+  await darDeBajaCuenta(env.DB, lector.id);
+
+  return json({
+    baja: true,
+    revocado_en_apple: revocacion.revocado,
+    motivo_revocacion: revocacion.revocado ? null : revocacion.motivo,
+    revocacion_configurada: hayRevocacionConfigurada(env),
+    administradores_restantes: restantes,
   });
 }
 
@@ -161,6 +221,7 @@ async function registroCompleto(peticion, env) {
 const RUTAS = [
   ['GET', '/api/salud', async () => json({ estado: 'ok', ahora: new Date().toISOString() })],
   ['POST', '/api/sesion', abrirSesion],
+  ['POST', '/api/cuenta/baja', darDeBaja],
   ['GET', '/api/sync', sincronizar],
   ['POST', '/api/cambios', recibirCambios],
   ['GET', '/api/conflictos', conflictosPendientes],

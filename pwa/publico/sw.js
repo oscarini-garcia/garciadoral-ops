@@ -11,11 +11,13 @@
  * copia vieja que pudiera contener algo ya retirado.
  */
 
-const VERSION = 'agenda-v2';
+const VERSION = 'agenda-v3';
 
 const ARMAZON = [
   '/',
   '/index.html',
+  '/privacidad.html',
+  '/soporte.html',
   '/manifest.webmanifest',
   '/css/estilos.css',
   '/js/app.js',
@@ -61,15 +63,25 @@ self.addEventListener('fetch', (evento) => {
 
   // Navegaciones: red primero para recoger despliegues nuevos, con el armazón
   // cacheado como red de seguridad cuando no hay conexión.
+  //
+  // Cada página se guarda bajo su propia dirección, y solo la raíz cuenta como
+  // armazón. Guardarlas todas como `/index.html` —que es lo que hacía antes de
+  // que existieran páginas sueltas— dejaba la aplicación abriendo la política
+  // de privacidad, o el «aquí no hay nada» del 404, la siguiente vez que se
+  // abriera sin conexión.
   if (evento.request.mode === 'navigate') {
+    const esArmazon = url.pathname === '/' || url.pathname === '/index.html';
     evento.respondWith(
       fetch(evento.request)
         .then((respuesta) => {
-          const copia = respuesta.clone();
-          caches.open(VERSION).then((cache) => cache.put('/index.html', copia));
+          if (respuesta.ok) {
+            const copia = respuesta.clone();
+            caches.open(VERSION).then((cache) => cache.put(esArmazon ? '/index.html' : evento.request, copia));
+          }
           return respuesta;
         })
-        .catch(() => caches.match('/index.html')),
+        .catch(() => caches.match(esArmazon ? '/index.html' : evento.request)
+          .then((cacheada) => cacheada || caches.match('/index.html'))),
     );
     return;
   }

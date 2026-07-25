@@ -183,8 +183,14 @@ export async function versionInstalada() {
  *
  * Devuelve `null` fuera de la cáscara o si el complemento no está instalado,
  * para que quien llame pueda caer al camino web sin comprobar la plataforma.
+ *
+ * De la hoja salen dos cosas y se devuelven las dos. El **token de identidad**
+ * es el que se canjea por una sesión al entrar. El **código de autorización**
+ * solo hace falta para darse de baja, porque es lo único con lo que el Worker
+ * puede pedirle a Apple que revoque el vínculo; se pide en ese momento, no
+ * aquí, y por eso esta función se usa desde los dos sitios.
  */
-export async function tokenDeAppleNativo({ appleClienteWeb, redireccion } = {}) {
+export async function autorizacionDeAppleNativa({ appleClienteWeb, redireccion } = {}) {
   const acceso = plugin('SignInWithApple');
   if (!esNativo() || !acceso) return null;
 
@@ -197,7 +203,15 @@ export async function tokenDeAppleNativo({ appleClienteWeb, redireccion } = {}) 
     scopes: 'name',
   });
 
-  return response?.identityToken ?? null;
+  return {
+    identityToken: response?.identityToken ?? null,
+    authorizationCode: response?.authorizationCode ?? null,
+  };
+}
+
+export async function tokenDeAppleNativo(configuracion) {
+  const autorizacion = await autorizacionDeAppleNativa(configuracion);
+  return autorizacion?.identityToken ?? null;
 }
 
 // ---------------------------------------------- Recordatorios locales --

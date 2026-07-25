@@ -39,6 +39,8 @@ publico/
   index.html            · armazón: acceso, cabecera, pantalla, pestañas
                           la cabecera lleva el estado de sincronización y los ajustes
   404.html              · para que una ruta inexistente no devuelva la app
+  privacidad.html       · política de privacidad, obligatoria en la ficha de la App Store
+  soporte.html          · página de ayuda, la otra URL que la ficha exige
   config.json           · API, Services ID de Apple y manifiesto OTA
   manifest.webmanifest  · instalación como PWA
   sw.js                 · caché del armazón; la API nunca se cachea
@@ -82,7 +84,16 @@ Regalos y en Familia apunta una idea, y en Buscar no aparece.
 **Los ajustes viven en la cabecera, no en una quinta pestaña.** No son un sitio
 al que se vaya a hacer algo: se entra, se toca una cosa y se sale. Una pestaña
 les daría un peso que no tienen y se lo quitaría a las cuatro que sí. Dentro
-están el aspecto, la actualización de la app y el cierre de sesión.
+están el aspecto, la actualización de la app, el cierre de sesión y la baja.
+
+**Darse de baja no es desaparecer del hogar.** «Cuenta» y «persona» son cosas
+distintas, y el modelo ya las separaba antes de que Apple lo exigiera: una
+persona sin cuenta es un estado de primera clase, el de quien cumple años y
+recibe regalos pero no entra en la aplicación. La baja deshace el vínculo con
+Apple, los dispositivos, los avisos y los permisos, y deja a la persona ahí,
+con lo que la familia escribió sobre ella —que no es dato de la cuenta y no le
+pertenece a solas—. Volver exige que alguien vuelva a vincularla, igual que la
+primera vez.
 
 ---
 
@@ -104,6 +115,11 @@ npm run open:ios
 En Xcode: *Signing & Capabilities* → su equipo, y el identificador del paquete
 igual que `appId` en `capacitor.config.json` y que `APPLE_AUD_IOS` en el Worker.
 Después, *Any iOS Device* → **Product ▸ Archive** → **Distribute App**.
+
+Eso deja el binario en App Store Connect, que no es lo mismo que publicarlo. La
+ficha, las notas de revisión y el obstáculo que tiene esta aplicación en
+concreto —que quien la revisa no puede entrar, porque el acceso es por
+invitación— están en `docs/despliegue-cloudflare.md` §8.3.
 
 ### Publicar una actualización
 

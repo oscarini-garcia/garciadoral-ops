@@ -154,6 +154,55 @@ export async function personaPorId(db, id) {
   return fila ? { ...fila, tiene_cuenta: bool(fila.tiene_cuenta), activa: bool(fila.activa) } : null;
 }
 
+/**
+ * Da de baja la cuenta de una persona sin borrarla del hogar.
+ *
+ * Aquí «cuenta» y «persona» son dos cosas distintas, y el modelo ya las
+ * separaba antes de que hiciera falta para esto: una persona sin cuenta es un
+ * estado de primera clase (specs/modelo-datos.md §4), el de la abuela que
+ * cumple años y recibe regalos pero no entra en la aplicación. Darse de baja es
+ * exactamente pasar a ese estado.
+ *
+ * Se va, por tanto, todo lo que constituye la cuenta: el vínculo con Apple, la
+ * condición de titular, el rol, los dispositivos, las preferencias de aviso y
+ * los accesos concedidos a categorías restringidas. Se queda la persona como
+ * miembro del hogar, y con ella lo que otras personas escribieron sobre ella o
+ * junto a ella —eventos compartidos, regalos, comentarios—, que no es dato de
+ * la cuenta sino contenido del registro familiar y no le pertenece a solas.
+ *
+ * Sin el vínculo con Apple, ese mismo identificador vuelve a ser un
+ * desconocido: `personaPorApple` no lo encuentra y `abrirSesion` responde
+ * `sin_vincular`, que es la puerta por la que se entra la primera vez. Volver
+ * exige que una administradora vuelva a vincular, igual que al principio.
+ */
+export async function darDeBajaCuenta(db, personaId) {
+  await db.batch([
+    db.prepare('DELETE FROM dispositivo WHERE persona_id = ?').bind(personaId),
+    db.prepare('DELETE FROM preferencia_notificacion WHERE persona_id = ?').bind(personaId),
+    db.prepare('DELETE FROM acceso_categoria WHERE persona_id = ?').bind(personaId),
+    db.prepare(
+      `UPDATE persona
+          SET identificador_apple = NULL,
+              tiene_cuenta = 0,
+              rol = NULL,
+              actualizado_en = datetime('now')
+        WHERE id = ?`,
+    ).bind(personaId),
+  ]);
+}
+
+/** Cuántas personas con cuenta administradora quedarían sin contar a `exceptoId`. */
+export async function administradoresRestantes(db, exceptoId) {
+  const fila = await db
+    .prepare(
+      `SELECT COUNT(*) AS cuantos FROM persona
+        WHERE rol = 'administrador' AND tiene_cuenta = 1 AND activa = 1 AND id <> ?`,
+    )
+    .bind(exceptoId)
+    .first();
+  return Number(fila?.cuantos || 0);
+}
+
 // ---------------------------------------------------------------------------
 // Escritura
 // ---------------------------------------------------------------------------

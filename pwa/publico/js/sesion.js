@@ -20,7 +20,7 @@
  * audiencias y devuelve la misma persona.
  */
 
-import { esNativo, tokenDeAppleNativo } from './native.js';
+import { autorizacionDeAppleNativa, esNativo, tokenDeAppleNativo } from './native.js';
 
 const SDK = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/es_ES/appleid.auth.js';
 
@@ -45,7 +45,7 @@ function cargarSdkDeApple() {
   });
 }
 
-async function tokenPorLaWeb(configuracion) {
+async function autorizacionPorLaWeb(configuracion) {
   if (!configuracion.appleClienteWeb) {
     throw new Error('Esta instalación todavía no tiene configurado el acceso de Apple.');
   }
@@ -59,7 +59,15 @@ async function tokenPorLaWeb(configuracion) {
   });
 
   const respuesta = await window.AppleID.auth.signIn();
-  return respuesta?.authorization?.id_token ?? null;
+  return {
+    identityToken: respuesta?.authorization?.id_token ?? null,
+    authorizationCode: respuesta?.authorization?.code ?? null,
+  };
+}
+
+async function tokenPorLaWeb(configuracion) {
+  const autorizacion = await autorizacionPorLaWeb(configuracion);
+  return autorizacion?.identityToken ?? null;
 }
 
 /**
@@ -99,5 +107,53 @@ export async function entrarConApple(configuracion) {
     throw error;
   }
 
+  return datos;
+}
+
+// ------------------------------------------------------ Baja de la cuenta --
+
+/**
+ * Vuelve a pasar por Apple para obtener un **código de autorización**, que es
+ * lo único con lo que el Worker puede pedirle a Apple que revoque el vínculo.
+ *
+ * Se pide aquí, en el momento de la baja, y no al entrar: así el camino de
+ * acceso —el más frágil del sistema— no cambia, y no hay que guardar en el
+ * servidor ningún secreto de larga vida por cada persona. De paso, volver a
+ * identificarse justo antes de una acción irreversible es lo que uno espera.
+ *
+ * Devuelve `null` si no se puede obtener, por la razón que sea: que alguien
+ * cancele la hoja de Apple, o que la esté usando desde una versión antigua de
+ * la cáscara sin el complemento, no puede impedirle darse de baja.
+ */
+export async function codigoDeAutorizacion(configuracion) {
+  try {
+    const autorizacion = esNativo()
+      ? await autorizacionDeAppleNativa(configuracion)
+      : await autorizacionPorLaWeb(configuracion);
+    return autorizacion?.authorizationCode ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pide la baja a la API. El token de sesión es el que acredita quién la pide:
+ * nadie puede dar de baja a otra persona, ni siquiera una administradora.
+ */
+export async function eliminarLaCuenta(configuracion, token, codigo) {
+  if (!configuracion.api) {
+    throw new Error('Esta instalación todavía no tiene configurada la API.');
+  }
+
+  const respuesta = await fetch(`${configuracion.api}/api/cuenta/baja`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ codigo_apple: codigo }),
+  });
+
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) {
+    throw new Error(datos.mensaje || datos.error || `La API respondió ${respuesta.status}.`);
+  }
   return datos;
 }
