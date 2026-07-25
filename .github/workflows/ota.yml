@@ -1,0 +1,90 @@
+name: bundle OTA
+
+# Publica el bundle web que las apps iOS se descargan solas.
+#
+# La regla de oro: **sube la versión y mergea** para un OTA; abre Xcode solo
+# cuando cambie algo nativo. Si la versión de pwa/package.json ya tiene release,
+# no se republica nada, de modo que un empujón normal a main es inofensivo.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pwa/publico/**'
+      - 'pwa/package.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ota
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: ¿Hay versión nueva?
+        id: comprobar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./pwa/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if gh release view "ota-v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "publicar=false" >> "$GITHUB_OUTPUT"
+            echo "La versión $VERSION ya está publicada. No se hace nada."
+          else
+            echo "publicar=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Un bundle con los marcadores de ejemplo dejaría a todos los teléfonos
+      # apuntando a una API que no existe, y encima se aplicaría solo. Mejor
+      # que falle aquí.
+      - name: Comprobar que la configuración está rellena
+        if: steps.comprobar.outputs.publicar == 'true'
+        run: |
+          if grep -q 'EJEMPLO' pwa/publico/config.json; then
+            echo "::error file=pwa/publico/config.json::config.json todavía tiene marcadores EJEMPLO; sustitúyelos antes de publicar un OTA."
+            exit 1
+          fi
+
+      - name: Regenerar iconos y datos de demostración
+        if: steps.comprobar.outputs.publicar == 'true'
+        run: python3 herramientas/preparar-pwa.py
+
+      - name: Empaquetar el bundle y el manifiesto
+        if: steps.comprobar.outputs.publicar == 'true'
+        run: |
+          VERSION="${{ steps.comprobar.outputs.version }}"
+          # index.html tiene que quedar en la RAÍZ del zip: se empaqueta el
+          # contenido del directorio, no el directorio.
+          (cd pwa/publico && zip -qr "$GITHUB_WORKSPACE/bundle.zip" .)
+          CHECKSUM=$(sha256sum bundle.zip | awk '{print $1}')
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/ota-v${VERSION}/bundle.zip"
+          printf '{ "version": "%s", "url": "%s", "checksum": "%s" }\n' "$VERSION" "$URL" "$CHECKSUM" > latest.json
+          cat latest.json
+          unzip -l bundle.zip | head -5
+
+      - name: Crear el release
+        if: steps.comprobar.outputs.publicar == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ota-v${{ steps.comprobar.outputs.version }}
+          name: OTA v${{ steps.comprobar.outputs.version }}
+          body: |
+            Actualización de la parte web para la app iOS. No pasa por revisión de Apple.
+
+            Las apps la aplican en la siguiente apertura.
+          files: |
+            bundle.zip
+            latest.json

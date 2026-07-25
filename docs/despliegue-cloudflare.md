@@ -9,7 +9,7 @@ Los nombres propios de esta instalación ya están fijados en el repositorio:
 | Qué | Valor | Dónde se declara |
 |---|---|---|
 | Dominio de la aplicación web | `garciadoral-ops.galoopa.store` | `pwa/publico/config.json`, `api/wrangler.toml` |
-| Identificador del paquete de iOS (App ID) | `store.galoopa.agenda` | `ios/project.yml`, `APPLE_AUD_IOS` |
+| Identificador del paquete de iOS (App ID) | `store.galoopa.agenda` | `pwa/capacitor.config.json`, `APPLE_AUD_IOS` |
 | Identificador de servicio de la web (Services ID) | `store.galoopa.agenda.web` | `config.json`, `APPLE_AUD_WEB` |
 
 Queda un único marcador por sustituir, porque depende de la cuenta de Cloudflare
@@ -35,8 +35,11 @@ y no se conoce hasta el paso 2:
   paso 5.2.
 - **Apple Developer Program**, 99 € al año. Necesario para firmar la aplicación
   iOS y para Sign in with Apple. Sin él puede desplegar la PWA y usarla, pero no
-  habrá acceso con Apple ni aplicación nativa.
+  habrá acceso con Apple ni aplicación en el teléfono.
 - **Node 20 o posterior** y `npm` en su máquina.
+- Para la app de iOS, además: un **Mac con Xcode** y **CocoaPods**
+  (`brew install cocoapods`). `npx cap add ios` hace `pod install`, que no
+  funciona en Linux ni en CI.
 - Acceso de escritura a este repositorio de GitHub.
 
 ```bash
@@ -155,7 +158,7 @@ espera tiene: los cambios de dominio tardan unos minutos en propagarse.
 4. En Capabilities marque **Sign in with Apple**.
 5. Guarde.
 
-Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `ios/project.yml`.
+Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `pwa/capacitor.config.json`.
 
 ### 4.2 Identificador de servicio (Services ID), para la web
 
@@ -196,7 +199,34 @@ Ese Services ID es el que va en `APPLE_AUD_WEB` y en `pwa/publico/config.json`.
 > porque en nativo la audiencia es el identificador del paquete y no hace falta
 > dominio ninguno.
 
-### 4.3 Nada de claves privadas
+### 4.3 Pendiente: el acceso con Apple dentro de la cáscara de iOS
+
+Esto está sin resolver y conviene saberlo antes de subir nada a TestFlight.
+
+En el navegador, el acceso funciona: la web pide el token con el SDK de Apple en
+ventana emergente, desde el origen `https://garciadoral-ops.galoopa.store`, que
+es el que se declara arriba. Dentro de la cáscara de Capacitor, en cambio, la
+misma web se sirve desde el origen `capacitor://localhost`, y `app.js` llama al
+mismo `entrarConApple` de `sesion.js`. Ese origen no se puede registrar como
+*Return URL* en Apple, así que el flujo de ventana emergente no tiene a dónde
+volver.
+
+El repositorio no trae hoy ningún complemento nativo de Sign in with Apple —las
+dependencias de `pwa/package.json` son háptica, compartir y el actualizador—, de
+modo que el botón, tal cual, fallará en el teléfono aunque funcione en el
+navegador.
+
+Las salidas, de menor a mayor cambio: añadir un complemento nativo de Sign in
+with Apple y usarlo cuando `esNativo()` sea cierto, que es lo que se suele hacer;
+o cambiar el flujo web al de redirección en lugar de ventana emergente; o hacer
+que la cáscara cargue la web del dominio con `server.url`, lo que devolvería el
+origen correcto pero renunciaría al bundle local y al OTA. No es una decisión de
+despliegue, así que aquí solo queda anotada.
+
+Nada de esto afecta al acceso desde el navegador, que es lo que se pone en marcha
+en los pasos 4 y 5.
+
+### 4.4 Nada de claves privadas
 
 Este diseño **no** necesita la clave `.p8` de Sign in with Apple ni el flujo de
 `client_secret`: el Worker verifica el `id_token` contra las claves públicas de
@@ -216,7 +246,8 @@ Antes de publicar, sustituya `EJEMPLO` por el subdominio real del Worker en
 {
   "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
   "appleClienteWeb": "store.galoopa.agenda.web",
-  "redireccion": "https://garciadoral-ops.galoopa.store"
+  "redireccion": "https://garciadoral-ops.galoopa.store",
+  "otaManifiesto": "https://github.com/oscarini-garcia/garciadoral-ops/releases/latest/download/latest.json"
 }
 ```
 
@@ -309,11 +340,25 @@ existe en el repositorio con sus instrucciones. Tras el empujón que lo publique
 curl -i https://garciadoral-ops.galoopa.store/.well-known/apple-developer-domain-association.txt
 ```
 
-Debe responder `200`, en texto plano y **sin redirección** por el camino.
+> **Aquí `200` no basta, y este es el error que más tiempo hace perder.** Este
+> proyecto de Pages no tiene `404.html`, de modo que **cualquier ruta que no
+> exista devuelve `200` con el `index.html` de la aplicación**. Compruébelo:
+> `curl -o /dev/null -w '%{http_code}\n' https://garciadoral-ops.galoopa.store/esto-no-existe`
+> también responde `200`.
+>
+> Lo que hay que mirar en la respuesta es la cabecera **`content-type`**:
+>
+> - `text/plain` → el fichero se está sirviendo de verdad. Adelante.
+> - `text/html` → el fichero **no** está; le están devolviendo la aplicación.
+>   Apple fallará la verificación con un error que no explica nada.
+>
+> Y el cuerpo debe ser la cadena que entregó Apple, no `<!DOCTYPE html>`.
+> Tampoco debe haber redirección por el camino.
 
-Si responde `404`, la causa es conocida: los despliegues de Pages no siempre
-suben los directorios cuyo nombre empieza por punto. La salida, sin depender de
-ese comportamiento, es servirlo desde una ruta normal y reescribir la petición
+Si el `content-type` es `text/html`, la causa es conocida: los despliegues de
+Pages no siempre suben los directorios cuyo nombre empieza por punto. La salida,
+sin depender de ese comportamiento, es servirlo desde una ruta normal y
+reescribir la petición
 —Pages admite «proxying» con código 200 en `_redirects`, que es una reescritura
 interna y no una redirección, de modo que Apple ve el fichero donde lo espera—:
 
@@ -337,24 +382,32 @@ aplicación deja de hablar con la API.
 
 Conviene tenerlo claro para no ir buscando dónde más hay que tocar:
 
-- **GitHub Actions.** Ninguno de los cuatro workflows sabe nada del dominio.
-  `pruebas` ejecuta las suites; `plan-semanal` y `despachador` hablan con el
-  Worker por `AGENDA_URL`, que apunta a `workers.dev` y no cambia; `mantenimiento`
-  solo escribe un latido. No hay nada que ajustar en CI.
+- **Ningún workflow conoce el dominio.** `pruebas` ejecuta las suites;
+  `plan-semanal` y `despachador` hablan con el Worker por `AGENDA_URL`, que
+  apunta a `workers.dev`; `mantenimiento` solo escribe un latido; y `ota`
+  empaqueta `pwa/publico` tal cual. Cambiar de dominio no obliga a tocar CI.
 - **El despliegue de la web** lo hace la integración con Git de Pages, no un
   workflow: cada empujón a `main` republica `pwa/publico`. Añadir un dominio
   propio no altera la compilación, solo por dónde entra el tráfico.
-- **El Worker no se despliega solo.** `ORIGENES_PERMITIDOS` vive en
-  `api/wrangler.toml`, y ese fichero solo surte efecto al ejecutar
-  `npm run desplegar` a mano. Si algún día cambia el dominio, ese redespliegue
-  es el paso que se olvida y el que produce el error de CORS.
-- **La aplicación iOS y su distribución.** En nativo, Sign in with Apple valida
-  contra el identificador del paquete, no contra un dominio. Ni el proyecto de
-  Xcode ni el archivado ni TestFlight cambian por esto. Solo haría falta declarar
-  el dominio —*Associated Domains* y `apple-app-site-association`— si en el
-  futuro se quisieran enlaces universales, que hoy no se usan.
+- **El binario de iOS no lleva el dominio dentro.** La cáscara empaqueta la web
+  (`webDir: publico`) y la actualiza por OTA; no carga la web desde el dominio.
+  Ni el archivado ni TestFlight cambian por esto. Solo haría falta declarar el
+  dominio —*Associated Domains* y `apple-app-site-association`— si en el futuro
+  se quisieran enlaces universales, que hoy no se usan.
 - **`config.json` se lee en caliente.** Cambiar el dominio o el Services ID no
   exige reconstruir la PWA, solo republicarla.
+
+Y dos cosas que **sí** dependen de esto, que es donde se pierde el tiempo:
+
+- **El Worker no se despliega solo.** `ORIGENES_PERMITIDOS` vive en
+  `api/wrangler.toml`, y ese fichero solo surte efecto al ejecutar
+  `npm run desplegar` a mano. Si cambia el dominio, ese redespliegue es el paso
+  que se olvida y el que produce el error de CORS.
+- **El workflow `ota` falla mientras `config.json` conserve `EJEMPLO`.** Es
+  deliberado —un bundle con marcadores dejaría a todos los teléfonos apuntando a
+  una API inexistente—, pero significa que hasta que no despliegue el Worker y
+  sustituya su subdominio, cualquier empujón a `main` que toque `pwa/publico`
+  deja el workflow en rojo. Primero el paso 2, después lo demás.
 
 ---
 
@@ -428,27 +481,67 @@ teléfono.
 
 ## 8. La aplicación iOS
 
+No hay una aplicación nativa aparte: la de iOS es una **cáscara de Capacitor**
+con la misma web dentro. El binario casi nunca cambia —se sube a Apple la primera
+vez y solo se vuelve a subir cuando se toca algo nativo—, y los cambios de web
+llegan a los teléfonos por OTA sin pasar por revisión.
+
+La identidad ya está puesta en `pwa/capacitor.config.json`:
+
+```json
+{ "appId": "store.galoopa.agenda", "appName": "Agenda", "webDir": "publico" }
+```
+
+`appId` es **el mismo** App ID del paso 4.1 y el mismo valor que `APPLE_AUD_IOS`
+en el Worker. Cambiarlo después es un lío: un Bundle ID no se puede renombrar en
+Apple.
+
+En el Mac:
+
 ```bash
-brew install xcodegen
-cd ios
-xcodegen generate
-open AgendaFamiliar.xcodeproj
+cd pwa
+npm install
+npx cap add ios          # hace pod install; solo funciona en macOS
+npm run sync:ios         # copia la web, sincroniza y aplica el parche del scroll
+npm run assets:ios       # iconos y splash desde una fuente opaca de 1024×1024
+npm run open:ios
 ```
 
 En Xcode:
 
-1. Target **AgendaFamiliar → Signing & Capabilities**: elija su equipo. Debería
-   aparecer ya **Sign in with Apple**, que viene del fichero de *entitlements*.
-2. Compruebe que el Bundle Identifier coincide con el App ID del paso 4.1 y con
-   `APPLE_AUD_IOS`.
-3. En `App/AgendaFamiliar/Info.plist`, la clave `AgendaAPI` debe apuntar a la URL
-   del Worker.
-4. Ejecute en un dispositivo real: Sign in with Apple no funciona bien en el
-   simulador sin una cuenta de iCloud configurada.
+1. **Signing & Capabilities** → elija su *Team* y confirme el bundle id.
+2. Añada la capacidad **Sign in with Apple**.
+3. *Any iOS Device* → **Product ▸ Archive** → **Distribute App ▸ App Store
+   Connect ▸ Upload**.
+4. Pruebe en **TestFlight** (interno, casi sin revisión) antes de enviar a la
+   App Store.
 
-Para instalarla en los teléfonos de casa sin pasar por App Store, use TestFlight:
-Xcode → Product → Archive → Distribute App → TestFlight. Con *internal testing*
-basta y no pasa por revisión.
+Ejecute en un teléfono real: Sign in with Apple no funciona bien en el simulador
+sin una cuenta de iCloud configurada.
+
+> `pwa/ios/` **no se versiona**: lo regenera `cap add ios`, y `pod install`
+> necesita macOS. Está en `pwa/.gitignore`.
+
+### 8.1 El día a día: publicar una actualización
+
+Esta es la parte que ahorra el trámite con Apple.
+
+1. Cambie lo que sea de `pwa/publico`.
+2. **Suba la versión** en `pwa/package.json` (por ejemplo `1.0.0 → 1.0.1`).
+3. Mergee a `main`.
+
+El workflow `bundle OTA` empaqueta el contenido de `publico/` en un `bundle.zip`,
+calcula su `sha256`, escribe `latest.json` y crea el release `ota-v<versión>`.
+Las apps leen ese manifiesto al abrir y, si hay versión nueva, la descargan y la
+aplican en la **siguiente** apertura.
+
+Si no cambia la versión, no se publica nada: un empujón normal a `main` es
+inofensivo. Y si `config.json` todavía tiene marcadores `EJEMPLO`, el workflow
+falla a propósito antes de publicar: un bundle con ellos dejaría a todos los
+teléfonos apuntando a una API que no existe, y encima se aplicaría solo.
+
+Solo hay que volver a Xcode cuando cambie algo **nativo**: un plugin nuevo, los
+iconos, los permisos o la versión de Capacitor.
 
 ---
 
@@ -471,6 +564,8 @@ error visible: es arruinar una sorpresa.
 - [ ] Ejecutar el plan semanal en simulacro y leer los siete mensajes.
 - [ ] Encolar un mensaje de prueba en `queue.json` con `send_at` a diez minutos y
       verificar que llega.
+- [ ] En la app de iOS, subir la versión de `pwa/package.json`, mergear y
+      comprobar que el cambio entra al abrirla por segunda vez.
 
 ---
 
@@ -500,6 +595,10 @@ error visible: es arruinar una sorpresa.
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
 | Todo daba 401 de repente | Cambió `SESION_SECRETO`; hay que volver a entrar |
 | El plan del domingo no sale | Mire la traza en Actions. Lo más común es `AGENDA_URL` sin `/api/registro` al final, o `AGENDA_TOKEN` distinto de `TOKEN_SERVICIO` |
+| **Pantalla negra** al abrir la app | El `MainViewController.swift` existe pero no quedó registrado en el `.pbxproj`, así que no compila | `npm run patch:ios` lo registra; si avisa de que no ha sabido, añádalo a mano en Xcode (clic derecho en App → Add Files, target App) |
+| El OTA no baja | Manifiesto inaccesible, o la versión no cambió | Compruebe `otaManifiesto` en `config.json`, que el release exista y que subió la versión en `pwa/package.json` |
+| El bundle OTA carga en blanco | `index.html` no quedó en la raíz del zip | Se empaqueta el **contenido** de `publico/`, no la carpeta; el workflow ya lo hace así |
+| La app revierte la actualización sola | No se llamó a `notifyAppReady()` | Lo hace `iniciarNativo()` al arrancar; compruebe que `app.js` lo sigue llamando |
 | El despachador dejó de ejecutarse | GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por defecto. Reactívelo desde Actions y active el workflow `mantenimiento` |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
 
@@ -537,11 +636,13 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 4. Insertar a mano la primera persona administradora.
 5. App ID en Apple.
 6. Proyecto de Pages con salida `pwa/publico` y `config.json` relleno.
-7. CNAME `agenda` → `<proyecto>.pages.dev` en el DNS del dominio, y esperar a que
-   el dominio propio figure como *Active* en Pages.
+7. CNAME `garciadoral-ops` → `<proyecto>.pages.dev` en el DNS del dominio, y
+   esperar a que el dominio propio figure como *Active* en Pages.
 8. Services ID en Apple, publicar el `.txt` de verificación y comprobarlo con
    `curl` antes de pulsar *Verify*.
 9. Entrar, copiar el identificador de Apple a la ficha, volver a entrar.
 10. Secretos de GitHub y simulacro del plan semanal.
-11. `xcodegen generate` y TestFlight.
+11. En el Mac: `npx cap add ios` → `npm run sync:ios` → assets → Xcode → TestFlight.
 12. Recorrer la lista de comprobaciones del apartado 9.
+13. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
+    la app dos veces.

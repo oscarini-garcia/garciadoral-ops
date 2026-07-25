@@ -6,8 +6,7 @@ un mismo modelo y una misma regla de visibilidad:
 | Pieza | Dónde | Qué es |
 |---|---|---|
 | **API** | `api/` | Worker de Cloudflare sobre D1. Guarda el registro canónico y **filtra antes de transmitir** |
-| **Aplicación web** | `pwa/` | PWA instalable, local-first, sin proceso de compilación |
-| **Aplicación iOS** | `ios/` | SwiftUI, con el núcleo en un paquete que se prueba sin simulador |
+| **Aplicación** | `pwa/` | Una sola base de código: PWA instalable y, con la misma web dentro, la app de iOS |
 | **Plan semanal** | `scripts/plan_semanal.py` | Un mensaje de WhatsApp por persona, cada domingo |
 | **Despachador** | `scripts/despachar.py` | La cola de mensajes programados |
 
@@ -18,9 +17,10 @@ Los pasos de despliegue —Cloudflare, Apple Developer y GitHub— están en
 
 El modo de fallo grave de este sistema no es un error visible: es **arruinar una
 sorpresa**. De ahí que la función de visibilidad (`specs/modelo-datos.md` §6)
-esté implementada tres veces —Python, JavaScript y Swift— y que las tres suites
-de pruebas comprueben exactamente lo mismo. Una divergencia entre ellas
-significaría que la aplicación y el plan semanal ocultan cosas distintas.
+esté implementada dos veces —Python para el plan semanal, JavaScript para el
+Worker— y que las dos suites de pruebas comprueben exactamente lo mismo. Una
+divergencia entre ellas significaría que la aplicación y el plan semanal ocultan
+cosas distintas.
 
 Y de ahí, sobre todo, que el filtrado se produzca **en el servidor, antes de
 transmitir**: ningún dispositivo llega a almacenar lo que su titular no puede
@@ -33,14 +33,14 @@ otras vías. Es el requisito no funcional de mayor importancia del sistema.
 
 ```
 api/                  · Worker de Cloudflare y esquema de D1
-pwa/                  · aplicación web instalable
-ios/                  · aplicación SwiftUI y núcleo AgendaFamiliarCore
+pwa/                  · la aplicación: web instalable y cáscara de iOS con OTA
 docs/                 · guía de despliegue
 herramientas/         · generación de iconos y datos de demostración
 .github/workflows/
   despachador.yml     · sondeo diario que despacha la cola
   plan-semanal.yml    · el plan de la semana entrante, los domingos por la tarde
   mantenimiento.yml   · latido contra la desactivación por inactividad
+  ota.yml             · publica el bundle web que se descargan las apps de iOS
   pruebas.yml         · unittest en cada empujón
 scripts/
   despachar.py        · recorre queue.json y envía lo vencido
@@ -72,9 +72,9 @@ tests/                · 77 pruebas sobre las reglas de las especificaciones
 | `specs/modelo-datos.md` §7.4 | `eventos_derivados` en `scripts/agenda/semana.py` |
 | `specs/especificacion.md` §3.1 y §4.1 | `datos/catalogos.json`, `api/migraciones/0002_catalogos.sql` |
 | `specs/especificacion.md` §3 (visibilidad) | `api/src/visibilidad.js` y `api/src/filtrado.js` |
-| `specs/especificacion.md` §8 (acceso) | `api/src/apple.js`, `pwa/publico/js/sesion.js`, `ios/App/…/AgendaFamiliarApp.swift` |
-| `specs/especificacion.md` §9 (sin conexión) | `pwa/publico/js/sincronizacion.js`, `ios/Sources/…/Almacen.swift` |
-| `specs/ux.md` §11 (opción D) | `pwa/publico/js/vistas/`, `ios/App/AgendaFamiliar/Vistas/` |
+| `specs/especificacion.md` §8 (acceso) | `api/src/apple.js` y `pwa/publico/js/sesion.js` |
+| `specs/especificacion.md` §9 (sin conexión) | `pwa/publico/js/sincronizacion.js` y `pwa/publico/js/almacen.js` |
+| `specs/ux.md` §11 (opción D) | `pwa/publico/js/vistas/` |
 
 `specs/especificacion.md` §7 (Anecdotario) tiene la especificación diferida y no
 se modela, tal como el propio documento indica.
@@ -250,7 +250,6 @@ principal se extrae a `procesar()` para poder probarlo sin red.
 ```bash
 python3 -m unittest discover -s tests -v   # despachador, plan semanal, modelo
 cd api && npm test                         # visibilidad y filtrado del Worker
-cd ios && swift test                       # el núcleo, en un Mac
 ```
 
 Cubren la función de visibilidad —incluidas la ocultación por destinatario, los
@@ -274,6 +273,6 @@ eventos no editables, pero no hay conector que los traiga—, las **notificacion
 del recordatorio previo, y la **copia periódica automática** de salvaguarda; la
 exportación bajo demanda sí funciona (`docs/despliegue-cloudflare.md` §12).
 
-El código de iOS no se ha compilado: se escribió en un entorno sin cadena de
-herramientas de Swift. Conviene pasarle `swift test` y un `xcodegen generate`
-antes de darlo por bueno.
+La cáscara de iOS no se ha generado aquí: `npx cap add ios` hace `pod install` y
+eso solo funciona en macOS. Los pasos están en `pwa/README.md` y en el apartado 8
+de la guía de despliegue.
