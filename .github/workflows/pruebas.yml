@@ -23,6 +23,11 @@ jobs:
       - name: Ejecutar las pruebas
         run: python3 -m unittest discover -s tests -v
 
+      # El mapa es lo que se le inyecta a una sesión al abrirse. Si el commit lo
+      # trae desfasado, quien llegue leerá una descripción del código anterior.
+      - name: Comprobar que docs/mapa.md corresponde al código
+        run: python3 herramientas/mapa.py --verificar
+
       - name: Comprobar que el registro de ejemplo compone los siete planes
         env:
           AGENDA_PATH: datos/agenda.ejemplo.json

@@ -221,7 +221,7 @@ export async function tokenDeAppleNativo(configuracion) {
 
 /**
  * El recordatorio previo al evento, que es la única notificación activa por
- * defecto (specs/especificacion.md §88).
+ * defecto (specs/especificacion.md §3.5).
  *
  * Se programan **en el dispositivo**, no se envían desde el servidor, y esa
  * decisión es lo que hace que la regla «las notificaciones heredan la
