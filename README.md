@@ -267,9 +267,9 @@ El módulo **Anecdotario** queda fuera por decisión de la propia especificació
 funcional, que difiere su detalle hasta cerrar la estructura de la importación
 desde el export de Facebook.
 
-La **Valija** —lo que hay que tener en cuenta para las vacaciones y salidas
-similares— tiene reservado su sitio en `specs/valija.md`, que por ahora es solo
-un marcador: recoge la idea y las cuestiones a decidir, y no está especificada.
+La **Valija** —el cuaderno de cada sitio al que se vuelve: restaurantes, tiendas,
+planes y lo que hay que llevar— está especificada en `specs/valija.md` pero no
+construida. No tiene entidades en el esquema ni representación en la aplicación.
 
 De lo demás, tres cosas están modeladas pero no construidas: los **calendarios
 externos** importados —el modelo los contempla y la interfaz los muestra como
