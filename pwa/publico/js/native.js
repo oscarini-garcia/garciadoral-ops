@@ -200,7 +200,10 @@ export async function autorizacionDeAppleNativa({ appleClienteWeb, redireccion }
   const { response } = await acceso.authorize({
     clientId: appleClienteWeb,
     redirectURI: redireccion,
-    scopes: 'name',
+    // Igual que en la web: sin el ámbito `email` el token no trae el correo, y
+    // sin correo la bandeja de solicitudes se queda sin el único dato de esa
+    // pantalla que no es declarado (specs/autenticacion.md §8).
+    scopes: 'name email',
   });
 
   return {

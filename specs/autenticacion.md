@@ -95,11 +95,14 @@ puerta.
 | correo | Lo que diga Apple. Puede ser un buzón de reenvío, o nulo |
 | correo_privado | Si Apple indicó `is_private_email` |
 | nombre_declarado | Lo escribe la persona. Obligatorio |
-| nota | «De qué nos conocemos». Libre y opcional |
-| estado | pendiente, aprobada, rechazada |
-| persona_id | A quién se vinculó, al aprobar |
-| resuelta_por | Qué administrador la resolvió |
+| estado | pendiente o rechazada |
+| resuelta_por | Qué administrador la rechazó |
 | creado_en, actualizado_en, visto_en | `visto_en` es el último intento de entrar |
+
+**No hay estado «aprobada»: al aprobar, la fila se borra.** Conservarla dejaría
+el correo de alguien que ya está en el hogar guardado para siempre, porque
+ninguna caducidad alcanza a una solicitud resuelta a favor. A quien entró se le
+busca en `persona`, que es donde está.
 
 La unicidad del identificador no es un detalle de implementación: es el freno.
 Volver a entrar con el mismo identificador de Apple no crea una solicitud nueva,
@@ -110,17 +113,12 @@ al pintarlo y se limita en longitud. Quien lo lee es un administrador que decide
 sobre esa base, y conviene que la interfaz sea explícita en que ese nombre lo ha
 escrito el solicitante, no Apple.
 
-**Ningún cambio en el esquema de `persona`.** De lo que trae la solicitud, al
-aprobar se conserva una sola cosa: la nota, que pasa a ser un `atributo_persona`
-con clave «cómo nos conocemos». Es el dato que dentro de dos años nadie
-recordará y que explica por qué esa persona está en la lista, y la entidad ya
-existe precisamente para atributos que no merecen columna propia
-(`specs/modelo-datos.md` §2.1).
-
-El correo, en cambio, **no se copia**: se va con la solicitud cuando se purgue.
-No se guarda porque no se usa —este sistema no envía correo a nadie— y conservar
-un dato personal «por si acaso» es la clase de acumulación que el resto del
-diseño evita.
+**Ningún cambio en `persona`.** De la solicitud no se copia nada a la ficha: al
+aprobar, el nombre declarado se usa como propuesta editable del formulario y el
+correo se va con la solicitud cuando se purgue. El correo no se guarda porque no
+se usa —este sistema no envía correo a nadie— y conservar un dato personal «por
+si acaso» es la clase de acumulación que el resto del diseño evita. Si algún día
+hiciera falta, `atributo_persona` existe para eso y no requiere migración.
 
 ---
 
@@ -130,15 +128,15 @@ diseño evita.
 demostración.
 
 **Al volver de Apple.** La API responde con el estado del identificador. Si es
-desconocido, la aplicación pide dos cosas y nada más:
+desconocido, la aplicación pide **una sola cosa**: «¿quién eres?».
 
-- **«¿Quién eres?»** — obligatorio.
-- **«¿De qué nos conocemos?»** — una línea, opcional.
-
-Que el nombre lo escriba la persona no es desconfianza hacia Apple, es que Apple
-no lo da de forma fiable (§8). Y la nota resuelve el problema real del
-administrador, que no es identificar a quien pide entrar sino acordarse de por
-qué le dijo que se descargara la aplicación.
+Un campo y nada más. Que el nombre lo escriba la persona no es desconfianza
+hacia Apple, es que Apple no lo da de forma fiable (§8), y ese único campo es lo
+que sostiene la bandeja cuando el correo llega oculto. Se descartó pedir además
+de qué os conocéis: en un grupo pequeño y de confianza, quien aprueba ya sabe
+quién viene —normalmente porque él mismo le dijo que se descargara la
+aplicación—, así que la explicación es un campo que se rellena por cortesía y no
+se lee.
 
 **La sala de espera.** Una pantalla honesta: la solicitud está hecha, la revisa
 una persona, no hay plazo. Con dos acciones: **comprobar** —que vuelve a
@@ -177,8 +175,8 @@ sería un concepto nuevo en el modelo y un punto único de fallo: si quien tuvie
 esa condición se ausenta o se da de baja, las solicitudes se quedarían sin nadie
 que las mirase.
 
-Cada solicitud muestra el nombre declarado, la nota, el correo —marcado como
-buzón de reenvío cuando lo sea— y la fecha. Y ofrece tres salidas:
+Cada solicitud muestra el nombre declarado, el correo —marcado como buzón de
+reenvío cuando lo sea— y la fecha. Y ofrece tres salidas:
 
 1. **Dar cuenta a alguien que ya está en el registro.** Se elige a una persona sin
    cuenta de la lista y se le asigna rol. Es el camino de la abuela: conserva su
@@ -188,8 +186,8 @@ buzón de reenvío cuando lo sea— y la fecha. Y ofrece tres salidas:
 3. **Rechazar.**
 
 La aprobación es una sola operación indivisible: crea o localiza la persona, le
-pone `tiene_cuenta`, rol e identificador de Apple, guarda la nota como atributo
-y marca la solicitud. Si algo falla, no queda a medias.
+pone `tiene_cuenta`, rol e identificador de Apple, y marca la solicitud. Si algo
+falla, no queda a medias.
 
 **Dos casos que la operación tiene que rechazar con un mensaje claro**, porque
 ocurrirán: que la solicitud ya la haya resuelto el otro administrador mientras
@@ -229,7 +227,7 @@ como sesión plena.
 | Ruta | Quién | Qué hace |
 |---|---|---|
 | `POST /api/sesion` | Token de Apple | Devuelve el estado: `activa` con sesión y persona, o `sin_solicitud` / `pendiente` / `rechazada` con una sesión de espera |
-| `POST /api/solicitud` | Sesión de espera | Crea la solicitud con nombre y nota |
+| `POST /api/solicitud` | Sesión de espera | Crea la solicitud con el nombre declarado |
 | `GET /api/solicitud` | Sesión de espera | Estado actual |
 | `DELETE /api/solicitud` | Sesión de espera | Retira y borra |
 | `GET /api/solicitudes` | Sesión de administrador | Bandeja de pendientes |
@@ -300,9 +298,15 @@ cualquiera puede llamar a la puerta. Tres frenos, ninguno complicado:
 - **El coste de entrada.** Cada solicitud exige una autorización real de Apple.
   No es una barrera infranqueable, pero descarta el abuso trivial.
 
-**Caducidad.** Las pendientes sin resolver se borran a los catorce días; las
-rechazadas, a los treinta. Se hace en la misma pasada de mantenimiento que ya
-existe (`.github/workflows/mantenimiento.yml`), no con un proceso nuevo.
+**Caducidad.** Las aprobadas desaparecen en el acto —aprobar es borrar—, las
+pendientes sin resolver se borran a los catorce días y las rechazadas a los
+treinta. La purga la hace el propio Worker al paso, en los dos
+momentos en que alguien mira esta tabla: cuando alguien intenta entrar y cuando
+un administrador abre la bandeja. No hay tarea programada, y por tanto tampoco
+credenciales que custodiar ni un proceso que pueda llevar meses caído sin que
+nadie lo note. El precio es que en un hogar completamente inactivo las filas
+sobreviven a su fecha; como el primero que asome las barre, y como nadie las lee
+entretanto, es un precio que se paga con gusto.
 
 Catorce días son pocos a propósito: los datos de alguien que quizá nunca entre
 duran lo mínimo, y una solicitud que lleva dos semanas sin mirarse ya no es una
@@ -387,15 +391,19 @@ Ningún punto de diseño queda abierto. El trabajo se reparte así:
 | `api/migraciones/` | Tabla `solicitud_acceso` |
 | `api/src/apple.js` | Normalizar `email_verified`; recoger `is_private_email` |
 | `api/src/sesion.js` | El `tipo` del token y la sesión de espera |
+| `api/src/solicitudes.js` | La sala de espera entera: alta, purga, aprobar, rechazar |
 | `api/src/index.js` | Las cinco rutas nuevas y el estado de `/api/sesion` |
-| `api/src/repositorio.js` | Aprobar y rechazar, en una sola transacción |
-| `api/src/filtrado.js` | El recuento de pendientes, solo para administradores |
+| `api/src/repositorio.js` | El recuento de pendientes en el registro |
+| `api/src/filtrado.js` | Transmitirlo solo a los administradores |
 | `pwa/publico/js/sesion.js`, `native.js` | Añadir `email` al ámbito de Apple |
 | `pwa/publico/js/app.js` | Formulario de solicitud y sala de espera |
 | `pwa/publico/js/vistas/familia.js` | La bandeja; retirar el campo del identificador |
 | `pwa/publico/privacidad.html` | Qué se guarda de quien solicita, y cuánto dura |
-| `docs/despliegue-cloudflare.md` | Recuperación si no queda ningún administrador |
-| `.github/workflows/mantenimiento.yml` | La purga de caducadas |
+| `docs/despliegue-cloudflare.md` | La migración y la recuperación sin administradores |
+
+La sala de espera va en un módulo propio y no dentro de `repositorio.js` porque
+es la misma separación que sostiene todo lo demás: `repositorio.js` habla del
+registro del hogar, y una solicitud todavía no forma parte de él.
 
 El campo «Identificador de Apple» de la ficha de persona desaparece de la
 interfaz. Era la contrapartida del flujo antiguo —el hueco donde se pegaba la

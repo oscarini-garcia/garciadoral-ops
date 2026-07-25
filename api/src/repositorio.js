@@ -7,6 +7,8 @@
  * habla con la base.
  */
 
+import { contarPendientes } from './solicitudes.js';
+
 const CAMPOS = {
   persona: [
     'nombre', 'apellidos', 'fecha_nacimiento', 'parentesco',
@@ -138,12 +140,26 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     })),
     comentarios: comentarios.map((c) => ({ ...c, activo: bool(c.activo) })),
     conflictos,
+    // Cuántas personas esperan a que alguien las apruebe. Va aquí y no en una
+    // ruta propia para que llegue con la sincronización, sin una petición más;
+    // `filtrado.js` decide a quién se le transmite, que es solo a los
+    // administradores.
+    solicitudes_pendientes: await contarPendientes(db),
   };
 }
 
+/**
+ * La persona con cuenta a la que pertenece un identificador de Apple.
+ *
+ * Exige `tiene_cuenta`, y no solo el vínculo: un identificador que quedara
+ * apuntando a alguien a quien se le retiró la cuenta abriría sesión aquí y
+ * fallaría en la petición siguiente, que es la peor forma de decir que no.
+ */
 export async function personaPorApple(db, sub) {
   const fila = await db
-    .prepare('SELECT * FROM persona WHERE identificador_apple = ? AND activa = 1')
+    .prepare(
+      'SELECT * FROM persona WHERE identificador_apple = ? AND tiene_cuenta = 1 AND activa = 1',
+    )
     .bind(sub)
     .first();
   return fila ? { ...fila, tiene_cuenta: bool(fila.tiene_cuenta), activa: bool(fila.activa) } : null;

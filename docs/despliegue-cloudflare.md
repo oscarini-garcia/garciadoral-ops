@@ -87,6 +87,10 @@ Cree el esquema y los catálogos:
 npm run migrar:remoto
 ```
 
+Sobre una base que ya exista, esta misma orden es la que aplica las migraciones
+nuevas: todas se escriben con `CREATE TABLE IF NOT EXISTS`, de modo que
+ejecutarla otra vez no toca nada de lo que ya está.
+
 Comprobación:
 
 ```bash
@@ -159,8 +163,8 @@ wrangler d1 execute agenda-familiar --remote --command "
   VALUES ('p-oscar', 'Óscar', 'García', 1, 'administrador', 1)"
 ```
 
-Deje `identificador_apple` vacío: se rellena en el paso 6, cuando esa persona
-intente entrar por primera vez y la aplicación le diga cuál es.
+Deje `identificador_apple` vacío: se rellena en el paso 6.1, cuando esa persona
+intente entrar por primera vez.
 
 El resto del hogar se da de alta desde la propia aplicación, en Familia →
 *Añadir una persona*. La carga inicial es manual a propósito: importar los
@@ -497,28 +501,68 @@ Y dos cosas que **sí** dependen de esto, que es donde se pierde el tiempo:
 
 ---
 
-## 6. Vincular a las personas con su identificador de Apple
+## 6. Dar acceso a las personas
 
-Cada persona entra una vez y la aplicación le dirá qué hay que vincular.
+Nadie se vincula a mano: cada persona lo pide desde la aplicación y un
+administrador lo aprueba desde la aplicación.
 
-1. La persona abre la web (o la app) y pulsa **Entrar con Apple**.
-2. Como su identificador todavía no está en el registro, aparece un aviso con la
-   cadena que Apple asigna: algo como `000123.a1b2c3…`.
-3. Un administrador abre **Familia → la persona → Editar la ficha** y pega esa
-   cadena en *Identificador de Apple*. Si es la primera persona, y como todavía
-   no puede entrar nadie, hágalo desde la línea de órdenes:
-
-```bash
-wrangler d1 execute agenda-familiar --remote --command "
-  UPDATE persona SET identificador_apple = '000123.a1b2c3…' WHERE id = 'p-oscar'"
-```
-
+1. La persona abre la web (o la app), pulsa **Entrar con Apple** y escribe su
+   nombre en la pantalla que aparece.
+2. En el dispositivo de un administrador, la pantalla de **Familia** muestra
+   *Hay N personas esperando*.
+3. Ahí se ve quién dice ser y con qué correo, y se elige: darle acceso —creando
+   una ficha nueva o **vinculándola a una que ya exista**— o rechazar.
 4. Esa persona vuelve a pulsar **Entrar con Apple** y ya está dentro.
+
+El paso 3 tiene una trampa que conviene no pisar. Si quien pide entrar ya
+figuraba en el registro sin cuenta —la abuela, que cumple años y recibe
+regalos—, hay que elegirla en *Quién es* en lugar de crear una ficha nueva: así
+conserva su fecha de nacimiento y todo lo que otros escribieron con ella.
 
 El identificador que Apple entrega es **distinto para cada aplicación**, pero
 comparte el mismo App ID entre la web y iOS si el Services ID tiene ese App ID
 como *Primary*. Por eso el paso 4.2 importa: si se configura mal, la misma
-persona recibe dos identificadores y hay que vincular los dos.
+persona recibe dos identificadores y aparece dos veces en la bandeja.
+
+### 6.1 La primera vez: vincularse uno mismo
+
+La primera persona administradora no puede aprobarse a sí misma, así que su
+vínculo sí se escribe a mano. Pulse **Entrar con Apple**, envíe la solicitud, y
+lea de la base de datos el identificador que Apple le ha asignado:
+
+```bash
+wrangler d1 execute agenda-familiar --remote --command "
+  SELECT identificador_apple, correo, nombre_declarado FROM solicitud_acceso"
+```
+
+Con esa cadena, vincúlese a la ficha que creó en el paso 3 y borre la solicitud:
+
+```bash
+wrangler d1 execute agenda-familiar --remote --command "
+  UPDATE persona SET identificador_apple = '000123.a1b2c3…' WHERE id = 'p-oscar';
+  DELETE FROM solicitud_acceso WHERE identificador_apple = '000123.a1b2c3…'"
+```
+
+Vuelva a entrar y ya estará dentro. A partir de aquí, todo lo demás se hace
+desde la aplicación.
+
+### 6.2 Si no queda ningún administrador
+
+Darse de baja es un derecho y la aplicación no lo impide, ni siquiera a la última
+persona con permisos de administración (es la directriz 5.1.1(v) de la App
+Store). Pero si eso ocurre, no queda nadie que pueda aprobar solicitudes y estas
+se acumulan sin que nadie pueda tocarlas desde la aplicación.
+
+La salida es la misma que la del apartado 6.1: devolverle el rol a alguien desde
+la línea de órdenes.
+
+```bash
+wrangler d1 execute agenda-familiar --remote --command "
+  UPDATE persona SET rol = 'administrador' WHERE id = 'p-oscar' AND tiene_cuenta = 1"
+```
+
+Si esa persona también había perdido la cuenta, hay que rehacer el vínculo con
+Apple como en 6.1.
 
 ---
 
@@ -707,11 +751,13 @@ quiere hacer público: esa página la lee cualquiera.
 
 #### El obstáculo de verdad: el revisor no puede entrar
 
-Aquí el acceso es por invitación. Quien pulsa «Entrar con Apple» con un
-identificador que no está vinculado a ninguna persona recibe `sin_vincular`, y
-eso es exactamente lo que le va a pasar al equipo de revisión. Sin más, es un
-rechazo por la directriz 2.1 con el texto de siempre: «no pudimos acceder a la
-funcionalidad de la aplicación».
+Aquí el alta la aprueba una persona. Quien pulsa «Entrar con Apple» por primera
+vez deja una solicitud y se queda en la sala de espera, y eso es exactamente lo
+que le va a pasar al equipo de revisión. Sin más, es un rechazo por la directriz
+2.1 con el texto de siempre: «no pudimos acceder a la funcionalidad de la
+aplicación». Dígalo en las notas de revisión, además de dejar el botón a la
+vista: la sala de espera ofrece la demostración, pero conviene no depender de
+que el revisor la encuentre.
 
 La salida está construida desde el principio y es el **modo de demostración**:
 datos inventados, sin servidor, con el recorte por titular funcionando a la
@@ -789,8 +835,9 @@ binario, para que un informe de fallos se pueda situar.
 1. TestFlight interno primero, en un iPhone real: la hoja nativa de Apple no se
    comporta igual en el simulador.
 2. Recorra desde el teléfono: entrar, sincronizar, un aviso local, compartir un
-   evento y **eliminar la cuenta**. Después vuelva a vincularse con el `UPDATE`
-   del paso 6, que es también el ensayo de la recuperación.
+   evento y **eliminar la cuenta**. Después vuelva a entrar: aparecerá en la
+   bandeja como una solicitud más, que es también el ensayo de la recuperación
+   del paso 6.1.
 3. Rellene la ficha, adjunte las notas de revisión de arriba y envíe.
 4. La primera revisión suele tardar entre uno y tres días.
 
@@ -865,7 +912,8 @@ error visible: es arruinar una sorpresa.
 | El dominio propio no sale de «pending» en Pages | El CNAME no ha propagado o apunta a otro proyecto. `dig garciadoral-ops.galoopa.store CNAME` debe devolver su `pages.dev` |
 | `Could not detect a directory containing static files` | El proyecto es un Worker y no uno de Pages, o el *Build output directory* no es `pwa/publico`. Vea el aviso del paso 5.1 |
 | Se rompió la tienda de `galoopa.store` | Nada de este despliegue toca el apex. Revise si al añadir el CNAME se modificó por error el registro `A` que apunta a Shopify |
-| «Este identificador de Apple todavía no está vinculado» | Es el comportamiento correcto la primera vez: copie el identificador a la ficha (paso 6) |
+| Alguien se queda en «Tu solicitud está hecha» | Es el comportamiento correcto la primera vez: apruébela en Familia → *Hay N personas esperando* (paso 6) |
+| Una solicitud llega sin correo, o con uno de `privaterelay.appleid.com` | Esa persona eligió «Ocultar mi correo», o entró antes de que se pidiera el ámbito `email`. El nombre que escribió es entonces el único dato para reconocerla |
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
 | Todo daba 401 de repente | Cambió `SESION_SECRETO`; hay que volver a entrar |
 | El plan del domingo no sale | Mire la traza en Actions. Lo más común es `AGENDA_URL` sin `/api/registro` al final, o `AGENDA_TOKEN` distinto de `TOKEN_SERVICIO` |

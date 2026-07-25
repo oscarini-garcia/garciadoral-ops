@@ -53,7 +53,12 @@ async function autorizacionPorLaWeb(configuracion) {
   await cargarSdkDeApple();
   window.AppleID.auth.init({
     clientId: configuracion.appleClienteWeb,
-    scope: 'name',
+    // El correo es lo único que verá quien decide si esta persona entra, así
+    // que hay que pedirlo. Ojo al probar: el ámbito se fija en la **primera**
+    // autorización, y ampliarlo después no vuelve a preguntar. Quien ya entrara
+    // alguna vez seguirá sin correo hasta que retire la aplicación en Ajustes →
+    // su nombre → Inicio de sesión y seguridad (specs/autenticacion.md §8).
+    scope: 'name email',
     redirectURI: configuracion.redireccion || window.location.origin,
     usePopup: true,
   });
@@ -71,9 +76,15 @@ async function tokenPorLaWeb(configuracion) {
 }
 
 /**
- * Devuelve `{ token, persona }` o lanza un error con `mensaje` legible.
- * El error de vinculación pendiente lleva además el identificador que hay que
- * pegar en la ficha de esa persona.
+ * Devuelve en qué estado está este identificador de Apple frente al hogar.
+ *
+ * Con cuenta, `{ estado: 'activa', token, persona }`. Sin ella, el estado de su
+ * solicitud —`sin_solicitud`, `pendiente` o `rechazada`— y un `token_espera`
+ * con el que preguntar y retirarse, que es lo único que esa credencial permite.
+ *
+ * Llegar sin cuenta no es un error: es el estado normal de quien acaba de
+ * descargarse la aplicación, y por eso la API responde 200 y esta función no
+ * lanza nada.
  */
 export async function entrarConApple(configuracion) {
   if (!configuracion.api) {
@@ -100,15 +111,44 @@ export async function entrarConApple(configuracion) {
   });
 
   const datos = await canje.json().catch(() => ({}));
-
-  if (!canje.ok) {
-    const error = new Error(datos.mensaje || datos.error || `La API respondió ${canje.status}.`);
-    error.identificador = datos.identificador;
-    throw error;
-  }
-
+  if (!canje.ok) throw new Error(datos.error || `La API respondió ${canje.status}.`);
   return datos;
 }
+
+// ------------------------------------------------------- Sala de espera --
+
+/**
+ * Las tres llamadas de quien todavía no es del hogar.
+ *
+ * Van con el `token_espera`, que no da acceso a la agenda: solo permite pedir
+ * entrar, preguntar en qué ha quedado la petición y retirarla. Esa última no es
+ * una comodidad, es la directriz 5.1.1(v) de la App Store, que aplica desde el
+ * momento en que se ha guardado el correo de alguien.
+ */
+async function enLaPuerta(configuracion, token, metodo, cuerpo) {
+  if (!configuracion.api) {
+    throw new Error('Esta instalación todavía no tiene configurada la API.');
+  }
+
+  const respuesta = await fetch(`${configuracion.api}/api/solicitud`, {
+    method: metodo,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    ...(cuerpo ? { body: JSON.stringify(cuerpo) } : {}),
+  });
+
+  const datos = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) throw new Error(datos.error || `La API respondió ${respuesta.status}.`);
+  return datos;
+}
+
+export const pedirEntrar = (configuracion, token, nombre) =>
+  enLaPuerta(configuracion, token, 'POST', { nombre });
+
+export const consultarSolicitud = (configuracion, token) =>
+  enLaPuerta(configuracion, token, 'GET');
+
+export const retirarSolicitud = (configuracion, token) =>
+  enLaPuerta(configuracion, token, 'DELETE');
 
 // ------------------------------------------------------ Baja de la cuenta --
 
