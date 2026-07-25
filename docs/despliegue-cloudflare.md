@@ -4,13 +4,27 @@ Guía de despliegue de la Agenda Familiar. Va en orden: cada paso deja algo que
 se puede comprobar antes de seguir al siguiente. Calcule **una tarde** la
 primera vez, casi toda esperando a Apple.
 
-Sustituya en todo el documento:
+Los nombres propios de esta instalación ya están fijados en el repositorio:
+
+| Qué | Valor | Dónde se declara |
+|---|---|---|
+| Dominio de la aplicación web | `garciadoral-ops.galoopa.store` | `pwa/publico/config.json`, `api/wrangler.toml` |
+| Identificador del paquete de iOS (App ID) | `store.galoopa.agenda` | `pwa/capacitor.config.json`, `APPLE_AUD_IOS` |
+| Identificador de servicio de la web (Services ID) | `store.galoopa.agenda.web` | `config.json`, `APPLE_AUD_WEB` |
+
+Queda un único marcador por sustituir, porque depende de la cuenta de Cloudflare
+y no se conoce hasta el paso 2:
 
 | Marcador | Qué es | Ejemplo |
 |---|---|---|
-| `EJEMPLO` | Su subdominio de `workers.dev` o el nombre corto de su cuenta | `garciadoral` |
-| `agenda.example.com` | El dominio de la aplicación web | `agenda.migarcia.es` |
-| `com.example.agenda` | El identificador del paquete de iOS | `es.migarcia.agenda` |
+| `EJEMPLO` | Su subdominio de `workers.dev` | `garciadoral` |
+
+Que esos tres ficheros sigan contando la misma historia lo comprueba
+`tests/test_configuracion.py` en cada empujón: el Services ID de la web contra el
+que admite el Worker, el identificador del paquete contra el suyo, y la URL de
+retorno contra los orígenes admitidos. Es una discrepancia que no rompe nada al
+desplegar y aparece más tarde, en el dispositivo, como un `invalid_client` o un
+error de CORS sin explicación.
 
 ---
 
@@ -19,11 +33,13 @@ Sustituya en todo el documento:
 - **Cuenta de Cloudflare** gratuita. El plan gratuito basta de sobra: D1 incluye
   5 GB y 5 millones de lecturas de fila al día, y Workers 100.000 peticiones
   diarias. Un hogar no se acerca ni de lejos.
-- **Un dominio**, si quiere que la aplicación web tenga una dirección propia. No
-  es obligatorio: Pages da una del tipo `agenda-familiar.pages.dev` y funciona
-  igual. Sí lo es si va a usar Sign in with Apple en la web, porque Apple no
-  admite dominios de terceros en las URL de retorno; en ese caso el dominio ha de
-  ser suyo.
+- **Un dominio propio.** Aquí es `galoopa.store`, del que se usa únicamente el
+  subdominio `garciadoral-ops.galoopa.store`. No es obligatorio para desplegar
+  —Pages da una dirección del tipo `agenda-familiar.pages.dev` y la aplicación
+  funciona igual—, pero sí para usar Sign in with Apple en la web: Apple no admite
+  `*.pages.dev` ni ningún otro dominio de terceros como URL de retorno, así que
+  el dominio ha de ser suyo y verificable. Cómo se apunta a Pages está en el
+  paso 5.2.
 - **Apple Developer Program**, 99 € al año. Necesario para firmar la aplicación
   iOS y para Sign in with Apple. Sin él puede desplegar la PWA y usarla, pero no
   habrá acceso con Apple ni aplicación en el teléfono.
@@ -34,9 +50,21 @@ Sustituya en todo el documento:
 - Acceso de escritura a este repositorio de GitHub.
 
 ```bash
-npm install -g wrangler
+npm install -g wrangler --allow-scripts=esbuild,workerd
 wrangler login          # abre el navegador y autoriza la cuenta
+wrangler --version
 ```
+
+> **Por qué ese `--allow-scripts`.** Las versiones recientes de npm no ejecutan
+> los scripts de instalación por defecto. Sin ellos, `esbuild` y `workerd` se
+> quedan sin el binario de la plataforma y `wrangler deploy` falla más tarde, con
+> un error que no menciona la instalación. Si prefiere no repetirlo en cada
+> instalación: `npm config set allow-scripts=esbuild,workerd --location=user`.
+>
+> Y cuidado con el aviso que imprime npm: sugiere el comando **sin el nombre del
+> paquete**. Tal cual, npm intenta instalar el paquete del directorio actual, y
+> la raíz de este repositorio no tiene `package.json` —solo lo tienen `api/` y
+> `pwa/`—, de modo que responde `ENOENT ... could not read package.json`.
 
 ---
 
@@ -89,12 +117,13 @@ wrangler secret put SESION_SECRETO
 wrangler secret put TOKEN_SERVICIO
 ```
 
-Antes de desplegar, ajuste el bloque `[vars]` de `api/wrangler.toml`:
+El bloque `[vars]` de `api/wrangler.toml` ya viene relleno con los nombres de
+esta instalación; compruébelo antes de desplegar:
 
 ```toml
-ORIGENES_PERMITIDOS = "https://agenda.example.com,http://localhost:8788"
-APPLE_AUD_WEB = "com.example.agenda.web"
-APPLE_AUD_IOS = "com.example.agenda"
+ORIGENES_PERMITIDOS = "https://garciadoral-ops.galoopa.store,http://localhost:8788"
+APPLE_AUD_WEB = "store.galoopa.agenda.web"
+APPLE_AUD_IOS = "store.galoopa.agenda"
 ```
 
 `ORIGENES_PERMITIDOS` es lo que decide qué webs pueden hablar con la API. Sin
@@ -144,7 +173,7 @@ espera tiene: los cambios de dominio tardan unos minutos en propagarse.
 
 1. **Certificates, Identifiers & Profiles → Identifiers → +**
 2. Tipo **App IDs → App**.
-3. Description: `Agenda Familiar`. Bundle ID **explícito**: `com.example.agenda`.
+3. Description: `Agenda Familiar`. Bundle ID **explícito**: `store.galoopa.agenda`.
 4. En Capabilities marque **Sign in with Apple**.
 5. Guarde.
 
@@ -152,26 +181,75 @@ Ese Bundle ID es el que va en `APPLE_AUD_IOS` y en `pwa/capacitor.config.json`.
 
 ### 4.2 Identificador de servicio (Services ID), para la web
 
+Haga antes el paso 5: el dominio tiene que estar sirviendo por HTTPS y con el
+certificado emitido para que Apple pueda verificarlo.
+
 1. **Identifiers → + → Services IDs**.
-2. Description: `Agenda Familiar Web`. Identifier: `com.example.agenda.web`.
+2. Description: `Agenda Familiar Web`. Identifier: `store.galoopa.agenda.web`.
 3. Guarde, vuelva a abrirlo y marque **Sign in with Apple → Configure**:
    - **Primary App ID**: el del paso 4.1.
-   - **Domains and Subdomains**: `agenda.example.com`
-   - **Return URLs**: `https://agenda.example.com`
+   - **Domains and Subdomains**: `garciadoral-ops.galoopa.store`
+   - **Return URLs**: `https://garciadoral-ops.galoopa.store`
 4. Guarde. Apple pedirá verificar el dominio descargando un fichero y
-   publicándolo en `https://agenda.example.com/.well-known/apple-developer-domain-association.txt`.
+   publicándolo en la ruta
+   `/.well-known/apple-developer-domain-association.txt` del dominio.
    Descárguelo y colóquelo en `pwa/publico/.well-known/` antes de continuar; se
-   publicará con el siguiente despliegue de Pages.
+   publicará con el siguiente empujón a `main`. Compruébelo con `curl` antes de
+   pulsar *Verify* —el paso 5.3 explica qué mirar y qué hacer si da 404—.
 
 Ese Services ID es el que va en `APPLE_AUD_WEB` y en `pwa/publico/config.json`.
 
-> **Si no tiene dominio propio.** Apple no admite `*.pages.dev` como dominio
-> verificable. Puede desplegar la PWA y usarla, pero el botón de Apple fallará;
-> la aplicación iOS sí funcionará, porque en nativo no hace falta dominio. La
-> alternativa es apuntar un dominio suyo a Pages, que es gratis salvo el registro
-> del dominio.
+> **La *Return URL* debe coincidir carácter a carácter** con el campo
+> `redireccion` de `pwa/publico/config.json`, que es lo que la web entrega a
+> Apple como `redirectURI` (`pwa/publico/js/sesion.js`). Sin barra final, en
+> minúsculas y con `https://`. Un solo carácter de diferencia y Apple devuelve
+> `invalid_client` sin más explicación.
 
-### 4.3 Nada de claves privadas
+> **Un único dominio, no uno de autenticación aparte.** El acceso web usa el
+> flujo de ventana emergente (`usePopup: true`), que exige que la URL de retorno
+> esté en el **mismo origen** que la página donde está el botón. Es decir: el
+> dominio que se declara aquí tiene que ser aquel en el que vive la PWA. Un
+> `auth-…` separado del dominio de la aplicación no simplifica nada y obliga a
+> montar un puente entre orígenes.
+
+> **Sin dominio propio no hay acceso web.** Apple no admite `*.pages.dev` como
+> dominio verificable. Puede desplegar la PWA y usarla en modo demostración,
+> pero el botón de Apple fallará. La aplicación iOS sí funcionaría igualmente,
+> porque en nativo la audiencia es el identificador del paquete y no hace falta
+> dominio ninguno.
+
+### 4.3 Dos caminos hacia el mismo token
+
+Conviene entenderlo antes de depurar el primer acceso, porque el botón es el
+mismo pero por dentro no lo es.
+
+En el navegador, la web pide el token con el SDK de Apple en ventana emergente,
+con el Services ID como cliente y `https://garciadoral-ops.galoopa.store` como
+URL de retorno. Dentro de la cáscara de iOS ese camino no cabe: allí la web se
+sirve desde el origen `capacitor://localhost`, que Apple no admite como *Return
+URL*, de modo que la ventana emergente no tendría a dónde volver. La cáscara usa
+la hoja nativa, que no necesita origen ni dominio verificado porque se identifica
+con el paquete.
+
+`sesion.js` elige solo según `esNativo()`, y el canje contra la API es el mismo
+en los dos casos. La diferencia se ve en las trazas del Worker:
+
+| Dónde | Cliente ante Apple | Audiencia del token |
+|---|---|---|
+| Navegador | Services ID | `APPLE_AUD_WEB` |
+| Cáscara de iOS | el paquete, implícito | `APPLE_AUD_IOS` |
+
+Las dos audiencias están admitidas y desembocan en el **mismo** `sub`, siempre
+que el Services ID tenga ese App ID como *Primary* (paso 4.2). Si se configura
+mal, la misma persona recibe dos identificadores y hay que vincular los dos.
+
+> **El acceso nativo no llega por OTA.** El complemento
+> `@capacitor-community/apple-sign-in` es código nativo: entra en el binario, no
+> en el bundle web. Una cáscara compilada sin él enseña el mensaje «hace falta
+> una compilación nueva» y no deja entrar por mucho que se actualice la web. Si
+> ya hay versiones en TestFlight, esta es de las que obligan a subir binario.
+
+### 4.4 Nada de claves privadas
 
 Este diseño **no** necesita la clave `.p8` de Sign in with Apple ni el flujo de
 `client_secret`: el Worker verifica el `id_token` contra las claves públicas de
@@ -182,14 +260,16 @@ menos que rotar.
 
 ## 5. Cloudflare Pages: la aplicación web
 
-Antes de publicar, deje la configuración apuntando a lo suyo. Edite
-`pwa/publico/config.json`:
+### 5.1 Publicar el sitio
+
+Antes de publicar, sustituya `EJEMPLO` por el subdominio real del Worker en
+`pwa/publico/config.json`. El resto ya está puesto:
 
 ```json
 {
   "api": "https://agenda-familiar-api.EJEMPLO.workers.dev",
-  "appleClienteWeb": "com.example.agenda.web",
-  "redireccion": "https://agenda.example.com",
+  "appleClienteWeb": "store.galoopa.agenda.web",
+  "redireccion": "https://garciadoral-ops.galoopa.store",
   "otaManifiesto": "https://github.com/oscarini-garcia/garciadoral-ops/releases/latest/download/latest.json"
 }
 ```
@@ -201,8 +281,10 @@ vez que cambien los catálogos—:
 python3 herramientas/preparar-pwa.py
 ```
 
-Después, en el **panel de Cloudflare → Workers & Pages → Create → Pages →
-Connect to Git**:
+Después, en el **panel de Cloudflare → Workers & Pages → Create**. Aquí hay que
+ir con cuidado, porque el asistente ofrece **Workers** por defecto y Pages está
+en una pestaña aparte: **cambie a la pestaña «Pages»** y solo entonces
+*Connect to Git*.
 
 | Campo | Valor |
 |---|---|
@@ -215,18 +297,139 @@ Connect to Git**:
 No hay proceso de compilación: lo que se publica es literalmente el contenido de
 `pwa/publico`. Cada empujón a `main` republica.
 
-**Dominio propio:** en el proyecto de Pages, *Custom domains → Set up a custom
-domain* → `agenda.example.com`. Si el dominio ya está en Cloudflare, el registro
-DNS se crea solo.
+> **Cómo saber que se ha equivocado de producto.** Si en la configuración
+> aparecen los campos *Deploy command* y *Version command*, o si las pestañas del
+> proyecto son *Bindings*, *Observability* y *Domains*, lo que ha creado es un
+> Worker, no un proyecto de Pages. Un Worker así falla en la compilación con
+> `Could not detect a directory containing static files`: ejecuta
+> `npx wrangler deploy` en la raíz, donde no hay ningún `wrangler.toml` —el único
+> está en `api/`—, y se pone a buscar activos estáticos que en la raíz no existen.
+>
+> No lo arregle añadiendo un `wrangler.toml` con `[assets]`, aunque funcionaría
+> para servir la PWA: los dominios propios de un Worker exigen que la zona entera
+> esté alojada en Cloudflare, que es precisamente lo que aquí no interesa (5.2).
+> Pages, en cambio, admite un CNAME desde un DNS de fuera. Borre el Worker
+> —comparte espacio de nombres con los proyectos de Pages— y vuelva a crearlo en
+> la pestaña correcta.
 
-**Cabecera de seguridad:** cuando todo funcione, abra `pwa/publico/_headers`,
-descomente la línea `Content-Security-Policy` y sustituya el subdominio del
-Worker en `connect-src`. Actívela y compruebe el acceso en el mismo paso: con
-`connect-src` mal puesto la aplicación deja de hablar con la API.
+Anote la dirección que le asigna Pages —`agenda-familiar.pages.dev` o parecida—:
+hace falta en el paso siguiente.
 
-Comprobación: abra `https://agenda.example.com` y pulse **Ver una demostración
-con datos de ejemplo**. Si la semana aparece con sus siete filas, la parte
-estática está bien.
+### 5.2 Apuntar `garciadoral-ops.galoopa.store` a Pages
+
+`galoopa.store` no está alojado en Cloudflare: sus servidores de nombres son los
+de Google Cloud DNS (`ns-cloud-d1…d4.googledomains.com`), heredados de Google
+Domains, cuyas cuentas pasaron a Squarespace cuando el servicio cerró. El panel
+donde se editan los registros es hoy el de Squarespace Domains; el DNS por
+detrás sigue siendo el mismo.
+
+Eso no impide usar el dominio: Pages admite dominios cuyo DNS vive fuera de
+Cloudflare, y basta con un registro.
+
+> **El apex está ocupado.** `galoopa.store` resuelve a `23.227.38.65`, que es
+> Shopify. No se toca: todo esto cuelga de un subdominio y la tienda sigue
+> exactamente igual.
+
+1. En el proyecto de Pages: **Custom domains → Set up a custom domain** →
+   `garciadoral-ops.galoopa.store`. Como el dominio no está en Cloudflare, la
+   interfaz le dirá que cree el registro usted y le mostrará el destino.
+2. En el panel de DNS del dominio, un único registro nuevo:
+
+   | Tipo | Nombre | Valor | TTL |
+   |---|---|---|---|
+   | CNAME | `garciadoral-ops` | `<su-proyecto>.pages.dev` | 300 mientras prueba |
+
+3. Cloudflare detecta el CNAME, valida y emite el certificado solo. De unos
+   minutos a una hora. No siga hasta que el dominio figure como **Active** en
+   *Custom domains*: si Apple intenta verificar antes de que haya certificado,
+   falla y hay que reintentarlo.
+
+Comprobación: abra `https://garciadoral-ops.galoopa.store` y pulse **Ver una
+demostración con datos de ejemplo**. Si la semana aparece con sus siete filas,
+la parte estática está bien.
+
+> **Mover la zona entera a Cloudflare** —añadir el sitio y cambiar los
+> servidores de nombres en el registrador— es más cómodo a la larga: Pages
+> crearía el registro solo y habría un único sitio donde mirar. Pero obliga a
+> repasar registro por registro lo que hoy sirve la tienda y el correo antes de
+> conmutar, y no aporta nada a este despliegue. El CNAME de arriba basta.
+
+### 5.3 El fichero de verificación de Apple
+
+El `.txt` que entrega Apple (paso 4.2) va en `pwa/publico/.well-known/`, que ya
+existe en el repositorio con sus instrucciones. Tras el empujón que lo publique:
+
+```bash
+curl -i https://garciadoral-ops.galoopa.store/.well-known/apple-developer-domain-association.txt
+```
+
+> **Mire el `content-type`, no solo el `200`.** Sin un `404.html`, Pages
+> devuelve `200` con el `index.html` de la aplicación para **cualquier** ruta que
+> no exista, y entonces esta comprobación da un falso positivo redondo: parece
+> que el fichero está publicado cuando no lo está. El repositorio incluye ya un
+> `pwa/publico/404.html` justamente para que eso no pase, pero la comprobación
+> fiable sigue siendo la misma, y vale con cualquier despliegue:
+>
+> - `text/plain` → el fichero se está sirviendo de verdad. Adelante.
+> - `text/html` → el fichero **no** está; le están devolviendo la aplicación.
+>   Apple fallará la verificación con un error que no explica nada.
+>
+> Y el cuerpo debe ser la cadena que entregó Apple, no `<!DOCTYPE html>`.
+> Tampoco debe haber redirección por el camino.
+
+Si el `content-type` es `text/html`, la causa es conocida: los despliegues de
+Pages no siempre suben los directorios cuyo nombre empieza por punto. La salida,
+sin depender de ese comportamiento, es servirlo desde una ruta normal y
+reescribir la petición
+—Pages admite «proxying» con código 200 en `_redirects`, que es una reescritura
+interna y no una redirección, de modo que Apple ve el fichero donde lo espera—:
+
+1. Mueva el fichero a `pwa/publico/apple-dominio.txt`.
+2. Cree `pwa/publico/_redirects` con una línea:
+
+   ```
+   /.well-known/apple-developer-domain-association.txt /apple-dominio.txt 200
+   ```
+
+3. Vuelva a empujar y repita el `curl`.
+
+### 5.4 La cabecera de seguridad
+
+Cuando todo funcione, abra `pwa/publico/_headers`, descomente la línea
+`Content-Security-Policy` y sustituya el subdominio del Worker en `connect-src`.
+Actívela y compruebe el acceso en el mismo paso: con `connect-src` mal puesto la
+aplicación deja de hablar con la API.
+
+### 5.5 Lo que el dominio *no* obliga a cambiar
+
+Conviene tenerlo claro para no ir buscando dónde más hay que tocar:
+
+- **Ningún workflow conoce el dominio.** `pruebas` ejecuta las suites;
+  `plan-semanal` y `despachador` hablan con el Worker por `AGENDA_URL`, que
+  apunta a `workers.dev`; `mantenimiento` solo escribe un latido; y `ota`
+  empaqueta `pwa/publico` tal cual. Cambiar de dominio no obliga a tocar CI.
+- **El despliegue de la web** lo hace la integración con Git de Pages, no un
+  workflow: cada empujón a `main` republica `pwa/publico`. Añadir un dominio
+  propio no altera la compilación, solo por dónde entra el tráfico.
+- **El binario de iOS no lleva el dominio dentro.** La cáscara empaqueta la web
+  (`webDir: publico`) y la actualiza por OTA; no carga la web desde el dominio.
+  Ni el archivado ni TestFlight cambian por esto. Solo haría falta declarar el
+  dominio —*Associated Domains* y `apple-app-site-association`— si en el futuro
+  se quisieran enlaces universales, que hoy no se usan.
+- **`config.json` se lee en caliente.** Cambiar el dominio o el Services ID no
+  exige reconstruir la PWA, solo republicarla.
+
+Y dos cosas que **sí** dependen de esto, que es donde se pierde el tiempo:
+
+- **El Worker no se despliega solo.** `ORIGENES_PERMITIDOS` vive en
+  `api/wrangler.toml`, y ese fichero solo surte efecto al ejecutar
+  `npm run desplegar` a mano. Si cambia el dominio, ese redespliegue es el paso
+  que se olvida y el que produce el error de CORS.
+- **El workflow `ota` falla mientras `config.json` conserve `EJEMPLO`.** Es
+  deliberado —un bundle con marcadores dejaría a todos los teléfonos apuntando a
+  una API inexistente—, pero significa que hasta que no despliegue el Worker y
+  sustituya su subdominio, cualquier empujón a `main` que toque `pwa/publico`
+  deja el workflow en rojo. Primero el paso 2, después lo demás.
 
 ---
 
@@ -305,14 +508,15 @@ con la misma web dentro. El binario casi nunca cambia —se sube a Apple la prim
 vez y solo se vuelve a subir cuando se toca algo nativo—, y los cambios de web
 llegan a los teléfonos por OTA sin pasar por revisión.
 
-Primero, deje la identidad puesta en `pwa/capacitor.config.json`:
+La identidad ya está puesta en `pwa/capacitor.config.json`:
 
 ```json
-{ "appId": "com.example.agenda", "appName": "Agenda", "webDir": "publico" }
+{ "appId": "store.galoopa.agenda", "appName": "Agenda", "webDir": "publico" }
 ```
 
-`appId` tiene que ser **el mismo** App ID del paso 4.1 y el mismo valor que
-`APPLE_AUD_IOS` en el Worker. Cambiarlo después es un lío, así que elíjalo bien.
+`appId` es **el mismo** App ID del paso 4.1 y el mismo valor que `APPLE_AUD_IOS`
+en el Worker. Cambiarlo después es un lío: un Bundle ID no se puede renombrar en
+Apple.
 
 En el Mac:
 
@@ -328,7 +532,9 @@ npm run open:ios
 En Xcode:
 
 1. **Signing & Capabilities** → elija su *Team* y confirme el bundle id.
-2. Añada la capacidad **Sign in with Apple**.
+2. Añada la capacidad **Sign in with Apple**. No es opcional: sin ella el
+   complemento nativo del paso 4.3 falla al abrir la hoja, y el acceso desde el
+   teléfono no funciona aunque en el navegador vaya perfecto.
 3. *Any iOS Device* → **Product ▸ Archive** → **Distribute App ▸ App Store
    Connect ▸ Upload**.
 4. Pruebe en **TestFlight** (interno, casi sin revisión) antes de enviar a la
@@ -336,6 +542,12 @@ En Xcode:
 
 Ejecute en un teléfono real: Sign in with Apple no funciona bien en el simulador
 sin una cuenta de iCloud configurada.
+
+Comprobación de que el acceso nativo está bien montado: pulse **Entrar con
+Apple** en el teléfono. Debe salir la hoja del sistema —con Face ID o la
+contraseña de Apple—, no una ventana de navegador. Si aparece el mensaje «esta
+versión no trae el acceso con Apple», el complemento no entró en el binario:
+repita `npm install` y `npm run sync:ios` y vuelva a archivar.
 
 > `pwa/ios/` **no se versiona**: lo regenera `cap add ios`, y `pod install`
 > necesita macOS. Está en `pwa/.gitignore`.
@@ -357,6 +569,13 @@ Si no cambia la versión, no se publica nada: un empujón normal a `main` es
 inofensivo. Y si `config.json` todavía tiene marcadores `EJEMPLO`, el workflow
 falla a propósito antes de publicar: un bundle con ellos dejaría a todos los
 teléfonos apuntando a una API que no existe, y encima se aplicaría solo.
+
+**Lo que no viaja por OTA** es todo lo nativo: los complementos de Capacitor
+—háptica, compartir, el actualizador y el acceso con Apple—, los permisos, los
+iconos y cualquier cambio en `capacitor.config.json`. Añadir o quitar un
+complemento obliga a `npm install`, `npm run sync:ios` y una subida nueva a
+TestFlight. El código JavaScript que los invoca, en cambio, sí viaja: cambiar
+cómo se usa un complemento ya instalado es una actualización web normal.
 
 Solo hay que volver a Xcode cuando cambie algo **nativo**: un plugin nuevo, los
 iconos, los permisos o la versión de Capacitor.
@@ -384,6 +603,12 @@ error visible: es arruinar una sorpresa.
       verificar que llega.
 - [ ] En la app de iOS, subir la versión de `pwa/package.json`, mergear y
       comprobar que el cambio entra al abrirla por segunda vez.
+- [ ] Entrar con Apple **desde el navegador** y **desde el teléfono**, con la
+      misma cuenta, y comprobar que caen en la misma persona. Si el teléfono pide
+      vincular un identificador distinto, el Services ID no tiene ese App ID como
+      *Primary* (paso 4.2) y hay que corregirlo antes de dar de alta a nadie más.
+- [ ] Pedir una ruta que no exista —`/loquesea`— y comprobar que responde `404`,
+      no la aplicación con un `200`.
 
 ---
 
@@ -394,7 +619,7 @@ error visible: es arruinar una sorpresa.
 | Cloudflare Workers + D1 + Pages | 0 € en el plan gratuito, con margen enorme |
 | GitHub Actions | 0 € — unos 30 minutos al mes de una cuota de 2.000 |
 | CallMeBot | 0 €, servicio gratuito de un tercero y sin garantía |
-| Dominio | 10–15 € al año, opcional |
+| Dominio | 10–15 € al año. `galoopa.store` ya está pagado; el subdominio no cuesta nada aparte |
 | Apple Developer Program | 99 € al año, solo si quiere la app iOS |
 
 ---
@@ -404,6 +629,11 @@ error visible: es arruinar una sorpresa.
 | Síntoma | Causa habitual |
 |---|---|
 | La web carga pero el botón de Apple no hace nada | El dominio no está verificado en el Services ID, o `appleClienteWeb` no coincide con él |
+| Apple responde `invalid_client` | La *Return URL* del Services ID y el campo `redireccion` de `config.json` no son idénticos. Compare carácter a carácter, incluida la barra final |
+| Apple no consigue verificar el dominio | El `.txt` no se está sirviendo. Lance el `curl` del paso 5.3: si da 404, aplique la reescritura con `_redirects` que allí se explica. Si da 301 o 302, Apple tampoco lo acepta |
+| El dominio propio no sale de «pending» en Pages | El CNAME no ha propagado o apunta a otro proyecto. `dig garciadoral-ops.galoopa.store CNAME` debe devolver su `pages.dev` |
+| `Could not detect a directory containing static files` | El proyecto es un Worker y no uno de Pages, o el *Build output directory* no es `pwa/publico`. Vea el aviso del paso 5.1 |
+| Se rompió la tienda de `galoopa.store` | Nada de este despliegue toca el apex. Revise si al añadir el CNAME se modificó por error el registro `A` que apunta a Shopify |
 | «Este identificador de Apple todavía no está vinculado» | Es el comportamiento correcto la primera vez: copie el identificador a la ficha (paso 6) |
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
 | Todo daba 401 de repente | Cambió `SESION_SECRETO`; hay que volver a entrar |
@@ -447,11 +677,15 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 2. `npm run migrar:remoto`.
 3. `wrangler secret put` de los dos secretos y `npm run desplegar`.
 4. Insertar a mano la primera persona administradora.
-5. App ID y Services ID en Apple, con el dominio verificado.
+5. App ID en Apple.
 6. Proyecto de Pages con salida `pwa/publico` y `config.json` relleno.
-7. Entrar, copiar el identificador de Apple a la ficha, volver a entrar.
-8. Secretos de GitHub y simulacro del plan semanal.
-9. En el Mac: `npx cap add ios` → `npm run sync:ios` → assets → Xcode → TestFlight.
-10. Recorrer la lista de comprobaciones del apartado 9.
-11. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
+7. CNAME `garciadoral-ops` → `<proyecto>.pages.dev` en el DNS del dominio, y
+   esperar a que el dominio propio figure como *Active* en Pages.
+8. Services ID en Apple, publicar el `.txt` de verificación y comprobarlo con
+   `curl` antes de pulsar *Verify*.
+9. Entrar, copiar el identificador de Apple a la ficha, volver a entrar.
+10. Secretos de GitHub y simulacro del plan semanal.
+11. En el Mac: `npx cap add ios` → `npm run sync:ios` → assets → Xcode → TestFlight.
+12. Recorrer la lista de comprobaciones del apartado 9.
+13. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
     la app dos veces.

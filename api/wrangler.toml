@@ -2,21 +2,30 @@ name = "agenda-familiar-api"
 main = "src/index.js"
 compatibility_date = "2026-05-01"
 
-# Rellene database_id con el que devuelva `wrangler d1 create agenda-familiar`.
+# La PWA llama al Worker por su dirección de workers.dev, así que esa ruta se
+# declara explícitamente en lugar de dejar que wrangler la active por omisión.
+# Las URL de vista previa, en cambio, sobran: publicarían cada versión en una
+# dirección propia que nadie usa y que también atendería peticiones.
+workers_dev = true
+preview_urls = false
+
+# El binding es `DB` a propósito: es el nombre con el que el Worker la busca
+# (`env.DB`). No copie el que sugiere `wrangler d1 create`, que deriva del nombre
+# de la base de datos y dejaría al Worker sin encontrarla.
 [[d1_databases]]
 binding = "DB"
 database_name = "agenda-familiar"
-database_id = "PENDIENTE-DE-RELLENAR"
+database_id = "be25fff2-8d9a-4974-81af-331e7f2f1cca"
 
 [vars]
 # Orígenes desde los que se admite la PWA. Sin coincidencia no se emiten
 # cabeceras CORS, de modo que una web ajena no puede hablar con esta API.
-ORIGENES_PERMITIDOS = "https://agenda.EJEMPLO.com,http://localhost:8788"
+ORIGENES_PERMITIDOS = "https://garciadoral-ops.galoopa.store,http://localhost:8788"
 
 # Audiencias admitidas del token de Apple: el Services ID de la web y el
 # identificador del paquete de la app iOS.
-APPLE_AUD_WEB = "com.EJEMPLO.agenda.web"
-APPLE_AUD_IOS = "com.EJEMPLO.agenda"
+APPLE_AUD_WEB = "store.galoopa.agenda.web"
+APPLE_AUD_IOS = "store.galoopa.agenda"
 
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
