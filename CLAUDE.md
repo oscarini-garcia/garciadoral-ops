@@ -75,7 +75,7 @@ pendiente. El hook lo inyecta al final del mapa.
   queda abierto **cómo partir los dos grupos cuando un diciembre acumule treinta
   regalos**, que es cuando los rótulos dejarán de bastar.
 - **El banco de ideas va en dos apartados plegables** —Seleccionadas primero y
-  Libres después— y la marca de una idea ya cogida es un visto suelto, sin caja y
+  Disponibles después— y la marca de una idea ya cogida es un visto suelto, sin caja y
   sin palabra: la pastilla de «en curso» se retiró. Los verbos de una idea son
   editar y descartar, arriba junto al título; «Duplicar» ya no existe, así que
   reutilizar una idea del año pasado es volver a escribirla. Está en
