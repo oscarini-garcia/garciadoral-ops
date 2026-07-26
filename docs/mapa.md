@@ -71,8 +71,8 @@ tener que recorrer la aplicación entera cada vez.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **modelo.js** — Consultas sobre la instantánea local.
-  EMOJI_POR_DEFECTO · nuevoId · ahora · crearVista · ESTADOS_REGALO · REPETICIONES
-  formatearImporte
+  EMOJI_POR_DEFECTO · estaActivo · nuevoId · ahora · crearVista · ESTADOS_REGALO
+  REPETICIONES · formatearImporte
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -149,11 +149,11 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/native.js` §3.5 · `scripts/agenda/modelo.py` §7
 - **`specs/modelo-datos.md`**
   `api/src/filtrado.js` §7.3 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
-  `pwa/publico/js/semana.js` §7.4 · `pwa/publico/js/sincronizacion.js` §1
-  `pwa/publico/js/vistas/semana.js` §4.2 · `scripts/agenda/__init__.py` §2, §4, §6
-  `scripts/agenda/modelo.py` §4 · `scripts/agenda/semana.py` §2.4, §7.4
-  `scripts/agenda/visibilidad.py` · `tests/test_modelo.py` §4
-  `tests/test_visibilidad.py` §6
+  `pwa/publico/js/modelo.js` · `pwa/publico/js/semana.js` §7.4
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/vistas/semana.js` §4.2
+  `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/modelo.py` §4
+  `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
+  `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
 - **`specs/plan-semanal.md`**
   `api/src/index.js` §9 · `api/src/visibilidad.js` §5
   `scripts/agenda/__init__.py` §3, §4, §6 · `scripts/agenda/fuente.py` §12.1

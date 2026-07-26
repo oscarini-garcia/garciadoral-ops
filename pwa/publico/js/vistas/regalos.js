@@ -11,7 +11,7 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
 } from '../ui.js';
 import { guardar, retirar } from '../sincronizacion.js';
-import { ESTADOS_REGALO, formatearImporte, nuevoId } from '../modelo.js';
+import { ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId } from '../modelo.js';
 import { iso, hoy } from '../semana.js';
 
 let seccion = 'banco';
@@ -116,7 +116,7 @@ function tarjetaDeIdea(idea, ctx) {
 
 function vistaCampanas(ctx) {
   const ocasiones = [...(ctx.vista.datos.ocasiones || [])]
-    .filter((o) => o.activa !== false)
+    .filter((o) => estaActivo(o, 'activa'))
     .sort((a, b) => (a.estado === b.estado ? a.fecha.localeCompare(b.fecha) : a.estado === 'abierta' ? -1 : 1));
 
   const contenedor = el('div', {});
@@ -320,7 +320,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
 // -------------------------------------------------------------- Promoción --
 
 function abrirPromocion(idea, ctx) {
-  const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && o.activa !== false);
+  const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && estaActivo(o, 'activa'));
   const destinos = (idea.orientaciones || []).map((o) => o.persona_id).filter(Boolean);
 
   abrirHoja('Llevar a una campaña', (cuerpo) => {
@@ -481,7 +481,7 @@ function abrirFormularioOcasion(ctx, { duplicarDe = null } = {}) {
  *  registrado del total, indicando cuántos regalos carecen de importe: de no
  *  hacerlo mostraría una desviación favorable inexistente (spec funcional §6.3). */
 function vistaPresupuesto(ctx) {
-  const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && o.activa !== false);
+  const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && estaActivo(o, 'activa'));
   if (!abiertas.length) return el('p', { class: 'vacio', texto: 'Ninguna campaña abierta que presupuestar.' });
 
   const contenedor = el('div', {});

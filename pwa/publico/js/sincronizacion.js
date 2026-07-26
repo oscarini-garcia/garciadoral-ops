@@ -14,7 +14,7 @@
 import {
   encolarCambio, guardarInstantanea, leerCola, leerInstantanea, vaciarCola,
 } from './almacen.js';
-import { ahora } from './modelo.js';
+import { ahora, estaActivo } from './modelo.js';
 
 const PLURAL = {
   persona: 'personas',
@@ -158,7 +158,7 @@ function aplicarEnLocal(cambio) {
  * servidor vuelve a calcularlos y su versión es la que manda.
  */
 function derivarEnLocal() {
-  const regalos = (instantaneaActual.regalos || []).filter((r) => r.activo !== false);
+  const regalos = (instantaneaActual.regalos || []).filter((r) => estaActivo(r));
 
   for (const idea of instantaneaActual.ideas || []) {
     const suyos = regalos.filter((r) => r.idea_id === idea.id);
