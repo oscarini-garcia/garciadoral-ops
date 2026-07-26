@@ -796,7 +796,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
   }) : null;
 
   abrirHoja(existente ? 'Editar evento' : 'Nuevo evento', (cuerpo) => {
-    const titulo = entrada({ value: borrador.titulo, placeholder: 'Comida con los abuelos', autofocus: true });
+    const titulo = entrada({ value: borrador.titulo, autofocus: true });
     const dia = el('input', { type: 'date', value: borrador.dia });
     cuerpo.append(campo('Qué', titulo), campo('Cuándo', dia));
 
@@ -812,8 +812,8 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     // El tipo va después de la fecha: quien crea un evento tiene en la cabeza el
     // qué y el cuándo, no la taxonomía (specs/ux.md §10.1).
     const tipo = seleccion(ctx.vista.tiposEvento().map((t) => ({ valor: t.id, texto: `${t.emoji}  ${t.nombre}` })), borrador.tipo_id);
-    const lugar = entrada({ value: borrador.ubicacion, placeholder: 'Casa de los abuelos' });
-    const notas = el('textarea', { placeholder: 'Lo que convenga recordar' });
+    const lugar = entrada({ value: borrador.ubicacion });
+    const notas = el('textarea', {});
     notas.value = borrador.notas;
     const repite = seleccion(REPETICIONES.map((r) => ({ valor: r.valor, texto: r.texto })), borrador.repeticion);
 

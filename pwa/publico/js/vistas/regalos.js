@@ -14,8 +14,9 @@ import {
   dobleToque, icono,
 } from '../ui.js';
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
+import { recordarDestinatarios, ultimosDestinatarios } from '../almacen.js';
 import {
-  ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId, redaccionDisponible,
+  ESTADOS_REGALO, estaActivo, formatearImporte, normalizar, nuevoId, redaccionDisponible,
 } from '../modelo.js';
 import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, formatearFechaLarga, hoy, iso,
@@ -23,6 +24,10 @@ import {
 } from '../semana.js';
 import { abrirFicha } from './familia.js';
 import { copiar, toque } from '../native.js';
+
+/** Cuántos «últimos» se enseñan al abrir el buscador de gente. Con cuatro, la
+ *  lista entra en una línea y no empuja el formulario. */
+const CUANTOS_ULTIMOS = 4;
 
 let seccion = 'ideas';
 let filtroPersona = null;
@@ -872,7 +877,6 @@ function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
       value: existente
         ? existente.nombre
         : origen ? `${origen.nombre.replace(/\s*\d{4}$/, '')} ${new Date().getFullYear() + 1}` : '',
-      placeholder: 'Navidad 2026',
     });
     const fecha = el('input', { type: 'date', value: existente ? existente.fecha : iso(hoy()) });
     cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha));
@@ -958,7 +962,11 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   let destinatarios = existente
     ? orientaciones.map((o) => o.persona_id).filter(Boolean)
     : [paraPersona].filter(Boolean);
-  let etiquetas = existente ? orientaciones.map((o) => o.etiqueta_id).filter(Boolean) : [];
+  // Las etiquetas ya no se ponen desde aquí —el campo preguntaba por un perfil
+  // que no cambiaba nada: no reserva la idea para nadie, no la propone en
+  // ninguna ficha y no acota lo que se ofrece al asociar un regalo—, pero las
+  // que una idea ya tuviera se conservan al guardarla.
+  const etiquetas = existente ? orientaciones.map((o) => o.etiqueta_id).filter(Boolean) : [];
 
   const borrarIdea = existente ? botonIcono('borrar', {
     etiqueta: 'Borrar la idea', tono: 'peligro',
@@ -972,7 +980,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   }) : null;
 
   abrirHoja(existente ? 'Editar idea' : 'Apuntar una idea', (cuerpo) => {
-    const titulo = entrada({ value: existente?.titulo || '', placeholder: 'Botas de montar', autofocus: true });
+    const titulo = entrada({ value: existente?.titulo || '', autofocus: true });
 
     // El destello vive dentro del campo que va a rellenar, al final, como la
     // lupa de un buscador: no gasta una línea y no hay que explicar qué campo
@@ -1016,49 +1024,183 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
 
     // ------------------------------------------------------- Los demás campos --
 
-    const descripcion = el('textarea', { placeholder: 'Para acordarte dentro de seis meses' });
+    const descripcion = el('textarea', {});
     descripcion.value = existente?.descripcion || '';
 
-    cuerpo.append(campo('Para quién', opciones(
-      ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
-      destinatarios,
-      (v) => { destinatarios = v; ajustarPedir(); },
-    ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'));
+    cuerpo.append(campoDeGente());
     cuerpo.append(campo('Descripción', descripcion));
 
-    // Al editar se abre desplegado y sin conmutador: quien corrige viene a por
-    // un campo concreto, y esconderlo detrás de un enlace sobra.
+    // Al editar se abre desplegado y sin enlace: quien corrige viene a por un
+    // campo concreto, y esconderlo detrás de un enlace sobra.
+    //
+    // El enlace solo despliega, y al hacerlo se va. Volver a plegar no ahorraba
+    // nada —lo de debajo son campos vacíos— y dejaba un botón que decía «dejarlo
+    // así» encima de lo que se acababa de abrir para tocar.
     const extra = el('div', { class: 'hoja-seccion', hidden: !existente });
-    const conmutador = el('button', {
+    const desplegar = el('button', {
       class: 'enlace-discreto', type: 'button',
-      onclick: () => { extra.hidden = !extra.hidden; conmutador.textContent = extra.hidden ? 'Clasificarla' : 'Dejarlo así'; },
+      onclick: () => { extra.hidden = false; desplegar.remove(); },
     }, ['Clasificarla']);
-    if (!existente) cuerpo.append(conmutador);
+    if (!existente) cuerpo.append(desplegar);
     cuerpo.append(extra);
-
-    const avisoEtiquetas = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: !etiquetas.length });
-    avisoEtiquetas.textContent = 'Las etiquetas clasifican pero no ocultan: una idea etiquetada como «adolescente» la ven también las hijas. Para reservarla, nombra a la persona.';
 
     const categoria = seleccion(
       [{ valor: '', texto: 'Sin categoría' }, ...ctx.vista.categorias().map((c) => ({ valor: c.id, texto: c.nombre }))],
       existente?.categoria_id || '',
     );
-    const precio = entrada({ type: 'number', inputmode: 'decimal', placeholder: '120', value: existente?.precio_max ?? '' });
-    const establecimiento = entrada({ value: existente?.establecimiento || '', placeholder: 'Decathlon' });
-    const enlace = entrada({ type: 'url', placeholder: 'https://', value: existente?.enlace || '' });
+    const precio = entrada({ type: 'number', inputmode: 'decimal', value: existente?.precio_max ?? '' });
+    const establecimiento = entrada({ value: existente?.establecimiento || '' });
+    const enlace = entrada({ type: 'url', inputmode: 'url', value: existente?.enlace || '' });
 
     extra.append(
-      campo('O un perfil', opciones(
-        ctx.vista.etiquetas().map((e) => ({ valor: e.id, texto: e.nombre })),
-        etiquetas,
-        (v) => { etiquetas = v; avisoEtiquetas.hidden = v.length === 0; },
-      )),
-      avisoEtiquetas,
       campo('Categoría', categoria),
       campo('Precio aproximado', precio),
       campo('Dónde se compra', establecimiento),
       campo('Enlace', enlace),
     );
+
+    // ---------------------------------------------------------- Para quién --
+
+    /**
+     * Para quién: los cuatro de casa, y el resto a un toque.
+     *
+     * En reposo se ven solo los de casa —que son con diferencia a quienes más
+     * se les apunta— más lo que ya se haya elegido de fuera, que no puede
+     * esconderse nunca: una idea guardada sin ver para quién es sería un
+     * silencio peligroso en la única pantalla donde se decide quién no la ve.
+     *
+     * El «+» abre un buscador con una sola lista debajo, que en reposo son «los
+     * últimos» de este teléfono y al escribir pasa a ser el resultado. No hay
+     * dos listas a la vez, y el hueco es el mismo antes y después.
+     *
+     * Va dentro de la hoja y no en otra encima porque la aplicación tiene una
+     * sola: abrir la segunda cerraría el formulario a medio escribir.
+     */
+    function campoDeGente() {
+      const fila = el('div', { class: 'opciones' });
+      const busca = entrada({
+        type: 'search', 'aria-label': 'Buscar a una persona',
+        placeholder: 'Buscar por nombre o parentesco',
+      });
+      const rotuloLista = el('p', { class: 'buscagente-rotulo' });
+      const lista = el('div', { class: 'opciones' });
+      const panel = el('div', { class: 'buscagente', hidden: true }, [busca, rotuloLista, lista]);
+
+      let abierto = false;
+
+      const deCasa = ctx.vista.personasDe('familia');
+      const enLaFila = () => new Set([...deCasa.map((p) => p.id), ...destinatarios]);
+
+      const pastilla = (persona, alElegir = null) => {
+        const marcada = destinatarios.includes(persona.id);
+        return el('button', {
+          class: 'opcion', type: 'button',
+          'aria-pressed': marcada ? 'true' : 'false',
+          onclick: () => {
+            destinatarios = marcada
+              ? destinatarios.filter((id) => id !== persona.id)
+              : [...destinatarios, persona.id];
+            if (alElegir) alElegir();
+            ajustarPedir();
+            pintar();
+          },
+        }, [persona.nombre, marcada ? el('span', { class: 'opcion-quitar', texto: '×' }) : null]);
+      };
+
+      function pintarFila() {
+        vaciar(fila);
+        for (const persona of deCasa) fila.append(pastilla(persona));
+        for (const id of destinatarios) {
+          const persona = ctx.vista.persona(id);
+          if (persona && !deCasa.some((p) => p.id === id)) fila.append(pastilla(persona));
+        }
+        fila.append(el('button', {
+          class: 'opcion opcion-mas', type: 'button',
+          'aria-expanded': abierto ? 'true' : 'false',
+          'aria-label': abierto ? 'Cerrar la búsqueda' : 'Buscar a otra persona',
+          onclick: () => {
+            abierto = !abierto;
+            busca.value = '';
+            pintar();
+            if (abierto && !('ontouchstart' in window)) busca.focus();
+          },
+        }, [abierto ? '×' : '+']));
+      }
+
+      /**
+       * Con quién se abre el buscador: los últimos a quienes se les apuntó algo
+       * en este teléfono.
+       *
+       * Y cuando no llegan a cuatro —el primer día, un móvil recién estrenado—,
+       * se completa con aquellos a quienes más se les apunta en el hogar y, si
+       * aún faltan, con el resto de la gente. Abrir y encontrar el hueco vacío
+       * sería la peor bienvenida, y en un hogar recién dado de alta sería
+       * además la única.
+       */
+      function conQuienAbrir(candidatos) {
+        const porId = new Map(candidatos.map((p) => [p.id, p]));
+        const recientes = ultimosDestinatarios().filter((id) => porId.has(id) && id !== ctx.vista.yo.id);
+        const orden = [...recientes, ...ctx.vista.masRegaladas(), ...candidatos.map((p) => p.id)];
+
+        const elegidos = [];
+        for (const id of orden) {
+          if (id === ctx.vista.yo.id || !porId.has(id)) continue;
+          if (elegidos.some((p) => p.id === id)) continue;
+          elegidos.push(porId.get(id));
+          if (elegidos.length === CUANTOS_ULTIMOS) break;
+        }
+        return { gente: elegidos, hayRecientes: recientes.length > 0 };
+      }
+
+      function pintarLista() {
+        vaciar(lista);
+        const aguja = normalizar(busca.value).trim();
+        // Quien ya está en la fila no se repite aquí: se toca arriba.
+        const puestos = enLaFila();
+        const candidatos = ctx.vista.personas().filter((p) => !puestos.has(p.id));
+
+        if (!aguja) {
+          const { gente, hayRecientes } = conQuienAbrir(candidatos);
+          // El rótulo dice la verdad: «los últimos» solo cuando de verdad lo son.
+          rotuloLista.textContent = hayRecientes ? 'Los últimos'
+            : gente.length ? 'De tu gente' : 'Escribe un nombre o un parentesco';
+          for (const persona of gente) lista.append(pastilla(persona));
+          return;
+        }
+
+        const hallados = candidatos.filter(
+          (p) => normalizar(p.nombre).includes(aguja) || normalizar(p.parentesco).includes(aguja),
+        );
+        rotuloLista.textContent = hallados.length ? 'Resultados' : 'Nadie con ese nombre';
+        // Elegir buscando cierra: se venía a por una persona concreta.
+        for (const persona of hallados) {
+          lista.append(pastilla(persona, () => { abierto = false; busca.value = ''; }));
+        }
+      }
+
+      function pintar() {
+        pintarFila();
+        panel.hidden = !abierto;
+        if (abierto) pintarLista();
+      }
+
+      busca.addEventListener('input', pintarLista);
+      // Enter dentro del buscador no guarda la idea: aquí se está eligiendo.
+      busca.addEventListener('keydown', (evento) => {
+        if (evento.key === 'Enter') evento.preventDefault();
+      });
+
+      pintar();
+      return el('div', { class: 'campo' }, [
+        el('label', { texto: 'Para quién' }),
+        fila,
+        panel,
+        el('p', {
+          class: 'pista',
+          texto: 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.',
+        }),
+      ]);
+    }
 
     // ---------------------------------------------------------- La propuesta --
 
@@ -1144,6 +1286,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       // ya está en curso no vuelve a activa por corregirle el precio, y quien la
       // apuntó sigue siendo quien la apuntó.
       await guardar('idea', existente ? existente.id : nuevoId(), campos);
+      recordarDestinatarios(destinatarios);
       toque('media');
       cerrarHoja();
       avisar(existente ? 'Idea actualizada' : 'Idea apuntada');

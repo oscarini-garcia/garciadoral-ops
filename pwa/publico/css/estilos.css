@@ -56,6 +56,9 @@
 
   --radio: 12px;
   --toque: 44px;
+  /* Lo que mide la barra de pestañas: el toque más su aire. Lo usan la hoja
+     —para que sus botones no caigan sobre ella— y quien necesite dejarla libre. */
+  --alto-tabbar: 58px;
   --ancho: 620px;
 }
 
@@ -754,6 +757,37 @@ button { background: none; border: 0; cursor: pointer; }
   font-size: 15px; color: var(--ink-soft);
 }
 .opcion[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+.opcion-quitar { margin-left: 6px; opacity: .75; }
+
+/* El «+» del final de «Para quién»: la fila enseña solo a los de casa —y lo que
+   ya se haya elegido de fuera, que no puede esconderse— y detrás va este botón,
+   con el borde discontinuo de lo que abre algo en lugar de elegirse. */
+.opcion-mas {
+  width: 40px; padding: 8px 0; text-align: center;
+  color: var(--tinta); border-color: var(--tinta); border-style: dashed;
+  font-size: 17px; line-height: 1;
+}
+
+/* Una sola lista debajo del buscador: en reposo son los últimos, y al escribir
+   pasa a ser el resultado. Nunca las dos a la vez, de modo que el hueco es el
+   mismo antes y después de teclear. */
+.buscagente {
+  display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid var(--tinta); border-radius: var(--radio);
+  background: var(--tinta-suave); padding: 10px;
+}
+.buscagente-rotulo {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.buscagente .opciones { min-height: 40px; }
+/* El campo no vive dentro de un `.campo`, así que se le da aquí lo que allí
+   heredaría: alto de toque y cuerpo de 16 para que iOS no haga zoom al enfocar. */
+.buscagente input {
+  min-height: var(--toque);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; font-size: 16.5px; width: 100%;
+}
 
 /* -------------------------------------------------------------- Hoja modal -- */
 
@@ -788,7 +822,11 @@ button { background: none; border: 0; cursor: pointer; }
   border-radius: 18px 18px 0 0;
   border-top: 1px solid var(--borde-alto);
   box-shadow: var(--sombra-alta);
-  padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
+  /* Por debajo del contenido se deja libre la banda de las pestañas. La hoja
+     las tapa —es el plano de arriba— pero sus botones no deben terminar justo
+     encima de ellas: quien va a guardar tiene el pulgar sobre cuatro rótulos
+     que no puede tocar, y el borde de la pantalla a un milímetro. */
+  padding: 8px 20px calc(20px + var(--alto-tabbar) + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 14px;
   animation: subir .22s cubic-bezier(.22, .8, .3, 1);
 }

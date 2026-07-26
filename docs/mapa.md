@@ -71,13 +71,13 @@ tener que recorrer la aplicación entera cada vez.
 
 - **almacen.js** — Almacén local.
   guardarDocumento · leerDocumento · guardarInstantanea · leerInstantanea · encolarCambio
-  leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 1 más
+  leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 3 más
 - **app.js** — Arranque y navegación.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO · GENEROS
-  estaActivo · redaccionDisponible · nuevoId · ahora · …y 4 más
+  estaActivo · redaccionDisponible · normalizar · nuevoId · …y 5 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
