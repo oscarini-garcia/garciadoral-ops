@@ -169,15 +169,16 @@ button { background: none; border: 0; cursor: pointer; }
 .cabecera-fila { display: flex; align-items: baseline; gap: 12px; }
 .titulo-pantalla {
   font-family: var(--serif);
-  font-weight: 500; font-size: 26px; letter-spacing: -.01em;
+  font-weight: 500; font-size: 29px; letter-spacing: -.01em;
   min-width: 0; text-wrap: balance;
 }
-/* El de la agenda es una fecha y no un nombre: va en cifras, se compone mucho
-   más largo y tiene que caber al lado del indicador. Con el mes escrito entero
-   solo desborda la semana que cambia de año, una al año, que se parte en dos
-   antes que recortar el rótulo siempre. */
+/* El de la agenda es una fecha y no un nombre: va en cifras y se compone mucho
+   más largo, así que se queda algo por debajo del de las demás pestañas. Cabe
+   más que antes porque el indicador ya no lleva palabra al lado. Con el mes
+   escrito entero solo desborda la semana que cambia de año, una al año, que se
+   parte en dos antes que recortar el rótulo siempre. */
 .titulo-pantalla[data-pestana="semana"] {
-  font-size: 20px;
+  font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
 /* La agenda no pone título: allí la cabecera se queda con el indicador y los
@@ -187,13 +188,18 @@ button { background: none; border: 0; cursor: pointer; }
 .subcabecera { display: flex; align-items: center; gap: 8px; padding: 8px 0 10px; flex-wrap: wrap; }
 .subcabecera:empty { padding: 0 0 10px; }
 
+/* Solo el punto, con sitio alrededor para que el dedo lo encuentre: sin la
+   palabra, el blanco que la rodea es lo único que lo hace tocable. */
 .sync {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: center;
   margin-left: auto;
-  font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+  width: 28px; height: 28px; margin-right: -4px;
+  border-radius: 50%;
   color: var(--ink-faint);
 }
-.sync i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); }
+.sync i { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); }
+.sync:hover { background: var(--paper-2); }
 .sync[data-estado="sincronizando"] i { background: var(--aviso); animation: latido 1.1s ease-in-out infinite; }
 .sync[data-estado="sin-conexion"] i { background: var(--ink-faint); }
 .sync[data-estado="error"] i { background: var(--regalo); }
@@ -251,7 +257,9 @@ button { background: none; border: 0; cursor: pointer; }
   font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
   padding: 7px 4px;
 }
-.tab-icono { font-size: 19px; line-height: 1; }
+/* Dibujados sobre la rejilla de 24, igual que los de dentro de la
+   aplicación: heredan el color de la pestaña y con él su estado. */
+.tab-icono { width: 22px; height: 22px; display: block; }
 .tab[aria-current="page"] { color: var(--tinta); }
 
 .fab {
@@ -276,8 +284,8 @@ button { background: none; border: 0; cursor: pointer; }
   flex: none;
 }
 .seg button {
-  min-height: 36px; padding: 5px 10px; border-radius: 7px;
-  font-size: 14.5px; color: var(--ink-soft);
+  min-height: 38px; padding: 6px 12px; border-radius: 7px;
+  font-size: 15.5px; color: var(--ink-soft);
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
 
@@ -312,9 +320,9 @@ button { background: none; border: 0; cursor: pointer; }
 }
 /* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
 .boton-hoy {
-  min-height: 36px; padding: 5px 12px; border-radius: 999px;
+  min-height: 38px; padding: 6px 14px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--paper-2);
-  font-size: 14.5px; color: var(--ink-soft);
+  font-size: 15.5px; color: var(--ink-soft);
 }
 .boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
 
