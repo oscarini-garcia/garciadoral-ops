@@ -172,13 +172,13 @@ button { background: none; border: 0; cursor: pointer; }
   font-weight: 500; font-size: 29px; letter-spacing: -.01em;
   min-width: 0; text-wrap: balance;
 }
-/* El de la agenda es una fecha y no un nombre: va en cifras y se compone mucho
-   más largo, así que se queda algo por debajo del de las demás pestañas. Cabe
-   más que antes porque el indicador ya no lleva palabra al lado. Con el mes
-   escrito entero solo desborda la semana que cambia de año, una al año, que se
-   parte en dos antes que recortar el rótulo siempre. */
+/* El de la agenda lleva un año, así que sus cifras van de ancho fijo: si no, el
+   rótulo se mueve un pelo al pasar de mes. Del mismo tamaño que el de las demás
+   pestañas desde que dejó de nombrar los días del tramo —«Julio de 2026» y no
+   «20 – 26 de Julio de 2026»—, que ya están escritos en la columna de la
+   izquierda. Solo desborda la semana que cambia de año, una al año, y esa se
+   parte en dos antes que recortar el rótulo el resto del año. */
 .titulo-pantalla[data-pestana="semana"] {
-  font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
 /* La agenda no pone título: allí la cabecera se queda con el indicador y los
