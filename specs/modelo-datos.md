@@ -42,7 +42,9 @@
 
 **Círculo.** El vínculo, que es cosa distinta de tener cuenta: la abuela no tiene y es de la familia; un amigo podría tenerla sin serlo. Toma tres valores cerrados y cada persona pertenece a uno solo. Al migrar, quien tenía cuenta pasa a `familia` y el resto a `extendida`, que es también el valor por defecto: equivocarse hacia fuera se corrige desde una ficha, mientras que equivocarse hacia dentro rompe la regla de los cuatro en cuanto entra la quinta persona.
 
-**AtributoPersona.** Pares de clave y valor: talla de calzado, alergias, aficiones. Las claves son de creación libre, y la interfaz sugiere las ya utilizadas en el hogar. Se modela como entidad separada y no como campos fijos porque el conjunto de atributos útiles difiere mucho entre una hija y un sobrino, y crece de forma imprevisible.
+**AtributoPersona.** Lo que conviene recordar de alguien: tallas, alergias, aficiones, manías. Se modela como entidad separada y no como campos fijos porque el conjunto de datos útiles difiere mucho entre una hija y un sobrino, y crece de forma imprevisible.
+
+Guarda `clave` y `valor`, pero **la interfaz ya no pide las dos cosas**: se escribe de corrido, en una sola casilla de varias líneas, y el texto va a `valor` con la clave en blanco. Casi nada de lo que se apunta aquí tiene forma de par —«le da vergüenza que le canten el cumpleaños» no es una clave con su valor—, y partirlo en dos obligaba a inventar un rótulo. Los pares escritos antes de este cambio se siguen leyendo con su «clave: valor» delante; el esquema no se toca, que por esto no compensa una migración.
 
 No existe entidad de histórico de regalos. Se deriva por consulta sobre los regalos de las ocasiones cerradas, lo que elimina toda posibilidad de divergencia con el dato de origen.
 
