@@ -172,7 +172,9 @@ function derivarEnLocal() {
     const suyos = regalos.filter((r) => r.idea_id === idea.id);
     if (suyos.some((r) => r.estado === 'entregado')) idea.estado = 'cerrada';
     else if (suyos.length && idea.estado === 'activa') idea.estado = 'en_curso';
-    else if (!suyos.length && idea.estado === 'en_curso') idea.estado = 'activa';
+    // Sin nada colgando vuelve al banco, venga de donde venga: quitar el regalo
+    // deshace también el cierre, que si no era un punto sin retorno escondido.
+    else if (!suyos.length && ['en_curso', 'cerrada'].includes(idea.estado)) idea.estado = 'activa';
   }
 
   for (const ocasion of instantaneaActual.ocasiones || []) {

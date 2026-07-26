@@ -299,6 +299,12 @@ button { background: none; border: 0; cursor: pointer; }
      lo mismo, 20px. */
   padding: 14px max(20px, calc((100% - var(--ancho)) / 2)) 20px;
 }
+/* En Regalos, debajo del conmutador arranca casi siempre otra fila de mandos
+   —las pastillas de para quién, o las de quién lo lleva—, y dos filas de cosas
+   tocables pegadas se leen como una sola. Le damos aire a la de abajo. En la
+   agenda no hace falta: allí lo que sigue es la rejilla, que ya trae su línea. */
+.pantalla-regalos { padding-top: 26px; }
+
 /* La agenda estira su cuerpo hasta el final de la pantalla: el deslizamiento
    que pasa de semana se escucha ahí, y por debajo del domingo es donde el
    pulgar encuentra sitio libre. Las ideas lo estiran por lo mismo. */
@@ -481,10 +487,16 @@ button { background: none; border: 0; cursor: pointer; }
 .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
 .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
 
+/* La esquina es corta a propósito, y no la cápsula que era antes: en esta
+   aplicación lo redondo del todo son los mandos —las pastillas de filtro, el
+   botón de «Hoy», el flotante—, y lo que se lee y no se toca lleva esquinas
+   cortas: la tarjeta 12, el botón 10, la casilla 6. Una etiqueta que solo
+   informa, vestida de botón, invita a tocarla y no hace nada. El 6 es el de la
+   casilla, para no estrenar un valor más. */
 .etiqueta {
   display: inline-flex; align-items: center; gap: 5px;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
-  padding: 3px 9px; border-radius: 999px;
+  padding: 3px 9px; border-radius: 6px;
   background: var(--paper-3); color: var(--ink-soft);
 }
 .etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }

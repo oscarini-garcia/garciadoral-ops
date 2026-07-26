@@ -230,20 +230,21 @@ Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una i
 │ Regalos            ⟳    ⚙   │
 │ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
 ├──────────────────────────────┤
-│ (Todos) ( Los que llevo yo ) (Sin nadie)│
+│ QUIÉN SE ENCARGA             │
+│ (Todos) ( Yo ) ( Nadie )     │
 │ POR COMPRAR · 2              │
 │ ┌──────────────────────────┐ │
-│ │ Botas de montar  lo llevas tú│
+│ │ Botas de montar te encargas tú│
 │ │ para Marta · Cumpleaños de │
 │ │ Marta 2026 · en 6 días   │ │
 │ └──────────────────────────┘ │
 │ ┌──────────────────────────┐ │
-│ │ Hamaca de playa  sin nadie│ │
+│ │ Hamaca de playa sin encargado│
 │ │ para la abuela · … · en 4 días│
 │ └──────────────────────────┘ │
 │ LISTOS · 1                   │
 │ ┌──────────────────────────┐ │
-│ │ Curso de cerámica  lo lleva Ana│
+│ │ Curso de cerámica se encarga Ana│
 │ │ para Rosa · Navidad 2026 · 38 €│
 │ └──────────────────────────┘ │
 │ Ya pasaron              1  ⌄ │
@@ -252,9 +253,11 @@ Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una i
 
 **Se ordena por estado y no por ocasión.** La pregunta que se trae aquí es «¿qué me falta por comprar?», y esa se contesta de una vez para todas las fechas; por ocasión ya está la pantalla de al lado. Son dos grupos, *Por comprar* y *Listos*, y cada uno dice cuántos lleva en el rótulo.
 
-**La pastilla de la derecha dice quién lo lleva**, que es lo que hay que repartir. *Sin nadie* va marcado en color de aviso: no es un error, pero es lo único de la lista que pide que alguien haga algo. Con dos excepciones, que son los dos casos en los que el estado dice algo que el rótulo del grupo no dice ya: lo entregado, que dentro de *Listos* es lo único que se distingue del resto, y lo que se quedó sin comprar cuando la fecha ya pasó.
+**La pastilla de la derecha dice quién se encarga**, que es lo que hay que repartir. Su esquina es corta —seis puntos— y no la cápsula que fue: en esta aplicación lo redondo del todo son los mandos —las pastillas de filtro, el botón de «Hoy», el flotante— y lo que se lee y no se toca lleva esquinas cortas, así que una etiqueta que solo informa vestida de botón invitaba a tocarla para no hacer nada. El seis es el de la casilla del selector de regalos, para no estrenar un valor más, y el cambio alcanza a las otras tres etiquetas de la aplicación: la fecha de una fecha señalada, el «en 4 días» de un cumpleaños y el estado de un regalo dentro de su ocasión. Las ocho formas que se estudiaron están en `specs/prototipo-etiqueta-del-regalo.html`. *Sin encargado* va marcado en color de aviso: no es un error, pero es lo único de la lista que pide que alguien haga algo. Con dos excepciones, que son los dos casos en los que el estado dice algo que el rótulo del grupo no dice ya: lo entregado, que dentro de *Listos* es lo único que se distingue del resto, y lo que se quedó sin comprar cuando la fecha ya pasó.
 
-**Los tres filtros de arriba son los tres cortes que se hacen de verdad**: todos, los que llevo yo y los que no lleva nadie. En un hogar de cuatro, la mitad de los regalos son de otros y en la lista solo estorban; y *sin nadie* convierte la pantalla en la lista de lo que hay que repartir antes de que llegue la fecha.
+**Los tres filtros de arriba son los tres cortes que se hacen de verdad**: todos, de los que me encargo yo, y los que no lleva nadie. En un hogar de cuatro, la mitad de los regalos son de otros y en la lista solo estorban; y *Nadie* convierte la pantalla en la lista de lo que hay que repartir antes de que llegue la fecha.
+
+Van bajo un rótulo —«Quién se encarga»— igual que las personas en Ideas van bajo «Para quién», y por eso las pastillas pueden ser de una palabra: el rótulo hace el trabajo de explicar y *Todos · Yo · Nadie* se lee como una escala. Decían «Los que llevo yo» y «Sin nadie», que hablaban de llevar —que suena a llevarlo en la mano el día de la fiesta— y no decían sin qué; lo que hay que nombrar es otra cosa: que alguien se ha hecho cargo de ese regalo, o que todavía no. La misma palabra va en la pastilla de cada línea, en el campo del detalle —«Quién se encarga», con «Nadie todavía» como opción vacía— y en el resumen de una ocasión. Las cuatro maneras que se estudiaron, con las anchuras medidas, están en `specs/prototipo-quien-se-encarga.html`.
 
 **Pasada la fecha, nada desaparece solo.** Los regalos de una ocasión cuya fecha ya se fue bajan a un apartado plegado al final —*Ya pasaron*—, con lo que quedó sin comprar señalado. Archivar es esconder, y esconder solo lo que se ha terminado a medias sería esconder justamente lo que hay que mirar: una Navidad que se celebra el 26, o un cumpleaños que se junta el sábado siguiente, siguen haciendo falta el día después. Lo que los archiva de verdad es **dar la ocasión por cerrada**, que es un verbo que se ejerce a mano desde la ocasión y que manda sus regalos al histórico de quien los recibió.
 
@@ -328,6 +331,10 @@ El mismo visto va en **la ficha de cada persona**, donde antes el estado iba peg
 **Borrar una idea se pregunta**, y se pregunta diciendo qué se lleva por delante. Retirar no es descartar —lo descartado vuelve con un toque desde su propia hoja, y esto no vuelve— y hay un daño que no se ve venir: un regalo guarda de qué idea salió y toma de ella su título, así que con la idea retirada la línea del regalo pasa a llamarse «Regalo» y nada más, en la lista, en la ocasión y en el histórico de quien lo recibió. La pregunta lo dice, cuenta cuántos regalos hay en esa situación y recuerda que descartar es reversible. Cancelar devuelve al formulario del que se venía.
 
 Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es que no se ven —el servidor los oculta a su destinatario—, así que decir «no hay ninguno» sería mentir con cara de dato, y decir cuántos hay sería contar justo lo que no se puede contar.
+
+**Llevar una idea a una ocasión quiere decir llevarla a una fecha señalada.** Los cumpleaños se quedan fuera de esa lista aunque tengan ocasión abierta: a un cumpleaños no se le lleva una idea suelta, se entra en él —desde Ocasiones o desde la agenda— y allí se eligen los regalos de quien cumple, con lo que se sabe de esa persona delante. Mezclar «Cumpleaños de Marta 2026» con «Navidad» en un desplegable obligaba además a acertar el año en un sitio donde no se ve ni de quién es.
+
+**Quitar un regalo devuelve su idea al banco, y se dice.** El aviso decía «Regalo retirado», que solo cuenta lo que desaparece; ahora dice a dónde va lo que queda —«Quitado. La idea vuelve a Disponibles»—, porque desde la pantalla no se ve, y un regalo que se esfuma sin más parece habérselo llevado todo por delante.
 
 **«Duplicar» se retiró.** Dejaba dos apuntes iguales, que casi siempre es un error y no una intención, y su único caso real —reutilizar una idea cerrada— solo se alcanzaba desde Buscar. Reutilizar una idea del año pasado es ahora volver a escribirla, que son los diez segundos que esta aplicación se pone como límite para apuntar algo.
 

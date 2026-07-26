@@ -182,7 +182,7 @@ El diseño se sostiene sobre un principio: **solo dos transiciones son manuales*
 
 El estado En curso mantiene la idea visible en el banco, señalada con su ocasión. Retirarla de la vista invitaría a que otra persona la registrase de nuevo por su cuenta.
 
-Cerrada es terminal. La interfaz ya no ofrece duplicar una idea cerrada —era un verbo que nadie usaba y que dejaba dos apuntes iguales, que casi siempre es un error y no una intención—, de modo que reutilizarla con otro destinatario es volver a escribirla. Descartada revierte a Activa en cualquier momento, y descartar es ahora un verbo de la cabecera de la idea y no un botón entre lo que se mira.
+Cerrada no es terminal, aunque lo fue: retirar el regalo del que salió devuelve la idea a Activa, igual que retirarlo cuando estaba En curso. La regla es una sola —una idea está cogida mientras algo cuelgue de ella— y sin ella marcar un regalo como entregado por error se llevaba la idea sin vuelta atrás. La interfaz tampoco ofrece ya duplicar una idea cerrada, que era un verbo que nadie usaba y que dejaba dos apuntes iguales: reutilizarla con otro destinatario es volver a escribirla. Descartada revierte a Activa en cualquier momento, y descartar es ahora un verbo de la cabecera de la idea y no un botón entre lo que se mira.
 
 ### 5.3 Comentarios
 
