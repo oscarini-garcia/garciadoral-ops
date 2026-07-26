@@ -467,10 +467,16 @@ button { background: none; border: 0; cursor: pointer; }
 .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
 .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
 
+/* La esquina es corta a propósito, y no la cápsula que era antes: en esta
+   aplicación lo redondo del todo son los mandos —las pastillas de filtro, el
+   botón de «Hoy», el flotante—, y lo que se lee y no se toca lleva esquinas
+   cortas: la tarjeta 12, el botón 10, la casilla 6. Una etiqueta que solo
+   informa, vestida de botón, invita a tocarla y no hace nada. El 6 es el de la
+   casilla, para no estrenar un valor más. */
 .etiqueta {
   display: inline-flex; align-items: center; gap: 5px;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
-  padding: 3px 9px; border-radius: 999px;
+  padding: 3px 9px; border-radius: 6px;
   background: var(--paper-3); color: var(--ink-soft);
 }
 .etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }
