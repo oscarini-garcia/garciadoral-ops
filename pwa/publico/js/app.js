@@ -15,7 +15,10 @@
 import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, entrada, seleccion } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
-import { detener, estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
+import {
+  detener, estado, guardarAjustesDeIa, iniciar, instantanea, leerAjustesDeIa,
+  probarRedaccion, sincronizar, suscribir,
+} from './sincronizacion.js';
 import {
   cargarConfiguracion,
   codigoDeAutorizacion,
@@ -35,7 +38,7 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { hoy, instanciasEn, sumarDias } from './semana.js';
+import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
 import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
@@ -493,6 +496,10 @@ function abrirAjustes() {
     tema.addEventListener('change', () => aplicarTema(tema.value));
     cuerpo.append(campo('Aspecto', tema));
 
+    if (ctx.vista?.esAdministrador() && estado().estado !== 'demostracion') {
+      cuerpo.append(bloqueDeRedaccion());
+    }
+
     cuerpo.append(bloqueDeVersion());
     cuerpo.append(bloqueLegal());
 
@@ -513,6 +520,135 @@ function abrirAjustes() {
       }, ['Eliminar mi cuenta']));
     }
   });
+}
+
+/**
+ * La configuración de la redacción con IA: clave, modelo e instrucción.
+ *
+ * Solo para administradores, y solo de escritura: la clave se guarda en el
+ * servidor y de vuelta llegan sus cuatro últimos caracteres, lo justo para
+ * reconocer cuál está puesta sin poder copiarla de esta pantalla.
+ *
+ * El botón de probar existe porque un fallo aquí es invisible desde la agenda
+ * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
+ * la clave, el modelo o la instrucción.
+ */
+function bloqueDeRedaccion() {
+  const seccion = el('section', { class: 'bloque-ajuste' }, [
+    el('h3', { texto: 'Contar el día con IA' }),
+    el('p', { class: 'pista', texto: 'Cargando…' }),
+  ]);
+
+  leerAjustesDeIa()
+    .then((ajustes) => vaciar(seccion).append(...formularioDeRedaccion(ajustes)))
+    .catch((error) => {
+      vaciar(seccion).append(
+        el('h3', { texto: 'Contar el día con IA' }),
+        el('p', { class: 'pista', texto: `No he podido leer los ajustes: ${error.message}` }),
+      );
+    });
+
+  return seccion;
+}
+
+function formularioDeRedaccion(ajustes) {
+  const clave = entrada({
+    type: 'password', autocomplete: 'off', spellcheck: 'false',
+    placeholder: ajustes.hay_clave ? `Guardada, termina en ${ajustes.cola}` : 'sk-ant-…',
+  });
+
+  // Los modelos los da Anthropic para esa cuenta; si no contesta, la lista de
+  // reserva. El configurado se preselecciona aunque ya no esté en la lista.
+  const lista = ajustes.modelos.some((m) => m.id === ajustes.modelo)
+    ? ajustes.modelos
+    : [{ id: ajustes.modelo, nombre: ajustes.modelo }, ...ajustes.modelos];
+  const modelo = seleccion(lista.map((m) => ({ valor: m.id, texto: m.nombre })), ajustes.modelo);
+
+  const instruccion = el('textarea', { rows: '5', spellcheck: 'false' });
+  instruccion.value = ajustes.instruccion;
+
+  const traza = el('pre', { class: 'traza', hidden: true });
+  const contar = (texto, clase = 'traza') => {
+    traza.className = clase;
+    traza.textContent = texto;
+    traza.hidden = false;
+  };
+
+  const guardar = el('button', { class: 'boton crecer', type: 'button' }, ['Guardar']);
+  const probar = el('button', { class: 'boton', type: 'button' }, ['Probar']);
+
+  const conBotonesQuietos = async (activo, trabajo) => {
+    const antes = activo.textContent;
+    guardar.disabled = true;
+    probar.disabled = true;
+    activo.textContent = 'Un momento…';
+    try {
+      await trabajo();
+    } finally {
+      activo.textContent = antes;
+      guardar.disabled = false;
+      probar.disabled = false;
+    }
+  };
+
+  guardar.onclick = () => conBotonesQuietos(guardar, async () => {
+    try {
+      // La clave solo se manda si se ha escrito una: el campo en blanco no borra
+      // la que hay, que es lo que esperaría cualquiera al cambiar solo el modelo.
+      const guardado = await guardarAjustesDeIa({
+        clave: clave.value.trim() || undefined,
+        modelo: modelo.value,
+        instruccion: instruccion.value.trim(),
+      });
+      clave.value = '';
+      clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
+      avisar('Guardado');
+      refrescar();
+    } catch (error) {
+      contar(`No he podido guardar: ${error.message}`, 'traza mal');
+    }
+  });
+
+  probar.onclick = () => conBotonesQuietos(probar, async () => {
+    try {
+      const resultado = await probarRedaccion(iso(hoy()));
+      contar(resumenDeLaPrueba(resultado), resultado.texto ? 'traza bien' : 'traza mal');
+    } catch (error) {
+      contar(`No he podido probar: ${error.message}`, 'traza mal');
+    }
+  });
+
+  return [
+    el('h3', { texto: 'Contar el día con IA' }),
+    el('p', {
+      class: 'pista',
+      texto: 'Con una clave puesta, al compartir un día aparece un segundo botón que lo cuenta en dos frases antes de enviarlo.',
+    }),
+    campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
+    campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
+      ? 'Lista de reserva: Anthropic no ha respondido con los modelos de la cuenta.'
+      : 'Si falla, se prueba con los demás por orden.'),
+    campo('Instrucción', instruccion),
+    el('div', { class: 'acciones' }, [guardar, probar]),
+    traza,
+  ];
+}
+
+/** El resultado de probar, con un renglón por intento: modelo, código, tiempo y
+ *  el mensaje de error tal como lo devuelve la API. */
+function resumenDeLaPrueba(resultado) {
+  const renglones = (resultado.intentos || []).map((intento) => {
+    const partes = [intento.modelo, intento.estado ? `HTTP ${intento.estado}` : 'sin respuesta'];
+    if (intento.ms !== null && intento.ms !== undefined) partes.push(`${intento.ms} ms`);
+    if (intento.tipo) partes.push(intento.tipo);
+    if (intento.mensaje) partes.push(intento.mensaje);
+    return `· ${partes.join(' · ')}`;
+  });
+
+  if (resultado.texto) {
+    return [`Ha contestado ${resultado.modelo}:`, '', resultado.texto, '', ...renglones].join('\n');
+  }
+  return [resultado.motivo || 'no ha salido', '', ...renglones].join('\n');
 }
 
 /**

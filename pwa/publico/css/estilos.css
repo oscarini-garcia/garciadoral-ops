@@ -441,6 +441,22 @@ button { background: none; border: 0; cursor: pointer; }
 .boton:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
 
+/* Un apartado de Ajustes, separado por una raya para que no se lea como
+   continuación del anterior. */
+.bloque-ajuste { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid var(--line); padding-top: 13px; }
+.bloque-ajuste h3 { font-size: 16px; font-weight: 600; }
+
+/* La traza de una prueba se lee como salida de máquina: monoespaciada, con sus
+   saltos de línea y con desplazamiento propio si se pasa de ancha. */
+.traza {
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  background: var(--paper-2); border-radius: 10px; padding: 10px 12px;
+  max-height: 240px; overflow-y: auto;
+  color: var(--ink-soft);
+}
+.traza.mal { color: var(--regalo); }
+
 .opciones { display: flex; flex-wrap: wrap; gap: 7px; }
 .opcion {
   min-height: 40px; padding: 8px 13px; border-radius: 999px;
@@ -483,6 +499,18 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .icono-accion[data-tono="discreto"] { color: var(--ink-soft); background: var(--paper-2); }
 .icono-accion[data-tono="peligro"] { color: var(--regalo); background: transparent; }
+.icono-accion { position: relative; }
+.icono-accion:disabled { opacity: .45; cursor: default; }
+/* La insignia va fuera del dibujo, con reborde de papel, para que se lea como
+   una marca aparte y no como un trazo más del icono. */
+.icono-insignia {
+  position: absolute; top: -3px; right: -3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--tinta); color: var(--paper);
+  border: 2px solid var(--paper);
+}
+.icono-insignia .icono-svg svg { width: 9px; height: 9px; }
 .icono-accion:hover { filter: brightness(.97); }
 .icono-svg { display: block; line-height: 0; }
 .icono-svg svg { width: 19px; height: 19px; display: block; }
