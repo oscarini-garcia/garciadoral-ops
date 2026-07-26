@@ -16,7 +16,8 @@ import {
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
 import { recordarDestinatarios, ultimosDestinatarios } from '../almacen.js';
 import {
-  ESTADOS_REGALO, estaActivo, formatearImporte, normalizar, nuevoId, redaccionDisponible,
+  ESTADOS_REGALO, deQuien, estaActivo, formatearImporte, nombreCompleto, normalizar,
+  nuevoId, redaccionDisponible,
 } from '../modelo.js';
 import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, formatearFechaLarga, hoy, iso,
@@ -37,12 +38,12 @@ let filtroPersona = null;
  * pantalla se rehace en cada sincronización: sin esto, plegar los cumpleaños
  * duraría hasta que llegase la siguiente instantánea.
  */
-let plegado = { senaladas: false, cumples: true };
+let plegado = { senaladas: false, cumples: false };
 
 export function reiniciarRegalos() {
   seccion = 'ideas';
   filtroPersona = null;
-  plegado = { senaladas: false, cumples: true };
+  plegado = { senaladas: false, cumples: false };
 }
 
 export function pintarRegalos(pantalla, subcabecera, ctx) {
@@ -164,11 +165,10 @@ function tarjetaDeIdea(idea, ctx) {
  * describía bien el trabajo, pero nadie llama campaña a la Navidad
  * (specs/ux.md §6.1).
  *
- * Los dos son plegables, y arrancan distintos a propósito. Las fechas señaladas
- * van abiertas porque es a lo que se viene: son pocas y son las que hay que
- * empujar. Los cumpleaños van plegados, con el próximo escrito en el rótulo: la
- * lista entera es larga —está toda la familia— y la pregunta que trae aquí a
- * alguien casi siempre es «quién es el siguiente», que se contesta sin desplegar.
+ * Los dos son plegables y los dos arrancan abiertos: lo que se viene a mirar
+ * aquí está en los dos, y plegar es para quitar de en medio lo que estorbe hoy,
+ * no un estado en el que se abre la pantalla. El rótulo de los cumpleaños dice
+ * de todos modos quién es el próximo, para cuando se hayan plegado.
  */
 function vistaOcasiones(ctx) {
   // La pantalla se rehace entera en cada sincronización, así que la fila que
@@ -269,7 +269,7 @@ function bloqueDeCumples(ctx) {
     }
   }, {
     abierta: !plegado.cumples,
-    nota: siguiente ? `el próximo, ${siguiente.nombre} ${cuandoCumple(siguiente)}` : null,
+    nota: siguiente ? `el próximo, ${nombreCompleto(siguiente)} ${cuandoCumple(siguiente).texto}` : null,
   });
 
   bloque.addEventListener('toggle', () => { plegado.cumples = !bloque.open; });
@@ -287,15 +287,32 @@ function fechaCorta(fecha) {
   return `${dia.getDate()} ${mes}${anio}`;
 }
 
-/** Cuánto falta, contado como se cuenta hablando: de cerca en días, y de lejos
- *  por la fecha, que es lo único que significa algo a cuatro meses vista. */
+/** Los cuatro de casa. Quien viene de un registro anterior a los círculos no
+ *  trae el campo y cae en «extendida», igual que en la base. */
+const esDeCasa = (persona) => (persona.circulo || 'extendida') === 'familia';
+
+/**
+ * Cuánto falta, contado como se cuenta hablando: de cerca en días, y de lejos
+ * por la fecha, que es lo único que significa algo a cuatro meses vista.
+ *
+ * Con la gente de casa no se apaga la cuenta atrás aunque falten meses: sus
+ * cumpleaños se llevan así todo el año, y «en 213 días» dice algo que «el 12 de
+ * Mayo» no dice.
+ *
+ * Devuelve también **cómo** lo ha contado, porque de eso depende lo que se
+ * escribe debajo: si aquí van los días, la fecha hace falta; si aquí va ya la
+ * fecha, repetirla dos renglones más abajo sobra.
+ */
 function cuandoCumple(persona) {
   const dias = diasHastaElCumple(persona);
-  if (dias === 0) return 'hoy';
-  if (dias === 1) return 'mañana';
-  if (dias <= 60) return `en ${dias} días`;
+  if (dias === 0) return { texto: 'hoy', enDias: true };
+  if (dias === 1) return { texto: 'mañana', enDias: true };
+  if (dias <= 60 || esDeCasa(persona)) return { texto: `en ${dias} días`, enDias: true };
   const proximo = proximoAniversario(persona);
-  return `el ${proximo.getDate()} de ${MESES_LARGOS[proximo.getMonth()]}`;
+  return {
+    texto: `el ${proximo.getDate()} de ${MESES_LARGOS[proximo.getMonth()]}`,
+    enDias: false,
+  };
 }
 
 /**
@@ -362,19 +379,23 @@ function tarjetaDeCumple(persona, ctx) {
       : ideas ? `${ideas} ${ideas === 1 ? 'idea apuntada' : 'ideas apuntadas'}`
         : 'nada pensado todavía';
 
+  const falta = cuandoCumple(persona);
+
   return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirCumple(persona.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('span', { class: 'linea-emoji', texto: '🎂' }),
-      el('h3', { texto: persona.nombre }),
+      el('h3', { texto: nombreCompleto(persona) }),
       el('span', {
         class: 'etiqueta empujar', 'data-tono': dias <= 30 ? 'tinta' : null,
-        texto: cuandoCumple(persona),
+        texto: falta.texto,
       }),
     ]),
     el('p', {
       texto: [
         anios ? `cumple ${anios}` : null,
-        formatearFechaLarga(proximoAniversario(persona)),
+        // La fecha solo cuando arriba van los días: si la pastilla ya dice «el
+        // 12 de Mayo», escribirla otra vez aquí es leer dos veces lo mismo.
+        falta.enDias ? formatearFechaLarga(proximoAniversario(persona)) : null,
         preparativos,
       ].filter(Boolean).join(' · '),
     }),
@@ -460,15 +481,19 @@ export function abrirCumple(personaId, ctx) {
   const esMio = personaId === ctx.vista.yo.id;
   const dia = proximoAniversario(persona);
   const anios = aniosQueCumple(persona);
+  const falta = cuandoCumple(persona);
 
-  abrirHoja(`Cumpleaños de ${persona.nombre}`, (cuerpo) => {
+  abrirHoja(`Cumpleaños ${deQuien(nombreCompleto(persona))}`, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
       el('span', { style: 'font-size:26px', texto: '🎂' }),
       el('div', {}, [
         el('p', { texto: formatearFechaLarga(dia) }),
         el('p', {
           class: 'pista',
-          texto: [anios ? `cumple ${anios} años` : null, cuandoCumple(persona)].filter(Boolean).join(' · '),
+          // La fecha entera está en el renglón de encima, así que aquí solo se
+          // añade lo que falta: los años, y los días cuando se cuentan en días.
+          texto: [anios ? `cumple ${anios} años` : null, falta.enDias ? falta.texto : null]
+            .filter(Boolean).join(' · '),
         }),
       ]),
     ]));
@@ -581,7 +606,7 @@ async function asegurarOcasionDelCumple(persona, ctx) {
   const dia = proximoAniversario(persona);
   const id = nuevoId();
   await guardar('ocasion', id, {
-    nombre: `Cumpleaños de ${persona.nombre} ${dia.getFullYear()}`,
+    nombre: `Cumpleaños ${deQuien(persona.nombre)} ${dia.getFullYear()}`,
     fecha: iso(dia),
     estado: 'abierta',
     autor_id: ctx.vista.yo.id,

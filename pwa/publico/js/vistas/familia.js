@@ -12,7 +12,8 @@ import {
 } from '../ui.js';
 import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
 import {
-  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
+  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte,
+  nombreCompleto, nuevoId,
 } from '../modelo.js';
 import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, parsearMomento, proximoAniversario,
@@ -171,7 +172,7 @@ function resultadosDeBusqueda(ctx) {
               }
             },
           }, [
-            el('td', { texto: [persona.nombre, persona.apellidos].filter(Boolean).join(' ') }),
+            el('td', { texto: nombreCompleto(persona) }),
             // El círculo entre paréntesis detrás del parentesco: «tía (Familia
             // Extendida)», que es la pregunta que trae a alguien a buscar.
             el('td', {
