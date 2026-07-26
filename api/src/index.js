@@ -21,6 +21,7 @@
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
  *   GET    /api/registro    · registro completo para el generador del plan semanal
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
+ *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
@@ -60,8 +61,10 @@ import {
   cabeUnaMas,
   componerMaterial,
   componerMaterialDePeriodo,
+  componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
+  interpretarPropuestas,
   leerConfiguracion,
   modelosDisponibles,
   redactar,
@@ -394,6 +397,15 @@ async function contarElDia(peticion, env) {
   const configuracion = await leerConfiguracion(env.DB);
   const registro = await leerRegistro(env.DB);
   const material = materialDe(componerInstantanea(registro, lector), cuerpo);
+
+  // Un identificador que el servidor no sabe resolver es un fallo suyo, no de
+  // quien pide: significa que el dispositivo compone algo que aquí no se
+  // reconoce, y el modelo cuenta entonces una semana incompleta sin que nadie
+  // se entere. Ya pasó una vez con los cumpleaños derivados.
+  if (material.omitidos?.length) {
+    console.warn('redacción con eventos sin resolver', JSON.stringify(material.omitidos));
+  }
+
   const resultado = await redactar({ configuracion, material });
 
   if (!resultado.texto) {
@@ -410,7 +422,70 @@ async function contarElDia(peticion, env) {
     );
   }
 
-  return json({ texto: resultado.texto, modelo: resultado.modelo });
+  return json({
+    texto: resultado.texto,
+    modelo: resultado.modelo,
+    omitidos: material.omitidos?.length || 0,
+  });
+}
+
+/**
+ * Una tanda de regalos propuestos para una persona.
+ *
+ * Son cinco de una vez, y no una, porque lo caro de esta llamada es contarle al
+ * modelo quién es la persona: eso se manda igual para una que para cinco, así
+ * que pasar de una propuesta a otra en el teléfono no cuesta nada. Pedir otra
+ * tanda sí es otra llamada, y lleva las ya propuestas para no repetirlas.
+ *
+ * El cliente manda a quién, la pista que quien apunta llevara escrita y los
+ * títulos que ya ha visto. Lo que se le cuenta al modelo lo compone el Worker
+ * con la instantánea filtrada de quien pide: sus atributos, lo que ha pedido,
+ * las ideas que ya hay y lo que recibió otros años. Una idea reservada para
+ * alguien no puede asomar por aquí, porque aquí no se lee el registro entero.
+ *
+ * Comparte el freno con la redacción del día: es la misma cuenta de pago y el
+ * mismo bucle en la consola el que la gastaría.
+ */
+async function sugerirUnRegalo(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
+  }
+
+  const {
+    persona_id: personaId, pista = '', descartadas = [],
+  } = await peticion.json().catch(() => ({}));
+  if (!personaId) return json({ error: 'falta la persona' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeRegalo(componerInstantanea(registro, lector), {
+    personaId, pista, descartadas,
+  });
+
+  if (!material.lineas.length) return json({ error: 'esa persona no está' }, 404);
+
+  // Cinco propuestas no caben en el tope de dos frases con el que se cuenta un
+  // día: con él, la quinta llega cortada a la mitad.
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.regalo, tope: 700,
+  });
+
+  const propuestas = interpretarPropuestas(resultado.texto);
+
+  if (!propuestas.length) {
+    console.warn('sugerencia fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        propuestas: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ propuestas, modelo: resultado.modelo });
 }
 
 async function leerAjustesDeIa(peticion, env) {
@@ -422,8 +497,8 @@ async function leerAjustesDeIa(peticion, env) {
 
 async function guardarAjustesDeIa(peticion, env) {
   const administrador = await administradorAutenticado(peticion, env);
-  const { clave, modelo, instruccion } = await peticion.json().catch(() => ({}));
-  const configuracion = await guardarConfiguracion(env.DB, administrador, { clave, modelo, instruccion });
+  const { clave, modelo, instruccion, regalo } = await peticion.json().catch(() => ({}));
+  const configuracion = await guardarConfiguracion(env.DB, administrador, { clave, modelo, instruccion, regalo });
   return json(configuracionPublica(configuracion));
 }
 
@@ -455,6 +530,7 @@ async function probarLaRedaccion(peticion, env) {
     motivo: resultado.motivo || null,
     intentos: resultado.intentos,
     material: material.lineas,
+    omitidos: material.omitidos || [],
   });
 }
 
@@ -477,6 +553,7 @@ const RUTAS = [
   ['POST', '/api/solicitudes/resolver', resolverSolicitud],
   ['GET', '/api/registro', registroCompleto],
   ['POST', '/api/redactar', contarElDia],
+  ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],
   ['POST', '/api/ia/probar', probarLaRedaccion],

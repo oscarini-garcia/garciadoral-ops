@@ -1,55 +1,64 @@
 /**
- * Regalos: el banco de ideas y las campañas.
+ * Regalos: las ideas y las ocasiones.
  *
  * Se unifican en una sola sección porque son el mismo objeto en dos momentos de
- * su vida: hay un banco y hay campañas, y una idea pasa de uno a otras. La
- * distinción entre «Ideas» y «Ocasiones» existe en el modelo de datos y no en
- * la cabeza de quien lo usa (specs/ux.md §6).
+ * su vida: primero se apunta una idea y después se lleva a la ocasión en la que
+ * se regala. Las dos secciones se llaman como las dos entidades del modelo
+ * porque es lo que se viene a hacer aquí: o apuntar algo suelto, o mirar qué
+ * falta para una fecha concreta (specs/ux.md §6).
  */
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
+  botonIcono, dobleToque, icono,
 } from '../ui.js';
-import { guardar, retirar } from '../sincronizacion.js';
-import { ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId } from '../modelo.js';
+import { guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
+import {
+  ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId, redaccionDisponible,
+} from '../modelo.js';
 import { iso, hoy } from '../semana.js';
+import { toque } from '../native.js';
 
-let seccion = 'banco';
+let seccion = 'ideas';
 let filtroPersona = null;
 
 export function reiniciarRegalos() {
-  seccion = 'banco';
+  seccion = 'ideas';
   filtroPersona = null;
 }
 
 export function pintarRegalos(pantalla, subcabecera, ctx) {
   vaciar(subcabecera).append(
     el('div', { class: 'seg', role: 'group', 'aria-label': 'Sección de regalos' }, [
-      ...[['banco', 'Banco'], ['campanas', 'Campañas'], ['presupuesto', 'Presupuesto']]
-        .filter(([clave]) => clave !== 'presupuesto' || ctx.vista.esAdministrador())
-        .map(([clave, texto]) =>
-          el('button', {
-            type: 'button',
-            'aria-pressed': seccion === clave ? 'true' : 'false',
-            onclick: () => { seccion = clave; ctx.refrescar(); },
-          }, [texto]),
-        ),
+      ...[['ideas', 'Ideas'], ['ocasiones', 'Ocasiones']].map(([clave, texto]) =>
+        el('button', {
+          type: 'button',
+          'aria-pressed': seccion === clave ? 'true' : 'false',
+          onclick: () => { seccion = clave; ctx.refrescar(); },
+        }, [texto]),
+      ),
     ]),
   );
 
   vaciar(pantalla);
-  if (seccion === 'banco') pantalla.append(vistaBanco(ctx));
-  else if (seccion === 'campanas') pantalla.append(vistaCampanas(ctx));
-  else pantalla.append(vistaPresupuesto(ctx));
+  if (seccion === 'ideas') {
+    // El cuerpo se estira hasta el final de la pantalla aunque haya tres ideas:
+    // el hueco de debajo es donde se apunta la siguiente, y para eso tiene que
+    // existir como sitio al que llegar con el dedo.
+    pantalla.classList.add('pantalla-ideas');
+    pantalla.append(vistaIdeas(ctx));
+  } else {
+    pantalla.append(vistaOcasiones(ctx));
+  }
 }
 
 export const seccionActual = () => seccion;
 
-// ----------------------------------------------------------------- Banco --
+// ----------------------------------------------------------------- Ideas --
 
-function vistaBanco(ctx) {
+function vistaIdeas(ctx) {
   const personas = ctx.vista.personas();
-  const contenedor = el('div', {});
+  const contenedor = el('div', { class: 'cuerpo-ideas' });
 
   contenedor.append(el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Para quién' }),
@@ -75,11 +84,20 @@ function vistaBanco(ctx) {
   ]);
 
   if (!ideas.length) {
-    grupo.append(el('p', { class: 'vacio', texto: 'Nada por aquí todavía. El botón de abajo apunta una idea en diez segundos.' }));
+    grupo.append(el('p', { class: 'vacio', texto: 'Nada por aquí todavía. Dos toques en el hueco apuntan una idea en diez segundos.' }));
   }
   for (const idea of ideas) grupo.append(tarjetaDeIdea(idea, ctx));
 
   contenedor.append(grupo);
+
+  // La misma regla que en la agenda: doblar el toque sobre lo que está en
+  // blanco crea ahí. Si hay un filtro de persona puesto, la idea nace ya para
+  // esa persona, que es lo que se estaba mirando.
+  contenedor.append(dobleToque(
+    el('div', { class: 'zona-libre', 'aria-hidden': 'true' }),
+    () => { toque(); abrirFormularioIdea(ctx, { paraPersona: filtroPersona }); },
+  ));
+
   return contenedor;
 }
 
@@ -112,9 +130,9 @@ function tarjetaDeIdea(idea, ctx) {
   ]);
 }
 
-// -------------------------------------------------------------- Campañas --
+// ------------------------------------------------------------- Ocasiones --
 
-function vistaCampanas(ctx) {
+function vistaOcasiones(ctx) {
   const ocasiones = [...(ctx.vista.datos.ocasiones || [])]
     .filter((o) => estaActivo(o, 'activa'))
     .sort((a, b) => (a.estado === b.estado ? a.fecha.localeCompare(b.fecha) : a.estado === 'abierta' ? -1 : 1));
@@ -133,13 +151,13 @@ function vistaCampanas(ctx) {
 
   contenedor.append(bloque('En marcha', abiertas));
   if (!abiertas.length) {
-    contenedor.append(el('p', { class: 'vacio', texto: 'Ninguna campaña abierta.' }));
+    contenedor.append(el('p', { class: 'vacio', texto: 'Ninguna ocasión abierta.' }));
   }
   contenedor.append(bloque('Cerradas', cerradas));
 
   contenedor.append(el('div', { class: 'grupo' }, [
     el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: () => abrirFormularioOcasion(ctx) }, [
-      'Nueva campaña',
+      'Nueva ocasión',
     ]),
   ]));
   return contenedor;
@@ -232,11 +250,16 @@ export function abrirDetalleIdea(ideaId, ctx) {
   const idea = ctx.vista.idea(ideaId);
   if (!idea) return;
 
+  const destinos = (idea.orientaciones || []).map((o) =>
+    o.persona_id ? ctx.vista.nombre(o.persona_id) : ctx.vista.etiqueta(o.etiqueta_id)?.nombre,
+  ).filter(Boolean);
+
   abrirHoja(idea.titulo, (cuerpo) => {
     if (idea.descripcion) cuerpo.append(el('p', { texto: idea.descripcion }));
     cuerpo.append(el('p', {
       class: 'pista',
       texto: [
+        destinos.length ? `Para ${destinos.join(', ')}` : null,
         ctx.vista.categoria(idea.categoria_id)?.nombre,
         idea.establecimiento,
         `apuntada por ${ctx.vista.nombre(idea.autor_id)}`,
@@ -253,7 +276,7 @@ export function abrirDetalleIdea(ideaId, ctx) {
         : el('button', {
             class: 'boton crecer', type: 'button',
             onclick: () => abrirPromocion(idea, ctx),
-          }, ['Llevar a una campaña']),
+          }, ['Llevar a una ocasión']),
       el('button', {
         class: 'boton', 'data-tono': 'discreto', type: 'button',
         onclick: async () => {
@@ -270,7 +293,17 @@ export function abrirDetalleIdea(ideaId, ctx) {
         onclick: async () => { await guardar('idea', idea.id, { estado: 'descartada' }); cerrarHoja(); avisar('Idea descartada'); ctx.refrescar(); },
       }, ['Descartar']),
     ]));
-  });
+
+    // Borrar no vive aquí: es una operación de edición, y está donde se edita.
+    // Descartar sí, porque no borra nada —la idea se reactiva— y es lo que se
+    // decide mirándola.
+  }, [
+    // El verbo que se usa va arriba, junto al título, igual que en un evento.
+    botonIcono('editar', {
+      etiqueta: 'Editar',
+      onclick: () => abrirFormularioIdea(ctx, { id: idea.id }),
+    }),
+  ]);
 }
 
 export function abrirDetalleRegalo(regaloId, ctx) {
@@ -306,13 +339,13 @@ export function abrirDetalleRegalo(regaloId, ctx) {
       await guardar('regalo', regalo.id, { coste_real: valor });
       ctx.refrescar();
     });
-    cuerpo.append(campo('Lo que costó', coste, 'Opcional. Sin él, el panel de presupuesto lo dice en lugar de fingir un ahorro.'));
+    cuerpo.append(campo('Lo que costó', coste, 'Opcional. Es lo que permite saber después en qué se fue una ocasión.'));
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
         onclick: async () => { await retirar('regalo', regalo.id); cerrarHoja(); avisar('Regalo retirado'); ctx.refrescar(); },
-      }, ['Quitar de la campaña']),
+      }, ['Quitar de la ocasión']),
     ]));
   });
 }
@@ -323,9 +356,9 @@ function abrirPromocion(idea, ctx) {
   const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && estaActivo(o, 'activa'));
   const destinos = (idea.orientaciones || []).map((o) => o.persona_id).filter(Boolean);
 
-  abrirHoja('Llevar a una campaña', (cuerpo) => {
+  abrirHoja('Llevar a una ocasión', (cuerpo) => {
     if (!abiertas.length) {
-      cuerpo.append(el('p', { class: 'pista', texto: 'No hay ninguna campaña abierta. Crea una desde Regalos → Campañas.' }));
+      cuerpo.append(el('p', { class: 'pista', texto: 'No hay ninguna ocasión abierta. Crea una desde Regalos → Ocasiones.' }));
       return;
     }
     const ocasion = seleccion(abiertas.map((o) => ({ valor: o.id, texto: `${o.nombre} · ${o.fecha}` })), abiertas[0].id);
@@ -333,13 +366,13 @@ function abrirPromocion(idea, ctx) {
       ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
       destinos[0] || ctx.vista.personas()[0]?.id,
     );
-    cuerpo.append(campo('Campaña', ocasion), campo('Para quién', persona));
+    cuerpo.append(campo('Ocasión', ocasion), campo('Para quién', persona));
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
           await crearRegalo(ctx, { ocasionId: ocasion.value, destinatario: persona.value, idea });
-          cerrarHoja(); avisar('Añadido a la campaña'); ctx.refrescar();
+          cerrarHoja(); avisar('Añadido a la ocasión'); ctx.refrescar();
         },
       }, ['Añadir']),
     ]));
@@ -360,9 +393,9 @@ export function abrirSelectorDeRegalo(ctx, { evento = null, ocasion = null, dest
     : (ocasion?.participantes || []);
   const relevantes = new Set(candidatos.filter((id) => id !== ctx.vista.yo.id));
 
-  const banco = ctx.vista.banco();
-  const propuestas = banco.filter((idea) => (idea.orientaciones || []).some((o) => relevantes.has(o.persona_id)));
-  const resto = banco.filter((idea) => !propuestas.includes(idea));
+  const apuntadas = ctx.vista.banco();
+  const propuestas = apuntadas.filter((idea) => (idea.orientaciones || []).some((o) => relevantes.has(o.persona_id)));
+  const resto = apuntadas.filter((idea) => !propuestas.includes(idea));
 
   abrirHoja('Asociar un regalo', (cuerpo) => {
     const personas = ctx.vista.personas().filter((p) => p.id !== ctx.vista.yo.id);
@@ -375,7 +408,7 @@ export function abrirSelectorDeRegalo(ctx, { evento = null, ocasion = null, dest
     const elegir = async (idea) => {
       let destino = ocasion;
       if (!destino && evento) destino = await asegurarOcasionDe(evento, ctx);
-      if (!destino) { avisar('No hay campaña donde ponerlo'); return; }
+      if (!destino) { avisar('No hay ocasión donde ponerlo'); return; }
       await crearRegalo(ctx, { ocasionId: destino.id, destinatario: para.value, idea });
       cerrarHoja(); avisar('Regalo asociado'); ctx.refrescar();
     };
@@ -391,8 +424,8 @@ export function abrirSelectorDeRegalo(ctx, { evento = null, ocasion = null, dest
       ]));
     };
 
-    listar('Del banco, para quien participa', propuestas);
-    listar('El resto del banco', resto);
+    listar('Para quien participa', propuestas);
+    listar('El resto de las ideas', resto);
 
     cuerpo.append(el('div', { class: 'grupo' }, [
       el('button', {
@@ -443,13 +476,13 @@ async function crearRegalo(ctx, { ocasionId, destinatario, idea }) {
   }
 }
 
-// --------------------------------------------------------------- Campañas --
+// ------------------------------------------------------- Nueva ocasión --
 
 function abrirFormularioOcasion(ctx, { duplicarDe = null } = {}) {
   const origen = duplicarDe ? ctx.vista.ocasion(duplicarDe) : null;
   let participantes = origen ? [...(origen.participantes || [])] : [];
 
-  abrirHoja(origen ? 'Duplicar campaña' : 'Nueva campaña', (cuerpo) => {
+  abrirHoja(origen ? 'Duplicar la ocasión' : 'Nueva ocasión', (cuerpo) => {
     const nombre = entrada({ value: origen ? `${origen.nombre.replace(/\s*\d{4}$/, '')} ${new Date().getFullYear() + 1}` : '', placeholder: 'Navidad 2026' });
     const fecha = el('input', { type: 'date', value: iso(hoy()) });
     cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha));
@@ -467,7 +500,7 @@ function abrirFormularioOcasion(ctx, { duplicarDe = null } = {}) {
             nombre: nombre.value.trim(), fecha: fecha.value, estado: 'abierta',
             autor_id: ctx.vista.yo.id, activa: 1, participantes,
           });
-          cerrarHoja(); avisar('Campaña creada'); ctx.refrescar();
+          cerrarHoja(); avisar('Ocasión creada'); ctx.refrescar();
         },
       }, ['Crear']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
@@ -475,149 +508,300 @@ function abrirFormularioOcasion(ctx, { duplicarDe = null } = {}) {
   });
 }
 
-// ------------------------------------------------------------ Presupuesto --
-
-/** El panel queda reservado a los administradores y distingue el gasto
- *  registrado del total, indicando cuántos regalos carecen de importe: de no
- *  hacerlo mostraría una desviación favorable inexistente (spec funcional §6.3). */
-function vistaPresupuesto(ctx) {
-  const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && estaActivo(o, 'activa'));
-  if (!abiertas.length) return el('p', { class: 'vacio', texto: 'Ninguna campaña abierta que presupuestar.' });
-
-  const contenedor = el('div', {});
-
-  for (const ocasion of abiertas) {
-    const filas = [];
-    let previsto = 0;
-    let registrado = 0;
-    let sinImporte = 0;
-
-    for (const personaId of ocasion.participantes || []) {
-      const presupuesto = (ocasion.presupuestos || []).find((p) => p.persona_id === personaId);
-      const gasto = ctx.vista.gastoDe(ocasion.id, personaId);
-      previsto += presupuesto?.importe || 0;
-      registrado += gasto.registrado;
-      sinImporte += gasto.sinImporte;
-
-      const importe = entrada({ type: 'number', inputmode: 'decimal', step: '1', value: presupuesto?.importe ?? '' });
-      importe.addEventListener('change', async () => {
-        await guardar('presupuesto', `${ocasion.id}:${personaId}`, {
-          ocasion_id: ocasion.id, persona_id: personaId, importe: Number(importe.value) || 0,
-        });
-        ctx.refrescar();
-      });
-
-      filas.push(el('tr', {}, [
-        el('td', { texto: ctx.vista.nombre(personaId) }),
-        el('td', {}, [importe]),
-        el('td', { texto: formatearImporte(gasto.registrado) }),
-        el('td', { texto: gasto.sinImporte ? `${gasto.sinImporte} sin importe` : '—' }),
-      ]));
-    }
-
-    contenedor.append(el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: ocasion.nombre }),
-      el('div', { class: 'desplazable' }, [
-        el('table', { class: 'presupuesto' }, [
-          el('thead', {}, [el('tr', {}, [
-            el('th', { texto: 'Persona' }), el('th', { texto: 'Previsto' }),
-            el('th', { texto: 'Registrado' }), el('th', { texto: 'Pendiente de anotar' }),
-          ])]),
-          el('tbody', {}, filas),
-        ]),
-      ]),
-      el('div', { class: 'barra', 'data-excedido': registrado > previsto && previsto > 0 ? 'si' : 'no' }, [
-        el('i', { style: `width:${previsto ? Math.min(100, (registrado / previsto) * 100) : 0}%` }),
-      ]),
-      el('p', {
-        class: 'pista',
-        texto: `Previsto ${formatearImporte(previsto)} · registrado ${formatearImporte(registrado)}` +
-          (sinImporte ? ` · ${sinImporte} ${sinImporte === 1 ? 'regalo' : 'regalos'} sin importe anotado` : ''),
-      }),
-    ]));
-  }
-
-  return contenedor;
-}
-
-// ------------------------------------------------------ Captura de una idea --
+// ----------------------------------------------------- Apuntar y editar --
 
 /**
- * Captura en un gesto: un campo de título y un botón de guardar. La
- * clasificación se ofrece debajo pero no se reclama. Si registrar una idea
- * cuesta más de diez segundos, no se registra (specs/ux.md §2 y §3).
+ * Captura en un gesto: el qué, para quién y por qué, y un botón de guardar. El
+ * resto de la clasificación se ofrece debajo pero no se reclama. Si registrar
+ * una idea cuesta más de diez segundos, no se registra (specs/ux.md §2 y §3).
+ *
+ * Para quién sube por encima del pliegue aunque sea clasificación: es lo que
+ * decide a quién se le oculta la idea, y lo que enciende la propuesta de la IA.
+ *
+ * Corregir entra por la misma puerta que en la agenda: la misma hoja, con todo
+ * desplegado —quien viene a cambiar algo ya sabe qué campo busca— y el borrado
+ * arriba, junto al título. En el detalle no pinta nada: allí se mira.
  */
-export function abrirCapturaDeIdea(ctx, { paraPersona = null } = {}) {
-  let destinatarios = paraPersona ? [paraPersona] : [];
-  let etiquetas = [];
+export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {}) {
+  const existente = id ? ctx.vista.idea(id) : null;
+  const orientaciones = existente?.orientaciones || [];
 
-  abrirHoja('Apuntar una idea', (cuerpo) => {
-    const titulo = entrada({ placeholder: 'Botas de montar', autofocus: true });
-    cuerpo.append(campo('Qué', titulo));
+  let destinatarios = existente
+    ? orientaciones.map((o) => o.persona_id).filter(Boolean)
+    : [paraPersona].filter(Boolean);
+  let etiquetas = existente ? orientaciones.map((o) => o.etiqueta_id).filter(Boolean) : [];
 
-    const guardarIdea = async () => {
-      if (!titulo.value.trim()) { titulo.focus(); return; }
-      const soloYo = destinatarios.length === 1 && destinatarios[0] === ctx.vista.yo.id && !etiquetas.length;
-      await guardar('idea', nuevoId(), {
-        // Una idea cuyo destinatario es su propio autor se trata como deseo: de
-        // otro modo la ocultación la haría desaparecer al crearla.
-        tipo: soloYo ? 'deseo' : 'sugerencia',
-        titulo: titulo.value.trim(),
-        descripcion: descripcion.value.trim(),
-        categoria_id: categoria.value || null,
-        precio_max: precio.value ? Number(precio.value) : null,
-        enlace: enlace.value.trim(),
-        estado: 'activa',
-        autor_id: ctx.vista.yo.id,
-        activa: 1,
-        orientaciones: [
-          ...destinatarios.map((persona_id) => ({ persona_id })),
-          ...etiquetas.map((etiqueta_id) => ({ etiqueta_id })),
-        ],
-      });
-      cerrarHoja(); avisar('Idea apuntada'); ctx.refrescar();
-    };
+  const borrarIdea = existente ? botonIcono('borrar', {
+    etiqueta: 'Borrar la idea', tono: 'peligro',
+    onclick: async () => {
+      await retirar('idea', existente.id);
+      toque('media');
+      cerrarHoja();
+      avisar('Idea retirada');
+      ctx.refrescar();
+    },
+  }) : null;
 
-    titulo.addEventListener('keydown', (evento) => { if (evento.key === 'Enter') guardarIdea(); });
+  abrirHoja(existente ? 'Editar idea' : 'Apuntar una idea', (cuerpo) => {
+    const titulo = entrada({ value: existente?.titulo || '', placeholder: 'Botas de montar', autofocus: true });
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', { class: 'boton crecer', type: 'button', onclick: guardarIdea }, ['Guardar']),
-    ]));
+    // El destello vive dentro del campo que va a rellenar, al final, como la
+    // lupa de un buscador: no gasta una línea y no hay que explicar qué campo
+    // toca. Solo aparece cuando hay una persona a quien regalarle algo.
+    const pedir = el('button', {
+      class: 'destello-campo', type: 'button', hidden: true,
+      onclick: () => abrirPropuestas(),
+    }, [icono('destello')]);
 
-    const extra = el('div', { class: 'hoja-seccion', hidden: true });
+    const campoQue = campo('Qué', titulo);
+    campoQue.append(pedir);
+    cuerpo.append(campoQue);
+
+    // ------------------------------------------------------- Las propuestas --
+
+    const texto = el('div', { class: 'propuesta-texto', 'aria-live': 'polite' });
+    const cuenta = el('span', { class: 'propuesta-cuenta' });
+    const atras = el('button', {
+      class: 'propuesta-flecha', type: 'button', 'aria-label': 'Propuesta anterior',
+      onclick: () => mover(-1),
+    }, ['‹']);
+    const adelante = el('button', {
+      class: 'propuesta-flecha', type: 'button', 'aria-label': 'Propuesta siguiente',
+      onclick: () => mover(1),
+    }, ['›']);
+    const usarla = el('button', {
+      class: 'boton-mini', 'data-tono': 'principal', type: 'button', onclick: () => usarLaPropuesta(),
+    }, ['Usarla']);
+    const otras = el('button', {
+      class: 'boton-mini', type: 'button', onclick: () => pedirPropuestas({ mas: true }),
+    }, ['Otras cinco']);
+
+    const carrusel = el('div', { class: 'propuesta', hidden: true }, [
+      el('div', { class: 'propuesta-cuerpo' }, [atras, texto, adelante]),
+      el('div', { class: 'propuesta-pie' }, [usarla, otras, cuenta]),
+    ]);
+    cuerpo.append(carrusel);
+
+    // ------------------------------------------------------- Los demás campos --
+
+    const descripcion = el('textarea', { placeholder: 'Para acordarte dentro de seis meses' });
+    descripcion.value = existente?.descripcion || '';
+
+    cuerpo.append(campo('Para quién', opciones(
+      ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
+      destinatarios,
+      (v) => { destinatarios = v; ajustarPedir(); },
+    ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'));
+    cuerpo.append(campo('Descripción', descripcion));
+
+    // Al editar se abre desplegado y sin conmutador: quien corrige viene a por
+    // un campo concreto, y esconderlo detrás de un enlace sobra.
+    const extra = el('div', { class: 'hoja-seccion', hidden: !existente });
     const conmutador = el('button', {
       class: 'enlace-discreto', type: 'button',
       onclick: () => { extra.hidden = !extra.hidden; conmutador.textContent = extra.hidden ? 'Clasificarla' : 'Dejarlo así'; },
     }, ['Clasificarla']);
-    cuerpo.append(conmutador, extra);
+    if (!existente) cuerpo.append(conmutador);
+    cuerpo.append(extra);
 
-    const avisoEtiquetas = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: true });
+    const avisoEtiquetas = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: !etiquetas.length });
     avisoEtiquetas.textContent = 'Las etiquetas clasifican pero no ocultan: una idea etiquetada como «adolescente» la ven también las hijas. Para reservarla, nombra a la persona.';
 
-    const descripcion = el('textarea', { placeholder: 'Para acordarte dentro de seis meses' });
     const categoria = seleccion(
       [{ valor: '', texto: 'Sin categoría' }, ...ctx.vista.categorias().map((c) => ({ valor: c.id, texto: c.nombre }))],
-      '',
+      existente?.categoria_id || '',
     );
-    const precio = entrada({ type: 'number', inputmode: 'decimal', placeholder: '120' });
-    const enlace = entrada({ type: 'url', placeholder: 'https://' });
+    const precio = entrada({ type: 'number', inputmode: 'decimal', placeholder: '120', value: existente?.precio_max ?? '' });
+    const establecimiento = entrada({ value: existente?.establecimiento || '', placeholder: 'Decathlon' });
+    const enlace = entrada({ type: 'url', placeholder: 'https://', value: existente?.enlace || '' });
 
     extra.append(
-      campo('Para quién', opciones(
-        ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
-        destinatarios,
-        (v) => { destinatarios = v; },
-      ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'),
       campo('O un perfil', opciones(
         ctx.vista.etiquetas().map((e) => ({ valor: e.id, texto: e.nombre })),
         etiquetas,
         (v) => { etiquetas = v; avisoEtiquetas.hidden = v.length === 0; },
       )),
       avisoEtiquetas,
-      campo('Descripción', descripcion),
       campo('Categoría', categoria),
       campo('Precio aproximado', precio),
+      campo('Dónde se compra', establecimiento),
       campo('Enlace', enlace),
     );
-  });
+
+    // ---------------------------------------------------------- La propuesta --
+
+    /**
+     * A quién se le está buscando el regalo: la primera persona nombrada.
+     *
+     * Con una etiqueta —«adolescente»— no se propone nada: lo que hace útil a
+     * la propuesta es lo que se sabe de alguien concreto, y de un perfil no se
+     * sabe nada. Sin clave puesta en el servidor tampoco se ofrece: sería un
+     * botón que solo puede fallar.
+     */
+    const destinataria = () => destinatarios.map((id) => ctx.vista.persona(id)).find(Boolean) || null;
+
+    // La tanda vive mientras la hoja esté abierta. «Otras cinco» no la sustituye:
+    // añade al final, de modo que se puede volver atrás a la que gustaba.
+    let tanda = [];
+    let indice = 0;
+    let tandaDe = null;
+    let pistaDeLaTanda = '';
+
+    function ajustarPedir() {
+      const persona = destinataria();
+      const hay = Boolean(persona) && redaccionDisponible(ctx.vista.datos);
+      pedir.hidden = !hay;
+      // El hueco dentro del campo se reserva solo cuando el botón está: si no,
+      // el título escribe de borde a borde.
+      if (hay) campoQue.setAttribute('data-con-destello', '');
+      else campoQue.removeAttribute('data-con-destello');
+      if (persona) pedir.setAttribute('aria-label', `Que la IA proponga un regalo para ${persona.nombre}`);
+
+      // Cambiar de persona invalida lo propuesto para la anterior.
+      if (tandaDe && persona?.id !== tandaDe) {
+        tanda = [];
+        indice = 0;
+        tandaDe = null;
+        carrusel.hidden = true;
+      }
+    }
+
+    /** El destello: la primera vez pide; después vuelve a enseñar lo que ya hay,
+     *  que no cuesta nada y es lo que espera quien lo cerró sin usarlo. */
+    function abrirPropuestas() {
+      toque();
+      if (tanda.length) { carrusel.hidden = false; pintarPropuesta(); return; }
+      pedirPropuestas({ mas: false });
+    }
+
+    function mover(pasos) {
+      indice = Math.min(tanda.length - 1, Math.max(0, indice + pasos));
+      pintarPropuesta();
+    }
+
+    /**
+     * El marco no se mueve: solo cambia el texto de dentro. Es lo que permite
+     * pasar cinco propuestas seguidas sin que «Usarla» se escape de debajo del
+     * dedo, y por eso el hueco del texto tiene el alto reservado en el CSS.
+     */
+    function pintarPropuesta() {
+      const actual = tanda[indice];
+      vaciar(texto).append(
+        el('p', { class: 'propuesta-que', texto: actual.que }),
+        actual.porque ? el('p', { class: 'propuesta-porque', texto: actual.porque }) : null,
+      );
+      cuenta.textContent = `${indice + 1} / ${tanda.length}`;
+      atras.disabled = indice === 0;
+      adelante.disabled = indice >= tanda.length - 1;
+      usarla.disabled = false;
+      otras.disabled = false;
+    }
+
+    function esperando() {
+      carrusel.hidden = false;
+      vaciar(texto).append(el('p', { class: 'propuesta-porque', texto: 'Pensando…' }));
+      cuenta.textContent = '';
+      for (const boton of [atras, adelante, usarla, otras]) boton.disabled = true;
+    }
+
+    /**
+     * Una tanda son cinco de una vez, porque lo caro de la llamada es contarle
+     * al modelo quién es la persona: pasar de una a otra no vuelve a pedir nada.
+     *
+     * La pista es lo que hubiera escrito **antes** de pedir la primera, y se
+     * conserva: si se mandara lo que hay en los campos, la segunda tanda
+     * llevaría dentro la propuesta de la primera y el modelo se repetiría.
+     */
+    async function pedirPropuestas({ mas }) {
+      const persona = destinataria();
+      if (!persona) return;
+      if (mas) toque();
+
+      if (!mas) {
+        pistaDeLaTanda = [titulo.value.trim(), descripcion.value.trim()].filter(Boolean).join('. ');
+      }
+      const teniamos = tanda.length;
+      esperando();
+
+      try {
+        const nuevas = await sugerirRegalos(persona.id, {
+          pista: pistaDeLaTanda,
+          descartadas: tanda.map((propuesta) => propuesta.que),
+        });
+        if (!nuevas.length) {
+          avisar('No ha propuesto nada');
+          if (!teniamos) carrusel.hidden = true; else pintarPropuesta();
+          return;
+        }
+        tanda = mas ? [...tanda, ...nuevas] : nuevas;
+        tandaDe = persona.id;
+        // Al añadir se salta a la primera de las nuevas; las anteriores siguen
+        // ahí, a un toque de la flecha de atrás.
+        indice = mas ? teniamos : 0;
+        pintarPropuesta();
+      } catch (error) {
+        avisar(error.message || 'No he podido pedir la propuesta');
+        if (!teniamos) carrusel.hidden = true; else pintarPropuesta();
+      }
+    }
+
+    /** Aceptar baja la propuesta a los campos y recoge la tarjeta. La tanda se
+     *  queda: volver a tocar el destello la enseña por donde iba. */
+    function usarLaPropuesta() {
+      const actual = tanda[indice];
+      if (!actual) return;
+      toque();
+      titulo.value = actual.que;
+      if (actual.porque) descripcion.value = actual.porque;
+      carrusel.hidden = true;
+    }
+
+    ajustarPedir();
+
+    // ----------------------------------------------------------- Guardar --
+
+    const guardarIdea = async () => {
+      if (!titulo.value.trim()) { titulo.focus(); return; }
+      const campos = {
+        titulo: titulo.value.trim(),
+        descripcion: descripcion.value.trim(),
+        categoria_id: categoria.value || null,
+        precio_max: precio.value ? Number(precio.value) : null,
+        establecimiento: establecimiento.value.trim(),
+        enlace: enlace.value.trim(),
+        orientaciones: [
+          ...destinatarios.map((persona_id) => ({ persona_id })),
+          ...etiquetas.map((etiqueta_id) => ({ etiqueta_id })),
+        ],
+      };
+
+      if (!existente) {
+        const soloYo = destinatarios.length === 1 && destinatarios[0] === ctx.vista.yo.id && !etiquetas.length;
+        Object.assign(campos, {
+          // Una idea cuyo destinatario es su propio autor se trata como deseo: de
+          // otro modo la ocultación la haría desaparecer al crearla.
+          tipo: soloYo ? 'deseo' : 'sugerencia',
+          estado: 'activa',
+          autor_id: ctx.vista.yo.id,
+          activa: 1,
+        });
+      }
+
+      // El tipo, el estado y la autoría no se reescriben al editar: una idea que
+      // ya está en curso no vuelve a activa por corregirle el precio, y quien la
+      // apuntó sigue siendo quien la apuntó.
+      await guardar('idea', existente ? existente.id : nuevoId(), campos);
+      toque('media');
+      cerrarHoja();
+      avisar(existente ? 'Idea actualizada' : 'Idea apuntada');
+      ctx.refrescar();
+    };
+
+    titulo.addEventListener('keydown', (evento) => { if (evento.key === 'Enter') guardarIdea(); });
+
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton crecer', type: 'button', onclick: guardarIdea }, ['Guardar']),
+      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+    ]));
+  }, [borrarIdea]);
 }

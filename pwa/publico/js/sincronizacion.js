@@ -228,10 +228,23 @@ export function resolverSolicitud(cuerpo) {
  * pide, de modo que desde aquí no se le puede meter nada.
  */
 export async function redactarDia(fecha, eventos) {
-  const { texto } = await peticion('/api/redactar', {
+  return conAvisoDeOmitidos(await peticion('/api/redactar', {
     method: 'POST',
     body: JSON.stringify({ fecha, eventos }),
-  });
+  }));
+}
+
+/**
+ * El servidor dice cuántos identificadores no ha sabido resolver. Si hay
+ * alguno, lo que se ha redactado cuenta menos de lo que se estaba mirando.
+ *
+ * No se le enseña a quien comparte —el texto sigue valiendo, y no es cosa
+ * suya—, pero queda en la consola: así se ve a la primera, en lugar de
+ * descubrirlo porque un mensaje sale corto. Pasó con los cumpleaños derivados,
+ * que el servidor descartaba sin decir nada.
+ */
+function conAvisoDeOmitidos({ texto, omitidos }) {
+  if (omitidos) console.warn(`la redacción dejó fuera ${omitidos} evento(s) que el servidor no reconoce`);
   return texto;
 }
 
@@ -243,11 +256,27 @@ export async function redactarDia(fecha, eventos) {
  * de su propia instantánea.
  */
 export async function redactarPeriodo(desde, hasta, dias) {
-  const { texto } = await peticion('/api/redactar', {
+  return conAvisoDeOmitidos(await peticion('/api/redactar', {
     method: 'POST',
     body: JSON.stringify({ desde, hasta, dias }),
+  }));
+}
+
+/**
+ * Una tanda de cinco regalos propuestos para una persona.
+ *
+ * Viajan el identificador de la persona, lo que quien apunta lleve escrito en
+ * el formulario y los títulos que ya se han propuesto, para que la tanda
+ * siguiente no repita a la anterior. Lo que se sabe de ella —sus datos, lo que
+ * ha pedido, lo que ya tiene apuntado y lo que recibió— lo reúne el Worker con
+ * la instantánea filtrada de quien pide.
+ */
+export async function sugerirRegalos(personaId, { pista = '', descartadas = [] } = {}) {
+  const { propuestas } = await peticion('/api/regalo/sugerir', {
+    method: 'POST',
+    body: JSON.stringify({ persona_id: personaId, pista, descartadas }),
   });
-  return texto;
+  return propuestas || [];
 }
 
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */

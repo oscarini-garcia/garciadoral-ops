@@ -1,5 +1,5 @@
 /**
- * Familia: el registro de personas y la ficha de cada una.
+ * Gente: el registro de personas y la ficha de cada una.
  *
  * La ficha es la pantalla de detalle más valiosa del producto: reúne el
  * histórico derivado, los atributos acumulados y lo que se le puede regalar en
@@ -15,7 +15,7 @@ import {
   CIRCULOS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
 } from '../modelo.js';
 import { MESES_LARGOS, hoy, parsearMomento } from '../semana.js';
-import { abrirCapturaDeIdea, abrirDetalleIdea, abrirDetalleRegalo } from './regalos.js';
+import { abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea } from './regalos.js';
 
 /** Cuál de los dos círculos abiertos se está mirando. Se conserva entre
  *  repintados para que guardar una ficha no devuelva a nadie a la otra. */
@@ -354,7 +354,7 @@ function abrirAprobacion(solicitud, ctx) {
     cuerpo.append(
       campo('Quién es', quien, 'Si ya estaba en la familia sin cuenta, vincúlala a su ficha: así conserva su cumpleaños y su historial.'),
       nueva,
-      campo('Acceso', rol, 'Un administrador gestiona personas, categorías y presupuesto. Un miembro usa la agenda.'),
+      campo('Acceso', rol, 'Un administrador gestiona personas y categorías. Un miembro usa la agenda.'),
     );
 
     cuerpo.append(el('div', { class: 'acciones' }, [
@@ -470,7 +470,7 @@ export function abrirFicha(personaId, ctx) {
       esMia
         ? el('button', {
             class: 'enlace-discreto', type: 'button',
-            onclick: () => abrirCapturaDeIdea(ctx, { paraPersona: ctx.vista.yo.id }),
+            onclick: () => abrirFormularioIdea(ctx, { paraPersona: ctx.vista.yo.id }),
           }, ['Añadir un deseo'])
         : null,
     ]));
@@ -496,7 +496,7 @@ export function abrirFicha(personaId, ctx) {
           : el('p', { class: 'pista', texto: 'Ninguna todavía.' }),
         el('button', {
           class: 'enlace-discreto', type: 'button',
-          onclick: () => abrirCapturaDeIdea(ctx, { paraPersona: personaId }),
+          onclick: () => abrirFormularioIdea(ctx, { paraPersona: personaId }),
         }, [`Apuntar una idea para ${persona.nombre}`]),
       ]));
 
@@ -512,7 +512,7 @@ export function abrirFicha(personaId, ctx) {
                 el('p', { texto: [ocasion?.nombre, formatearImporte(regalo.coste_real)].filter(Boolean).join(' · ') }),
               ]);
             }))
-          : el('p', { class: 'pista', texto: 'Sin campañas cerradas todavía.' }),
+          : el('p', { class: 'pista', texto: 'Sin ocasiones cerradas todavía.' }),
       ]));
     }
 

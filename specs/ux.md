@@ -219,6 +219,8 @@ flowchart TD
 
 Lo que sigue no es una opción sino la decisión tomada: de las cuatro maneras que se pusieron sobre la mesa en `propuesta-familia-circulos.html` se eligió la de las pestañas.
 
+La pantalla se llama **Gente** en la barra, y *Familia* es uno de los tres círculos que hay dentro. Conviene que no coincidan: la pestaña reúne a todo el mundo, y sólo cuatro son de casa.
+
 **Tres círculos, y no dos grupos por si tienen cuenta.** Hasta aquí la pantalla se partía por `tiene_cuenta`, que es un dato técnico —quién ha entrado con Apple— usado como si fuera un vínculo. No lo es: la abuela no tiene cuenta y es de la familia, y un amigo podría tenerla sin serlo. Lo que ordena la pantalla pasa a ser el vínculo, escrito aparte en `persona.circulo`:
 
 - **Familia**, los cuatro de casa. Conjunto cerrado.
@@ -230,7 +232,7 @@ Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto c
 
 ```
 ┌──────────────────────────────┐
-│ Familia            ⟳    ⚙   │
+│ Gente              ⟳    ⚙   │
 │ ⌕ Buscar una persona         │
 ├──────────────────────────────┤
 │ FAMILIA          (lo ve Marta)│

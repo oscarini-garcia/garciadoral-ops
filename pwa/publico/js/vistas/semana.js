@@ -14,7 +14,7 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar, icono,
   deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
@@ -156,23 +156,13 @@ function textoDelPeriodo(ctx, dias, reparto) {
   for (const dia of dias) {
     const apariciones = reparto.get(iso(dia)) || [];
     if (!apariciones.length) continue;
-    const lineas = apariciones.map((aparicion) => {
-      const hora = horaDe(aparicion);
-      const cara = ctx.vista.caraDe(aparicion.evento);
-      return [
-        cara.emoji,
-        hora ? `${hora} ·` : null,
-        cara.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
-        aparicion.evento.ubicacion ? `· ${aparicion.evento.ubicacion}` : null,
-      ].filter(Boolean).join(' ');
-    });
-    bloques.push([formatearFechaLarga(dia), ...lineas].join('\n'));
+    bloques.push([formatearFechaLarga(dia), ...textoDelDia(apariciones, ctx)].join('\n'));
   }
   return bloques;
 }
 
-/** Los dos botones de compartir de la cabecera, con el mismo par de dibujos que
- *  la hoja de un día: lo que cambia es cuánto abarcan, no lo que hacen. */
+/** El botón de compartir de la cabecera de la agenda. Lo que cambia respecto al
+ *  de un día es cuánto abarca, no lo que hace. */
 function accionesDelPeriodo(ctx) {
   const dias = diasDelPeriodo();
   const reparto = repartoDelPeriodo(ctx, dias);
@@ -181,48 +171,105 @@ function accionesDelPeriodo(ctx) {
   if (!bloques.length) return [];
 
   const titulo = tituloDeLoCompartido(dias);
-  const talCual = () => compartirTexto(titulo, `${titulo}\n\n${bloques.join('\n\n')}`);
-
-  const plano = botonIcono('compartir', {
+  return [botonDeCompartir(ctx, {
     etiqueta: `Compartir ${nombreDelPeriodo()}`,
-    onclick: () => { toque(); talCual(); },
-  });
-  if (!redaccionDisponible(ctx.vista.datos)) return [plano];
-
-  const contado = botonIcono('compartir', {
-    etiqueta: `Compartir ${nombreDelPeriodo()} contado`,
-    insignia: 'destello',
-    onclick: () => contarElPeriodo(dias, reparto, titulo, talCual, [plano, contado]),
-  });
-  return [plano, contado];
+    titulo,
+    pista: 'Un renglón por evento, con su hora',
+    texto: () => `${titulo}\n\n${bloques.join('\n\n')}`,
+    redactar: () => redactarPeriodo(iso(dias[0]), iso(dias[dias.length - 1]), dias.map((dia) => ({
+      fecha: iso(dia),
+      eventos: (reparto.get(iso(dia)) || []).map((aparicion) => aparicion.evento.id),
+    }))),
+  })];
 }
 
 const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : modo === 'lista' ? 'lo que viene' : 'la semana');
 
-async function contarElPeriodo(dias, reparto, titulo, talCual, botones) {
-  toque();
-  for (const boton of botones) boton.disabled = true;
+// ------------------------------------------------------------- Compartir --
 
-  let texto = null;
-  let fallo = null;
-  try {
-    texto = await redactarPeriodo(iso(dias[0]), iso(dias[dias.length - 1]), dias.map((dia) => ({
-      fecha: iso(dia),
-      eventos: (reparto.get(iso(dia)) || []).map((aparicion) => aparicion.evento.id),
-    })));
-  } catch (error) {
-    fallo = error;
-  } finally {
-    for (const boton of botones) boton.disabled = false;
-  }
+/**
+ * Un solo botón de compartir, y la manera se elige en una hoja.
+ *
+ * Antes eran dos botones lado a lado, el segundo con un destello encima. Era un
+ * toque menos, pero pedía adivinar qué añadía ese destello, y el sitio de dos
+ * botones no lo hay en todas las cabeceras. Con una hoja, cada manera se explica
+ * con su frase —que es más de lo que puede decir un dibujo— y queda hueco para
+ * una tercera el día que haga falta.
+ *
+ * Sin clave puesta no hay nada que elegir, y entonces el botón hace directamente
+ * lo único que sabe: compartir tal cual, en un toque.
+ *
+ * Es el mismo botón en los tres sitios donde se comparte —el evento, el día y el
+ * periodo—, y lo único que cambia entre ellos es qué texto se compone y a qué
+ * llama para que lo cuenten.
+ */
+function botonDeCompartir(ctx, opciones) {
+  return botonIcono('compartir', {
+    etiqueta: opciones.etiqueta,
+    tono: opciones.tono || null,
+    onclick: () => {
+      toque();
+      if (!redaccionDisponible(ctx.vista.datos)) { compartirTexto(opciones.titulo, opciones.texto()); return; }
+      abrirEleccionDeCompartir(opciones);
+    },
+  });
+}
 
-  if (!texto) {
-    if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
-    avisar('No he podido contarlo: va la lista tal cual');
-    await talCual();
-    return;
-  }
-  await compartirTexto(titulo, texto);
+/**
+ * La hoja con las dos maneras.
+ *
+ * Abrirla cierra la que hubiera debajo —la del día, la del evento—, porque la
+ * aplicación enseña una hoja cada vez. No se recupera después: quien comparte
+ * un día ya ha terminado con él, y volver a abrirlo detrás del panel del
+ * sistema sería un sobresalto sin motivo.
+ */
+function abrirEleccionDeCompartir({ etiqueta, titulo, pista, texto, redactar }) {
+  abrirHoja(etiqueta, (cuerpo) => {
+    const talCual = eleccionDeCompartir('Tal cual', pista, null, async () => {
+      cerrarHoja();
+      await compartirTexto(titulo, texto());
+    });
+
+    const contado = eleccionDeCompartir('Contado en dos frases', 'Lo escribe un modelo con lo que hay', 'destello', async () => {
+      // Se queda abierta mientras piensa, y lo dice: son un par de segundos, y
+      // una hoja que se cierra sin nada detrás parecería que no ha hecho nada.
+      talCual.disabled = true;
+      contado.disabled = true;
+      contado.querySelector('.eleccion-nombre').textContent = 'Escribiéndolo…';
+
+      let redactado = null;
+      let fallo = null;
+      try {
+        redactado = await redactar();
+      } catch (error) {
+        fallo = error;
+      }
+
+      cerrarHoja();
+      if (redactado) { await compartirTexto(titulo, redactado); return; }
+
+      // La traza de los intentos solo llega si quien mira puede arreglarlo; en
+      // la consola sirve para depurar sin reproducirlo a ciegas.
+      if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
+      avisar('No he podido contarlo: va tal cual');
+      await compartirTexto(titulo, texto());
+    });
+
+    cuerpo.append(talCual, contado);
+  });
+}
+
+function eleccionDeCompartir(nombre, pista, insignia, accion) {
+  return el('button', { class: 'eleccion', type: 'button', onclick: accion }, [
+    el('span', { class: 'icono-accion', 'aria-hidden': 'true' }, [
+      icono('compartir'),
+      insignia ? el('span', { class: 'icono-insignia' }, [icono(insignia)]) : null,
+    ]),
+    el('span', { class: 'eleccion-texto' }, [
+      el('span', { class: 'eleccion-nombre', texto: nombre }),
+      el('span', { class: 'eleccion-pista', texto: pista }),
+    ]),
+  ]);
 }
 
 async function compartirTexto(titulo, texto) {
@@ -270,15 +317,27 @@ function vistaSemana(ctx) {
       }
     }
 
+    // Un día con una sola cosa abre esa cosa, no la lista de una cosa: la hoja
+    // del día sería un rodeo con un único destino a la vista. Con dos o más sí
+    // hay algo que elegir, y entonces se abre el día entero.
+    const unico = apariciones.length === 1 ? apariciones[0] : null;
+
     const fila = el('div', { class: 'dia', 'data-hoy': iso(dia) === clavehoy ? 'si' : 'no' }, [
       el('button', {
         class: 'dia-fecha', type: 'button',
+        // El botón dibuja un día, así que su etiqueta empieza por el día: si
+        // solo lleva a un evento, lo dice detrás. «Ver» delante del título
+        // tartamudearía con cualquiera que empiece por un verbo.
         'aria-label': vacio
           ? `Crear un evento el ${formatearFechaLarga(dia)}`
-          : `Ver el ${formatearFechaLarga(dia)}`,
+          : unico
+            ? `${formatearFechaLarga(dia)}: ${ctx.vista.caraDe(unico.evento).titulo}`
+            : `Ver el ${formatearFechaLarga(dia)}`,
         // En un día vacío no hay día que abrir: la hoja no tendría más que el
         // botón de añadir, que es justo lo que hace el doble toque de la fila.
-        onclick: vacio ? null : () => abrirDia(dia, ctx),
+        onclick: vacio
+          ? null
+          : () => (unico ? abrirDetalleEvento(unico.evento.id, ctx, unico) : abrirDia(dia, ctx)),
       }, [
         el('div', { class: 'dia-inicial', texto: INICIALES_DIA[(dia.getDay() + 6) % 7] }),
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
@@ -464,79 +523,32 @@ export function abrirDia(fecha, ctx) {
 }
 
 /**
- * Los dos botones de la cabecera del día: compartir la lista y compartirla
- * contada.
+ * El botón de compartir de la cabecera del día.
  *
  * Un día se comparte tal cual se ve: lo que hay en la hoja es ya lo visible
  * para quien mira, de modo que no puede salir por ahí un evento reservado. En
- * un día vacío no se ofrece ninguno de los dos, porque no habría nada que
- * enviar.
- *
- * El segundo es el mismo icono con un destello encima: dice «esto es
- * compartir, con algo añadido» sin obligar a aprender un dibujo nuevo. Solo
- * aparece si el servidor tiene clave; si no, sobraría un botón que únicamente
- * sabría fallar.
+ * un día vacío no se ofrece, porque no habría nada que enviar.
  */
 function accionesDelDia(fecha, apariciones, ctx) {
   if (!apariciones.length) return [];
 
-  const compartirTalCual = botonIcono('compartir', {
-    etiqueta: 'Compartir el día',
-    onclick: () => compartirDia(fecha, apariciones, ctx),
-  });
-  if (!redaccionDisponible(ctx.vista.datos)) return [compartirTalCual];
-
-  const contado = botonIcono('compartir', {
-    etiqueta: 'Compartir contado',
-    insignia: 'destello',
-    onclick: () => contarElDia(fecha, apariciones, ctx, [compartirTalCual, contado]),
-  });
-  return [compartirTalCual, contado];
-}
-
-/**
- * Compartir el día redactado por un modelo.
- *
- * No se ofrece revisar el texto antes: el botón es «compartir contado», no un
- * editor, y una hoja intermedia convertiría un gesto en un trámite. Si algo
- * falla —sin red, sin clave, el modelo caído— se comparte la lista tal cual y
- * se dice por qué: quedarse sin compartir sería el peor de los desenlaces.
- */
-async function contarElDia(fecha, apariciones, ctx, botones) {
-  toque();
-  for (const boton of botones) boton.disabled = true;
-
-  let texto = null;
-  let fallo = null;
-  try {
-    texto = await redactarDia(iso(fecha), apariciones.map((aparicion) => aparicion.evento.id));
-  } catch (error) {
-    fallo = error;
-  } finally {
-    for (const boton of botones) boton.disabled = false;
-  }
-
-  if (!texto) {
-    // La traza de los intentos solo llega si quien mira puede arreglarlo; en la
-    // consola sirve para depurar sin tener que reproducirlo a ciegas.
-    if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
-    avisar('No he podido contarlo: va la lista tal cual');
-    await compartirDia(fecha, apariciones, ctx);
-    return;
-  }
-
-  await compartirTexto(formatearFechaLarga(fecha), texto);
-}
-
-/**
- * El día entero como texto: la fecha y debajo una línea por evento, con su hora
- * y su sitio. La misma cara pública que se comparte de un evento suelto, sin
- * una palabra de la dimensión de regalos.
- */
-async function compartirDia(fecha, apariciones, ctx) {
-  toque();
   const titulo = formatearFechaLarga(fecha);
-  const lineas = apariciones.map((aparicion) => {
+  return [botonDeCompartir(ctx, {
+    etiqueta: 'Compartir el día',
+    titulo,
+    pista: 'Un renglón por evento, con su hora',
+    texto: () => `${titulo}\n${textoDelDia(apariciones, ctx).join('\n')}`,
+    redactar: () => redactarDia(iso(fecha), apariciones.map((aparicion) => aparicion.evento.id)),
+  })];
+}
+
+/**
+ * El día como texto: una línea por evento, con su hora y su sitio. La misma
+ * cara pública que se comparte de un evento suelto, sin una palabra de la
+ * dimensión de regalos.
+ */
+function textoDelDia(apariciones, ctx) {
+  return apariciones.map((aparicion) => {
     const hora = horaDe(aparicion);
     const cara = ctx.vista.caraDe(aparicion.evento);
     return [
@@ -546,8 +558,6 @@ async function compartirDia(fecha, apariciones, ctx) {
       aparicion.evento.ubicacion ? `· ${aparicion.evento.ubicacion}` : null,
     ].filter(Boolean).join(' ');
   });
-
-  await compartirTexto(titulo, `${titulo}\n${lineas.join('\n')}`);
 }
 
 // -------------------------------------------------------- Detalle de evento --
@@ -563,16 +573,10 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
   // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
   // `navigator.share` —o al portapapeles— en el navegador. Solo sale la cara
   // pública del evento: ni una palabra de la dimensión de regalos.
-  const compartirEvento = async () => {
-    toque();
-    const enviado = await compartir({
-      titulo: cara.titulo,
-      texto: `${cara.emoji} ${cara.titulo}\n${formatearFechaLarga(aparicion ? aparicion.dia : inicio)}`
-        + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
-        + (evento.ubicacion ? `\n${evento.ubicacion}` : ''),
-    });
-    if (!enviado) avisar('No he podido compartirlo');
-  };
+  const dia = aparicion ? aparicion.dia : inicio;
+  const textoDelEvento = () => `${cara.emoji} ${cara.titulo}\n${formatearFechaLarga(dia)}`
+    + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
+    + (evento.ubicacion ? `\n${evento.ubicacion}` : '');
 
   abrirHoja(cara.titulo, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
@@ -631,7 +635,14 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
       etiqueta: 'Editar',
       onclick: () => abrirFormularioEvento(ctx, { id: evento.id }),
     }),
-    botonIcono('compartir', { etiqueta: 'Compartir', tono: 'discreto', onclick: compartirEvento }),
+    botonDeCompartir(ctx, {
+      etiqueta: 'Compartir el evento',
+      tono: 'discreto',
+      titulo: cara.titulo,
+      pista: 'Con su fecha, su hora y su sitio',
+      texto: textoDelEvento,
+      redactar: () => redactarDia(iso(dia), [evento.id]),
+    }),
   ]);
 }
 

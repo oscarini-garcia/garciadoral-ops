@@ -1,0 +1,841 @@
+<meta charset="utf-8">
+<title>La sugerencia de regalo: el destello y las cinco propuestas</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
+     para que lo que se ve aquí sea lo que se verá allí. La Newsreader no puede
+     cargarse desde fuera, así que queda Georgia, que es su propio repuesto en
+     la cadena de la aplicación. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --regalo:     #E48FAE;
+      --regalo-suave:#33202A;
+      --aviso:      #E0A253;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 28px 20px 72px;
+  }
+  .hoja { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .parte {
+    border-top: 2px solid var(--ink); padding-top: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .parte p { color: var(--ink-soft); max-width: 62ch; }
+
+  /* -------------------------------------------------------------- Opciones -- */
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 720px) { .par { grid-template-columns: 320px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* --------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 320px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden;
+    font-size: 14px;
+  }
+  .tel-estado {
+    display: flex; align-items: center; justify-content: flex-end; gap: 7px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-faint);
+    padding: 9px 14px 0;
+  }
+  .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); }
+  .tel-fondo { padding: 10px 14px 0; opacity: .35; display: flex; flex-direction: column; gap: 7px; }
+  .tel-fondo .barra { height: 9px; border-radius: 999px; background: var(--paper-3); }
+  .tel-fondo .barra.corta { width: 45%; }
+
+  .tel-hoja {
+    background: var(--paper); border-top: 1px solid var(--line);
+    box-shadow: 0 -10px 24px rgba(28, 43, 51, .07);
+    padding: 9px 14px 16px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .asa { width: 34px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 3px; }
+  .hoja-cabecera { display: flex; align-items: center; gap: 10px; }
+  .hoja-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 17px; }
+
+  /* Los campos del formulario de una idea. */
+  .campo { display: flex; flex-direction: column; gap: 4px; }
+  .campo > .rot { font-size: 10.5px; }
+  .rot-fila { display: flex; align-items: center; gap: 8px; }
+  .rot-fila .rot { font-size: 10.5px; }
+  .control {
+    border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2);
+    padding: 9px 10px; font-size: 13.5px; min-height: 36px;
+  }
+  .control.vacio { color: var(--ink-faint); }
+  .control.area { min-height: 52px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px;
+    font-size: 12.5px; color: var(--ink-soft); background: var(--paper-2);
+  }
+  .chip.on { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .plegado { font-size: 13px; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+  .acciones { display: flex; gap: 8px; }
+  .boton {
+    border-radius: 9px; padding: 9px 15px; font-size: 14px; font-weight: 500;
+    background: var(--tinta); color: var(--paper); text-align: center;
+  }
+  .boton.discreto { background: var(--paper-3); color: var(--ink); font-weight: 400; }
+  .boton.crecer { flex: 1; }
+
+  /* ------------------------------------------- El destello, dentro del campo -- */
+
+  .campo-con-destello { position: relative; }
+  .campo-con-destello .control { padding-right: 44px; }
+  .destello-dentro {
+    position: absolute; right: 4px; bottom: 4px;
+    width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: var(--tinta-suave); color: var(--tinta);
+  }
+  .destello-dentro svg { width: 15px; height: 15px; }
+
+  .campo-adosado { display: flex; gap: 6px; align-items: stretch; }
+  .campo-adosado .control { flex: 1; }
+  .destello-adosado {
+    width: 40px; border-radius: 9px; display: grid; place-items: center; flex: none;
+    background: var(--tinta-suave); color: var(--tinta); border: 1px solid var(--tinta-suave);
+  }
+  .destello-adosado svg { width: 17px; height: 17px; }
+
+  .destello-chip {
+    position: absolute; right: 4px; bottom: 4px;
+    height: 30px; padding: 0 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--tinta); color: var(--paper); font-size: 12px;
+  }
+  .destello-chip svg { width: 12px; height: 12px; }
+  .campo-con-chip .control { padding-right: 88px; }
+
+  .destello-rotulo {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+    color: var(--tinta); font-size: 12px;
+  }
+  .destello-rotulo svg { width: 12px; height: 12px; }
+
+  /* -------------------------------------------------- El carrusel de cinco -- */
+
+  .carrusel {
+    border: 1px solid var(--tinta); border-radius: 12px; background: var(--tinta-suave);
+    padding: 11px 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .carrusel-cuerpo { display: flex; align-items: center; gap: 9px; }
+  .carrusel-texto { flex: 1; min-height: 66px; display: flex; flex-direction: column; gap: 5px; justify-content: center; }
+  .carrusel-texto .que { font-size: 14.5px; font-weight: 500; }
+  .carrusel-texto .porque { font-size: 12.5px; color: var(--ink-soft); }
+  .flecha {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    display: grid; place-items: center;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+    font-family: var(--serif); font-size: 16px; cursor: pointer;
+  }
+  .flecha:disabled { opacity: .35; cursor: default; }
+  .flecha:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
+  .puntos { display: flex; gap: 5px; justify-content: center; align-items: center; }
+  .puntos i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); display: block; }
+  .puntos i.on { background: var(--tinta); }
+  .cuenta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .carrusel-pie { display: flex; gap: 7px; align-items: center; }
+  .mini {
+    border-radius: 8px; padding: 7px 13px; font-size: 12.5px;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+  }
+  .mini.principal { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+  .lista-seca strong { color: var(--ink); }
+
+  .decidido {
+    display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .decidido div {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .decidido .rotulo { color: var(--tinta); }
+  .decidido p { color: var(--ink-soft); font-size: 14.5px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .carrusel-texto > * { animation: entra .18s ease-out; }
+    @keyframes entra { from { opacity: 0; transform: translateY(2px); } }
+  }
+</style>
+
+<div class="hoja">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta · segunda vuelta</p>
+    <h1>El destello dentro del campo, y cinco propuestas para pasar</h1>
+    <p>
+      Ya está decidido dónde vive la propuesta y en qué orden van los campos. Queda el
+      dibujo de dos piezas: cómo se pide desde el campo «Qué» y cómo se pasa de una
+      propuesta a otra. Las flechas de las maquetas funcionan: pruébalas.
+    </p>
+    <div class="decidido">
+      <div>
+        <p class="rotulo">Decidido · C</p>
+        <p>La propuesta vive en una tarjeta dentro del formulario, no en una hoja aparte. Nada se escribe hasta aceptarla.</p>
+      </div>
+      <div>
+        <p class="rotulo">Decidido · F</p>
+        <p>Qué, Para quién y Descripción a la vista. Categoría, precio, sitio y enlace, detrás de «Clasificarla».</p>
+      </div>
+      <div>
+        <p class="rotulo">Nuevo</p>
+        <p>Cinco propuestas por tanda, se pasan con flechas y solo cambia el texto. «Otras cinco» y «Usarla» se quedan.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="parte">
+    <p class="rotulo">Primera pieza</p>
+    <h2>El destello, al final del campo «Qué»</h2>
+    <p>
+      Cuatro maneras de poner ahí el botón. En todas aparece solo cuando hay una persona
+      nombrada, y en todas el rótulo largo desaparece: lo que se pide se entiende por dónde
+      está.
+    </p>
+  </div>
+
+  <!-- ----------------------------------------------------------------- A -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">A</span>
+        <h2>Dentro del campo, pegado al borde</h2>
+      </div>
+      <p>
+        Un destello sobre su moneda de tinta, dentro del recuadro y a la derecha. El texto
+        lleva sitio reservado para que nunca pase por debajo. Es lo que hacen la lupa de
+        buscar o el ojo de una contraseña.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo campo-con-destello">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>No ocupa ni una línea: la hoja queda tan corta como sin la función.</span></div>
+        <div class="si"><span>+</span><span>Está donde va a caer lo que pida. La relación entre el botón y el campo no hay que explicarla.</span></div>
+        <div class="no"><span>−</span><span>Treinta píxeles de lado, contra los cuarenta y cuatro que esta aplicación se ha impuesto para lo que se toca con el pulgar.</span></div>
+        <div class="no"><span>−</span><span>Un título largo queda pegado al botón; hay que reservar el hueco aunque el botón no esté.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- B -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">B</span>
+        <h2>Adosado al campo, por fuera</h2>
+      </div>
+      <p>
+        El campo se acorta y a su derecha queda un botón cuadrado del mismo alto, pegado.
+        Sigue siendo «el final del campo», pero con sitio de sobra para el dedo.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="campo-adosado">
+              <div class="control vacio">algo para el verano</div>
+              <span class="destello-adosado">
+                <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+              </span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cuarenta y cuatro píxeles de alto, los de la aplicación. Se acierta a la primera.</span></div>
+        <div class="si"><span>+</span><span>El texto del campo nunca se roza con el botón, escriba lo que escriba.</span></div>
+        <div class="si"><span>+</span><span>Aparecer y desaparecer con la persona no descoloca el texto ya escrito, solo estrecha el campo.</span></div>
+        <div class="no"><span>−</span><span>Le quita cuarenta píxeles al título, que es el campo más largo de la hoja.</span></div>
+        <div class="no"><span>−</span><span>Es un patrón que la aplicación no usa en ninguna otra parte.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- C -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">C</span>
+        <h2>Dentro, con el nombre puesto</h2>
+      </div>
+      <p>
+        Lo mismo que A pero con forma de pastilla y el nombre de la persona al lado del
+        destello. Dice a la vez qué hace y para quién, sin gastar una línea.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo campo-con-destello campo-con-chip">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-chip">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+              Marta
+            </span>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Con varias personas nombradas queda dicho para cuál se propone, que si no hay que adivinarlo.</span></div>
+        <div class="si"><span>+</span><span>En tinta plena se ve; el destello solo, dentro de un campo gris, pasa desapercibido.</span></div>
+        <div class="no"><span>−</span><span>Se come casi noventa píxeles del campo, y con un nombre largo —«la abuela»— más.</span></div>
+        <div class="no"><span>−</span><span>El ancho cambia al cambiar de persona, y el texto salta.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- D -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">D</span>
+        <h2>En la línea del rótulo</h2>
+      </div>
+      <p>
+        El campo se queda intacto y el botón sube a la fila del rótulo, a la derecha de
+        «QUÉ». No es exactamente el final del recuadro, pero pertenece al campo igual y no
+        le quita ni un píxel.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <div class="rot-fila">
+              <span class="rot">Qué</span>
+              <span class="destello-rotulo">
+                <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+                proponer
+              </span>
+            </div>
+            <div class="control vacio">algo para el verano</div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El campo no se toca: ni sitio reservado, ni texto que se roce, ni ancho que cambie.</span></div>
+        <div class="si"><span>+</span><span>Lleva una palabra, así que no hay que saber qué significa un destello.</span></div>
+        <div class="no"><span>−</span><span>La fila del rótulo es de diez píxeles y medio: para tocarla hay que darle un alto que ahí desentona.</span></div>
+        <div class="no"><span>−</span><span>Está más lejos de donde cae el resultado que las otras tres.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Segunda pieza</p>
+    <h2>Las cinco propuestas, y cómo se pasan</h2>
+    <p>
+      Una tanda son cinco. El marco no se mueve: solo cambia el texto de dentro, de modo
+      que pasar de una a otra no descoloca la hoja ni mueve el botón de aceptar. Tres
+      maneras de colocar las flechas.
+    </p>
+  </div>
+
+  <!-- ----------------------------------------------------------------- E -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">E</span>
+        <h2>Flechas a los lados del texto</h2>
+      </div>
+      <p>
+        Como se pasa una foto: la propuesta en medio y una flecha a cada lado. Debajo, los
+        dos botones de siempre y el número de la que se está viendo.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo campo-con-destello">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="carrusel" data-carrusel>
+            <div class="carrusel-cuerpo">
+              <button class="flecha" type="button" data-ir="-1" aria-label="Propuesta anterior">‹</button>
+              <div class="carrusel-texto" data-hueco aria-live="polite"></div>
+              <button class="flecha" type="button" data-ir="1" aria-label="Propuesta siguiente">›</button>
+            </div>
+            <div class="carrusel-pie">
+              <span class="mini principal">Usarla</span>
+              <span class="mini">Otras cinco</span>
+              <span class="cuenta" data-cuenta style="margin-left:auto"></span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El gesto se reconoce sin leer nada: dos flechas alrededor de algo son un carrete.</span></div>
+        <div class="si"><span>+</span><span>Las flechas quedan lejos de «Usarla», así que no se acepta una queriendo pasar.</span></div>
+        <div class="no"><span>−</span><span>Las flechas comen sesenta píxeles de ancho al texto, que es lo que se ha venido a leer.</span></div>
+        <div class="no"><span>−</span><span>Con el pulgar derecho, la flecha de la izquierda cae lejos.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- F -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">F</span>
+        <h2>Flechas abajo, junto a los botones</h2>
+      </div>
+      <p>
+        El texto ocupa el ancho entero y todo lo que se toca vive en una sola fila al pie:
+        las dos flechas a la izquierda, los puntos en medio y «Usarla» a la derecha.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo campo-con-destello">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="carrusel" data-carrusel>
+            <div class="carrusel-texto" data-hueco aria-live="polite"></div>
+            <div class="carrusel-pie">
+              <button class="flecha" type="button" data-ir="-1" aria-label="Propuesta anterior">‹</button>
+              <button class="flecha" type="button" data-ir="1" aria-label="Propuesta siguiente">›</button>
+              <span class="puntos" data-puntos></span>
+              <span class="mini principal" style="margin-left:auto">Usarla</span>
+            </div>
+            <div class="carrusel-pie">
+              <span class="mini" style="flex:1; text-align:center">Otras cinco</span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El texto se lee a ancho completo, que en un teléfono son dos líneas menos.</span></div>
+        <div class="si"><span>+</span><span>Todo lo que se toca en la misma banda, y al alcance del pulgar.</span></div>
+        <div class="si"><span>+</span><span>Los puntos dicen cuántas quedan sin necesidad de leer un número.</span></div>
+        <div class="no"><span>−</span><span>Cuatro cosas tocables en una fila estrecha: pasar y aceptar están a un centímetro.</span></div>
+        <div class="no"><span>−</span><span>Que se pueda pasar se ve menos: las flechas ya no rodean nada.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- G -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">G</span>
+        <h2>Cabecera con el número, y el pie para decidir</h2>
+      </div>
+      <p>
+        Tres bandas: arriba «Propuesta 2 de 5» con las flechas a la derecha, en medio el
+        texto solo, y abajo los dos botones. Cada banda hace una cosa.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo campo-con-destello">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="carrusel" data-carrusel>
+            <div class="carrusel-pie">
+              <span class="cuenta" data-cuenta data-largo></span>
+              <button class="flecha" type="button" data-ir="-1" aria-label="Propuesta anterior" style="margin-left:auto">‹</button>
+              <button class="flecha" type="button" data-ir="1" aria-label="Propuesta siguiente">›</button>
+            </div>
+            <div class="carrusel-texto" data-hueco aria-live="polite"></div>
+            <div class="carrusel-pie">
+              <span class="mini principal" style="flex:1; text-align:center">Usarla</span>
+              <span class="mini" style="flex:1; text-align:center">Otras cinco</span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>«Propuesta 2 de 5» lo dice todo: que hay cinco, por cuál se va y que se puede seguir.</span></div>
+        <div class="si"><span>+</span><span>Pasar y decidir quedan en bandas distintas: ningún toque se confunde con el otro.</span></div>
+        <div class="si"><span>+</span><span>Los dos botones del mismo tamaño, que es lo que son: dos salidas legítimas.</span></div>
+        <div class="no"><span>−</span><span>Es la tarjeta más alta de las tres, y empuja el formulario hacia abajo.</span></div>
+        <div class="no"><span>−</span><span>Tres bandas para cinco frases puede leerse como demasiado aparato.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------- Lo de dentro -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que cambia por dentro, sea cual sea el dibujo</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>Una llamada, cinco propuestas.</strong> Al modelo se le pide una lista de
+        cinco, cada una con su línea de qué y su línea de por qué. Cinco cuestan casi lo
+        mismo que una —lo caro es contarle quién es la persona, y eso se manda una sola
+        vez—, así que pasar de una a otra no gasta nada: ya están todas en el teléfono.
+      </p>
+      <p>
+        <strong>«Otras cinco» sí es una llamada nueva</strong>, y lleva la lista de lo ya
+        propuesto para que la segunda tanda no repita a la primera. El freno del servidor
+        —seis por persona y minuto, compartido con contar el día— da para cinco tandas
+        seguidas, o veinticinco propuestas. Cuando se llegue, el aviso lo dirá con esas
+        palabras.
+      </p>
+      <p>
+        <strong>Aceptar no cierra la tanda.</strong> «Usarla» baja el texto a los campos y
+        recoge la tarjeta; si se vuelve a tocar el destello, vuelven las mismas cinco por
+        donde iban, sin pedir nada. Solo «Otras cinco» pide de nuevo.
+      </p>
+      <p>
+        <strong>El marco no se mueve.</strong> La tarjeta se reserva el alto de la propuesta
+        más larga de la tanda, de modo que pasar de una de tres palabras a una de doce no
+        hace saltar el botón de aceptar debajo del dedo.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que yo haría</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>B y G.</strong> El botón adosado por fuera es el único que respeta los
+        cuarenta y cuatro píxeles que esta aplicación se exige para todo lo que se toca de
+        pie y con una mano, y no obliga a reservarle un hueco al texto del título. Sigue
+        estando al final del campo, que es lo que pedías.
+      </p>
+      <p>
+        Y en la tarjeta, <strong>G</strong> por el rótulo: «Propuesta 2 de 5» enseña de una
+        vez que hay cinco y que se pasan, cosa que ni los puntos ni las flechas solas
+        consiguen la primera vez que aparece. Cuesta una banda más de alto, y la pago a
+        gusto.
+      </p>
+      <p>
+        Si prefieres la hoja lo más corta posible, la combinación es <strong>A y F</strong>:
+        el destello dentro del campo y todo lo tocable en una banda al pie. Es la más
+        apretada de las dos, y la que peor se acierta con el dedo.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que hace falta que decidas</h2>
+    </div>
+    <ol class="lista-seca">
+      <li><strong>Una de A, B, C o D</strong> para el botón del campo. Si no dices nada, va B.</li>
+      <li><strong>Una de E, F o G</strong> para la tarjeta. Si no dices nada, va G.</li>
+      <li>
+        Si quieres que además se pueda pasar <strong>deslizando el dedo</strong> sobre el
+        texto, dilo: es media hora más y convive con las flechas, que se quedan igual.
+      </li>
+    </ol>
+  </section>
+
+</div>
+
+<script>
+  // Las cinco propuestas de la maqueta. Son las mismas en las tres tarjetas: lo
+  // que se compara es el sitio de las flechas, no lo que dicen.
+  const PROPUESTAS = [
+    ['Hamaca de playa plegable', 'Se lleva la bici a todas partes y esto le cabe detrás.'],
+    ['Gafas de bucear con tubo', 'Este año le tocan las calas del norte.'],
+    ['Altavoz que aguanta el agua', 'Escucha música en todas partes y el suyo no sale del cuarto.'],
+    ['Toalla de microfibra grande', 'La suya ocupa media mochila y tarda un día en secarse.'],
+    ['Cantimplora térmica de un litro', 'Sale a montar a las tres de la tarde en agosto.'],
+  ];
+
+  for (const carrusel of document.querySelectorAll('[data-carrusel]')) {
+    const hueco = carrusel.querySelector('[data-hueco]');
+    const cuenta = carrusel.querySelector('[data-cuenta]');
+    const puntos = carrusel.querySelector('[data-puntos]');
+    const flechas = carrusel.querySelectorAll('[data-ir]');
+    let actual = 1;
+
+    const pintar = () => {
+      const [que, porque] = PROPUESTAS[actual];
+      hueco.replaceChildren();
+
+      const titulo = document.createElement('div');
+      titulo.className = 'que';
+      titulo.textContent = que;
+
+      const razon = document.createElement('div');
+      razon.className = 'porque';
+      razon.textContent = porque;
+
+      hueco.append(titulo, razon);
+
+      if (cuenta) {
+        cuenta.textContent = cuenta.hasAttribute('data-largo')
+          ? `Propuesta ${actual + 1} de ${PROPUESTAS.length}`
+          : `${actual + 1} / ${PROPUESTAS.length}`;
+      }
+      if (puntos) {
+        puntos.replaceChildren();
+        PROPUESTAS.forEach((_, i) => {
+          const p = document.createElement('i');
+          if (i === actual) p.className = 'on';
+          puntos.append(p);
+        });
+      }
+      for (const flecha of flechas) {
+        const paso = Number(flecha.dataset.ir);
+        flecha.disabled = actual + paso < 0 || actual + paso >= PROPUESTAS.length;
+      }
+    };
+
+    for (const flecha of flechas) {
+      flecha.addEventListener('click', () => {
+        actual = Math.min(PROPUESTAS.length - 1, Math.max(0, actual + Number(flecha.dataset.ir)));
+        pintar();
+      });
+    }
+    pintar();
+  }
+</script>

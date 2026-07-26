@@ -29,7 +29,7 @@ export function pintarBuscar(pantalla, subcabecera, ctx) {
   const control = entrada({
     type: 'search',
     value: consulta,
-    placeholder: 'Buscar entre ideas y campañas',
+    placeholder: 'Buscar entre ideas y ocasiones',
     'aria-label': 'Buscar',
   });
   const resultados = el('div', {});
@@ -87,7 +87,7 @@ function componerResultados(ctx, texto) {
 
   if (ocasiones.length) {
     contenedor.append(el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: `Campañas (${ocasiones.length})` }),
+      el('p', { class: 'grupo-titulo', texto: `Ocasiones (${ocasiones.length})` }),
       ...ocasiones.map((ocasion) => el('button', {
         class: 'tarjeta', type: 'button', onclick: () => abrirOcasion(ocasion.id, ctx),
       }, [
