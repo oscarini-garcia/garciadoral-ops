@@ -123,6 +123,46 @@ export function eventosDerivados(instantanea) {
     }));
 }
 
+/**
+ * La fecha del próximo aniversario, sea este año o el que viene.
+ *
+ * Vive aquí y no en la pantalla de personas porque lo consultan dos: la rejilla
+ * de Gente, para ordenarla y para decir cuándo cumple cada uno, y la pestaña de
+ * Ocasiones, que compone con esto su lista de cumpleaños.
+ */
+export function proximoAniversario(persona) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  if (!nacimiento) return null;
+  const referencia = hoy();
+  const deEsteAno = new Date(referencia.getFullYear(), nacimiento.getMonth(), nacimiento.getDate());
+  return deEsteAno < referencia
+    ? new Date(referencia.getFullYear() + 1, nacimiento.getMonth(), nacimiento.getDate())
+    : deEsteAno;
+}
+
+/** Quien no tiene fecha va al final de la lista, no al principio. */
+export function diasHastaElCumple(persona) {
+  if (!persona.fecha_nacimiento) return Infinity;
+  return Math.round((proximoAniversario(persona) - hoy()) / 86400000);
+}
+
+/**
+ * Los años que cumple en ese aniversario, que no son los cumplidos: el día
+ * mismo son los mismos, y a partir del día siguiente se habla ya del próximo.
+ *
+ * Es la cifra que se busca al mirar a alguien para decidir un regalo, y por eso
+ * la piden tres sitios: la rejilla de Gente —«3 nov (48)»—, la lista de
+ * cumpleaños de Ocasiones y el Worker al componer la felicitación, que hace esta
+ * misma cuenta con las fechas del registro.
+ */
+export function aniosQueCumple(persona) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  const proximo = proximoAniversario(persona);
+  if (!nacimiento || !proximo) return null;
+  const anios = proximo.getFullYear() - nacimiento.getFullYear();
+  return anios > 0 && anios < 130 ? anios : null;
+}
+
 // -------------------------------------------------------------- Recurrencia --
 
 const ultimoDia = (anio, mes) => new Date(anio, mes + 1, 0).getDate();

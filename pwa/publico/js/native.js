@@ -3,10 +3,10 @@
  *
  * El modelo es el de la receta: el binario nativo casi nunca cambia y los
  * cambios de web se reparten por OTA, sin pasar por Apple. Aquí vive la parte
- * web de ese trato —háptica, compartir y comprobación del bundle— y todo lo que
- * hay es **seguro en el navegador**: fuera de la cáscara cada función es una
- * operación nula o cae al equivalente web, de modo que la PWA y las pruebas
- * siguen funcionando igual.
+ * web de ese trato —háptica, compartir, portapapeles y comprobación del
+ * bundle— y todo lo que hay es **seguro en el navegador**: fuera de la cáscara
+ * cada función es una operación nula o cae al equivalente web, de modo que la
+ * PWA y las pruebas siguen funcionando igual.
  *
  * **Una desviación de la receta.** Esta webapp no tiene empaquetador: son
  * módulos ES servidos tal cual. En lugar de importar `@capacitor/core`, que
@@ -74,6 +74,43 @@ export async function compartir({ titulo, texto, url } = {}) {
   try {
     await navigator.clipboard?.writeText([titulo, texto].filter(Boolean).join('\n'));
     return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Al portapapeles, para pegarlo donde haga falta.
+ *
+ * Sin plugin por medio: `navigator.clipboard` funciona dentro del WebView de la
+ * cáscara igual que en el navegador, y meter `@capacitor/clipboard` obligaría a
+ * publicar un binario nuevo para algo que la web ya sabe hacer. El truco del
+ * área de texto queda como último recurso, para los contextos donde el
+ * portapapeles moderno no está permitido.
+ *
+ * Hay que llamarla **dentro del gesto** que la pide: un portapapeles que se
+ * escribe un segundo después, ya fuera del toque, lo rechaza el navegador.
+ */
+export async function copiar(texto) {
+  if (!texto) return false;
+
+  try {
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch {
+    /* sin permiso o sin contexto seguro: se prueba a la antigua */
+  }
+
+  try {
+    const area = document.createElement('textarea');
+    area.value = texto;
+    area.setAttribute('readonly', '');
+    area.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+    document.body.append(area);
+    area.select();
+    const copiado = document.execCommand('copy');
+    area.remove();
+    return copiado;
   } catch {
     return false;
   }

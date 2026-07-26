@@ -93,6 +93,9 @@ export function vaciarCola(hastaOrden) {
 }
 
 export function olvidarTodo() {
+  // Los últimos destinatarios son de quien tiene la sesión, igual que la
+  // instantánea: cambiar de persona en este dispositivo no puede dejarlos.
+  localStorage.removeItem(CLAVE_ULTIMOS);
   return transaccion(['documentos', 'cola'], 'readwrite', (tx) => {
     tx.objectStore('documentos').clear();
     tx.objectStore('cola').clear();
@@ -117,4 +120,38 @@ export function leerSesion() {
 
 export function borrarSesion() {
   localStorage.removeItem(CLAVE_SESION);
+}
+
+// --------------------------------------------- Últimos a quienes se apuntó --
+
+const CLAVE_ULTIMOS = 'agenda.ultimos.para';
+const CUANTOS_ULTIMOS = 12;
+
+/**
+ * A quiénes se les ha apuntado algo últimamente, en este teléfono.
+ *
+ * Se guardan aquí y no en el registro porque son de quien usa el aparato y no
+ * del hogar: si esta semana andas con el regalo de un sobrino, es tu semana y
+ * no la de los demás. Se conservan más de los que se enseñan, para que quitar a
+ * alguien de la lista no deje un hueco.
+ */
+export function ultimosDestinatarios() {
+  try {
+    const guardados = JSON.parse(localStorage.getItem(CLAVE_ULTIMOS) || '[]');
+    return Array.isArray(guardados) ? guardados.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Los recién usados pasan al principio, sin repetirse. */
+export function recordarDestinatarios(ids = []) {
+  const utiles = ids.filter(Boolean);
+  if (!utiles.length) return;
+  const lista = [...new Set([...utiles, ...ultimosDestinatarios()])].slice(0, CUANTOS_ULTIMOS);
+  try {
+    localStorage.setItem(CLAVE_ULTIMOS, JSON.stringify(lista));
+  } catch {
+    /* sin sitio en el almacén local, la lista se queda como estaba */
+  }
 }

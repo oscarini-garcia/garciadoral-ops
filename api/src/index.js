@@ -22,6 +22,7 @@
  *   GET    /api/registro    · registro completo para el generador del plan semanal
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
  *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
+ *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
@@ -61,9 +62,11 @@ import {
   cabeUnaMas,
   componerMaterial,
   componerMaterialDePeriodo,
+  componerMaterialDeFelicitacion,
   componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
+  interpretarFelicitaciones,
   interpretarPropuestas,
   leerConfiguracion,
   modelosDisponibles,
@@ -488,6 +491,52 @@ async function sugerirUnRegalo(peticion, env) {
   return json({ propuestas, modelo: resultado.modelo });
 }
 
+/**
+ * Cinco felicitaciones para quien cumple, que se copian y se pegan en WhatsApp.
+ *
+ * Va por el mismo camino que la sugerencia de regalo —el mismo freno por minuto y
+ * la misma cadena de modelos—, y se diferencia en el material: lo compone
+ * `componerMaterialDeFelicitacion` con lo que quien cumple ya sabe de sí mismo, de
+ * modo que por aquí no puede salir hacia el modelo un regalo pendiente.
+ */
+async function felicitarUnCumple(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas felicitaciones seguidas; prueba dentro de un minuto');
+  }
+
+  const { persona_id: personaId, descartadas = [] } = await peticion.json().catch(() => ({}));
+  if (!personaId) return json({ error: 'falta la persona' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeFelicitacion(componerInstantanea(registro, lector), {
+    personaId, descartadas,
+  });
+
+  if (!material.lineas.length) return json({ error: 'esa persona no está' }, 404);
+
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.felicitacion, tope: 700,
+  });
+
+  const felicitaciones = interpretarFelicitaciones(resultado.texto);
+
+  if (!felicitaciones.length) {
+    console.warn('felicitación fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        felicitaciones: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ felicitaciones, modelo: resultado.modelo });
+}
+
 async function leerAjustesDeIa(peticion, env) {
   await administradorAutenticado(peticion, env);
   const configuracion = await leerConfiguracion(env.DB);
@@ -497,8 +546,10 @@ async function leerAjustesDeIa(peticion, env) {
 
 async function guardarAjustesDeIa(peticion, env) {
   const administrador = await administradorAutenticado(peticion, env);
-  const { clave, modelo, instruccion, regalo } = await peticion.json().catch(() => ({}));
-  const configuracion = await guardarConfiguracion(env.DB, administrador, { clave, modelo, instruccion, regalo });
+  const { clave, modelo, instruccion, regalo, felicitacion } = await peticion.json().catch(() => ({}));
+  const configuracion = await guardarConfiguracion(env.DB, administrador, {
+    clave, modelo, instruccion, regalo, felicitacion,
+  });
   return json(configuracionPublica(configuracion));
 }
 
@@ -554,6 +605,7 @@ const RUTAS = [
   ['GET', '/api/registro', registroCompleto],
   ['POST', '/api/redactar', contarElDia],
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
+  ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],
   ['POST', '/api/ia/probar', probarLaRedaccion],
