@@ -692,6 +692,26 @@ button { background: none; border: 0; cursor: pointer; }
 .eleccion-nombre { font-size: 15.5px; }
 .eleccion-pista { font-size: 13px; color: var(--ink-soft); }
 
+
+/* La idea marcada en el selector de regalos. Reutiliza la fila de `.eleccion`
+   —el mismo dibujo que las dos maneras de compartir— y le antepone una casilla:
+   sin ella, nada diría que se puede marcar más de una. */
+.eleccion-idea { flex-direction: row; align-items: center; gap: 12px; }
+.eleccion-idea[aria-pressed="true"] { border-color: var(--tinta); background: var(--tinta-suave); }
+.casilla {
+  width: 21px; height: 21px; border-radius: 6px; flex: none;
+  display: grid; place-items: center;
+  border: 1.6px solid var(--hueco-linea); background: var(--hueco);
+  color: var(--paper);
+}
+.eleccion-idea[aria-pressed="true"] .casilla { background: var(--tinta); border-color: var(--tinta); }
+.casilla .icono-svg svg { width: 13px; height: 13px; stroke-width: 2.6; }
+
+/* «Ver también las de otras personas»: la casilla del sistema, que ya sabe
+   anunciarse y responder al teclado. */
+.conmutador { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--ink-soft); min-height: var(--toque); }
+.conmutador input { width: 19px; height: 19px; accent-color: var(--tinta); flex: none; }
+
 /* Apartado plegable. El triángulo del navegador se retira y en su lugar va un
    ángulo a la derecha, que es donde el pulgar lo espera en un teléfono. */
 .acordeon { border-top: 1px solid var(--line); }

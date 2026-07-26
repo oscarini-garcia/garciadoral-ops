@@ -24,7 +24,8 @@ import {
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, instanciasEn, iso,
   isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
-import { abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
+import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
+import { bloqueDeComentarios } from '../comentarios.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 
@@ -590,8 +591,33 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
   const evento = ctx.vista.evento(eventoId) || aparicion?.evento;
   if (!evento) return;
 
-  const derivado = evento.origen !== 'manual';
   const inicio = parsearMomento(evento.inicio);
+
+  // Un cumpleaños abre la hoja de cumpleaños, que ya existe en Regalos y sabe
+  // cosas que esta no: cuántos cumple, la felicitación y sus regalos. Tener dos
+  // hojas para lo mismo solo servía para que se fueran separando. El día que se
+  // le pasa es el de la aparición y no el próximo aniversario: abrir el de 2027
+  // desde el mes tiene que decir los años de 2027.
+  if (evento.origen === 'derivado' && evento.persona_origen_id) {
+    const cuando = aparicion ? aparicion.dia : inicio;
+    const nombre = ctx.vista.caraDe(evento).titulo;
+    return abrirCumple(evento.persona_origen_id, ctx, {
+      dia: cuando,
+      comentariosDe: evento.id,
+      // Compartir lo pone la agenda y no la hoja: el botón vive en este módulo,
+      // y hacerlo al revés obligaría a que Regalos importara de vuelta.
+      acciones: [botonDeCompartir(ctx, {
+        etiqueta: 'Compartir el cumpleaños',
+        tono: 'discreto',
+        titulo: nombre,
+        pista: 'Con su fecha',
+        texto: () => `🎂 ${nombre}\n${formatearFechaLarga(cuando)}`,
+        redactar: () => redactarDia(iso(cuando), [evento.id]),
+      })],
+    });
+  }
+
+  const derivado = evento.origen !== 'manual';
   const cara = ctx.vista.caraDe(evento);
 
   // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
@@ -716,40 +742,6 @@ function tarjetaDeRegalo(regalo, ctx) {
       texto: `Para ${ctx.vista.nombre(regalo.destinatario_principal_id)}` +
         (regalo.responsable_id ? ` · lo lleva ${ctx.vista.nombre(regalo.responsable_id)}` : ' · sin responsable'),
     }),
-  ]);
-}
-
-// -------------------------------------------------------------- Comentarios --
-
-export function bloqueDeComentarios(tipo, id, ctx) {
-  const comentarios = ctx.vista.comentariosDe(tipo, id);
-  const lista = el('div', { class: 'lista' }, comentarios.map((comentario) =>
-    el('div', { class: 'comentario' }, [
-      el('p', { class: 'comentario-meta', texto: `${ctx.vista.nombre(comentario.autor_id)} · ${(comentario.creado_en || '').slice(0, 10)}` }),
-      el('p', { texto: comentario.texto }),
-    ]),
-  ));
-
-  const control = entrada({ placeholder: 'Escribe un comentario', 'aria-label': 'Nuevo comentario' });
-  const enviar = async () => {
-    const texto = control.value.trim();
-    if (!texto) return;
-    control.value = '';
-    await guardar('comentario', nuevoId(), {
-      objeto_tipo: tipo, objeto_id: id, autor_id: ctx.vista.yo.id, texto, activo: 1,
-    });
-    ctx.refrescar();
-    avisar('Comentario añadido');
-  };
-  control.addEventListener('keydown', (evento) => { if (evento.key === 'Enter') enviar(); });
-
-  return el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: `Comentarios (${comentarios.length})` }),
-    lista,
-    el('div', { class: 'acciones' }, [
-      el('div', { class: 'campo crecer' }, [control]),
-      el('button', { class: 'boton', type: 'button', onclick: enviar }, ['Enviar']),
-    ]),
   ]);
 }
 

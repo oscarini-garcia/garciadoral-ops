@@ -71,6 +71,7 @@ const ICONOS = {
   destello: '<path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z"'
     + ' fill="currentColor" stroke-width="1"/>',
   cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
+  visto: '<path d="m5 12.5 4.5 4.5L19 7"/>',
 };
 
 export function icono(nombre) {

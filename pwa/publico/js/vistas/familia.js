@@ -836,7 +836,14 @@ function deTextoDeFecha(texto) {
  * del registro es manual a propósito: una importación desde los contactos del
  * teléfono arrastraría duplicados y datos irrelevantes (spec funcional §2).
  */
-function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) {
+/**
+ * El formulario de una persona.
+ *
+ * `alGuardar` existe para quien llega aquí de paso: el cumpleaños de la agenda
+ * manda a corregir una fecha de nacimiento y quiere recuperar su hoja al
+ * terminar, en vez de dejar a quien la corrigió mirando la ficha.
+ */
+export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', alGuardar = null } = {}) {
   const persona = id ? ctx.vista.persona(id) : null;
   const deCasa = ctx.vista.personasDe('familia');
 
@@ -948,6 +955,7 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
             activa: 1,
           });
           cerrarHoja(); avisar('Ficha guardada'); ctx.refrescar();
+          alGuardar?.();
         },
       }, ['Guardar']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
