@@ -588,7 +588,7 @@ Las tres son necesarias porque responden a preguntas distintas: qué hay estos d
 
 ### 10.1 El formulario de evento
 
-La creación tiene dos niveles. La hoja rápida pide título y día, y con eso guarda. El formulario completo se abre desde ella o al editar un evento existente, y agrupa los campos en seis bloques: cuándo, quién, dónde, qué es, reserva y más.
+La creación tiene dos niveles. La hoja rápida pide título y día, y con eso guarda. El formulario completo se abre desde ella o al editar un evento existente, y agrupa los campos en cinco bloques: cuándo, quién, dónde, qué es y más.
 
 Tres decisiones merecen mención.
 
@@ -596,7 +596,9 @@ Tres decisiones merecen mención.
 
 **«De quién es» y «quién va» son campos distintos.** El primero determina a quién se le ocultan los regalos del evento y qué ideas se proponen al asociarlos; el segundo es informativo. La diferencia se explica bajo los campos, en lenguaje llano, porque no es evidente y sus consecuencias son importantes.
 
-**La reserva se expresa como acción, no como categoría.** El control dice «ocultarlo a alguien» en lugar de «asignar categoría restringida», y al activarse explica qué implica: el evento desaparece por completo de la agenda de esas personas, sin dejar hueco ni llegar a su dispositivo.
+**La reserva se ha retirado del formulario.** Existió un control que decía «ocultarlo a alguien» y expresaba la reserva como acción en lugar de como categoría. Se ha quitado porque prometía lo que no daba: no había ese alguien. Lo único que hacía era asignar la categoría `coordinacion`, de regla `privada`, cuyo efecto es «lo ven los administradores y nadie más» —o sea, todo o nada frente a las hijas—, y ese caso ya lo cubre la ocultación por destinatario, que es la que sostiene el modelo. Elegir de verdad a quién se le oculta pediría la regla `restringida` con permisos por persona, que está en el modelo y sin uso (`especificacion.md` §3.1); si algún día se construye, es ahí donde vuelve el control.
+
+Lo que se retira es el mando, no la regla. La categoría reservada sigue filtrándose en el servidor, sigue sin contar en el desbordamiento y sigue sin salir en el plan semanal, y el detalle de un evento que la lleve sigue avisando de que está reservado. El formulario tampoco la borra: arrastra la categoría que el evento ya tuviera, porque guardar desde una pantalla que ya no habla de reserva no puede destapar lo que estaba tapado.
 
 ### 10.2 Densidad: varios eventos en un mismo día
 
