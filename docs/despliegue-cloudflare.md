@@ -788,6 +788,14 @@ campo público.
 - **Clasificación por edades**: sin contenido sensible; 4+.
 - **Capturas**: obligatorias las de 6,9″. Sáquelas del **modo de demostración**,
   nunca de la agenda real: son públicas y con datos del hogar dejarían de serlo.
+  No hace falta un teléfono: el simulador de Xcode da cualquier tamaño.
+
+  Si App Store Connect le pide además **capturas de iPad de 13 pulgadas**, no es
+  un problema de capturas: es que esa build se subió como universal. La
+  plantilla de Capacitor deja el proyecto para iPhone y iPad, y `patch-ios.mjs`
+  lo corrige —`TARGETED_DEVICE_FAMILY = 1`—, pero eso viaja en el binario: hay
+  que volver a `npm run sync:ios`, archivar y subir. Con la build antigua
+  seleccionada, el requisito sigue ahí.
 - **Derechos de autor** y **datos de contacto**: los suyos.
 
 #### El texto, listo para pegar

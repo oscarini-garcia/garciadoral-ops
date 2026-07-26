@@ -84,7 +84,33 @@ if (existsSync(rutaProyecto)) {
   }
 }
 
-// 3) Declarar el cumplimiento de exportación en el Info.plist.
+// 3) Solo iPhone.
+//
+// La plantilla de Capacitor deja el proyecto como universal
+// (`TARGETED_DEVICE_FAMILY = "1,2"`), y eso tiene una consecuencia que no
+// aparece hasta el final: App Store Connect exige capturas de iPad de 13
+// pulgadas y no deja enviar sin ellas. Se puede sortear haciéndolas en el
+// simulador, pero entonces se publica para iPad una interfaz pensada para el
+// pulgar, con las pestañas abajo y una sola columna: capturas honradas de algo
+// que nadie ha mirado en esa pantalla.
+//
+// Así que se declara lo que es: una aplicación de iPhone. Añadir iPad más
+// adelante es quitar esta línea y diseñarlo en serio.
+if (existsSync(rutaProyecto)) {
+  const proyecto = readFileSync(rutaProyecto, 'utf8');
+
+  if (!proyecto.includes('TARGETED_DEVICE_FAMILY = "1,2"')) {
+    console.log('[patch-ios] Ya estaba declarada como aplicación de iPhone.');
+  } else {
+    writeFileSync(
+      rutaProyecto,
+      proyecto.replaceAll('TARGETED_DEVICE_FAMILY = "1,2"', 'TARGETED_DEVICE_FAMILY = 1'),
+    );
+    console.log('[patch-ios] Solo iPhone: no se pedirán capturas de iPad ✅');
+  }
+}
+
+// 4) Declarar el cumplimiento de exportación en el Info.plist.
 //
 // Esta aplicación solo usa HTTPS, que es criptografía exenta, pero si no se
 // declara, App Store Connect pregunta por ella en **cada** subida y deja la
@@ -113,7 +139,7 @@ if (existsSync(rutaPlist)) {
   }
 }
 
-// 4) Apuntar el storyboard al controlador nuevo.
+// 5) Apuntar el storyboard al controlador nuevo.
 const rutaStoryboard = join(APP_IOS, 'Base.lproj', 'Main.storyboard');
 
 if (existsSync(rutaStoryboard)) {
