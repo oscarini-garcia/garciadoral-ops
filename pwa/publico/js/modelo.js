@@ -93,6 +93,12 @@ export const estaActivo = (registro, campo = 'activo') => {
  */
 export const redaccionDisponible = (instantanea) => Boolean(instantanea?.redaccion?.disponible);
 
+/** Texto comparable: sin mayúsculas y sin acentos. Lo usan la búsqueda global y
+ *  el buscador de gente del formulario de una idea, que tienen que encontrar lo
+ *  mismo escribiendo lo mismo. */
+export const normalizar = (texto) =>
+  String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 export const nuevoId = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
@@ -195,6 +201,28 @@ export function crearVista(instantanea) {
       (instantanea.ideas || []).filter(
         (i) => estaActivo(i, 'activa') && i.tipo === 'deseo' && i.autor_id === personaId && i.estado !== 'descartada',
       ),
+
+    /**
+     * A quiénes se les apuntan más ideas en el hogar, de más a menos.
+     *
+     * Es lo que rellena «los últimos» mientras este dispositivo no tenga los
+     * suyos: abrir el buscador y encontrar un hueco vacío la primera vez sería
+     * la peor bienvenida posible. Se deduce de la instantánea, así que no hay
+     * nada que mantener ni que sincronizar.
+     */
+    masRegaladas() {
+      const cuenta = new Map();
+      for (const idea of instantanea.ideas || []) {
+        if (!estaActivo(idea, 'activa') || idea.estado === 'descartada') continue;
+        for (const orientacion of idea.orientaciones || []) {
+          if (!orientacion.persona_id) continue;
+          cuenta.set(orientacion.persona_id, (cuenta.get(orientacion.persona_id) || 0) + 1);
+        }
+      }
+      return [...cuenta.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([id]) => id);
+    },
 
     ideasPara: (personaId) =>
       (instantanea.ideas || []).filter(

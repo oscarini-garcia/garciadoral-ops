@@ -10,7 +10,7 @@
  */
 
 import { el, vaciar, entrada } from '../ui.js';
-import { estaActivo, formatearImporte } from '../modelo.js';
+import { estaActivo, formatearImporte, normalizar } from '../modelo.js';
 import { abrirDetalleIdea, abrirDetalleRegalo, abrirOcasion } from './regalos.js';
 
 let consulta = '';
@@ -18,9 +18,6 @@ let consulta = '';
 export function reiniciarBusqueda() {
   consulta = '';
 }
-
-const normalizar = (texto) =>
-  String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export function pintarBuscar(pantalla, subcabecera, ctx) {
   vaciar(subcabecera);
