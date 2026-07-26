@@ -443,10 +443,17 @@ const TEXTO_SINCRONIZACION = {
   demostracion: 'demostración',
 };
 
+/**
+ * El punto de la sincronización. El estado va en su color y, escrito, en la
+ * etiqueta: quien no ve el color lo oye igual, y quien lo ve no necesita leer
+ * «al día» a todas horas para saber que todo va bien.
+ */
 function pintarIndicador(situacion) {
   const indicador = document.getElementById('indicadorSync');
+  const texto = TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
   indicador.dataset.estado = situacion.estado;
-  document.getElementById('syncTexto').textContent = TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
+  indicador.setAttribute('aria-label', `Sincronización: ${texto}`);
+  indicador.setAttribute('title', texto);
 }
 
 // -------------------------------------------- Panel de estado y ajustes --
