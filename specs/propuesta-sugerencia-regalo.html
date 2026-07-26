@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Pedir otro regalo, y el orden del formulario — opciones</title>
+<title>La sugerencia de regalo: el destello y las cinco propuestas</title>
 
 <style>
   /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
@@ -131,7 +131,6 @@
   .tel-fondo .barra { height: 9px; border-radius: 999px; background: var(--paper-3); }
   .tel-fondo .barra.corta { width: 45%; }
 
-  /* La hoja modal, dibujada sobre el propio teléfono. */
   .tel-hoja {
     background: var(--paper); border-top: 1px solid var(--line);
     box-shadow: 0 -10px 24px rgba(28, 43, 51, .07);
@@ -140,20 +139,15 @@
   .asa { width: 34px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 3px; }
   .hoja-cabecera { display: flex; align-items: center; gap: 10px; }
   .hoja-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 17px; }
-  .hoja-cabecera .acciones-icono { margin-left: auto; display: inline-flex; gap: 6px; }
-  .icono-accion {
-    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
-    color: var(--ink-faint);
-  }
-  .icono-accion svg { width: 17px; height: 17px; }
-  .icono-accion.peligro { color: var(--regalo); }
 
   /* Los campos del formulario de una idea. */
   .campo { display: flex; flex-direction: column; gap: 4px; }
   .campo > .rot { font-size: 10.5px; }
+  .rot-fila { display: flex; align-items: center; gap: 8px; }
+  .rot-fila .rot { font-size: 10.5px; }
   .control {
     border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2);
-    padding: 8px 10px; font-size: 13.5px; min-height: 34px;
+    padding: 9px 10px; font-size: 13.5px; min-height: 36px;
   }
   .control.vacio { color: var(--ink-faint); }
   .control.area { min-height: 52px; }
@@ -172,37 +166,69 @@
   .boton.discreto { background: var(--paper-3); color: var(--ink); font-weight: 400; }
   .boton.crecer { flex: 1; }
 
-  /* El botón de la IA: el destello delante del rótulo. */
-  .boton-ia {
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    border-radius: 9px; padding: 9px 12px; font-size: 13.5px;
-    background: var(--paper-3); color: var(--ink);
-  }
-  .boton-ia svg { width: 14px; height: 14px; color: var(--tinta); flex: none; }
+  /* ------------------------------------------- El destello, dentro del campo -- */
 
-  /* La tarjeta con lo que ha propuesto el modelo. */
-  .propuesta {
-    border: 1px solid var(--tinta); border-radius: 12px; background: var(--tinta-suave);
-    padding: 11px 12px; display: flex; flex-direction: column; gap: 8px;
+  .campo-con-destello { position: relative; }
+  .campo-con-destello .control { padding-right: 44px; }
+  .destello-dentro {
+    position: absolute; right: 4px; bottom: 4px;
+    width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: var(--tinta-suave); color: var(--tinta);
   }
-  .propuesta .que { font-size: 14.5px; font-weight: 500; }
-  .propuesta .porque { font-size: 12.5px; color: var(--ink-soft); }
-  .propuesta .pie { display: flex; gap: 7px; align-items: center; }
-  .propuesta .mini {
-    border-radius: 8px; padding: 6px 12px; font-size: 12.5px;
+  .destello-dentro svg { width: 15px; height: 15px; }
+
+  .campo-adosado { display: flex; gap: 6px; align-items: stretch; }
+  .campo-adosado .control { flex: 1; }
+  .destello-adosado {
+    width: 40px; border-radius: 9px; display: grid; place-items: center; flex: none;
+    background: var(--tinta-suave); color: var(--tinta); border: 1px solid var(--tinta-suave);
+  }
+  .destello-adosado svg { width: 17px; height: 17px; }
+
+  .destello-chip {
+    position: absolute; right: 4px; bottom: 4px;
+    height: 30px; padding: 0 10px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--tinta); color: var(--paper); font-size: 12px;
+  }
+  .destello-chip svg { width: 12px; height: 12px; }
+  .campo-con-chip .control { padding-right: 88px; }
+
+  .destello-rotulo {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+    color: var(--tinta); font-size: 12px;
+  }
+  .destello-rotulo svg { width: 12px; height: 12px; }
+
+  /* -------------------------------------------------- El carrusel de cinco -- */
+
+  .carrusel {
+    border: 1px solid var(--tinta); border-radius: 12px; background: var(--tinta-suave);
+    padding: 11px 12px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .carrusel-cuerpo { display: flex; align-items: center; gap: 9px; }
+  .carrusel-texto { flex: 1; min-height: 66px; display: flex; flex-direction: column; gap: 5px; justify-content: center; }
+  .carrusel-texto .que { font-size: 14.5px; font-weight: 500; }
+  .carrusel-texto .porque { font-size: 12.5px; color: var(--ink-soft); }
+  .flecha {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    display: grid; place-items: center;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+    font-family: var(--serif); font-size: 16px; cursor: pointer;
+  }
+  .flecha:disabled { opacity: .35; cursor: default; }
+  .flecha:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
+  .puntos { display: flex; gap: 5px; justify-content: center; align-items: center; }
+  .puntos i { width: 5px; height: 5px; border-radius: 50%; background: var(--line); display: block; }
+  .puntos i.on { background: var(--tinta); }
+  .cuenta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .carrusel-pie { display: flex; gap: 7px; align-items: center; }
+  .mini {
+    border-radius: 8px; padding: 7px 13px; font-size: 12.5px;
     background: var(--paper); border: 1px solid var(--line); color: var(--ink);
   }
-  .propuesta .mini.principal { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
-  .propuesta .cuenta { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); }
-
-  .listado { display: flex; flex-direction: column; gap: 7px; }
-  .listado .propuesta { background: var(--paper-2); border-color: var(--line); }
-  .listado .propuesta.elegida { background: var(--tinta-suave); border-color: var(--tinta); }
-
-  .aviso-burbuja {
-    align-self: center; background: var(--ink); color: var(--paper);
-    border-radius: 999px; padding: 5px 14px; font-size: 12px;
-  }
+  .mini.principal { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
 
   .nota {
     background: var(--paper-2); border: 1px solid var(--line);
@@ -215,88 +241,57 @@
 
   .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
   .lista-seca strong { color: var(--ink); }
+
+  .decidido {
+    display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .decidido div {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .decidido .rotulo { color: var(--tinta); }
+  .decidido p { color: var(--ink-soft); font-size: 14.5px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .carrusel-texto > * { animation: entra .18s ease-out; }
+    @keyframes entra { from { opacity: 0; transform: translateY(2px); } }
+  }
 </style>
 
 <div class="hoja">
 
   <header class="portada">
-    <p class="rotulo">Agenda Familiar · propuesta</p>
-    <h1>Pedir otro regalo, y el orden del formulario</h1>
+    <p class="rotulo">Agenda Familiar · propuesta · segunda vuelta</p>
+    <h1>El destello dentro del campo, y cinco propuestas para pasar</h1>
     <p>
-      Dos decisiones sobre la hoja de apuntar una idea. La primera: cómo se enseña lo que
-      propone el modelo y cómo se le pide otra cosa. La segunda: en qué orden van los campos.
-      Van juntas porque la propuesta cae dentro del formulario, y lo que se decida de una
-      mueve a la otra.
+      Ya está decidido dónde vive la propuesta y en qué orden van los campos. Queda el
+      dibujo de dos piezas: cómo se pide desde el campo «Qué» y cómo se pasa de una
+      propuesta a otra. Las flechas de las maquetas funcionan: pruébalas.
     </p>
+    <div class="decidido">
+      <div>
+        <p class="rotulo">Decidido · C</p>
+        <p>La propuesta vive en una tarjeta dentro del formulario, no en una hoja aparte. Nada se escribe hasta aceptarla.</p>
+      </div>
+      <div>
+        <p class="rotulo">Decidido · F</p>
+        <p>Qué, Para quién y Descripción a la vista. Categoría, precio, sitio y enlace, detrás de «Clasificarla».</p>
+      </div>
+      <div>
+        <p class="rotulo">Nuevo</p>
+        <p>Cinco propuestas por tanda, se pasan con flechas y solo cambia el texto. «Otras cinco» y «Usarla» se quedan.</p>
+      </div>
+    </div>
   </header>
 
-  <!-- --------------------------------------------------- Lo que hay hoy -- -->
-
-  <section class="opcion" style="border-top: 0; padding-top: 0;">
-    <div class="opcion-cabeza">
-      <h2>Cómo está hoy, y qué falla</h2>
-      <p>
-        Sí se puede pedir más de una vez: el botón sigue ahí y se puede pulsar las veces que
-        haga falta. Lo que pasa al pulsarlo por segunda vez es el problema.
-      </p>
-    </div>
-    <div class="par">
-      <div class="tel">
-        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
-        <div class="tel-fondo">
-          <div class="barra"></div>
-          <div class="barra corta"></div>
-        </div>
-        <div class="tel-hoja">
-          <div class="asa"></div>
-          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
-          <div class="campo">
-            <span class="rot">Qué</span>
-            <div class="control">Cámara instantánea de bolsillo</div>
-          </div>
-          <div class="boton-ia">
-            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
-            Que lo proponga la IA para Marta
-          </div>
-          <div class="plegado">Dejarlo así</div>
-          <div class="campo">
-            <span class="rot">Descripción</span>
-            <div class="control area">Lleva meses pidiéndola y no la tiene.</div>
-          </div>
-          <div class="acciones">
-            <div class="boton crecer">Guardar</div>
-            <div class="boton discreto">Cancelar</div>
-          </div>
-        </div>
-      </div>
-      <div class="juicio">
-        <div class="no"><span>−</span><span><strong>Pisa lo escrito sin avisar.</strong> La propuesta cae directamente en el título y en la descripción. Si lo que había era bueno, ya no está.</span></div>
-        <div class="no"><span>−</span><span><strong>Repetir se muerde la cola.</strong> La pista que viaja es lo que hay escrito en los campos, y la segunda vez eso es justo lo que acaba de proponer: el modelo tiende a repetirse a sí mismo.</span></div>
-        <div class="no"><span>−</span><span>No se ve que se pueda pedir otra. El botón dice «que lo proponga», no «otra».</span></div>
-        <div class="si"><span>+</span><span>Un solo toque, ninguna pantalla nueva, y lo propuesto queda donde se va a corregir.</span></div>
-      </div>
-    </div>
-    <div class="nota pega">
-      <p>
-        <strong>Esto se arregla en cualquiera de las opciones</strong>, y conviene decirlo
-        aparte porque no es una cuestión de dibujo: la pista original —lo que se había escrito
-        antes de pedir nada— se guarda al pulsar la primera vez y es la que se manda siempre,
-        y al modelo se le pasa además la lista de lo que ya ha propuesto en esta sesión, con
-        el encargo de no repetirlo. Sin eso, «otra» devuelve casi lo mismo.
-      </p>
-      <p>
-        El freno del servidor son <strong>seis peticiones por persona y minuto</strong>,
-        compartidas con contar el día. Da para cinco o seis «otra» seguidas, que es más de lo
-        que nadie pide de verdad, pero conviene que el aviso lo diga con esas palabras cuando
-        se llegue.
-      </p>
-    </div>
-  </section>
-
   <div class="parte">
-    <p class="rotulo">Primera decisión</p>
-    <h2>Dónde aparece lo que propone el modelo</h2>
-    <p>Cuatro maneras, de la más barata a la más ambiciosa.</p>
+    <p class="rotulo">Primera pieza</p>
+    <h2>El destello, al final del campo «Qué»</h2>
+    <p>
+      Cuatro maneras de poner ahí el botón. En todas aparece solo cuando hay una persona
+      nombrada, y en todas el rótulo largo desaparece: lo que se pide se entiende por dónde
+      está.
+    </p>
   </div>
 
   <!-- ----------------------------------------------------------------- A -- -->
@@ -305,12 +300,12 @@
     <div class="opcion-cabeza">
       <div class="opcion-titulo">
         <span class="letra">A</span>
-        <h2>Como ahora, con el botón dicho de otra manera</h2>
+        <h2>Dentro del campo, pegado al borde</h2>
       </div>
       <p>
-        La propuesta sigue cayendo en los campos, pero el botón cambia de rótulo en cuanto
-        hay una: pasa a decir «Proponer otra». Se arreglan la pista y la repetición, y no se
-        toca nada más.
+        Un destello sobre su moneda de tinta, dentro del recuadro y a la derecha. El texto
+        lleva sitio reservado para que nunca pase por debajo. Es lo que hacen la lupa de
+        buscar o el ojo de una contraseña.
       </p>
     </div>
     <div class="par">
@@ -320,18 +315,25 @@
         <div class="tel-hoja">
           <div class="asa"></div>
           <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
-          <div class="campo">
+          <div class="campo campo-con-destello">
             <span class="rot">Qué</span>
-            <div class="control">Cámara instantánea de bolsillo</div>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
           </div>
-          <div class="boton-ia">
-            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
-            Proponer otra para Marta
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
           </div>
           <div class="campo">
             <span class="rot">Descripción</span>
-            <div class="control area">Lleva meses pidiéndola y no la tiene.</div>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
           </div>
+          <div class="plegado">Clasificarla</div>
           <div class="acciones">
             <div class="boton crecer">Guardar</div>
             <div class="boton discreto">Cancelar</div>
@@ -339,10 +341,10 @@
         </div>
       </div>
       <div class="juicio">
-        <div class="si"><span>+</span><span>Un toque por propuesta. Nada que aceptar, nada que cerrar.</span></div>
-        <div class="si"><span>+</span><span>Es media hora de trabajo: el rótulo, la memoria de la pista y el «no repitas».</span></div>
-        <div class="no"><span>−</span><span>Sigue pisando lo escrito. Quien tenía media descripción hecha la pierde y no hay vuelta atrás.</span></div>
-        <div class="no"><span>−</span><span>Comparar dos propuestas es imposible: la segunda borra a la primera.</span></div>
+        <div class="si"><span>+</span><span>No ocupa ni una línea: la hoja queda tan corta como sin la función.</span></div>
+        <div class="si"><span>+</span><span>Está donde va a caer lo que pida. La relación entre el botón y el campo no hay que explicarla.</span></div>
+        <div class="no"><span>−</span><span>Treinta píxeles de lado, contra los cuarenta y cuatro que esta aplicación se ha impuesto para lo que se toca con el pulgar.</span></div>
+        <div class="no"><span>−</span><span>Un título largo queda pegado al botón; hay que reservar el hueco aunque el botón no esté.</span></div>
       </div>
     </div>
   </section>
@@ -353,49 +355,53 @@
     <div class="opcion-cabeza">
       <div class="opcion-titulo">
         <span class="letra">B</span>
-        <h2>Una hoja encima, con «Otra» y «Usarla»</h2>
+        <h2>Adosado al campo, por fuera</h2>
       </div>
       <p>
-        Lo que pediste, tal cual: la propuesta llega en su propia hoja modal, sobre el
-        formulario. «Otra» pide una nueva sin salir; «Usarla» la escribe en los campos y
-        cierra; cerrar sin más no toca nada.
+        El campo se acorta y a su derecha queda un botón cuadrado del mismo alto, pegado.
+        Sigue siendo «el final del campo», pero con sitio de sobra para el dedo.
       </p>
     </div>
     <div class="par">
       <div class="tel">
         <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
-        <div class="tel-fondo">
-          <div class="barra"></div>
-          <div class="barra corta"></div>
-          <div class="barra"></div>
-        </div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
         <div class="tel-hoja">
           <div class="asa"></div>
-          <div class="hoja-cabecera">
-            <h4>Para Marta</h4>
-            <span class="acciones-icono">
-              <span class="icono-accion">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="campo-adosado">
+              <div class="control vacio">algo para el verano</div>
+              <span class="destello-adosado">
+                <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
               </span>
-            </span>
+            </div>
           </div>
-          <div class="propuesta">
-            <div class="que">Cámara instantánea de bolsillo</div>
-            <div class="porque">Lleva meses pidiéndola y no la tiene.</div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
           </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
           <div class="acciones">
-            <div class="boton crecer">Usarla</div>
-            <div class="boton discreto">Otra</div>
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
           </div>
-          <p class="rot" style="text-align:center">2ª de este rato · quedan 4 este minuto</p>
         </div>
       </div>
       <div class="juicio">
-        <div class="si"><span>+</span><span>Nada se escribe hasta que se acepta. Lo que hubiera en los campos está a salvo.</span></div>
-        <div class="si"><span>+</span><span>«Otra» es un botón de verdad, con su sitio: no hay que adivinar que el de arriba se puede volver a pulsar.</span></div>
-        <div class="no"><span>−</span><span><strong>La aplicación solo tiene una hoja.</strong> Abrir la segunda cierra la primera: habría que apilarlas —pieza nueva— o rehacer el formulario al volver, con riesgo de perder lo escrito. Es, con diferencia, la opción más cara.</span></div>
-        <div class="no"><span>−</span><span>Tapa el formulario, así que no se ve dónde va a caer lo que se acepta.</span></div>
-        <div class="no"><span>−</span><span>Dos toques por propuesta buena: pedirla y aceptarla.</span></div>
+        <div class="si"><span>+</span><span>Cuarenta y cuatro píxeles de alto, los de la aplicación. Se acierta a la primera.</span></div>
+        <div class="si"><span>+</span><span>El texto del campo nunca se roza con el botón, escriba lo que escriba.</span></div>
+        <div class="si"><span>+</span><span>Aparecer y desaparecer con la persona no descoloca el texto ya escrito, solo estrecha el campo.</span></div>
+        <div class="no"><span>−</span><span>Le quita cuarenta píxeles al título, que es el campo más largo de la hoja.</span></div>
+        <div class="no"><span>−</span><span>Es un patrón que la aplicación no usa en ninguna otra parte.</span></div>
       </div>
     </div>
   </section>
@@ -406,12 +412,11 @@
     <div class="opcion-cabeza">
       <div class="opcion-titulo">
         <span class="letra">C</span>
-        <h2>Una tarjeta dentro del formulario</h2>
+        <h2>Dentro, con el nombre puesto</h2>
       </div>
       <p>
-        Lo mismo que B —se ve antes de aceptar, y se puede pedir otra— pero sin segunda hoja:
-        la propuesta aparece como una tarjeta debajo del botón, con los campos a la vista
-        justo debajo. «Usarla» la baja a los campos y la tarjeta desaparece.
+        Lo mismo que A pero con forma de pastilla y el nombre de la persona al lado del
+        destello. Dice a la vez qué hace y para quién, sin gastar una línea.
       </p>
     </div>
     <div class="par">
@@ -421,22 +426,24 @@
         <div class="tel-hoja">
           <div class="asa"></div>
           <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
-          <div class="campo">
+          <div class="campo campo-con-destello campo-con-chip">
             <span class="rot">Qué</span>
             <div class="control vacio">algo para el verano</div>
+            <span class="destello-chip">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+              Marta
+            </span>
           </div>
-          <div class="boton-ia">
-            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
-            Que lo proponga la IA para Marta
-          </div>
-          <div class="propuesta">
-            <div class="que">Hamaca de playa plegable</div>
-            <div class="porque">Se lleva la bici a todas partes y esto le cabe detrás.</div>
-            <div class="pie">
-              <span class="mini principal">Usarla</span>
-              <span class="mini">Otra</span>
-              <span class="cuenta">2ª de 6</span>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
             </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
           </div>
           <div class="plegado">Clasificarla</div>
           <div class="acciones">
@@ -446,11 +453,10 @@
         </div>
       </div>
       <div class="juicio">
-        <div class="si"><span>+</span><span>Nada se pisa hasta aceptar, igual que en B, y se ve el campo donde va a caer.</span></div>
-        <div class="si"><span>+</span><span>Sin hoja nueva: la pieza es una tarjeta más dentro de la que ya está abierta. Barato y sin riesgo de perder lo escrito.</span></div>
-        <div class="si"><span>+</span><span>La cuenta —«2ª de 6»— dice de paso que esto tiene un límite, sin un aviso aparte.</span></div>
-        <div class="no"><span>−</span><span>La hoja crece: en un teléfono pequeño, con la tarjeta puesta hay que bajar para ver Guardar.</span></div>
-        <div class="no"><span>−</span><span>Dos toques por propuesta buena, como en B.</span></div>
+        <div class="si"><span>+</span><span>Con varias personas nombradas queda dicho para cuál se propone, que si no hay que adivinarlo.</span></div>
+        <div class="si"><span>+</span><span>En tinta plena se ve; el destello solo, dentro de un campo gris, pasa desapercibido.</span></div>
+        <div class="no"><span>−</span><span>Se come casi noventa píxeles del campo, y con un nombre largo —«la abuela»— más.</span></div>
+        <div class="no"><span>−</span><span>El ancho cambia al cambiar de persona, y el texto salta.</span></div>
       </div>
     </div>
   </section>
@@ -461,12 +467,12 @@
     <div class="opcion-cabeza">
       <div class="opcion-titulo">
         <span class="letra">D</span>
-        <h2>Tres de golpe, y se elige</h2>
+        <h2>En la línea del rótulo</h2>
       </div>
       <p>
-        Una sola llamada devuelve tres propuestas distintas y se tocan para elegir. «Otras
-        tres» pide una tanda nueva, que ya sabe cuáles se descartaron. Elegir entre varias es
-        más fácil que juzgar una sola: para un regalo, que es cuestión de gusto, importa.
+        El campo se queda intacto y el botón sube a la fila del rótulo, a la derecha de
+        «QUÉ». No es exactamente el final del recuadro, pero pertenece al campo igual y no
+        le quita ni un píxel.
       </p>
     </div>
     <div class="par">
@@ -477,76 +483,21 @@
           <div class="asa"></div>
           <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
           <div class="campo">
-            <span class="rot">Qué</span>
+            <div class="rot-fila">
+              <span class="rot">Qué</span>
+              <span class="destello-rotulo">
+                <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+                proponer
+              </span>
+            </div>
             <div class="control vacio">algo para el verano</div>
           </div>
-          <div class="boton-ia">
-            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
-            Que lo proponga la IA para Marta
-          </div>
-          <div class="listado">
-            <div class="propuesta elegida">
-              <div class="que">Hamaca de playa plegable</div>
-              <div class="porque">Se lleva la bici a todas partes y esto le cabe detrás.</div>
-            </div>
-            <div class="propuesta">
-              <div class="que">Gafas de bucear con tubo</div>
-              <div class="porque">Este año le tocan las calas del norte.</div>
-            </div>
-            <div class="propuesta">
-              <div class="que">Altavoz que aguanta el agua</div>
-              <div class="porque">Escucha música en todas partes y el suyo no sale del cuarto.</div>
-            </div>
-          </div>
-          <div class="acciones">
-            <div class="boton discreto crecer">Otras tres</div>
-          </div>
-          <div class="plegado">Clasificarla</div>
-        </div>
-      </div>
-      <div class="juicio">
-        <div class="si"><span>+</span><span>Elegir es más fácil que aceptar o rechazar, y sale mejor: entre tres, casi siempre hay una que vale.</span></div>
-        <div class="si"><span>+</span><span>Una llamada por tanda. Tres propuestas cuestan casi lo mismo que una, y el freno del minuto deja de ser un problema.</span></div>
-        <div class="no"><span>−</span><span>Ocupa toda la hoja: el formulario se va abajo del todo y hay que desplazarse para llegar a Guardar.</span></div>
-        <div class="no"><span>−</span><span>Es lo más largo de esperar: tres propuestas tardan más que una, y son varios segundos con el botón parado.</span></div>
-        <div class="no"><span>−</span><span>Al modelo hay que pedirle un formato de tres, que es más frágil que dos líneas sueltas.</span></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="parte">
-    <p class="rotulo">Segunda decisión</p>
-    <h2>El orden del formulario de la idea</h2>
-    <p>
-      Guardar ya está al final desde este mismo trabajo. Lo que queda por decidir es qué se ve
-      por encima sin desplegar nada: hoy solo el título, y la descripción está escondida
-      detrás de «Clasificarla», que es justo donde cae la mitad de lo que propone el modelo.
-    </p>
-  </div>
-
-  <!-- ----------------------------------------------------------------- E -- -->
-
-  <section class="opcion">
-    <div class="opcion-cabeza">
-      <div class="opcion-titulo">
-        <span class="letra">E</span>
-        <h2>Qué y Descripción, uno detrás de otro</h2>
-      </div>
-      <p>
-        La descripción sube y se queda pegada al título. Detrás de «Clasificarla» quedan la
-        persona, el perfil, la categoría, el precio, el sitio y el enlace.
-      </p>
-    </div>
-    <div class="par">
-      <div class="tel">
-        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
-        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
-        <div class="tel-hoja">
-          <div class="asa"></div>
-          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
           <div class="campo">
-            <span class="rot">Qué</span>
-            <div class="control vacio">Botas de montar</div>
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
           </div>
           <div class="campo">
             <span class="rot">Descripción</span>
@@ -560,10 +511,78 @@
         </div>
       </div>
       <div class="juicio">
-        <div class="si"><span>+</span><span>Las dos cosas que escribe una persona, juntas y en el orden en que se piensan.</span></div>
-        <div class="si"><span>+</span><span>Lo que propone el modelo cae entero a la vista, sin desplegar nada.</span></div>
-        <div class="no"><span>−</span><span>El botón de la IA no aparece: sin desplegar no hay a quién nombrar, y la propuesta es lo que más se venía a buscar.</span></div>
-        <div class="no"><span>−</span><span>La captura en diez segundos gana un campo que casi nunca se rellena de primeras.</span></div>
+        <div class="si"><span>+</span><span>El campo no se toca: ni sitio reservado, ni texto que se roce, ni ancho que cambie.</span></div>
+        <div class="si"><span>+</span><span>Lleva una palabra, así que no hay que saber qué significa un destello.</span></div>
+        <div class="no"><span>−</span><span>La fila del rótulo es de diez píxeles y medio: para tocarla hay que darle un alto que ahí desentona.</span></div>
+        <div class="no"><span>−</span><span>Está más lejos de donde cae el resultado que las otras tres.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Segunda pieza</p>
+    <h2>Las cinco propuestas, y cómo se pasan</h2>
+    <p>
+      Una tanda son cinco. El marco no se mueve: solo cambia el texto de dentro, de modo
+      que pasar de una a otra no descoloca la hoja ni mueve el botón de aceptar. Tres
+      maneras de colocar las flechas.
+    </p>
+  </div>
+
+  <!-- ----------------------------------------------------------------- E -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">E</span>
+        <h2>Flechas a los lados del texto</h2>
+      </div>
+      <p>
+        Como se pasa una foto: la propuesta en medio y una flecha a cada lado. Debajo, los
+        dos botones de siempre y el número de la que se está viendo.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo campo-con-destello">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="carrusel" data-carrusel>
+            <div class="carrusel-cuerpo">
+              <button class="flecha" type="button" data-ir="-1" aria-label="Propuesta anterior">‹</button>
+              <div class="carrusel-texto" data-hueco aria-live="polite"></div>
+              <button class="flecha" type="button" data-ir="1" aria-label="Propuesta siguiente">›</button>
+            </div>
+            <div class="carrusel-pie">
+              <span class="mini principal">Usarla</span>
+              <span class="mini">Otras cinco</span>
+              <span class="cuenta" data-cuenta style="margin-left:auto"></span>
+            </div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El gesto se reconoce sin leer nada: dos flechas alrededor de algo son un carrete.</span></div>
+        <div class="si"><span>+</span><span>Las flechas quedan lejos de «Usarla», así que no se acepta una queriendo pasar.</span></div>
+        <div class="no"><span>−</span><span>Las flechas comen sesenta píxeles de ancho al texto, que es lo que se ha venido a leer.</span></div>
+        <div class="no"><span>−</span><span>Con el pulgar derecho, la flecha de la izquierda cae lejos.</span></div>
       </div>
     </div>
   </section>
@@ -574,12 +593,11 @@
     <div class="opcion-cabeza">
       <div class="opcion-titulo">
         <span class="letra">F</span>
-        <h2>Qué, Para quién y Descripción</h2>
+        <h2>Flechas abajo, junto a los botones</h2>
       </div>
       <p>
-        Igual que E, con la persona por medio. Es el campo que decide dos cosas importantes
-        —a quién se le oculta la idea y si se puede proponer un regalo—, y es lo único de la
-        parte plegada que se toca casi siempre.
+        El texto ocupa el ancho entero y todo lo que se toca vive en una sola fila al pie:
+        las dos flechas a la izquierda, los puntos en medio y «Usarla» a la derecha.
       </p>
     </div>
     <div class="par">
@@ -589,41 +607,41 @@
         <div class="tel-hoja">
           <div class="asa"></div>
           <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
-          <div class="campo">
+          <div class="campo campo-con-destello">
             <span class="rot">Qué</span>
-            <div class="control vacio">Botas de montar</div>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="carrusel" data-carrusel>
+            <div class="carrusel-texto" data-hueco aria-live="polite"></div>
+            <div class="carrusel-pie">
+              <button class="flecha" type="button" data-ir="-1" aria-label="Propuesta anterior">‹</button>
+              <button class="flecha" type="button" data-ir="1" aria-label="Propuesta siguiente">›</button>
+              <span class="puntos" data-puntos></span>
+              <span class="mini principal" style="margin-left:auto">Usarla</span>
+            </div>
+            <div class="carrusel-pie">
+              <span class="mini" style="flex:1; text-align:center">Otras cinco</span>
+            </div>
           </div>
           <div class="campo">
             <span class="rot">Para quién</span>
             <div class="chips">
-              <span class="chip">Ana</span>
-              <span class="chip">Óscar</span>
-              <span class="chip on">Marta</span>
-              <span class="chip">Lucía</span>
-              <span class="chip">la abuela</span>
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
             </div>
           </div>
-          <div class="boton-ia">
-            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
-            Que lo proponga la IA para Marta
-          </div>
-          <div class="campo">
-            <span class="rot">Descripción</span>
-            <div class="control area vacio">Para acordarte dentro de seis meses</div>
-          </div>
           <div class="plegado">Clasificarla</div>
-          <div class="acciones">
-            <div class="boton crecer">Guardar</div>
-            <div class="boton discreto">Cancelar</div>
-          </div>
         </div>
       </div>
       <div class="juicio">
-        <div class="si"><span>+</span><span>El botón de la IA aparece sin desplegar nada: nombrar a alguien está a un toque.</span></div>
-        <div class="si"><span>+</span><span>Lo que decide la ocultación deja de estar escondido, que es donde peor está.</span></div>
-        <div class="si"><span>+</span><span>El orden se lee como la frase que uno piensa: qué, para quién, por qué.</span></div>
-        <div class="no"><span>−</span><span>Es la hoja más alta de las tres. Con seis personas, la fila de nombres ocupa dos líneas.</span></div>
-        <div class="no"><span>−</span><span>Deja «Clasificarla» con lo residual —categoría, precio, sitio, enlace—, y el rótulo se queda grande para lo que esconde.</span></div>
+        <div class="si"><span>+</span><span>El texto se lee a ancho completo, que en un teléfono son dos líneas menos.</span></div>
+        <div class="si"><span>+</span><span>Todo lo que se toca en la misma banda, y al alcance del pulgar.</span></div>
+        <div class="si"><span>+</span><span>Los puntos dicen cuántas quedan sin necesidad de leer un número.</span></div>
+        <div class="no"><span>−</span><span>Cuatro cosas tocables en una fila estrecha: pasar y aceptar están a un centímetro.</span></div>
+        <div class="no"><span>−</span><span>Que se pueda pasar se ve menos: las flechas ya no rodean nada.</span></div>
       </div>
     </div>
   </section>
@@ -634,22 +652,38 @@
     <div class="opcion-cabeza">
       <div class="opcion-titulo">
         <span class="letra">G</span>
-        <h2>Sin plegar nada</h2>
+        <h2>Cabecera con el número, y el pie para decidir</h2>
       </div>
       <p>
-        Se retira el conmutador y el formulario se muestra entero, en un orden fijo, con
-        Guardar al final. Es lo que ya pasa al editar una idea, extendido también a crearla.
+        Tres bandas: arriba «Propuesta 2 de 5» con las flechas a la derecha, en medio el
+        texto solo, y abajo los dos botones. Cada banda hace una cosa.
       </p>
     </div>
     <div class="par">
       <div class="tel">
         <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
-        <div class="tel-hoja" style="border-top:0">
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
           <div class="asa"></div>
           <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
-          <div class="campo">
+          <div class="campo campo-con-destello">
             <span class="rot">Qué</span>
-            <div class="control vacio">Botas de montar</div>
+            <div class="control vacio">algo para el verano</div>
+            <span class="destello-dentro">
+              <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            </span>
+          </div>
+          <div class="carrusel" data-carrusel>
+            <div class="carrusel-pie">
+              <span class="cuenta" data-cuenta data-largo></span>
+              <button class="flecha" type="button" data-ir="-1" aria-label="Propuesta anterior" style="margin-left:auto">‹</button>
+              <button class="flecha" type="button" data-ir="1" aria-label="Propuesta siguiente">›</button>
+            </div>
+            <div class="carrusel-texto" data-hueco aria-live="polite"></div>
+            <div class="carrusel-pie">
+              <span class="mini principal" style="flex:1; text-align:center">Usarla</span>
+              <span class="mini" style="flex:1; text-align:center">Otras cinco</span>
+            </div>
           </div>
           <div class="campo">
             <span class="rot">Para quién</span>
@@ -658,38 +692,51 @@
               <span class="chip on">Marta</span><span class="chip">Lucía</span>
             </div>
           </div>
-          <div class="boton-ia">
-            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
-            Que lo proponga la IA para Marta
-          </div>
-          <div class="campo">
-            <span class="rot">Descripción</span>
-            <div class="control area vacio">Para acordarte dentro de seis meses</div>
-          </div>
-          <div class="campo">
-            <span class="rot">Categoría</span>
-            <div class="control vacio">Sin categoría</div>
-          </div>
-          <div class="campo">
-            <span class="rot">Precio aproximado</span>
-            <div class="control vacio">120</div>
-          </div>
-          <div class="acciones">
-            <div class="boton crecer">Guardar</div>
-            <div class="boton discreto">Cancelar</div>
-          </div>
+          <div class="plegado">Clasificarla</div>
         </div>
       </div>
       <div class="juicio">
-        <div class="si"><span>+</span><span>Una sola hoja para crear y para editar: nada que aprender dos veces.</span></div>
-        <div class="si"><span>+</span><span>Ningún campo escondido, ningún «¿dónde estaba el enlace?».</span></div>
-        <div class="no"><span>−</span><span>Se lleva por delante la captura en diez segundos, que es el punto del que sale toda esta pantalla (specs/ux.md §2 y §3): ocho campos para apuntar «botas de montar» en la cola del supermercado.</span></div>
-        <div class="no"><span>−</span><span>Guardar queda fuera de pantalla desde el primer momento.</span></div>
+        <div class="si"><span>+</span><span>«Propuesta 2 de 5» lo dice todo: que hay cinco, por cuál se va y que se puede seguir.</span></div>
+        <div class="si"><span>+</span><span>Pasar y decidir quedan en bandas distintas: ningún toque se confunde con el otro.</span></div>
+        <div class="si"><span>+</span><span>Los dos botones del mismo tamaño, que es lo que son: dos salidas legítimas.</span></div>
+        <div class="no"><span>−</span><span>Es la tarjeta más alta de las tres, y empuja el formulario hacia abajo.</span></div>
+        <div class="no"><span>−</span><span>Tres bandas para cinco frases puede leerse como demasiado aparato.</span></div>
       </div>
     </div>
   </section>
 
-  <!-- ------------------------------------------------------------- Cierre -- -->
+  <!-- ------------------------------------------------------- Lo de dentro -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que cambia por dentro, sea cual sea el dibujo</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>Una llamada, cinco propuestas.</strong> Al modelo se le pide una lista de
+        cinco, cada una con su línea de qué y su línea de por qué. Cinco cuestan casi lo
+        mismo que una —lo caro es contarle quién es la persona, y eso se manda una sola
+        vez—, así que pasar de una a otra no gasta nada: ya están todas en el teléfono.
+      </p>
+      <p>
+        <strong>«Otras cinco» sí es una llamada nueva</strong>, y lleva la lista de lo ya
+        propuesto para que la segunda tanda no repita a la primera. El freno del servidor
+        —seis por persona y minuto, compartido con contar el día— da para cinco tandas
+        seguidas, o veinticinco propuestas. Cuando se llegue, el aviso lo dirá con esas
+        palabras.
+      </p>
+      <p>
+        <strong>Aceptar no cierra la tanda.</strong> «Usarla» baja el texto a los campos y
+        recoge la tarjeta; si se vuelve a tocar el destello, vuelven las mismas cinco por
+        donde iban, sin pedir nada. Solo «Otras cinco» pide de nuevo.
+      </p>
+      <p>
+        <strong>El marco no se mueve.</strong> La tarjeta se reserva el alto de la propuesta
+        más larga de la tanda, de modo que pasar de una de tres palabras a una de doce no
+        hace saltar el botón de aceptar debajo del dedo.
+      </p>
+    </div>
+  </section>
 
   <section class="opcion">
     <div class="opcion-cabeza">
@@ -697,22 +744,21 @@
     </div>
     <div class="nota">
       <p>
-        <strong>C y F.</strong> La tarjeta dentro del formulario hace lo que pides —ver la
-        propuesta antes de que toque nada, «otra» las veces que haga falta y un «usarla» que
-        la baja a los campos— sin la pieza nueva que exige la hoja modal, que es la única
-        parte de todo esto con riesgo de romper algo. Y con la persona arriba, la propuesta
-        está a un toque de distancia en lugar de a dos.
+        <strong>B y G.</strong> El botón adosado por fuera es el único que respeta los
+        cuarenta y cuatro píxeles que esta aplicación se exige para todo lo que se toca de
+        pie y con una mano, y no obliga a reservarle un hueco al texto del título. Sigue
+        estando al final del campo, que es lo que pedías.
       </p>
       <p>
-        <strong>D me tienta</strong>, y si me dices que sí lo hago en su lugar: para un
-        regalo, elegir entre tres es mejor que aceptar una, y sale más barato en llamadas.
-        Lo que me frena es que llena la hoja entera y deja el formulario debajo del pliegue
-        justo cuando lo que quieres es guardar.
+        Y en la tarjeta, <strong>G</strong> por el rótulo: «Propuesta 2 de 5» enseña de una
+        vez que hay cinco y que se pasan, cosa que ni los puntos ni las flechas solas
+        consiguen la primera vez que aparece. Cuesta una banda más de alto, y la pago a
+        gusto.
       </p>
       <p>
-        <strong>Sea cual sea</strong>, van dentro las dos correcciones de la nota de arriba:
-        la pista original se guarda y se manda siempre —no la propuesta anterior—, y al
-        modelo se le dice qué lleva propuesto para que no se repita.
+        Si prefieres la hoja lo más corta posible, la combinación es <strong>A y F</strong>:
+        el destello dentro del campo y todo lo tocable en una banda al pie. Es la más
+        apretada de las dos, y la que peor se acierta con el dedo.
       </p>
     </div>
   </section>
@@ -722,13 +768,74 @@
       <h2>Lo que hace falta que decidas</h2>
     </div>
     <ol class="lista-seca">
-      <li><strong>Una de A, B, C o D</strong> para la propuesta. Si no dices nada, va C.</li>
-      <li><strong>Una de E, F o G</strong> para el orden. Si no dices nada, va F.</li>
+      <li><strong>Una de A, B, C o D</strong> para el botón del campo. Si no dices nada, va B.</li>
+      <li><strong>Una de E, F o G</strong> para la tarjeta. Si no dices nada, va G.</li>
       <li>
-        Si prefieres D, dime si quieres <strong>tres o cuatro</strong> propuestas por tanda:
-        con cuatro se llena la pantalla, con dos casi no hay donde elegir.
+        Si quieres que además se pueda pasar <strong>deslizando el dedo</strong> sobre el
+        texto, dilo: es media hora más y convive con las flechas, que se quedan igual.
       </li>
     </ol>
   </section>
 
 </div>
+
+<script>
+  // Las cinco propuestas de la maqueta. Son las mismas en las tres tarjetas: lo
+  // que se compara es el sitio de las flechas, no lo que dicen.
+  const PROPUESTAS = [
+    ['Hamaca de playa plegable', 'Se lleva la bici a todas partes y esto le cabe detrás.'],
+    ['Gafas de bucear con tubo', 'Este año le tocan las calas del norte.'],
+    ['Altavoz que aguanta el agua', 'Escucha música en todas partes y el suyo no sale del cuarto.'],
+    ['Toalla de microfibra grande', 'La suya ocupa media mochila y tarda un día en secarse.'],
+    ['Cantimplora térmica de un litro', 'Sale a montar a las tres de la tarde en agosto.'],
+  ];
+
+  for (const carrusel of document.querySelectorAll('[data-carrusel]')) {
+    const hueco = carrusel.querySelector('[data-hueco]');
+    const cuenta = carrusel.querySelector('[data-cuenta]');
+    const puntos = carrusel.querySelector('[data-puntos]');
+    const flechas = carrusel.querySelectorAll('[data-ir]');
+    let actual = 1;
+
+    const pintar = () => {
+      const [que, porque] = PROPUESTAS[actual];
+      hueco.replaceChildren();
+
+      const titulo = document.createElement('div');
+      titulo.className = 'que';
+      titulo.textContent = que;
+
+      const razon = document.createElement('div');
+      razon.className = 'porque';
+      razon.textContent = porque;
+
+      hueco.append(titulo, razon);
+
+      if (cuenta) {
+        cuenta.textContent = cuenta.hasAttribute('data-largo')
+          ? `Propuesta ${actual + 1} de ${PROPUESTAS.length}`
+          : `${actual + 1} / ${PROPUESTAS.length}`;
+      }
+      if (puntos) {
+        puntos.replaceChildren();
+        PROPUESTAS.forEach((_, i) => {
+          const p = document.createElement('i');
+          if (i === actual) p.className = 'on';
+          puntos.append(p);
+        });
+      }
+      for (const flecha of flechas) {
+        const paso = Number(flecha.dataset.ir);
+        flecha.disabled = actual + paso < 0 || actual + paso >= PROPUESTAS.length;
+      }
+    };
+
+    for (const flecha of flechas) {
+      flecha.addEventListener('click', () => {
+        actual = Math.min(PROPUESTAS.length - 1, Math.max(0, actual + Number(flecha.dataset.ir)));
+        pintar();
+      });
+    }
+    pintar();
+  }
+</script>
