@@ -235,7 +235,33 @@ function vistaMes(ctx) {
   if (!delDia.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
   for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx));
 
-  return el('div', {}, [rejilla, detalle]);
+  // El día del mes que no tiene nada se llena igual que la fila vacía de la
+  // semana: doblando el toque sobre su hueco.
+  if (!delDia.length) dobleToque(detalle, () => { toque(); abrirFormularioEvento(ctx, { fecha: ancla }); });
+
+  return el('div', { class: 'cuerpo-agenda' }, [
+    rejilla,
+    detalle,
+    zonaLibre(ctx, () => ancla),
+  ]);
+}
+
+/**
+ * El blanco que queda por debajo del contenido, que también sirve para crear.
+ *
+ * En la semana el hueco de un día vacío es un sitio evidente donde doblar el
+ * toque; en el mes y en la lista no hay filas, y lo único despejado es lo que
+ * sobra al final. Se le da el mismo gesto para que la regla sea una sola:
+ * doblar el toque sobre lo que está en blanco crea un evento ahí.
+ *
+ * Qué día es «ahí» lo dice quien llama, y en el momento del toque: en el mes,
+ * el que esté seleccionado; en la lista, que siempre arranca en hoy, hoy.
+ */
+function zonaLibre(ctx, diaDe) {
+  return dobleToque(
+    el('div', { class: 'zona-libre', 'aria-hidden': 'true' }),
+    () => { toque(); abrirFormularioEvento(ctx, { fecha: diaDe() }); },
+  );
 }
 
 // ---------------------------------------------------------------- Lista --
@@ -245,11 +271,14 @@ function vistaLista(ctx) {
   const hasta = sumarDias(desde, 180);
   const instancias = instanciasEn(ctx.vista.datos, desde, hasta).sort((a, b) => a.inicio - b.inicio);
 
+  const contenedor = el('div', { class: 'cuerpo-agenda' });
+
   if (!instancias.length) {
-    return el('p', { class: 'vacio', texto: 'No hay nada en los próximos seis meses.' });
+    contenedor.append(el('p', { class: 'vacio', texto: 'No hay nada en los próximos seis meses.' }));
+    contenedor.append(zonaLibre(ctx, hoy));
+    return contenedor;
   }
 
-  const contenedor = el('div', {});
   let grupoActual = null;
   let nodo = null;
 
@@ -262,6 +291,7 @@ function vistaLista(ctx) {
     }
     nodo.append(tarjetaDeEvento({ instancia, evento: instancia.evento, dia: soloFecha(instancia.inicio), continuacion: false }, ctx));
   }
+  contenedor.append(zonaLibre(ctx, hoy));
   return contenedor;
 }
 

@@ -223,6 +223,10 @@ button { background: none; border: 0; cursor: pointer; }
    pulgar encuentra sitio libre. */
 .pantalla-agenda { display: flex; flex-direction: column; }
 .pantalla-agenda > * { flex: 1 0 auto; }
+/* El mes y la lista reparten ese alto entre su contenido y el blanco del
+   final, que es lo que recibe el doble toque para crear. */
+.cuerpo-agenda { display: flex; flex-direction: column; }
+.zona-libre { flex: 1 0 auto; min-height: 64px; }
 
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
