@@ -856,6 +856,12 @@ function abrirPromocion(idea, ctx) {
  * `asegurar` es la ocasión que todavía no existe: se llama **después** de elegir
  * el regalo, no antes, para que cerrar esta hoja sin elegir nada no deje una
  * ocasión vacía en el registro.
+ *
+ * De aquí solo salen regalos con idea detrás. El atajo para crear uno suelto
+ * dejaba en la ocasión una tarjeta que decía «Regalo» y nada más: sin título,
+ * sin precio y sin enlace, imposible de reconocer al volver a mirarla y sin
+ * nada que reutilizar al año siguiente. Apuntar antes la idea cuesta diez
+ * segundos y deja las dos cosas.
  */
 export function abrirSelectorDeRegalo(
   ctx,
@@ -943,7 +949,12 @@ export function abrirSelectorDeRegalo(
         ...(verOtras ? grupo('De otras personas', otras) : []),
       );
       if (!suyas.length && !sueltas.length && !(verOtras && otras.length)) {
-        lista.append(el('p', { class: 'vacio', texto: filtro ? 'Ninguna idea con ese texto.' : 'Ninguna idea apuntada todavía.' }));
+        lista.append(el('p', {
+          class: 'vacio',
+          texto: filtro
+            ? 'Ninguna idea con ese texto.'
+            : 'Ninguna idea apuntada todavía. Apunta una en Regalos → Ideas y vuelve por aquí.',
+        }));
       }
 
       vaciar(conmutador).append(
@@ -979,11 +990,6 @@ export function abrirSelectorDeRegalo(
     };
 
     pie.onclick = () => asociar(apuntadas.filter((i) => marcadas.has(i.id)));
-
-    cuerpo.append(el('button', {
-      class: 'enlace-discreto', type: 'button',
-      onclick: () => asociar([null]),
-    }, ['Un regalo suelto, sin idea previa']));
 
     pintar();
   });
