@@ -41,6 +41,9 @@ const MAXIMO_EVENTOS = 20;
 // cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
 const MAXIMO_EVENTOS_PERIODO = 60;
 const MAXIMO_DIAS = 40;
+// Los que el servidor no sabe resolver se devuelven para poder mirarlos, pero
+// no en cantidad ilimitada: con unos pocos ya se ve de qué familia son.
+const MAXIMO_OMITIDOS = 10;
 const LIMITE_POR_MINUTO = 6;
 const TOPE_DE_SALIDA = 400;
 
@@ -189,16 +192,58 @@ function horaDe(evento) {
  * silencio. Sin emojis: el adorno es cosa de la lista que se comparte tal cual,
  * y aquí solo estorbaría al modelo.
  */
+/**
+ * Lo que el observador puede ver, por identificador.
+ *
+ * No basta con `instantanea.eventos`: los cumpleaños no son filas de `evento`.
+ * Se derivan de la fecha de nacimiento de cada persona, en el dispositivo, con
+ * un identificador compuesto —`derivado:cumpleanos:<persona>`— que aquí no
+ * existe. Sin resolverlos, se caían en silencio y el modelo contaba una semana
+ * sin el cumpleaños que la ocupaba.
+ *
+ * Lo que se copia de esa regla es solo el nombre —«Cumpleaños de X»—, no las
+ * fechas: de cuándo cae cada uno sigue decidiéndolo el dispositivo, que es
+ * quien expande las repeticiones. Y sale del registro de la persona, no de lo
+ * que mande el cliente, de modo que por aquí sigue sin poder colarse texto: si
+ * esa persona no está en la instantánea de quien pide, su cumpleaños tampoco.
+ *
+ * **Si algún día se deriva algo más en el dispositivo** —y el modelo de datos
+ * deja la puerta abierta con `origen = 'derivado'`—, hay que resolverlo aquí
+ * también. Lo que no puede volver a pasar es que se caiga sin ruido: por eso
+ * los identificadores que no se reconocen se devuelven en `omitidos`, se
+ * escriben en la traza del Worker y se enseñan al probar desde Ajustes. Un
+ * evento de tipo «viaje» o uno importado de un calendario externo no entran en
+ * esto: son filas de `evento` y llegan en la instantánea como los demás.
+ */
+function visiblesDe(instantanea) {
+  const porId = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+
+  for (const persona of instantanea.personas || []) {
+    if (!persona.fecha_nacimiento) continue;
+    if (persona.activa === 0 || persona.activa === false) continue;
+    porId.set(`derivado:cumpleanos:${persona.id}`, {
+      id: `derivado:cumpleanos:${persona.id}`,
+      titulo: `Cumpleaños de ${persona.nombre}`,
+      inicio: persona.fecha_nacimiento,
+      jornada_completa: true,
+    });
+  }
+
+  return porId;
+}
+
 export function componerMaterial(instantanea, fecha, ids = []) {
-  const visibles = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+  const visibles = visiblesDe(instantanea);
   const lineas = [];
+  const omitidos = [];
 
   for (const id of ids.slice(0, MAXIMO_EVENTOS)) {
     const evento = visibles.get(id);
     if (evento) lineas.push(lineaDe(evento));
+    else if (omitidos.length < MAXIMO_OMITIDOS) omitidos.push(id);
   }
 
-  return { titulo: formatearFecha(fecha), lineas };
+  return { titulo: formatearFecha(fecha), lineas, omitidos };
 }
 
 function lineaDe(evento) {
@@ -220,8 +265,9 @@ function lineaDe(evento) {
  * filtrada de quien pide, y el encabezado se compone aquí a partir del tramo.
  */
 export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = [] }) {
-  const visibles = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+  const visibles = visiblesDe(instantanea);
   const lineas = [];
+  const omitidos = [];
   let cuenta = 0;
 
   for (const jornada of dias.slice(0, MAXIMO_DIAS)) {
@@ -229,7 +275,10 @@ export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = []
     for (const id of jornada.eventos || []) {
       if (cuenta >= MAXIMO_EVENTOS_PERIODO) break;
       const evento = visibles.get(id);
-      if (!evento) continue;
+      if (!evento) {
+        if (omitidos.length < MAXIMO_OMITIDOS) omitidos.push(id);
+        continue;
+      }
       delDia.push(`  ${lineaDe(evento)}`);
       cuenta += 1;
     }
@@ -238,7 +287,7 @@ export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = []
     if (delDia.length) lineas.push(`${formatearFecha(jornada.fecha)}:`, ...delDia);
   }
 
-  return { titulo: formatearRango(desde, hasta), lineas };
+  return { titulo: formatearRango(desde, hasta), lineas, omitidos };
 }
 
 // ----------------------------------------------------------------- Llamada --
