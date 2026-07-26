@@ -325,6 +325,10 @@ El mismo visto va en **la ficha de cada persona**, donde antes el estado iba peg
 
 **Descartar no lleva papelera ni aspa.** No destruye —aparta, y se reactiva desde la misma hoja—, así que la papelera mentiría; y un aspa en la cabecera de una hoja se lee como «cierra esto», que es lo contrario de lo que hace, con el agravante de que estas hojas no tienen ningún otro botón de cerrar. Lleva un círculo con una raya, que dice «quítalo de la lista».
 
+**Borrar una idea se pregunta**, y se pregunta diciendo qué se lleva por delante. Retirar no es descartar —lo descartado vuelve con un toque desde su propia hoja, y esto no vuelve— y hay un daño que no se ve venir: un regalo guarda de qué idea salió y toma de ella su título, así que con la idea retirada la línea del regalo pasa a llamarse «Regalo» y nada más, en la lista, en la ocasión y en el histórico de quien lo recibió. La pregunta lo dice, cuenta cuántos regalos hay en esa situación y recuerda que descartar es reversible. Cancelar devuelve al formulario del que se venía.
+
+Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es que no se ven —el servidor los oculta a su destinatario—, así que decir «no hay ninguno» sería mentir con cara de dato, y decir cuántos hay sería contar justo lo que no se puede contar.
+
 **«Duplicar» se retiró.** Dejaba dos apuntes iguales, que casi siempre es un error y no una intención, y su único caso real —reutilizar una idea cerrada— solo se alcanzaba desde Buscar. Reutilizar una idea del año pasado es ahora volver a escribirla, que son los diez segundos que esta aplicación se pone como límite para apuntar algo.
 
 ---
