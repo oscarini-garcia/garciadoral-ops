@@ -14,7 +14,7 @@ import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../s
 import {
   CIRCULOS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
 } from '../modelo.js';
-import { MESES_LARGOS, hoy, parsearMomento } from '../semana.js';
+import { MESES_LARGOS, diasHastaElCumple, parsearMomento, proximoAniversario } from '../semana.js';
 import { abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea } from './regalos.js';
 
 /** Cuál de los dos círculos abiertos se está mirando. Se conserva entre
@@ -390,22 +390,6 @@ async function resolver(cuerpo, ctx, exito) {
   } catch (error) {
     avisar(error.message || 'No se ha podido resolver la solicitud.');
   }
-}
-
-/** La fecha del próximo aniversario, sea este año o el que viene. */
-function proximoAniversario(persona) {
-  const nacimiento = parsearMomento(persona.fecha_nacimiento);
-  const referencia = hoy();
-  const deEsteAno = new Date(referencia.getFullYear(), nacimiento.getMonth(), nacimiento.getDate());
-  return deEsteAno < referencia
-    ? new Date(referencia.getFullYear() + 1, nacimiento.getMonth(), nacimiento.getDate())
-    : deEsteAno;
-}
-
-/** Quien no tiene fecha va al final de su rejilla, no al principio. */
-function diasHastaElCumple(persona) {
-  if (!persona.fecha_nacimiento) return Infinity;
-  return Math.round((proximoAniversario(persona) - hoy()) / 86400000);
 }
 
 function proximoCumple(persona) {

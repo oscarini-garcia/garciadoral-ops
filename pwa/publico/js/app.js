@@ -607,6 +607,9 @@ function formularioDeRedaccion(ajustes) {
   const regalo = el('textarea', { rows: '5', spellcheck: 'false' });
   regalo.value = ajustes.regalo;
 
+  const felicitacion = el('textarea', { rows: '5', spellcheck: 'false' });
+  felicitacion.value = ajustes.felicitacion;
+
   const traza = el('pre', { class: 'traza', hidden: true });
   const contar = (texto, clase = 'traza') => {
     traza.className = clase;
@@ -640,6 +643,7 @@ function formularioDeRedaccion(ajustes) {
         modelo: modelo.value,
         instruccion: instruccion.value.trim(),
         regalo: regalo.value.trim(),
+        felicitacion: felicitacion.value.trim(),
       });
       clave.value = '';
       clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
@@ -662,7 +666,7 @@ function formularioDeRedaccion(ajustes) {
   return [
     el('p', {
       class: 'pista',
-      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son dos, contar los días antes de compartirlos y proponer un regalo.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son tres, contar los días antes de compartirlos, proponer un regalo y felicitar un cumpleaños.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
@@ -675,10 +679,13 @@ function formularioDeRedaccion(ajustes) {
     el('h4', { class: 'subtitulo-ajuste', texto: 'Proponer un regalo' }),
     campo('Instrucción', regalo, 'Se pide una tanda de cinco, y la agenda espera una por línea: si reescribes esto, conserva esa forma. Lo que se sabe de la persona —su edad, lo que ha pedido, lo que ya tiene apuntado y lo que recibió— se lo da aparte. Vacío, vuelve el encargo de origen.'),
 
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Felicitar un cumpleaños' }),
+    campo('Instrucción', felicitacion, 'También en tandas de cinco, una por línea, y es el único encargo con emojis: el texto se copia y se pega en un WhatsApp. Se le dan el nombre, los años que cumple y lo que hay apuntado de esa persona; los regalos no, porque quien lo lea es quien cumple. Vacío, vuelve el encargo de origen.'),
+
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {
       class: 'pista',
-      texto: 'Guardar los guarda los dos. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+      texto: 'Guardar los guarda los tres. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
     }),
     traza,
   ];

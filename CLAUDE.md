@@ -34,6 +34,14 @@ pendiente. El hook lo inyecta al final del mapa.
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con
   conmutador y sin avatares. Está en `specs/ux.md` §7.1; el porqué de la
   elección se conserva en `specs/propuesta-familia-circulos.html`.
+- **La pestaña de Ocasiones ya está construida** en dos apartados plegables:
+  Fechas señaladas —Navidad y compañía, con sus verbos detrás de la pastilla— y
+  Cumpleaños, derivados de las fichas y ordenados por el que viene antes. Está en
+  `specs/ux.md` §6.1. No hay nada que migrar para desplegarla: la felicitación
+  guarda su encargo en la tabla `configuracion`, que ya existe, y se apaga sola si
+  no hay clave de Anthropic puesta. Queda abierto **si los cumpleaños deben
+  arrancar desplegados** —hoy van plegados, con el próximo escrito en el rótulo— y
+  qué hacer con las fechas señaladas cerradas cuando se acumulen una por año.
 - **Presupuesto.** El panel está retirado de la pestaña de Regalos mientras se
   decide qué forma tiene. Lo que sostiene sigue en pie y sin tocar: la escritura
   de `presupuesto` en el Worker, el envío del importe a los administradores en la

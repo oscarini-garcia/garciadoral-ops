@@ -46,10 +46,11 @@ tener que recorrer la aplicación entera cada vez.
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
-- **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día y proponer un regalo.
+- **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
-  INSTRUCCION_REGALO_POR_DEFECTO · leerConfiguracion · configuracionPublica
-  guardarConfiguracion · cadenaDeModelos · modelosDisponibles · componerMaterial · …y 5 más
+  INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO · leerConfiguracion
+  configuracionPublica · guardarConfiguracion · cadenaDeModelos · modelosDisponibles
+  …y 8 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -78,21 +79,21 @@ tener que recorrer la aplicación entera cada vez.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO · estaActivo
   redaccionDisponible · nuevoId · ahora · crearVista · …y 3 más
 - **native.js** — Puente con la cáscara nativa de iOS.
-  esNativo · toque · compartir · comprobarActualizacion · versionInstalada
+  esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
-  HORIZONTE_RECORDATORIOS_DIAS · iniciarNativo
+  HORIZONTE_RECORDATORIOS_DIAS · …y 1 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
-  soloFecha · iso · isoConHora · sumarDias · …y 11 más
+  soloFecha · iso · isoConHora · sumarDias · …y 14 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 6 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 7 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
-  cerrarHoja · hayHojaAbierta · …y 8 más
+  cerrarHoja · hayHojaAbierta · …y 11 más
 
 ### `pwa/publico/js/vistas/` · Las cuatro secciones de la aplicación
 
@@ -101,8 +102,8 @@ tener que recorrer la aplicación entera cada vez.
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha
 - **regalos.js** — Regalos: las ideas y las ocasiones.
-  reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirDetalleIdea
-  abrirDetalleRegalo · abrirSelectorDeRegalo · abrirFormularioIdea
+  reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirCumple
+  abrirDetalleIdea · abrirDetalleRegalo · abrirSelectorDeRegalo · abrirFormularioIdea
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
   bloqueDeComentarios · abrirFormularioEvento · anclaActual
@@ -131,6 +132,7 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
+- `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
@@ -176,7 +178,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/modelo.js` §7.1 · `pwa/publico/js/semana.js` §8, §10.2
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/ui.js` §1, §3
   `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
-  `pwa/publico/js/vistas/regalos.js` §2, §3, §6
+  `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1
   `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/modelo.py` §7.1
   `scripts/agenda/semana.py` §10.2
 
@@ -199,7 +201,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**169** en total.
+**179** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -209,7 +211,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
-- `api/test/redaccion.test.js` — 44
+- `api/test/redaccion.test.js` — 54
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 
