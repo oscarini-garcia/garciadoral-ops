@@ -1584,6 +1584,74 @@ function confirmarCierreDeOcasion(ocasion, ctx) {
 }
 
 /**
+ * Borrar una idea se pregunta, y se pregunta diciendo qué se lleva por delante.
+ *
+ * Retirar no es descartar: lo descartado vuelve con un toque desde su propia
+ * hoja, y esto no vuelve. Y hay un daño que no se ve venir: **el regalo que
+ * saliera de esa idea se queda sin nombre**. Un regalo guarda de qué idea salió
+ * y toma de ella su título; con la idea retirada, la instantánea deja de
+ * traerla y la línea pasa a llamarse «Regalo» y nada más, en la lista, en la
+ * ocasión y en el histórico de quien lo recibió.
+ *
+ * Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es
+ * que no se ven —el servidor los oculta a su destinatario—, así que decir «no
+ * hay ninguno» sería mentir con cara de dato, y decir cuántos hay sería contar
+ * justo lo que no se puede contar.
+ */
+function confirmarBorradoDeIdea(idea, ctx, { alCancelar = null } = {}) {
+  const esDeseo = esDeseoPropio(idea, ctx);
+  const colgando = esDeseo ? [] : (ctx.vista.datos.regalos || [])
+    .filter((r) => r.idea_id === idea.id && estaActivo(r));
+
+  abrirHoja(`Borrar ${idea.titulo}`, (cuerpo) => {
+    cuerpo.append(el('p', {
+      texto: esDeseo
+        ? 'Se retira de tus deseos. Para volver a pedirlo habrá que escribirlo otra vez.'
+        : 'Se retira del banco de ideas. Para volver a usarla habrá que escribirla otra vez.',
+    }));
+
+    if (colgando.length) {
+      cuerpo.append(el('p', {
+        class: 'pista', 'data-tono': 'aviso',
+        texto: colgando.length === 1
+          ? 'Hay un regalo cogido a partir de ella. El regalo se queda, pero pierde el nombre: pasa a llamarse «Regalo» y nada más. Si quieres conservarlo, quita antes el regalo.'
+          : `Hay ${colgando.length} regalos cogidos a partir de ella. Se quedan, pero pierden el nombre: pasan a llamarse «Regalo» y nada más. Si quieres conservarlo, quita antes los regalos.`,
+      }));
+    }
+
+    // Descartar sigue estando y no es lo mismo, así que se dice: casi siempre es
+    // lo que se quería hacer.
+    if (idea.estado !== 'descartada') {
+      cuerpo.append(el('p', {
+        class: 'pista',
+        texto: esDeseo
+          ? 'Si solo es que ya no te apetece, descartarlo lo aparta y se puede recuperar.'
+          : 'Si solo es que ya no vale para nadie, descartarla la aparta y se puede recuperar.',
+      }));
+    }
+
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button',
+        // Reabrir ya cierra esta: la hoja es una sola. Cerrarla antes a mano
+        // dejaría un parpadeo entre las dos.
+        onclick: () => (alCancelar ? alCancelar() : cerrarHoja()),
+      }, ['Cancelar']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+        onclick: async () => {
+          await retirar('idea', idea.id);
+          toque('media');
+          cerrarHoja();
+          avisar(esDeseo ? 'Deseo retirado' : 'Idea retirada');
+          ctx.refrescar();
+        },
+      }, ['Borrar']),
+    ]));
+  });
+}
+
+/**
  * Borrar una ocasión se pregunta, y se pregunta diciendo qué se lleva por
  * delante: los regalos cuelgan de ella, y una Navidad con ocho apuntados no
  * puede desaparecer de un dedo distraído.
@@ -1654,14 +1722,13 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     && !etiquetas.length;
 
   const borrarIdea = existente ? botonIcono('borrar', {
-    etiqueta: 'Borrar la idea', tono: 'peligro',
-    onclick: async () => {
-      await retirar('idea', existente.id);
-      toque('media');
-      cerrarHoja();
-      avisar('Idea retirada');
-      ctx.refrescar();
-    },
+    etiqueta: esDeseoPropio(existente, ctx) ? 'Borrar el deseo' : 'Borrar la idea',
+    tono: 'peligro',
+    // Se pregunta antes, y cancelar devuelve al formulario: la hoja es una sola,
+    // así que la pregunta se come lo que hubiera abierto y hay que reponerlo.
+    onclick: () => confirmarBorradoDeIdea(existente, ctx, {
+      alCancelar: () => abrirFormularioIdea(ctx, { id: existente.id }),
+    }),
   }) : null;
 
   // El título dice qué se está apuntando: desde Deseos se viene a pedir algo,
