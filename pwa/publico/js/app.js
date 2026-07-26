@@ -412,8 +412,13 @@ function refrescar() {
   document.getElementById('tituloPantalla').textContent = definicion.titulo;
   document.getElementById('fab').hidden = !definicion.fab;
 
+  // Cada pestaña parte de la pantalla desnuda y le añade las clases de
+  // disposición que necesite, sin heredar las de la anterior.
+  const pantalla = document.getElementById('pantalla');
+  pantalla.className = 'pantalla';
+
   definicion.pintar(
-    document.getElementById('pantalla'),
+    pantalla,
     document.getElementById('subcabecera'),
     ctx,
   );

@@ -15,7 +15,7 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
-  deslizarHorizontal, dobleToque,
+  deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
 import { guardar, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId } from '../modelo.js';
@@ -93,6 +93,11 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   );
 
   vaciar(pantalla);
+  // El cuerpo se estira hasta el final de la pantalla aunque la semana no llene
+  // el alto: por debajo del domingo también se desliza, que es donde el pulgar
+  // encuentra sitio libre.
+  pantalla.classList.add('pantalla-agenda');
+
   let cuerpo;
   if (modo === 'semana') cuerpo = vistaSemana(ctx);
   else if (modo === 'mes') cuerpo = vistaMes(ctx);
@@ -304,11 +309,41 @@ export function abrirDia(fecha, ctx) {
       class: 'boton', type: 'button',
       onclick: () => abrirFormularioEvento(ctx, { fecha }),
     }, ['Añadir un evento este día']));
-  });
+  }, [
+    // Un día se comparte tal cual se ve: lo que hay en la hoja es ya lo visible
+    // para quien mira, de modo que no puede salir por ahí un evento reservado.
+    // En un día vacío no se ofrece, porque no habría nada que enviar.
+    apariciones.length ? botonIcono('compartir', {
+      etiqueta: 'Compartir el día',
+      onclick: () => compartirDia(fecha, apariciones, ctx),
+    }) : null,
+  ]);
 
   // El mismo gesto que en la semana y en el mes, un piso más abajo: aquí lo que
   // pasa es el día. Se cuelga del cuerpo, que la hoja rehace en cada apertura.
   deslizarHorizontal(contenido, (pasos) => { toque(); abrirDia(sumarDias(fecha, pasos), ctx); });
+}
+
+/**
+ * El día entero como texto: la fecha y debajo una línea por evento, con su hora
+ * y su sitio. La misma cara pública que se comparte de un evento suelto, sin
+ * una palabra de la dimensión de regalos.
+ */
+async function compartirDia(fecha, apariciones, ctx) {
+  toque();
+  const titulo = formatearFechaLarga(fecha);
+  const lineas = apariciones.map((aparicion) => {
+    const hora = horaDe(aparicion);
+    return [
+      ctx.vista.emojiDe(aparicion.evento),
+      hora ? `${hora} ·` : null,
+      aparicion.evento.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+      aparicion.evento.ubicacion ? `· ${aparicion.evento.ubicacion}` : null,
+    ].filter(Boolean).join(' ');
+  });
+
+  const enviado = await compartir({ titulo, texto: `${titulo}\n${lineas.join('\n')}` });
+  if (!enviado) avisar('No he podido compartirlo');
 }
 
 // -------------------------------------------------------- Detalle de evento --
@@ -319,6 +354,20 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
 
   const derivado = evento.origen !== 'manual';
   const inicio = parsearMomento(evento.inicio);
+
+  // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
+  // `navigator.share` —o al portapapeles— en el navegador. Solo sale la cara
+  // pública del evento: ni una palabra de la dimensión de regalos.
+  const compartirEvento = async () => {
+    toque();
+    const enviado = await compartir({
+      titulo: evento.titulo,
+      texto: `${ctx.vista.emojiDe(evento)} ${evento.titulo}\n${formatearFechaLarga(aparicion ? aparicion.dia : inicio)}`
+        + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
+        + (evento.ubicacion ? `\n${evento.ubicacion}` : ''),
+    });
+    if (!enviado) avisar('No he podido compartirlo');
+  };
 
   abrirHoja(evento.titulo, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
@@ -369,37 +418,25 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
     cuerpo.append(bloqueDeRegalos(evento, ctx));
     cuerpo.append(bloqueDeComentarios('evento', evento.id, ctx));
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      derivado ? null : el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: () => abrirFormularioEvento(ctx, { id: evento.id }),
-      }, ['Editar']),
-      // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
-      // `navigator.share` —o al portapapeles— en el navegador. Solo sale la
-      // cara pública del evento: ni una palabra de la dimensión de regalos.
-      el('button', {
-        class: 'boton', 'data-tono': 'discreto', type: 'button',
-        onclick: async () => {
-          toque();
-          const enviado = await compartir({
-            titulo: evento.titulo,
-            texto: `${ctx.vista.emojiDe(evento)} ${evento.titulo}\n${formatearFechaLarga(aparicion ? aparicion.dia : inicio)}`
-              + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
-              + (evento.ubicacion ? `\n${evento.ubicacion}` : ''),
-          });
-          if (!enviado) avisar('No he podido compartirlo');
-        },
-      }, ['Compartir']),
-      el('button', {
-        class: 'boton', 'data-tono': 'discreto', type: 'button',
-        onclick: () => abrirSelectorDeEmoji(evento, ctx),
-      }, ['Emoji']),
-      derivado ? null : el('button', {
-        class: 'boton', 'data-tono': 'peligro', type: 'button',
-        onclick: async () => { await retirar('evento', evento.id); cerrarHoja(); avisar('Evento retirado'); ctx.refrescar(); },
-      }, ['Borrar']),
-    ]));
-  });
+    // Al pie se queda lo único que conviene que cueste alcanzar.
+    if (!derivado) {
+      cuerpo.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton', 'data-tono': 'peligro', type: 'button',
+          onclick: async () => { await retirar('evento', evento.id); cerrarHoja(); avisar('Evento retirado'); ctx.refrescar(); },
+        }, ['Borrar']),
+      ]));
+    }
+  }, [
+    // Los dos verbos que se usan van arriba, junto al título. De un evento
+    // derivado solo se puede cambiar el emoji, y el formulario se abre reducido
+    // a eso: el resto se corrige en su origen.
+    botonIcono('editar', {
+      etiqueta: derivado ? 'Cambiar el emoji' : 'Editar',
+      onclick: () => abrirFormularioEvento(ctx, { id: evento.id, evento }),
+    }),
+    botonIcono('compartir', { etiqueta: 'Compartir', tono: 'discreto', onclick: compartirEvento }),
+  ]);
 }
 
 /**
@@ -483,33 +520,47 @@ export function bloqueDeComentarios(tipo, id, ctx) {
   ]);
 }
 
-// ------------------------------------------------------- Selector de emoji --
-
-function abrirSelectorDeEmoji(evento, ctx) {
-  const permitidos = ctx.vista.emojisPermitidos();
-  abrirHoja('Elegir emoji', (cuerpo) => {
-    cuerpo.append(el('p', {
-      class: 'pista',
-      texto: 'La selección es corta a propósito: la variedad ilimitada convierte la semana en un mosaico y destruye el reconocimiento de un vistazo.',
-    }));
-    cuerpo.append(el('div', { class: 'emojis' }, permitidos.map((emoji) =>
-      el('button', {
-        type: 'button',
-        'aria-pressed': ctx.vista.emojiDe(evento) === emoji ? 'true' : 'false',
-        onclick: async () => { await guardar('evento', evento.id, { emoji }); cerrarHoja(); ctx.refrescar(); },
-      }, [emoji]),
-    )));
-  });
-}
-
 // --------------------------------------------------------- Crear y editar --
+
+/**
+ * Rejilla para elegir el emoji del evento, con la casilla de dejárselo al tipo.
+ *
+ * La selección es corta a propósito: la variedad ilimitada convierte la semana
+ * en un mosaico y destruye el reconocimiento de un vistazo. Devuelve una
+ * función que da el valor elegido —cadena vacía si manda el tipo—.
+ */
+function selectorDeEmoji(ctx, inicial) {
+  let elegido = inicial || '';
+  const contenedor = el('div', { class: 'emojis' });
+
+  const opciones = ['', ...ctx.vista.emojisPermitidos()];
+  const botones = opciones.map((emoji) => el('button', {
+    type: 'button',
+    'aria-pressed': emoji === elegido ? 'true' : 'false',
+    'aria-label': emoji || 'El del tipo de evento',
+    title: emoji || 'El del tipo de evento',
+    onclick: () => {
+      elegido = emoji;
+      for (const otro of botones) otro.setAttribute('aria-pressed', 'false');
+      botones[opciones.indexOf(emoji)].setAttribute('aria-pressed', 'true');
+    },
+  }, [emoji || '—']));
+
+  contenedor.append(...botones);
+  return { nodo: contenedor, valor: () => elegido };
+}
 
 /**
  * La creación tiene dos niveles. La hoja rápida pide título y día, y con eso
  * guarda; el resto de campos aparece solo si se piden (specs/ux.md §10.1).
+ *
+ * De un evento derivado o externo solo se admite el emoji —el resto se corrige
+ * en su origen (specs/modelo-datos.md §4.2)—, así que el formulario se abre
+ * reducido a ese campo en lugar de no abrirse.
  */
-export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
-  const existente = id ? ctx.vista.evento(id) : null;
+export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = null } = {}) {
+  const existente = (id ? ctx.vista.evento(id) : null) || evento;
+  if (existente && existente.origen !== 'manual') return abrirFormularioDeEmoji(existente, ctx);
   const inicio = existente ? parsearMomento(existente.inicio) : (fecha || hoy());
 
   const borrador = {
@@ -552,10 +603,14 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     const repite = seleccion(REPETICIONES.map((r) => ({ valor: r.valor, texto: r.texto })), borrador.repeticion);
 
     const gente = ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre }));
+    // El emoji va detrás del tipo, que es quien lo propone: aquí solo se
+    // corrige cuando el propuesto no dice lo que se quiere decir.
+    const emoji = selectorDeEmoji(ctx, existente?.emoji);
 
     avanzado.append(
       campo('A qué hora', hora, 'Déjala vacía si dura todo el día.'),
       campo('Qué es', tipo, 'El tipo elige el emoji y propone si el evento lleva regalos.'),
+      campo('Emoji', emoji.nodo, 'Con «—» manda el del tipo. La lista es corta a propósito: la variedad ilimitada convierte la semana en un mosaico.'),
       campo('De quién es', opciones(gente, borrador.protagonistas, (v) => { borrador.protagonistas = v; }),
         'Determina a quién se le ocultan los regalos de este evento y qué ideas se proponen al asociarlos.'),
       campo('Quién más va', opciones(gente, borrador.asistentes, (v) => { borrador.asistentes = v; }),
@@ -594,6 +649,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
           const campos = {
             titulo: titulo.value.trim(),
             tipo_id: tipo.value,
+            emoji: emoji.valor(),
             inicio: jornadaCompleta ? dia.value : isoConHora(momento),
             jornada_completa: jornadaCompleta ? 1 : 0,
             ubicacion: lugar.value.trim(),
@@ -617,6 +673,40 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
           ctx.refrescar();
         },
       }, [existente ? 'Guardar' : 'Crear']),
+      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+    ]));
+  });
+}
+
+/**
+ * Lo único que se puede cambiar de un cumpleaños o de un evento traído de fuera.
+ *
+ * El dato maestro está en otro sitio —la ficha de la persona, el calendario de
+ * origen— y no puede divergir de su reflejo, pero el emoji es de aquí: lo
+ * decide quien mira la semana (specs/modelo-datos.md §4.2).
+ */
+function abrirFormularioDeEmoji(evento, ctx) {
+  const emoji = selectorDeEmoji(ctx, evento.emoji);
+
+  abrirHoja('Cambiar el emoji', (cuerpo) => {
+    cuerpo.append(el('p', {
+      class: 'pista',
+      texto: evento.origen === 'derivado'
+        ? 'De un cumpleaños solo se cambia el emoji: la fecha sale de la ficha de la persona y se corrige allí.'
+        : 'De un evento de un calendario externo solo se cambia el emoji: lo demás se corrige en su origen.',
+    }));
+    cuerpo.append(campo('Emoji', emoji.nodo, 'Con «—» manda el del tipo de evento.'));
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async () => {
+          await guardar('evento', evento.id, { emoji: emoji.valor() });
+          toque('media');
+          cerrarHoja();
+          avisar('Emoji cambiado');
+          ctx.refrescar();
+        },
+      }, ['Guardar']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });
