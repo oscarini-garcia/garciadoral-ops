@@ -43,7 +43,7 @@ import {
 import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
 import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
-import { pintarFamilia } from './vistas/familia.js';
+import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
@@ -53,7 +53,10 @@ const PESTANAS = {
   // al pasar de semana, y con las demás pestañas no cambia nunca.
   semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirCapturaDeIdea(ctx) },
-  familia: { titulo: 'Familia', pintar: pintarFamilia, fab: (ctx) => abrirCapturaDeIdea(ctx) },
+  // Sin botón flotante: la pantalla lleva ahora un «+» dentro de cada círculo,
+  // y uno encima que hiciera otra cosa —capturar una idea— dejaría dos signos
+  // iguales con dos significados a la vez (specs/ux.md §7.1).
+  familia: { titulo: 'Familia', pintar: pintarFamilia, fab: null },
   // En las pantallas sin acción de creación el botón no aparece.
   buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
 };
@@ -772,7 +775,7 @@ async function salir() {
   await olvidarTodo();
   borrarSesion();
   sesionActual = null;
-  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda();
+  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda(); reiniciarFamilia();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
 }

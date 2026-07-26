@@ -13,6 +13,23 @@
 export const EMOJI_POR_DEFECTO = '📌';
 
 /**
+ * Los tres círculos, y cómo se llaman en pantalla.
+ *
+ * Son cerrados y no un catálogo editable: cada círculo que se añadiera sería una
+ * pregunta más en cada alta, y la pantalla de personas está construida justo
+ * para no tener que hacerla —el «+» vive dentro de su grupo y ya sabe a cuál
+ * añade (specs/ux.md §7.1).
+ */
+export const CIRCULOS = {
+  familia: 'Familia',
+  extendida: 'Familia Extendida',
+  amigos: 'Amigos',
+};
+
+/** Cuántos caben en «Familia». Es el hogar, no un grupo que crece. */
+export const TAMANO_FAMILIA = 4;
+
+/**
  * Emoji con el que arranca un título, si es que arranca con uno.
  *
  * Cuenta como uno solo la secuencia entera —el emoji, su selector de
@@ -66,6 +83,9 @@ export function crearVista(instantanea) {
     personas: () => [...personas.values()].filter((p) => estaActivo(p, 'activa')),
     personasConCuenta: () => api.personas().filter((p) => p.tiene_cuenta),
     personasSinCuenta: () => api.personas().filter((p) => !p.tiene_cuenta),
+    // Quien venga de un registro anterior a los círculos no trae el campo. Cae
+    // en «extendida», que es el valor por defecto también en la base.
+    personasDe: (circulo) => api.personas().filter((p) => (p.circulo || 'extendida') === circulo),
     categoria: (id) => categorias.get(id) || null,
     categorias: () => [...categorias.values()],
     tipoEvento: (id) => tipos.get(id) || null,

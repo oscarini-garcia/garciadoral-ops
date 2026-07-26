@@ -75,8 +75,8 @@ tener que recorrer la aplicación entera cada vez.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **modelo.js** — Consultas sobre la instantánea local.
-  EMOJI_POR_DEFECTO · estaActivo · redaccionDisponible · nuevoId · ahora · crearVista
-  ESTADOS_REGALO · REPETICIONES · formatearImporte
+  EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · estaActivo · redaccionDisponible · nuevoId
+  ahora · crearVista · ESTADOS_REGALO · REPETICIONES · …y 1 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -99,7 +99,7 @@ tener que recorrer la aplicación entera cada vez.
 - **buscar.js** — Búsqueda global sobre Ideas y Ocasiones, que es el alcance de la primera versión (spec…
   reiniciarBusqueda · pintarBuscar
 - **familia.js** — Familia: el registro de personas y la ficha de cada una.
-  pintarFamilia · abrirFicha
+  reiniciarFamilia · pintarFamilia · abrirFicha
 - **regalos.js** — Regalos: el banco de ideas y las campañas.
   reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirDetalleIdea
   abrirDetalleRegalo · abrirSelectorDeRegalo · abrirCapturaDeIdea
@@ -171,11 +171,13 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_mensaje.py` §6, §7 · `tests/test_plan_semanal.py` · `tests/test_semana.py` §3
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
-  `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js`
-  `pwa/publico/js/semana.js` §8, §10.2 · `pwa/publico/js/sincronizacion.js` §1
-  `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §11
+  `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
+  `pwa/publico/js/modelo.js` §7.1 · `pwa/publico/js/semana.js` §8, §10.2
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/ui.js` §1, §3
+  `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6
-  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/semana.py` §10.2
+  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/modelo.py` §7.1
+  `scripts/agenda/semana.py` §10.2
 
 ## Variables de entorno
 
@@ -196,12 +198,12 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**143** en total.
+**147** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
 - `tests/test_mensaje.py` — 12
-- `tests/test_modelo.py` — 18
+- `tests/test_modelo.py` — 22
 - `tests/test_plan_semanal.py` — 11
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13

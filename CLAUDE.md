@@ -27,14 +27,13 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- **Pendiente de decidir: cómo se dibuja la pantalla de personas.** Está sobre la
-  mesa `specs/propuesta-familia-circulos.html`, con cuatro opciones para partir el
-  registro en tres círculos —Familia (los cuatro de casa, cerrado), Familia
-  Extendida y Amigos—, cada uno con su `+`, más un buscador y la marca de a quién
-  le falta la fecha de nacimiento. La recomendación es la opción A. Al elegir, se
-  recogen sus decisiones en `specs/ux.md` y se lleva a
-  `pwa/publico/js/vistas/familia.js`; en el modelo, el campo se propone llamar
-  `circulo` y no «categoría», que ya está tomado por la tabla de los eventos.
+- La pantalla de personas ya está decidida y construida: tres círculos —Familia
+  (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con el conmutador
+  de la opción B y sin avatares. Está en `specs/ux.md` §7.1; el porqué de la
+  elección se conserva en `specs/propuesta-familia-circulos.html`. Queda una cosa
+  por hacer al desplegar: **aplicar la migración `0005_circulos.sql`**, que
+  reparte a quien ya estuviera en la base —quien tenía cuenta a `familia`, el
+  resto a `extendida`— y deja el ajuste fino para las fichas.
 - Lo pendiente de construir está en el apartado 7 del `README`: los calendarios
   externos, la copia periódica de salvaguarda y la parte configurable del
   recordatorio previo.

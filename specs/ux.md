@@ -215,6 +215,53 @@ flowchart TD
 
 **A quién conviene.** A una familia cuyo interés principal sea el archivo de personas más que la coordinación. Como arquitectura principal es arriesgada; como pantalla dentro de otra opción, es valiosa.
 
+### 7.1 La pantalla de personas, como se construyó
+
+Lo que sigue no es una opción sino la decisión tomada: de las cuatro maneras que se pusieron sobre la mesa en `propuesta-familia-circulos.html` se eligió la de las pestañas.
+
+**Tres círculos, y no dos grupos por si tienen cuenta.** Hasta aquí la pantalla se partía por `tiene_cuenta`, que es un dato técnico —quién ha entrado con Apple— usado como si fuera un vínculo. No lo es: la abuela no tiene cuenta y es de la familia, y un amigo podría tenerla sin serlo. Lo que ordena la pantalla pasa a ser el vínculo, escrito aparte en `persona.circulo`:
+
+- **Familia**, los cuatro de casa. Conjunto cerrado.
+- **Familia Extendida** y **Amigos**, abiertos.
+
+Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto círculo obligaría a decidir en cada alta a cuál va cada quien, que es justo la pregunta que esta pantalla evita.
+
+**La forma.** Los cuatro de casa, arriba y siempre, en una fila de cuatro columnas. Debajo, un conmutador entre los otros dos círculos y una sola rejilla que cambia de contenido. Así la pantalla no crece cuando crecen los amigos, y queda dicho sin escribirlo que el hogar no es un grupo más.
+
+```
+┌──────────────────────────────┐
+│ Familia            ⟳    ⚙   │
+│ ⌕ Buscar una persona         │
+├──────────────────────────────┤
+│ FAMILIA                      │
+│ ┌─────┐┌─────┐┌─────┐┌─────┐ │
+│ │Marta││Óscar││Lucía││ Ana │ │
+│ │hija ││padre││hija ││madre│ │
+│ │en 6d││3 nov││19feb││12may│ │
+│ └─────┘└─────┘└─────┘└─────┘ │
+│                              │
+│ ┌ Familia Extendida·4 ┬ Amigos·3 ┐ │
+│ ┌───────┐┌───────┐┌───────┐  │
+│ │abuela ││ Rosa  ││abuelo │  │
+│ │en 4 d ││en 26 d││ 5 mar │  │
+│ └───────┘└───────┘└───────┘  │
+│ ┌───────┐┌ ─ ─ ─ ┐           │
+│ │ Javi  ││   +   │           │
+│ │sinfech││ Añadir│           │
+│ └───────┘└ ─ ─ ─ ┘           │
+└──────────────────────────────┘
+```
+
+**Sin avatares.** Las iniciales sobre un color inventado no decían nada que no dijera el nombre, que va justo debajo. En su lugar va lo que de verdad se consulta —de quién es y cuándo cumple—, que además cabe en menos alto. El avatar se conserva en la cabecera de la ficha, donde identifica de quién es la hoja abierta y no compite con nada.
+
+**El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
+
+**El «+» es una celda más de la rejilla**, con el borde discontinuo y el tamaño de una persona, al final del círculo al que pertenece. Puesto ahí no tiene que preguntar a cuál se añade. Familia no lo ofrece: quien intente crecerla se encuentra con que no hay por dónde, que es la manera más barata de sostener que son cuatro. El botón flotante desaparece de esta pantalla, porque un segundo «+» encima que hiciera otra cosa dejaría dos signos iguales con dos significados.
+
+**El buscador está encima de todo, no dentro de una pestaña.** Es el defecto conocido del conmutador —tener que acertar la pestaña antes de buscar—, y se resuelve así: mientras hay algo escrito la pantalla deja de estar dividida y enseña un único resultado sobre los tres círculos, con el círculo de cada persona escrito bajo su nombre. Al borrar la búsqueda vuelve la pestaña que estaba. Busca por nombre, apellidos y parentesco, e ignora las tildes: «abuel» tiene que dar con los dos abuelos aunque ninguno se llame así.
+
+**Cuándo dejará de servir.** El día que *Amigos* pase de unas doce personas, su rejilla pedirá su propio buscador o un orden distinto. Nada de lo de aquí lo impide.
+
 ---
 
 ## 8. Opción D — La semana
