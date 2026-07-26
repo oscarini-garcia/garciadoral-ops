@@ -698,8 +698,8 @@ concreto que hacen que la revisión se tuerza.
 |---|---|
 | Eliminar la cuenta desde la app (5.1.1(v)) | Ajustes → **Eliminar mi cuenta** |
 | Revocación del token ante Apple | Paso 4.5; sin la clave, la baja funciona pero no avisa |
-| Política de privacidad | `/privacidad.html`, servida por Pages |
-| Página de soporte | `/soporte.html` |
+| Política de privacidad | `/privacidad`, servida por Pages |
+| Página de soporte | `/soporte` |
 | Cumplimiento de exportación | `patch-ios.mjs` lo declara en el `Info.plist` |
 
 Antes de archivar, revise que el correo de contacto de `soporte.html` es el que
@@ -780,8 +780,8 @@ campo público.
 
 - **Categoría**: Productividad; secundaria, Estilo de vida.
 - **URL de política de privacidad**:
-  `https://garciadoral-ops.galoopa.store/privacidad.html`.
-- **URL de soporte**: `https://garciadoral-ops.galoopa.store/soporte.html`.
+  `https://garciadoral-ops.galoopa.store/privacidad`.
+- **URL de soporte**: `https://garciadoral-ops.galoopa.store/soporte`.
   Las dos son obligatorias y Apple las comprueba: un 404 aquí es un rechazo sin
   llegar a revisión. `tests/test_configuracion.py` comprueba que los ficheros
   existen; que Pages los sirva, compruébelo con `curl` una vez desplegado.
