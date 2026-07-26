@@ -166,11 +166,16 @@ export const hayHojaAbierta = () => Boolean(cerrarActual);
  * buscador del navegador abre por su cuenta el apartado donde encuentra algo.
  * Nada de eso saldría gratis con un `div` y una clase.
  */
-export function acordeon(titulo, construir, { abierta = false } = {}) {
+export function acordeon(titulo, construir, { abierta = false, nota = null } = {}) {
   const cuerpo = el('div', { class: 'acordeon-cuerpo' });
   construir(cuerpo);
   return el('details', { class: 'acordeon', open: abierta }, [
-    el('summary', {}, [el('span', { texto: titulo })]),
+    // La nota va en el propio rótulo para que el apartado plegado siga diciendo
+    // algo: «el próximo, Marta en seis días» ahorra desplegarlo solo para verlo.
+    el('summary', {}, [
+      el('span', { texto: titulo }),
+      nota ? el('span', { class: 'acordeon-nota', texto: nota }) : null,
+    ]),
     cuerpo,
   ]);
 }
@@ -222,6 +227,138 @@ export function deslizarHorizontal(nodo, alDeslizar) {
 }
 
 /**
+ * Los verbos de una tarjeta, escondidos detrás de ella.
+ *
+ * Se arrastra la tarjeta hacia la izquierda y aparecen debajo; se suelta y la
+ * fila se queda abierta hasta que se toca algo. Es el atajo, no el camino: los
+ * mismos verbos están dentro —al abrir la ocasión hay «editar», y borrar vive
+ * donde se edita—, de modo que quien no descubra el gesto no se queda sin nada.
+ *
+ * Tres cuidados, que son los que hacen que no estorbe:
+ *
+ * - **El desplazamiento vertical manda.** Hasta que el dedo no recorre en
+ *   horizontal más de lo que ha bajado, no se mueve nada; si baja, el gesto se
+ *   abandona y la página se desliza como si esto no existiera.
+ * - **Solo una abierta.** Al empezar a arrastrar se cierra la que hubiera, que es
+ *   lo que hace la lista de un correo y lo que evita dejar verbos sueltos por la
+ *   pantalla.
+ * - **El clic de después no cuenta.** Un arrastre que empieza encima de la
+ *   tarjeta termina, para el navegador, en un clic sobre ella; y con la fila
+ *   abierta, el primer toque la cierra en lugar de abrir el detalle.
+ *
+ * Con el teclado no hay arrastre que hacer: los botones están en el árbol y la
+ * fila se abre sola al enfocarlos, con `:focus-within` desde el CSS.
+ */
+export function conVerbosAlDeslizar(tarjeta, verbos) {
+  const UMBRAL = 12;
+  const DOMINANCIA = 1.4;
+  const GRACIA = 400;
+
+  const utiles = [].concat(verbos).filter(Boolean);
+  if (!utiles.length) return tarjeta;
+
+  const banda = el('div', { class: 'deslizable-verbos' }, utiles);
+  const cara = el('div', { class: 'deslizable-cara' }, [tarjeta]);
+  const marco = el('div', { class: 'deslizable', 'data-abierta': 'no' }, [banda, cara]);
+
+  const ancho = () => banda.offsetWidth || 0;
+  let abierta = false;
+  let origen = null;
+  let arrastrando = false;
+  let sordoHasta = 0;
+
+  const colocar = (x) => { cara.style.transform = x ? `translateX(${x}px)` : ''; };
+
+  // Cerrar deja el nodo **sin** transformación en línea, y no en cero: así la
+  // regla de `:focus-within` del CSS puede abrirla cuando se llega con el
+  // tabulador, que una transformación en línea taparía.
+  const cerrar = () => {
+    abierta = false;
+    marco.dataset.abierta = 'no';
+    colocar(0);
+    if (deslizadaAbierta?.nodo === marco) deslizadaAbierta = null;
+  };
+
+  const abrir = () => {
+    if (deslizadaAbierta && deslizadaAbierta.nodo !== marco) deslizadaAbierta.cerrar();
+    abierta = true;
+    marco.dataset.abierta = 'si';
+    colocar(-ancho());
+    deslizadaAbierta = { nodo: marco, cerrar };
+  };
+
+  cara.addEventListener('pointerdown', (evento) => {
+    if (!evento.isPrimary) return;
+    origen = { x: evento.clientX, y: evento.clientY, base: abierta ? -ancho() : 0 };
+    arrastrando = false;
+    cara.style.transition = 'none';
+  });
+
+  cara.addEventListener('pointermove', (evento) => {
+    if (!origen) return;
+    const dx = evento.clientX - origen.x;
+    const dy = evento.clientY - origen.y;
+
+    if (!arrastrando) {
+      if (Math.abs(dx) < UMBRAL) return;
+      if (Math.abs(dx) < Math.abs(dy) * DOMINANCIA) { soltar(null); return; }
+      arrastrando = true;
+      if (deslizadaAbierta && deslizadaAbierta.nodo !== marco) cerrarDeslizada();
+      // Sin captura, un arrastre que se sale de la tarjeta —con el ratón— deja
+      // de recibir eventos y la fila se queda a medio camino.
+      try { cara.setPointerCapture(evento.pointerId); } catch { /* da igual */ }
+    }
+    colocar(Math.min(0, Math.max(-ancho(), origen.base + dx)));
+  });
+
+  function soltar(evento) {
+    if (!origen) return;
+    const base = origen.base;
+    const dx = evento ? evento.clientX - origen.x : 0;
+    const hubo = arrastrando;
+    origen = null;
+    arrastrando = false;
+    cara.style.transition = '';
+
+    if (!hubo) { colocar(base); return; }
+    sordoHasta = performance.now() + GRACIA;
+    if (base + dx < -ancho() / 2) abrir(); else cerrar();
+  }
+
+  cara.addEventListener('pointerup', soltar);
+  cara.addEventListener('pointercancel', () => {
+    origen = null;
+    arrastrando = false;
+    cara.style.transition = '';
+    colocar(abierta ? -ancho() : 0);
+  });
+
+  cara.addEventListener('click', (evento) => {
+    if (performance.now() < sordoHasta) {
+      evento.preventDefault();
+      evento.stopPropagation();
+      return;
+    }
+    // Con los verbos a la vista, el toque sobre la tarjeta los recoge. Abrir el
+    // detalle desde ahí sorprendería: lo que se está mirando son los verbos.
+    if (abierta) {
+      evento.preventDefault();
+      evento.stopPropagation();
+      cerrar();
+    }
+  }, true);
+
+  return marco;
+}
+
+/** La única fila con los verbos a la vista, si hay alguna. */
+let deslizadaAbierta = null;
+
+export function cerrarDeslizada() {
+  if (deslizadaAbierta) deslizadaAbierta.cerrar();
+}
+
+/**
  * Doble toque sobre un nodo, contando los clics a mano.
  *
  * No se usa el evento `dblclick`: en la cáscara de iOS no llega —el doble toque
@@ -249,6 +386,118 @@ export function avisar(texto) {
   const burbuja = el('div', { class: 'aviso-burbuja', texto });
   document.getElementById('avisos').append(burbuja);
   setTimeout(() => burbuja.remove(), 2600);
+}
+
+// --------------------------------------------------- Propuestas de un modelo --
+
+/**
+ * La pastilla donde se pasan las propuestas de un modelo.
+ *
+ * Es la misma pieza en los dos sitios donde la agenda le pide algo escrito a un
+ * modelo —cinco regalos para una persona, cinco felicitaciones para quien
+ * cumple— y lo único que cambia entre ellos es qué se pide, cómo se dibuja cada
+ * propuesta y qué verbo la aprovecha: usarla, o copiarla.
+ *
+ * Lo que la pieza sostiene:
+ *
+ * - **La tanda vive mientras la pastilla exista.** Cerrarla no la tira: volver a
+ *   abrirla enseña lo que ya había, por donde iba, y eso no cuesta nada.
+ * - **Pedir más añade al final.** No sustituye, de modo que se puede volver atrás
+ *   a la que gustaba; y salta a la primera de las nuevas, que es lo que se acaba
+ *   de pedir.
+ * - **Lo ya propuesto se le devuelve al modelo**, o la segunda tanda repite a la
+ *   primera: el material que ve es idéntico.
+ * - **El marco no se mueve.** Solo cambia el texto de dentro, y por eso el hueco
+ *   lleva el alto reservado en el CSS: si la tarjeta creciera con la propuesta
+ *   más larga, el verbo se escaparía de debajo del dedo al pasar.
+ */
+export function carruselDePropuestas({
+  pedir, pintar, verbo, etiquetaMas = 'Otras cinco', clave = (propuesta) => propuesta, holgado = false,
+}) {
+  let tanda = [];
+  let indice = 0;
+
+  const texto = el('div', { class: 'propuesta-texto', 'aria-live': 'polite' });
+  const cuenta = el('span', { class: 'propuesta-cuenta' });
+  const atras = el('button', {
+    class: 'propuesta-flecha', type: 'button', 'aria-label': 'Propuesta anterior',
+    onclick: () => mover(-1),
+  }, ['‹']);
+  const adelante = el('button', {
+    class: 'propuesta-flecha', type: 'button', 'aria-label': 'Propuesta siguiente',
+    onclick: () => mover(1),
+  }, ['›']);
+  const usar = el('button', {
+    class: 'boton-mini', 'data-tono': 'principal', type: 'button',
+    onclick: () => { if (tanda[indice] !== undefined) verbo.hacer(tanda[indice]); },
+  }, [verbo.texto]);
+  const mas = el('button', {
+    class: 'boton-mini', type: 'button', onclick: () => solicitar({ mas: true }),
+  }, [etiquetaMas]);
+
+  const nodo = el('div', { class: 'propuesta', 'data-holgado': holgado ? 'si' : null, hidden: true }, [
+    el('div', { class: 'propuesta-cuerpo' }, [atras, texto, adelante]),
+    el('div', { class: 'propuesta-pie' }, [usar, mas, cuenta]),
+  ]);
+
+  function mover(pasos) {
+    indice = Math.min(tanda.length - 1, Math.max(0, indice + pasos));
+    dibujar();
+  }
+
+  function dibujar() {
+    vaciar(texto).append(...[].concat(pintar(tanda[indice])).filter(Boolean));
+    cuenta.textContent = `${indice + 1} / ${tanda.length}`;
+    atras.disabled = indice === 0;
+    adelante.disabled = indice >= tanda.length - 1;
+    usar.disabled = false;
+    mas.disabled = false;
+  }
+
+  function esperando() {
+    nodo.hidden = false;
+    vaciar(texto).append(el('p', { class: 'propuesta-porque', texto: 'Pensando…' }));
+    cuenta.textContent = '';
+    for (const boton of [atras, adelante, usar, mas]) boton.disabled = true;
+  }
+
+  async function solicitar({ mas: otras }) {
+    const teniamos = tanda.length;
+    esperando();
+
+    try {
+      const nuevas = await pedir({ mas: otras, yaDichas: tanda.map(clave) });
+      if (!nuevas.length) {
+        avisar('No ha propuesto nada');
+        if (teniamos) dibujar(); else nodo.hidden = true;
+        return;
+      }
+      tanda = otras ? [...tanda, ...nuevas] : nuevas;
+      indice = otras ? teniamos : 0;
+      dibujar();
+    } catch (error) {
+      avisar(error.message || 'No he podido pedírselo');
+      if (teniamos) dibujar(); else nodo.hidden = true;
+    }
+  }
+
+  return {
+    nodo,
+    /** La primera vez pide; después vuelve a enseñar lo que ya hay, que es lo
+     *  que espera quien la cerró sin usarla. */
+    abrir() {
+      if (tanda.length) { nodo.hidden = false; dibujar(); return; }
+      solicitar({ mas: false });
+    },
+    cerrar() { nodo.hidden = true; },
+    /** Lo propuesto para otra persona no vale para esta. */
+    olvidar() {
+      tanda = [];
+      indice = 0;
+      nodo.hidden = true;
+    },
+    hay: () => tanda.length > 0,
+  };
 }
 
 // ------------------------------------------------------------- Formularios --

@@ -128,12 +128,14 @@ ellos.
 
 La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
 la base de datos desde *Ajustes → Inteligencia artificial*, dentro de la propia
-aplicación y solo para administradores. Es lo que enciende las dos cosas que la
+aplicación y solo para administradores. Es lo que enciende las tres cosas que la
 agenda le pide a un modelo: el segundo botón de compartir —el del destello—, que
-cuenta en dos frases un día, la semana, el mes o lo que viene antes de enviarlo,
-y la propuesta de regalo al apuntar una idea para alguien. Sin clave, ninguno de
-los dos botones aparece y todo lo demás funciona igual. El encargo de cada una
-—lo que se le pide al modelo— se reescribe en ese mismo apartado. Se registra
+cuenta en dos frases un día, la semana, el mes o lo que viene antes de enviarlo;
+la propuesta de regalo al apuntar una idea para alguien; y la felicitación de
+cumpleaños, que se escribe al abrir un cumpleaños en Regalos → Ocasiones y se
+copia al portapapeles. Sin clave no aparece ninguno de los tres botones y todo lo
+demás funciona igual. El encargo de cada una —lo que se le pide al modelo— se
+reescribe en ese mismo apartado. Se registra
 allí y no aquí porque es lo único de esta instalación que se cambia con cierta
 frecuencia —al rotarla, al cambiar de modelo— y hacerlo con `wrangler` obligaría
 a volver a desplegar cada vez.

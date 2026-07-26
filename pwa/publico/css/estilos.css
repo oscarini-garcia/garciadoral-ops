@@ -617,6 +617,11 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .propuesta-que { font-size: 16px; font-weight: 500; }
 .propuesta-porque { font-size: 14px; color: var(--ink-soft); }
+/* Una felicitación es un párrafo, no un título de ocho palabras: ocupa dos o
+   tres líneas y el hueco reservado crece con ella para que el marco siga sin
+   moverse al pasar de una a otra. */
+.propuesta-felicitacion { font-size: 15.5px; line-height: 1.45; }
+.propuesta[data-holgado="si"] .propuesta-texto { min-height: 104px; }
 .propuesta-flecha {
   width: 34px; height: 34px; border-radius: 9px; flex: none;
   display: grid; place-items: center;
@@ -644,6 +649,12 @@ button { background: none; border: 0; cursor: pointer; }
 .boton:disabled { opacity: .5; cursor: default; }
 /* Botón de dentro de una tarjeta, más bajo que los de una hoja: ahí compiten
    con el texto y no deben ganarle. */
+/* Un botón que lleva su dibujo delante. Hace falta decirlo porque el icono se
+   dibuja como bloque —para que el SVG no cuelgue de la línea base— y sin esto se
+   pondría en un renglón propio, encima del texto. */
+.boton[data-con-icono] { display: flex; align-items: center; justify-content: center; gap: 9px; }
+.boton[data-con-icono] .icono-svg svg { width: 17px; height: 17px; }
+
 .boton-mini {
   min-height: 36px; padding: 7px 14px; border-radius: 9px; font-size: 15px;
   background: var(--paper); border: 1px solid var(--line); color: var(--ink);
@@ -690,6 +701,36 @@ button { background: none; border: 0; cursor: pointer; }
 .acordeon > summary:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 6px; }
 .acordeon-cuerpo { display: flex; flex-direction: column; gap: 11px; padding: 2px 0 15px; }
 @media (prefers-reduced-motion: reduce) { .acordeon > summary::after { transition: none; } }
+
+/* Lo que el apartado sigue diciendo con la solapa bajada: cuántas fechas hay en
+   marcha, o quién es el próximo que cumple. Va apagado y a la derecha, pegado a
+   la flecha, para que se lea como una nota del rótulo y no como parte de él. */
+.acordeon-nota {
+  margin-left: auto; padding-left: 10px;
+  font-size: 13px; font-weight: 400; color: var(--ink-faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Los verbos de una tarjeta, escondidos debajo de ella y descubiertos al
+   deslizarla hacia la izquierda. El recorte del marco es lo que los tapa; la
+   cara lleva fondo propio —el de la tarjeta— y por eso no se transparentan.
+
+   `touch-action: pan-y` reparte los gestos sin discutirlos: el vertical sigue
+   siendo de la página y el horizontal es de la fila. Y con el teclado no hay
+   nada que arrastrar: enfocar cualquiera de los dos botones abre la fila. */
+.deslizable { position: relative; overflow: hidden; border-radius: var(--radio); --verbos: 96px; }
+.deslizable-verbos {
+  position: absolute; inset: 0 0 0 auto; width: var(--verbos);
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-right: 4px;
+}
+/* Aquí los dos verbos son dos fichas iguales. El de borrar lleva su fondo, que
+   en una cabecera de hoja no hace falta —va sobre papel— pero aquí sí: sin él
+   parecería un dibujo suelto en el hueco. */
+.deslizable-verbos .icono-accion { width: 40px; height: 40px; }
+.deslizable-verbos .icono-accion[data-tono="peligro"] { background: var(--regalo-suave); }
+.deslizable-cara { position: relative; touch-action: pan-y; transition: transform .18s ease; }
+.deslizable:focus-within .deslizable-cara { transform: translateX(calc(-1 * var(--verbos))); }
+@media (prefers-reduced-motion: reduce) { .deslizable-cara { transition: none; } }
 
 /* Una función dentro de un apartado: la instrucción de contar los días, dentro
    del de la inteligencia artificial. */

@@ -279,6 +279,22 @@ export async function sugerirRegalos(personaId, { pista = '', descartadas = [] }
   return propuestas || [];
 }
 
+/**
+ * Una tanda de cinco felicitaciones para quien cumple.
+ *
+ * Viaja el identificador de la persona y lo que ya se ha escrito en esta misma
+ * sesión, para que la tanda siguiente no repita a la anterior. Lo que se sabe de
+ * ella lo reúne el Worker, y a propósito reúne **menos** que para un regalo: el
+ * texto se le manda a quien cumple, así que ni las ideas ni los regalos entran.
+ */
+export async function felicitarCumple(personaId, { descartadas = [] } = {}) {
+  const { felicitaciones } = await peticion('/api/cumple/felicitar', {
+    method: 'POST',
+    body: JSON.stringify({ persona_id: personaId, descartadas }),
+  });
+  return felicitaciones || [];
+}
+
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */
 export const leerAjustesDeIa = () => peticion('/api/ia');
 

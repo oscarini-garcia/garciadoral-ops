@@ -1,6 +1,6 @@
 /**
- * Lo que la agenda le pide a un modelo de Anthropic: contar un día y proponer
- * un regalo.
+ * Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un
+ * regalo y felicitar un cumpleaños.
  *
  * La llamada sale de aquí y no del teléfono por tres motivos, en orden de
  * importancia: la clave es una credencial de pago del hogar y no debe viajar a
@@ -17,6 +17,12 @@
  * La única excepción es la pista de la sugerencia de regalo, que es texto libre
  * y va explicada donde se compone: es lo que quien pide acaba de escribir en su
  * propio formulario, y vuelve a su propia pantalla.
+ *
+ * Los tres encargos son el mismo mecanismo con instrucciones distintas, y cada
+ * uno se puede reescribir desde Ajustes. Lo que cambia entre ellos es el
+ * material: de un día se le cuentan los eventos; de un regalo, lo que se sabe de
+ * quien lo recibe; de una felicitación, **solo lo que esa persona ya sabe de sí
+ * misma**, porque el texto se le manda a ella.
  */
 
 const ANTHROPIC = 'https://api.anthropic.com/v1';
@@ -54,6 +60,28 @@ export const INSTRUCCION_REGALO_POR_DEFECTO = [
   'En español de España, sin emojis, sin viñetas y sin comillas.',
 ].join(' ');
 
+/**
+ * El encargo de la felicitación, que es el único de los tres con emojis.
+ *
+ * Va a WhatsApp y va a la persona que cumple, así que se le pide gracia y se le
+ * prohíbe la crueldad fácil —la edad, el cuerpo— y la invención: lo que no esté
+ * en el material no se pone, porque quien lo reciba lo va a leer sabiendo si es
+ * verdad.
+ */
+export const INSTRUCCION_FELICITACION_POR_DEFECTO = [
+  'Escribes felicitaciones de cumpleaños para mandar por WhatsApp. Te doy quién',
+  'cumple, los años que cumple, qué es en la familia y lo que se sabe de esa',
+  'persona.',
+  'Escribe CINCO felicitaciones distintas entre sí, de una o dos frases cada una,',
+  'con gracia y con cariño, en español de España y tuteando, y pon en cada una dos',
+  'o tres emojis.',
+  'La gracia sale de lo que sabes de ella —lo que le gusta, sus manías, lo que',
+  'hace—, no de un chiste de calendario. No te metas con su edad ni con su cuerpo,',
+  'y no inventes nada que no te haya dado: lo va a leer quien cumple.',
+  'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada línea la',
+  'felicitación entera, sin comillas y sin explicar nada.',
+].join(' ');
+
 const MAXIMO_EVENTOS = 20;
 // Un periodo da para más, pero no para todo: un mes cargado son cuarenta o
 // cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
@@ -87,6 +115,7 @@ const CLAVES = {
   modelo: 'ia.modelo',
   instruccion: 'ia.instruccion',
   regalo: 'ia.regalo',
+  felicitacion: 'ia.felicitacion',
 };
 
 export async function leerConfiguracion(db) {
@@ -102,6 +131,7 @@ export async function leerConfiguracion(db) {
     modelo: filas.get(CLAVES.modelo)?.valor || MODELO_POR_DEFECTO,
     instruccion: filas.get(CLAVES.instruccion)?.valor || INSTRUCCION_POR_DEFECTO,
     regalo: filas.get(CLAVES.regalo)?.valor || INSTRUCCION_REGALO_POR_DEFECTO,
+    felicitacion: filas.get(CLAVES.felicitacion)?.valor || INSTRUCCION_FELICITACION_POR_DEFECTO,
   };
 }
 
@@ -120,6 +150,7 @@ export function configuracionPublica(configuracion) {
     modelo: configuracion.modelo,
     instruccion: configuracion.instruccion,
     regalo: configuracion.regalo,
+    felicitacion: configuracion.felicitacion,
   };
 }
 
@@ -396,6 +427,48 @@ export function componerMaterialDeRegalo(
   return { titulo: `Un regalo para ${persona.nombre}`, lineas };
 }
 
+/**
+ * Lo que se le cuenta al modelo para que felicite a quien cumple.
+ *
+ * Es el material más corto de los tres, y lo es a propósito: **la felicitación se
+ * le manda a la persona que cumple**, así que aquí solo puede entrar lo que ella
+ * ya sabe de sí misma —cómo se llama, qué es en la familia, los años que cumple y
+ * lo que hay apuntado sobre ella—. Las ideas, los regalos y lo que recibió otros
+ * años se quedan fuera: son justo lo que no debe leer, y un modelo al que se le
+ * da un regalo pendiente lo acaba mencionando.
+ *
+ * Los años son los que **cumple**, no los cumplidos: el día del cumpleaños son
+ * los mismos, y cualquier otro día de después se habla ya del siguiente.
+ */
+export function componerMaterialDeFelicitacion(
+  instantanea,
+  { personaId, descartadas = [], hoy = null } = {},
+) {
+  const persona = (instantanea.personas || []).find((p) => p.id === personaId);
+  if (!persona) return { titulo: '', lineas: [] };
+
+  const anios = aniosQueCumple(persona, hoy);
+  const senas = [persona.parentesco, anios ? `cumple ${anios} años` : null].filter(Boolean).join(', ');
+  const lineas = [`Felicita a ${persona.nombre}${senas ? ` (${senas})` : ''}`];
+
+  const suyos = (instantanea.atributos_persona || [])
+    .filter((a) => a.persona_id === personaId)
+    .slice(0, MAXIMO_POR_LISTA)
+    .map((a) => `  ${a.clave}: ${a.valor}`);
+  if (suyos.length) lineas.push('Lo que se sabe de ella:', ...suyos);
+
+  const yaDichas = descartadas
+    .map((texto) => String(texto || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, MAXIMO_DESCARTADAS);
+  if (yaDichas.length) {
+    lineas.push('Ya has escrito estas, escribe otras distintas:');
+    lineas.push(...yaDichas.map((texto) => `  ${texto}`));
+  }
+
+  return { titulo: `Una felicitación para ${persona.nombre}`, lineas };
+}
+
 /** Los años que cumple este año, que es como se habla de la edad al pensar un
  *  regalo. Sin fecha de nacimiento no se dice nada: inventarla sería peor. */
 function edadDe(persona, hoy) {
@@ -409,6 +482,27 @@ function edadDe(persona, hoy) {
     anios -= 1;
   }
   return anios >= 0 && anios < 130 ? `${anios} años` : null;
+}
+
+/**
+ * Los años que cumple en su próximo cumpleaños, contando hoy como suyo si hoy es.
+ *
+ * No es la edad de `edadDe`: el 25 de julio, quien nació el 1 de agosto de 2010
+ * tiene 15 años cumplidos y **cumple 16**, y eso es lo que dice una felicitación.
+ * Pasado su cumpleaños se habla ya del siguiente, que es cuando se vuelve a
+ * escribir una.
+ */
+function aniosQueCumple(persona, hoy) {
+  if (!persona.fecha_nacimiento) return null;
+  const nacimiento = partes(persona.fecha_nacimiento);
+  const referencia = partes(hoy || new Date().toISOString().slice(0, 10));
+  if (!nacimiento.anio || !referencia.anio) return null;
+
+  let anios = referencia.anio - nacimiento.anio;
+  const yaPaso = referencia.mes > nacimiento.mes
+    || (referencia.mes === nacimiento.mes && referencia.dia > nacimiento.dia);
+  if (yaPaso) anios += 1;
+  return anios > 0 && anios < 130 ? anios : null;
 }
 
 // ----------------------------------------------------------------- Llamada --
@@ -541,6 +635,38 @@ export function interpretarPropuestas(texto, cuantas = PROPUESTAS_POR_TANDA) {
   }
 
   return propuestas;
+}
+
+/**
+ * Las cinco felicitaciones, que son cinco textos enteros y no un par de campos.
+ *
+ * Aquí no se parte la línea por la raya: una felicitación lleva rayas, comas y
+ * signos dentro, y cortarla por la primera dejaría media. Se le quita la
+ * numeración y las comillas **cuando envuelven la línea entera**, y lo demás se
+ * conserva tal cual —emojis y puntuación final incluidos—, porque se va a pegar
+ * en un WhatsApp. Una comilla suelta a media frase se queda: es más probable que
+ * sea una cita dentro del texto que un adorno del modelo.
+ *
+ * La numeración exige separador, a diferencia de la de los regalos: sin él,
+ * «16 años y sigues igual 🎉» perdería los años al confundirlos con un número de
+ * lista.
+ */
+export function interpretarFelicitaciones(texto, cuantas = PROPUESTAS_POR_TANDA) {
+  const felicitaciones = [];
+
+  for (const cruda of String(texto || '').split('\n')) {
+    const linea = cruda
+      .replace(/^\s*(?:\d+\s*[.)\-—–:]|[-*•])\s*/, '')
+      .trim()
+      .replace(/^[«"'](.*)[»"']$/, '$1')
+      .trim();
+    if (!linea) continue;
+
+    felicitaciones.push(linea);
+    if (felicitaciones.length >= cuantas) break;
+  }
+
+  return felicitaciones;
 }
 
 // ------------------------------------------------------------------- Freno --
