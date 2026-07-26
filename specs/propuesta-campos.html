@@ -1,0 +1,480 @@
+<meta charset="utf-8">
+<title>Los campos de texto en la hoja — opciones</title>
+
+<style>
+  /* Los dos temas se dibujan a la vez, uno al lado del otro, porque la pregunta
+     es cómo queda en cada uno. Por eso los colores no van en :root sino en dos
+     clases: cada teléfono lleva el suyo y no depende del tema con el que se esté
+     leyendo esta página. Los valores son los de la aplicación, incluido el papel
+     elevado de las hojas. */
+  .tema-claro {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA; --paper-alto-3: #EDE8DE;
+    --borde-alto: rgba(28,43,51,.06); --velo: rgba(8,16,20,.55);
+    --sombra-alta: 0 -2px 6px rgba(28,43,51,.10), 0 -20px 50px rgba(28,43,51,.22);
+    --hueco: rgba(28,43,51,.07);
+  }
+  .tema-oscuro {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
+    --borde-alto: rgba(231,238,241,.07); --velo: rgba(0,0,0,.68);
+    --sombra-alta: 0 -2px 6px rgba(0,0,0,.5), 0 -20px 50px rgba(0,0,0,.6);
+    --hueco: rgba(0,0,0,.45);
+  }
+
+  :root {
+    color-scheme: light dark;
+    --pag-fondo: #FBF9F5; --pag-tinta: #1C2B33; --pag-suave: #5F7280;
+    --pag-tenue: #93A3AD; --pag-linea: #E2DED4; --pag-verde: #0E6E62; --pag-ambar: #A8641B;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --pag-fondo: #10171A; --pag-tinta: #E7EEF1; --pag-suave: #9CB0BA;
+      --pag-tenue: #6C818C; --pag-linea: #263238; --pag-verde: #55C9B4; --pag-ambar: #E0A253;
+    }
+  }
+  :root[data-theme="light"], :root[data-theme="claro"] {
+    --pag-fondo: #FBF9F5; --pag-tinta: #1C2B33; --pag-suave: #5F7280;
+    --pag-tenue: #93A3AD; --pag-linea: #E2DED4; --pag-verde: #0E6E62; --pag-ambar: #A8641B;
+  }
+  :root[data-theme="dark"], :root[data-theme="oscuro"] {
+    --pag-fondo: #10171A; --pag-tinta: #E7EEF1; --pag-suave: #9CB0BA;
+    --pag-tenue: #6C818C; --pag-linea: #263238; --pag-verde: #55C9B4; --pag-ambar: #E0A253;
+  }
+
+  body {
+    background: var(--pag-fondo); color: var(--pag-tinta);
+    font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 21px; }
+  p { margin: 0; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--pag-tenue); }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--pag-suave); max-width: 66ch; }
+  code { font-family: var(--mono); font-size: .88em; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--pag-linea); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--pag-verde);
+    border: 1px solid var(--pag-verde); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--pag-suave); max-width: 66ch; }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--pag-suave); }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--pag-verde); }
+  .juicio .no span:first-child { color: var(--pag-ambar); }
+
+  .pareja { display: flex; flex-wrap: wrap; gap: 18px; }
+  .con-juicio { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 880px) { .con-juicio { grid-template-columns: auto 1fr; } }
+  .pie-tema { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--pag-tenue); margin-top: 7px; text-align: center; }
+
+  /* -------------------------------------------------------- La hoja ------ */
+
+  .tel {
+    width: 258px; border-radius: 18px; overflow: hidden;
+    border: 1px solid var(--pag-linea);
+    background: var(--velo);
+  }
+  .hoja {
+    background: var(--paper-alto);
+    border-top: 1px solid var(--borde-alto);
+    border-radius: 16px 16px 0 0;
+    margin-top: 26px;
+    padding: 9px 14px 15px;
+    display: flex; flex-direction: column; gap: 11px;
+
+    /* Dentro de la hoja la escala de papeles sube un peldaño, igual que en la
+       aplicación: así lo que se ve aquí es lo que se verá allí. */
+    --paper: var(--paper-alto);
+    --paper-2: var(--paper-alto-2);
+    --paper-3: var(--paper-alto-3);
+  }
+  .asa { width: 32px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 2px; }
+  .hoja h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 17px; color: var(--ink); }
+
+  .campo { display: flex; flex-direction: column; gap: 5px; }
+  .campo label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
+  .entrada {
+    min-height: 36px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 8px 10px; font-size: 13.5px; color: var(--ink);
+  }
+  .entrada.vacia { color: var(--ink-faint); }
+  .entrada.foco { outline: 2px solid var(--tinta); outline-offset: 1px; }
+  .acciones { display: flex; gap: 8px; margin-top: 2px; }
+  .boton { flex: 1; text-align: center; border-radius: 9px; padding: 8px 12px; font-size: 13px; background: var(--tinta); color: var(--paper-alto); }
+  .boton.discreto { flex: 0 0 auto; background: var(--paper-3); color: var(--ink); }
+
+  /* --- A: un peldaño de la escala --- */
+  .a .entrada { background: var(--paper-2); }
+
+  /* --- B: pozo, siempre más oscuro que su superficie --- */
+  .b.tema-claro .entrada { background: #F0EBE0; border-color: #DCD6C9; }
+  .b.tema-oscuro .entrada { background: #131B1F; border-color: #2C3A41; }
+
+  /* --- C: solo el borde --- */
+  .c .entrada { border-color: var(--ink-faint); }
+
+  /* --- D: pozo con sombra interior --- */
+  .d.tema-claro .entrada { background: #F4F0E7; border-color: #DCD6C9; box-shadow: inset 0 1px 2px rgba(28,43,51,.07); }
+  .d.tema-oscuro .entrada { background: #151E22; border-color: #2C3A41; box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+
+  /* --- E: relleno sin contorno, con raya abajo --- */
+  .e .entrada {
+    border: 0; border-bottom: 2px solid var(--line);
+    border-radius: 9px 9px 0 0;
+  }
+  .e.tema-claro .entrada { background: #F2EDE3; }
+  .e.tema-oscuro .entrada { background: #141D21; }
+  .e .entrada.foco { outline: 0; border-bottom-color: var(--tinta); }
+
+  .nota {
+    background: color-mix(in srgb, var(--pag-fondo) 88%, var(--pag-tinta));
+    border: 1px solid var(--pag-linea); border-left: 3px solid var(--pag-verde);
+    border-radius: 12px; padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--pag-suave); max-width: 68ch; }
+  .nota strong { color: var(--pag-tinta); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Que se vea dónde se escribe</h1>
+    <p>
+      Los campos se dibujan con <code>background: var(--paper)</code>, y dentro de una hoja
+      eso es <strong>exactamente el color de la hoja</strong>. Lo único que separa el hueco de
+      escribir del papel que hay detrás es una línea de un píxel en <code>--line</code>. Con el
+      papel elevado que llevan ahora las hojas, esa línea se ha quedado corta.
+    </p>
+    <p>
+      Cinco maneras de arreglarlo. En cada pareja, el segundo campo está enfocado, porque el
+      estado de foco es la mitad del problema. Los teléfonos llevan el papel elevado de
+      verdad, así que lo que se ve aquí es lo que se verá allí.
+    </p>
+  </header>
+
+  <!-- ------------------------------------------------------- Como está -- -->
+
+  <section class="opcion" style="border-top: 0; padding-top: 0;">
+    <div class="opcion-cabeza">
+      <h2>Como está ahora</h2>
+      <p>El campo y la hoja, el mismo color.</p>
+    </div>
+    <div class="pareja">
+      <div>
+        <div class="tel tema-claro">
+          <div class="hoja">
+            <div class="asa"></div>
+            <h4>Nuevo evento</h4>
+            <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+            <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+            <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+          </div>
+        </div>
+        <p class="pie-tema">Claro</p>
+      </div>
+      <div>
+        <div class="tel tema-oscuro">
+          <div class="hoja">
+            <div class="asa"></div>
+            <h4>Nuevo evento</h4>
+            <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+            <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+            <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+          </div>
+        </div>
+        <p class="pie-tema">Oscuro</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- A -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>Un peldaño de la escala que ya hay</h2></div>
+      <p>
+        El campo pasa de <code>--paper</code> a <code>--paper-2</code>, que es el papel con el
+        que ya se dibujan las tarjetas y el conmutador de vista. Ni un color nuevo, y funciona
+        igual dentro de una hoja que fuera de ella, porque la escala se recalcula sola.
+      </p>
+      <p>
+        <strong>Ojo a una cosa:</strong> en el tema oscuro, un peldaño de esta escala es
+        <em>más claro</em>, no más oscuro. Es coherente con el resto de la aplicación —lo que
+        está más cerca recibe más luz—, pero no es literalmente lo que pedías.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro a">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro a">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Una palabra de CSS y ningún color nuevo en la paleta.</span></div>
+        <div class="si"><span>+</span><span>Se adapta solo al papel de cada sitio: hoja, pantalla, lo que venga.</span></div>
+        <div class="no"><span>−</span><span>En oscuro va hacia arriba, no hacia abajo: el campo queda más claro que la hoja.</span></div>
+        <div class="no"><span>−</span><span>Es el mismo tono de las tarjetas, así que un campo y una tarjeta pasan a parecerse.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- B -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Pozo: más oscuro que su superficie, en los dos temas</h2></div>
+      <p>
+        Un tono propio para los campos, que en claro y en oscuro va siempre <strong>por
+        debajo</strong> del papel que lo rodea. Es lo que pedías, y además dice la verdad
+        sobre lo que es: un hueco donde meter algo, no una pieza apoyada encima. El borde
+        acompaña, un punto más marcado que la línea general.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro b">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro b">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se ve en los dos temas y en la misma dirección: el hueco siempre va hacia dentro.</span></div>
+        <div class="si"><span>+</span><span>Un campo deja de parecerse a una tarjeta: son cosas distintas y ahora se ven distintas.</span></div>
+        <div class="si"><span>+</span><span>En oscuro, el texto blanco sobre un fondo más hondo se lee mejor.</span></div>
+        <div class="no"><span>−</span><span>Dos fichas de color nuevas, una por tema, que hay que mantener a mano.</span></div>
+        <div class="no"><span>−</span><span>Fijas: si algún día una hoja va sobre otro papel, el pozo no se entera.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- C -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>Solo el borde, más marcado</h2></div>
+      <p>
+        El fondo se queda como está y lo que sube de tono es la línea: de
+        <code>--line</code>, que es casi papel, a <code>--ink-faint</code>. El campo sigue
+        siendo un hueco vacío, pero con el contorno dibujado de verdad.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro c">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro c">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Ningún color nuevo, y el contraste del borde sube donde la norma lo pide.</span></div>
+        <div class="si"><span>+</span><span>Vale igual sobre cualquier papel, ahora y después.</span></div>
+        <div class="no"><span>−</span><span>Cuatro rectángulos con borde marcado, uno debajo de otro, hacen ruido: el formulario se lee como una reja.</span></div>
+        <div class="no"><span>−</span><span>Un borde no dice «aquí se escribe» tan claro como un fondo distinto.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- D -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>Pozo con sombra interior</h2></div>
+      <p>
+        La B, con menos diferencia de tono y una sombra por dentro del borde superior. Lo
+        hondo lo hace la sombra y no el color, así que el campo se separa sin oscurecerse
+        tanto. Es el recurso clásico del campo hundido, de cuando los formularios imitaban al
+        papel.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro d">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro d">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se nota el hueco sin tener que oscurecer tanto el fondo.</span></div>
+        <div class="si"><span>+</span><span>En oscuro es donde mejor funciona: la sombra interior se lee sin cambiar el tono.</span></div>
+        <div class="no"><span>−</span><span>Sombras dentro de sombras: la aplicación no usa ninguna otra, y esta abre esa puerta.</span></div>
+        <div class="no"><span>−</span><span>A tamaño pequeño y con poca luz, la sombra interior casi no se aprecia.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- E -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h2>Relleno sin contorno, con la raya debajo</h2></div>
+      <p>
+        Se quita el borde de los cuatro lados y queda el fondo más oscuro con una raya de dos
+        píxeles abajo, que al enfocar se pone de tinta. Menos líneas en pantalla y el foco se
+        ve sin recuadro. Es la convención de los formularios de Android.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro e">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro e">
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>Nuevo evento</h4>
+              <div class="campo"><label>Qué</label><div class="entrada vacia">Comida con los abuelos</div></div>
+              <div class="campo"><label>Dónde</label><div class="entrada foco">Casa de la abuela</div></div>
+              <div class="acciones"><span class="boton">Crear</span><span class="boton discreto">Cancelar</span></div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Menos líneas: el formulario respira y se lee de arriba abajo.</span></div>
+        <div class="si"><span>+</span><span>El foco se ve en la raya, sin el recuadro que se superpone al borde.</span></div>
+        <div class="no"><span>−</span><span>Es la convención de Android, y esta aplicación vive en un iPhone.</span></div>
+        <div class="no"><span>−</span><span>Media esquina redondeada y media recta: no pega con el resto, que es todo esquinas.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- Cierre -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><h2>Lo que yo haría</h2></div>
+    <div class="nota">
+      <p>
+        <strong>B</strong>. Es lo que pediste —más oscuro— y además va en la misma dirección en
+        los dos temas, que es lo que la A no consigue: un hueco donde escribir se hunde, no se
+        levanta, y eso vale con luz y sin ella. De paso deja de confundirse con una tarjeta,
+        que son dos cosas distintas y hasta ahora se dibujaban casi igual.
+      </p>
+      <p>
+        <strong>A</strong> es la más barata y la que menos hay que mantener, y si no fuera por
+        lo del tema oscuro sería la respuesta. Si te da igual que en oscuro el campo quede más
+        claro que la hoja, es la que menos deuda deja.
+      </p>
+      <p>
+        <strong>D</strong> es la B bien hecha si la B te parece demasiado contraste. Se puede
+        empezar por la B y bajarle el tono luego: es cambiar dos valores.
+      </p>
+    </div>
+  </section>
+
+</div>
