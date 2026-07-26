@@ -47,6 +47,9 @@
 
   --radio: 12px;
   --toque: 44px;
+  /* Lo que mide la barra de pestañas: el toque más su aire. Lo usan la hoja
+     —para que sus botones no caigan sobre ella— y quien necesite dejarla libre. */
+  --alto-tabbar: 58px;
   --ancho: 620px;
 }
 
@@ -683,7 +686,11 @@ button { background: none; border: 0; cursor: pointer; }
   border-radius: 18px 18px 0 0;
   border-top: 1px solid var(--borde-alto);
   box-shadow: var(--sombra-alta);
-  padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
+  /* Por debajo del contenido se deja libre la banda de las pestañas. La hoja
+     las tapa —es el plano de arriba— pero sus botones no deben terminar justo
+     encima de ellas: quien va a guardar tiene el pulgar sobre cuatro rótulos
+     que no puede tocar, y el borde de la pantalla a un milímetro. */
+  padding: 8px 20px calc(20px + var(--alto-tabbar) + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 14px;
   animation: subir .22s cubic-bezier(.22, .8, .3, 1);
 }

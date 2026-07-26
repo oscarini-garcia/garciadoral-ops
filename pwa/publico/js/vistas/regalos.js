@@ -483,7 +483,7 @@ function abrirFormularioOcasion(ctx, { duplicarDe = null } = {}) {
   let participantes = origen ? [...(origen.participantes || [])] : [];
 
   abrirHoja(origen ? 'Duplicar la ocasión' : 'Nueva ocasión', (cuerpo) => {
-    const nombre = entrada({ value: origen ? `${origen.nombre.replace(/\s*\d{4}$/, '')} ${new Date().getFullYear() + 1}` : '', placeholder: 'Navidad 2026' });
+    const nombre = entrada({ value: origen ? `${origen.nombre.replace(/\s*\d{4}$/, '')} ${new Date().getFullYear() + 1}` : '' });
     const fecha = el('input', { type: 'date', value: iso(hoy()) });
     cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha));
     cuerpo.append(campo(
@@ -529,7 +529,11 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   let destinatarios = existente
     ? orientaciones.map((o) => o.persona_id).filter(Boolean)
     : [paraPersona].filter(Boolean);
-  let etiquetas = existente ? orientaciones.map((o) => o.etiqueta_id).filter(Boolean) : [];
+  // Las etiquetas ya no se ponen desde aquí —el campo preguntaba por un perfil
+  // que no cambiaba nada: no reserva la idea para nadie, no la propone en
+  // ninguna ficha y no acota lo que se ofrece al asociar un regalo—, pero las
+  // que una idea ya tuviera se conservan al guardarla.
+  const etiquetas = existente ? orientaciones.map((o) => o.etiqueta_id).filter(Boolean) : [];
 
   const borrarIdea = existente ? botonIcono('borrar', {
     etiqueta: 'Borrar la idea', tono: 'peligro',
@@ -543,7 +547,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   }) : null;
 
   abrirHoja(existente ? 'Editar idea' : 'Apuntar una idea', (cuerpo) => {
-    const titulo = entrada({ value: existente?.titulo || '', placeholder: 'Botas de montar', autofocus: true });
+    const titulo = entrada({ value: existente?.titulo || '', autofocus: true });
 
     // El destello vive dentro del campo que va a rellenar, al final, como la
     // lupa de un buscador: no gasta una línea y no hay que explicar qué campo
@@ -584,7 +588,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
 
     // ------------------------------------------------------- Los demás campos --
 
-    const descripcion = el('textarea', { placeholder: 'Para acordarte dentro de seis meses' });
+    const descripcion = el('textarea', {});
     descripcion.value = existente?.descripcion || '';
 
     cuerpo.append(campo('Para quién', opciones(
@@ -594,34 +598,29 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'));
     cuerpo.append(campo('Descripción', descripcion));
 
-    // Al editar se abre desplegado y sin conmutador: quien corrige viene a por
-    // un campo concreto, y esconderlo detrás de un enlace sobra.
+    // Al editar se abre desplegado y sin enlace: quien corrige viene a por un
+    // campo concreto, y esconderlo detrás de un enlace sobra.
+    //
+    // El enlace solo despliega, y al hacerlo se va. Volver a plegar no ahorraba
+    // nada —lo de debajo son campos vacíos— y dejaba un botón que decía «dejarlo
+    // así» encima de lo que se acababa de abrir para tocar.
     const extra = el('div', { class: 'hoja-seccion', hidden: !existente });
-    const conmutador = el('button', {
+    const desplegar = el('button', {
       class: 'enlace-discreto', type: 'button',
-      onclick: () => { extra.hidden = !extra.hidden; conmutador.textContent = extra.hidden ? 'Clasificarla' : 'Dejarlo así'; },
+      onclick: () => { extra.hidden = false; desplegar.remove(); },
     }, ['Clasificarla']);
-    if (!existente) cuerpo.append(conmutador);
+    if (!existente) cuerpo.append(desplegar);
     cuerpo.append(extra);
-
-    const avisoEtiquetas = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: !etiquetas.length });
-    avisoEtiquetas.textContent = 'Las etiquetas clasifican pero no ocultan: una idea etiquetada como «adolescente» la ven también las hijas. Para reservarla, nombra a la persona.';
 
     const categoria = seleccion(
       [{ valor: '', texto: 'Sin categoría' }, ...ctx.vista.categorias().map((c) => ({ valor: c.id, texto: c.nombre }))],
       existente?.categoria_id || '',
     );
-    const precio = entrada({ type: 'number', inputmode: 'decimal', placeholder: '120', value: existente?.precio_max ?? '' });
-    const establecimiento = entrada({ value: existente?.establecimiento || '', placeholder: 'Decathlon' });
-    const enlace = entrada({ type: 'url', placeholder: 'https://', value: existente?.enlace || '' });
+    const precio = entrada({ type: 'number', inputmode: 'decimal', value: existente?.precio_max ?? '' });
+    const establecimiento = entrada({ value: existente?.establecimiento || '' });
+    const enlace = entrada({ type: 'url', inputmode: 'url', value: existente?.enlace || '' });
 
     extra.append(
-      campo('O un perfil', opciones(
-        ctx.vista.etiquetas().map((e) => ({ valor: e.id, texto: e.nombre })),
-        etiquetas,
-        (v) => { etiquetas = v; avisoEtiquetas.hidden = v.length === 0; },
-      )),
-      avisoEtiquetas,
       campo('Categoría', categoria),
       campo('Precio aproximado', precio),
       campo('Dónde se compra', establecimiento),
