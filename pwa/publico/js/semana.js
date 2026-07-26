@@ -11,6 +11,8 @@
  * UTC y desplazaría medio calendario.
  */
 
+import { estaActivo } from './modelo.js';
+
 export const INICIALES_DIA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 // Los meses van con mayúscula inicial: en la aplicación no aparecen dentro de
@@ -105,7 +107,7 @@ export function formatearFechaLarga(fecha) {
 export function eventosDerivados(instantanea) {
   if (!instantanea.tipos_evento?.some((t) => t.id === 'cumpleanos')) return [];
   return (instantanea.personas || [])
-    .filter((p) => p.activa !== false && p.fecha_nacimiento)
+    .filter((p) => estaActivo(p, 'activa') && p.fecha_nacimiento)
     .map((persona) => ({
       id: `derivado:cumpleanos:${persona.id}`,
       titulo: `Cumpleaños de ${persona.nombre}`,
@@ -191,7 +193,7 @@ export function ocurrencias(evento, desde, hasta) {
 }
 
 export function instanciasEn(instantanea, desde, hasta) {
-  const fuentes = [...(instantanea.eventos || []).filter((e) => e.activo !== false), ...eventosDerivados(instantanea)];
+  const fuentes = [...(instantanea.eventos || []).filter((e) => estaActivo(e)), ...eventosDerivados(instantanea)];
   return fuentes.flatMap((evento) => ocurrencias(evento, desde, hasta));
 }
 

@@ -486,6 +486,7 @@ button { background: none; border: 0; cursor: pointer; }
   color: var(--tinta); background: var(--tinta-suave);
 }
 .icono-accion[data-tono="discreto"] { color: var(--ink-soft); background: var(--paper-2); }
+.icono-accion[data-tono="peligro"] { color: var(--regalo); background: transparent; }
 .icono-accion:hover { filter: brightness(.97); }
 .icono-svg { display: block; line-height: 0; }
 .icono-svg svg { width: 19px; height: 19px; display: block; }

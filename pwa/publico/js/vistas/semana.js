@@ -418,15 +418,7 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
     cuerpo.append(bloqueDeRegalos(evento, ctx));
     cuerpo.append(bloqueDeComentarios('evento', evento.id, ctx));
 
-    // Al pie se queda lo único que conviene que cueste alcanzar.
-    if (!derivado) {
-      cuerpo.append(el('div', { class: 'acciones' }, [
-        el('button', {
-          class: 'boton', 'data-tono': 'peligro', type: 'button',
-          onclick: async () => { await retirar('evento', evento.id); cerrarHoja(); avisar('Evento retirado'); ctx.refrescar(); },
-        }, ['Borrar']),
-      ]));
-    }
+    // Borrar no vive aquí: es una operación de edición, y está donde se edita.
   }, [
     // Los dos verbos que se usan van arriba, junto al título. De un evento
     // derivado solo se puede cambiar el emoji, y el formulario se abre reducido
@@ -580,6 +572,20 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = n
     lleva_regalos: existente?.lleva_regalos ?? null,
   };
 
+  // Borrar solo existe sobre un evento que ya existe, y aquí, que es la
+  // pantalla donde se cambian sus datos. En el detalle no pinta nada: allí se
+  // mira, y un botón de borrar entre lo que se mira solo puede ir a peor.
+  const borrarEvento = existente ? botonIcono('borrar', {
+    etiqueta: 'Borrar el evento', tono: 'peligro',
+    onclick: async () => {
+      await retirar('evento', existente.id);
+      toque('media');
+      cerrarHoja();
+      avisar('Evento retirado');
+      ctx.refrescar();
+    },
+  }) : null;
+
   abrirHoja(existente ? 'Editar evento' : 'Nuevo evento', (cuerpo) => {
     const titulo = entrada({ value: borrador.titulo, placeholder: 'Comida con los abuelos', autofocus: true });
     const dia = el('input', { type: 'date', value: borrador.dia });
@@ -675,7 +681,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = n
       }, [existente ? 'Guardar' : 'Crear']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
-  });
+  }, [borrarEvento]);
 }
 
 /**

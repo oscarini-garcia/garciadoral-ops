@@ -12,6 +12,21 @@
 
 export const EMOJI_POR_DEFECTO = '📌';
 
+/**
+ * ¿Sigue vivo este registro?
+ *
+ * El borrado nunca es físico: se marca como inactivo (specs/modelo-datos.md
+ * §1). Lo que hay que mirar con cuidado es **cómo** viene marcado: D1 guarda
+ * `activo` como entero, así que por la sincronización llega un `0`, mientras
+ * que la escritura optimista del propio dispositivo también escribe `0`. Un
+ * `!== false` a secas deja pasar los dos, y lo borrado se queda en pantalla.
+ */
+export const estaActivo = (registro, campo = 'activo') => {
+  const valor = registro?.[campo];
+  if (valor === undefined || valor === null) return true;
+  return valor !== false && valor !== 0 && valor !== '0';
+};
+
 export const nuevoId = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
@@ -30,7 +45,7 @@ export function crearVista(instantanea) {
 
     persona: (id) => personas.get(id) || null,
     nombre: (id) => personas.get(id)?.nombre || '—',
-    personas: () => [...personas.values()].filter((p) => p.activa !== false),
+    personas: () => [...personas.values()].filter((p) => estaActivo(p, 'activa')),
     personasConCuenta: () => api.personas().filter((p) => p.tiene_cuenta),
     personasSinCuenta: () => api.personas().filter((p) => !p.tiene_cuenta),
     categoria: (id) => categorias.get(id) || null,
@@ -73,7 +88,7 @@ export function crearVista(instantanea) {
     },
 
     ocasionDeEvento: (eventoId) => (instantanea.ocasiones || []).find((o) => o.evento_id === eventoId) || null,
-    regalosDe: (ocasionId) => (instantanea.regalos || []).filter((r) => r.ocasion_id === ocasionId && r.activo !== false),
+    regalosDe: (ocasionId) => (instantanea.regalos || []).filter((r) => r.ocasion_id === ocasionId && estaActivo(r)),
 
     regalosPara(ocasionId, personaId) {
       return api.regalosDe(ocasionId).filter(
@@ -82,22 +97,22 @@ export function crearVista(instantanea) {
     },
 
     comentariosDe: (tipo, id) =>
-      (instantanea.comentarios || []).filter((c) => c.objeto_tipo === tipo && c.objeto_id === id && c.activo !== false),
+      (instantanea.comentarios || []).filter((c) => c.objeto_tipo === tipo && c.objeto_id === id && estaActivo(c)),
 
     /** Banco de ideas: lo activo y lo que está en curso, que permanece a la
      *  vista señalado con su ocasión para que nadie lo registre por su cuenta. */
     banco: () => (instantanea.ideas || []).filter(
-      (i) => i.activa !== false && i.tipo === 'sugerencia' && ['activa', 'en_curso'].includes(i.estado),
+      (i) => estaActivo(i, 'activa') && i.tipo === 'sugerencia' && ['activa', 'en_curso'].includes(i.estado),
     ),
 
     deseosDe: (personaId) =>
       (instantanea.ideas || []).filter(
-        (i) => i.activa !== false && i.tipo === 'deseo' && i.autor_id === personaId && i.estado !== 'descartada',
+        (i) => estaActivo(i, 'activa') && i.tipo === 'deseo' && i.autor_id === personaId && i.estado !== 'descartada',
       ),
 
     ideasPara: (personaId) =>
       (instantanea.ideas || []).filter(
-        (i) => i.activa !== false && i.tipo === 'sugerencia'
+        (i) => estaActivo(i, 'activa') && i.tipo === 'sugerencia'
           && (i.orientaciones || []).some((o) => o.persona_id === personaId),
       ),
 
@@ -106,13 +121,13 @@ export function crearVista(instantanea) {
     historicoDe(personaId) {
       const cerradas = new Set((instantanea.ocasiones || []).filter((o) => o.estado === 'cerrada').map((o) => o.id));
       return (instantanea.regalos || []).filter(
-        (r) => r.activo !== false && cerradas.has(r.ocasion_id)
+        (r) => estaActivo(r) && cerradas.has(r.ocasion_id)
           && (r.destinatario_principal_id === personaId || (r.codestinatarios || []).includes(personaId)),
       );
     },
 
     atributosDe: (personaId) =>
-      (instantanea.atributos_persona || []).filter((a) => a.persona_id === personaId && a.activo !== false),
+      (instantanea.atributos_persona || []).filter((a) => a.persona_id === personaId && estaActivo(a)),
 
     /** Gasto registrado y número de regalos sin importe. Distinguir ambas cosas
      *  evita mostrar una desviación favorable inexistente (spec funcional §6.3). */

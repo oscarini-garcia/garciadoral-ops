@@ -63,6 +63,9 @@ export function avatar(persona, clase = 'avatar') {
 const ICONOS = {
   editar: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   compartir: '<path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/>',
+  borrar: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/>'
+    + '<path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/>'
+    + '<path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
 };
 
 export function icono(nombre) {

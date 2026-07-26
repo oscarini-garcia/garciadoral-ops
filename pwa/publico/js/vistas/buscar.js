@@ -10,7 +10,7 @@
  */
 
 import { el, vaciar, entrada } from '../ui.js';
-import { formatearImporte } from '../modelo.js';
+import { estaActivo, formatearImporte } from '../modelo.js';
 import { abrirDetalleIdea, abrirDetalleRegalo, abrirOcasion } from './regalos.js';
 
 let consulta = '';
@@ -55,15 +55,15 @@ function componerResultados(ctx, texto) {
   const coincide = (...partes) => partes.some((parte) => normalizar(parte).includes(aguja));
 
   const ideas = (ctx.vista.datos.ideas || []).filter(
-    (idea) => idea.activa !== false && coincide(idea.titulo, idea.descripcion, idea.establecimiento),
+    (idea) => estaActivo(idea, 'activa') && coincide(idea.titulo, idea.descripcion, idea.establecimiento),
   );
 
   const ocasiones = (ctx.vista.datos.ocasiones || []).filter(
-    (ocasion) => ocasion.activa !== false && coincide(ocasion.nombre),
+    (ocasion) => estaActivo(ocasion, 'activa') && coincide(ocasion.nombre),
   );
 
   const regalos = (ctx.vista.datos.regalos || []).filter((regalo) => {
-    if (regalo.activo === false) return false;
+    if (!estaActivo(regalo)) return false;
     const idea = regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null;
     return coincide(idea?.titulo, ctx.vista.nombre(regalo.destinatario_principal_id));
   });
