@@ -70,6 +70,7 @@ const ICONOS = {
   // contorno la convertiría en una mancha.
   destello: '<path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z"'
     + ' fill="currentColor" stroke-width="1"/>',
+  cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
 };
 
 export function icono(nombre) {
@@ -156,6 +157,23 @@ export function cerrarHoja() {
 }
 
 export const hayHojaAbierta = () => Boolean(cerrarActual);
+
+/**
+ * Un apartado plegable, con `<details>` y `<summary>` del propio navegador.
+ *
+ * Sin JavaScript por debajo a propósito: el elemento ya se abre al tocarlo y al
+ * pulsar Enter, ya se anuncia como plegado o desplegado a quien no ve, y el
+ * buscador del navegador abre por su cuenta el apartado donde encuentra algo.
+ * Nada de eso saldría gratis con un `div` y una clase.
+ */
+export function acordeon(titulo, construir, { abierta = false } = {}) {
+  const cuerpo = el('div', { class: 'acordeon-cuerpo' });
+  construir(cuerpo);
+  return el('details', { class: 'acordeon', open: abierta }, [
+    el('summary', {}, [el('span', { texto: titulo })]),
+    cuerpo,
+  ]);
+}
 
 // ------------------------------------------------------------------ Gestos --
 

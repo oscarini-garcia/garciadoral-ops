@@ -12,7 +12,9 @@
  * de evitar.
  */
 
-import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, entrada, seleccion } from './ui.js';
+import {
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
+} from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
 import {
@@ -486,7 +488,11 @@ function abrirPanelDeSincronizacion() {
  * daría un peso que no tiene y le quitaría sitio a las cuatro que sí.
  */
 function abrirAjustes() {
+  const demostracion = estado().estado === 'demostracion';
+
   abrirHoja('Ajustes', (cuerpo) => {
+    // Quién eres queda fuera de los apartados: es lo primero que uno comprueba
+    // al entrar aquí, y no algo que se venga a cambiar.
     if (sesionActual?.persona?.nombre) {
       cuerpo.append(el('p', {
         class: 'pista',
@@ -494,41 +500,61 @@ function abrirAjustes() {
       }));
     }
 
-    const tema = seleccion(
-      [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
-      localStorage.getItem('agenda.tema') || 'auto',
-    );
-    tema.addEventListener('change', () => aplicarTema(tema.value));
-    cuerpo.append(campo('Aspecto', tema));
+    // Todos empiezan plegados. Ajustes es una lista de cosas que casi nunca se
+    // tocan: enseñarlas todas abiertas obliga a leerlas enteras para encontrar
+    // la única que se venía a buscar.
+    cuerpo.append(acordeon('Aspecto', (dentro) => {
+      const tema = seleccion(
+        [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
+        localStorage.getItem('agenda.tema') || 'auto',
+      );
+      tema.addEventListener('change', () => aplicarTema(tema.value));
+      dentro.append(campo('Tema', tema));
+    }));
 
-    if (ctx.vista?.esAdministrador() && estado().estado !== 'demostracion') {
-      cuerpo.append(bloqueDeRedaccion());
+    if (ctx.vista?.esAdministrador() && !demostracion) {
+      cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
     }
 
-    cuerpo.append(bloqueDeVersion());
-    cuerpo.append(bloqueLegal());
+    cuerpo.append(acordeon('La aplicación', (dentro) => {
+      dentro.append(bloqueDeVersion());
+      dentro.append(bloqueLegal());
+    }));
 
-    const demostracion = estado().estado === 'demostracion';
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
-        onclick: () => salir(),
-      }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
-    ]));
+    cuerpo.append(acordeon('Tu cuenta', (dentro) => {
+      dentro.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+          onclick: () => salir(),
+        }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
+      ]));
 
-    // La baja no está en la demostración porque allí no hay cuenta que dar de
-    // baja: nada de lo que se ve ha salido nunca de este navegador.
-    if (!demostracion) {
-      cuerpo.append(el('button', {
-        class: 'enlace-discreto', type: 'button',
-        onclick: () => confirmarBaja(),
-      }, ['Eliminar mi cuenta']));
-    }
-  });
+      // La baja no está en la demostración porque allí no hay cuenta que dar de
+      // baja: nada de lo que se ve ha salido nunca de este navegador.
+      if (!demostracion) {
+        dentro.append(el('button', {
+          class: 'enlace-discreto', type: 'button',
+          onclick: () => confirmarBaja(),
+        }, ['Eliminar mi cuenta']));
+      }
+    }));
+  }, [
+    // Salir de aquí se hacía tocando fuera de la hoja, que es la convención de
+    // la plataforma pero no se ve. Con los apartados plegados la hoja es corta y
+    // queda mucho fuera que tocar; aun así, quien la busque merece una salida
+    // dibujada.
+    botonIcono('cerrar', { etiqueta: 'Cerrar los ajustes', tono: 'discreto', onclick: cerrarHoja }),
+  ]);
 }
 
 /**
- * La configuración de la redacción con IA: clave, modelo e instrucción.
+ * La configuración de la inteligencia artificial: la clave, el modelo y las
+ * instrucciones de lo que la agenda le pide.
+ *
+ * La clave y el modelo son de la instalación entera y no de una función: hoy la
+ * única que los usa es contar un día o un tramo antes de compartirlo, pero lo
+ * que venga después tirará de los mismos. Por eso el apartado se llama por la
+ * herramienta y no por el uso, y las instrucciones van dentro, una por función.
  *
  * Solo para administradores, y solo de escritura: la clave se guarda en el
  * servidor y de vuelta llegan sus cuatro últimos caracteres, lo justo para
@@ -538,22 +564,16 @@ function abrirAjustes() {
  * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
  * la clave, el modelo o la instrucción.
  */
-function bloqueDeRedaccion() {
-  const seccion = el('section', { class: 'bloque-ajuste' }, [
-    el('h3', { texto: 'Contar el día con IA' }),
-    el('p', { class: 'pista', texto: 'Cargando…' }),
-  ]);
+function bloqueDeRedaccion(seccion) {
+  seccion.append(el('p', { class: 'pista', texto: 'Cargando…' }));
 
   leerAjustesDeIa()
     .then((ajustes) => vaciar(seccion).append(...formularioDeRedaccion(ajustes)))
     .catch((error) => {
       vaciar(seccion).append(
-        el('h3', { texto: 'Contar el día con IA' }),
         el('p', { class: 'pista', texto: `No he podido leer los ajustes: ${error.message}` }),
       );
     });
-
-  return seccion;
 }
 
 function formularioDeRedaccion(ajustes) {
@@ -624,16 +644,17 @@ function formularioDeRedaccion(ajustes) {
   });
 
   return [
-    el('h3', { texto: 'Contar el día con IA' }),
     el('p', {
       class: 'pista',
-      texto: 'Con una clave puesta, al compartir un día aparece un segundo botón que lo cuenta en dos frases antes de enviarlo.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Hoy solo lo usa una cosa: contar un día o una semana antes de compartirlos.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
       ? 'Lista de reserva: Anthropic no ha respondido con los modelos de la cuenta.'
       : 'Si falla, se prueba con los demás por orden.'),
-    campo('Instrucción', instruccion),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Contar los días para compartirlos' }),
+    campo('Instrucción', instruccion, 'Lo que se le pide al modelo. Los eventos se los da la agenda aparte; aquí va solo el encargo.'),
     el('div', { class: 'acciones' }, [guardar, probar]),
     traza,
   ];

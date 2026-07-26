@@ -468,10 +468,35 @@ button { background: none; border: 0; cursor: pointer; }
 .boton:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
 
-/* Un apartado de Ajustes, separado por una raya para que no se lea como
-   continuación del anterior. */
-.bloque-ajuste { display: flex; flex-direction: column; gap: 9px; border-top: 1px solid var(--line); padding-top: 13px; }
-.bloque-ajuste h3 { font-size: 16px; font-weight: 600; }
+/* Apartado plegable. El triángulo del navegador se retira y en su lugar va un
+   ángulo a la derecha, que es donde el pulgar lo espera en un teléfono. */
+.acordeon { border-top: 1px solid var(--line); }
+.acordeon:last-of-type { border-bottom: 1px solid var(--line); }
+.acordeon > summary {
+  display: flex; align-items: center; gap: 10px;
+  min-height: var(--toque); padding: 4px 0;
+  font-size: 16.5px; font-weight: 500;
+  cursor: pointer; list-style: none;
+}
+.acordeon > summary::-webkit-details-marker { display: none; }
+.acordeon > summary::after {
+  content: ''; margin-left: auto; flex: none;
+  width: 9px; height: 9px;
+  border-right: 1.8px solid var(--ink-faint); border-bottom: 1.8px solid var(--ink-faint);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .16s ease;
+}
+.acordeon[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.acordeon > summary:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 6px; }
+.acordeon-cuerpo { display: flex; flex-direction: column; gap: 11px; padding: 2px 0 15px; }
+@media (prefers-reduced-motion: reduce) { .acordeon > summary::after { transition: none; } }
+
+/* Una función dentro de un apartado: la instrucción de contar los días, dentro
+   del de la inteligencia artificial. */
+.subtitulo-ajuste {
+  font-size: 14px; font-weight: 600; color: var(--ink-soft);
+  margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line);
+}
 
 /* La traza de una prueba se lee como salida de máquina: monoespaciada, con sus
    saltos de línea y con desplazamiento propio si se pasa de ancha. */
