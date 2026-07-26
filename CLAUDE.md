@@ -28,7 +28,7 @@ Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
 - **Al desplegar la pestaña de Gente**, hay que **aplicar la migración
-  `0005_circulos.sql`**: reparte a quien ya estuviera en la base —quien tenía
+  `0005_circulos.unavez.sql`**: reparte a quien ya estuviera en la base —quien tenía
   cuenta a `familia`, el resto a `extendida`— y deja el ajuste fino para las
   fichas. La pantalla en sí ya está decidida y construida: tres círculos
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con

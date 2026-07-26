@@ -10,6 +10,12 @@
 -- justo la pregunta que la pantalla evita al llevar el «+» dentro de su grupo
 -- (specs/ux.md §7.1).
 
+-- **De un solo uso**, y por eso el `.unavez.sql` del nombre: el bucle que
+-- aplica las demás la salta. Las otras se pueden repetir sin consecuencias
+-- —`CREATE TABLE IF NOT EXISTS`—, y esta no: el `ALTER TABLE` falla si la
+-- columna ya está, y el reparto de abajo pisaría los círculos que se hubieran
+-- corregido desde la aplicación. Se pide por su nombre al desplegar la API.
+
 PRAGMA foreign_keys = ON;
 
 -- `extendida` como valor por defecto y no `familia`: al migrar no se sabe quién
