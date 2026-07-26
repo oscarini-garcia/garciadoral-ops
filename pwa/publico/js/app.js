@@ -12,10 +12,15 @@
  * de evitar.
  */
 
-import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, entrada, seleccion } from './ui.js';
+import {
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
+} from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
-import { detener, estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
+import {
+  detener, estado, guardarAjustesDeIa, iniciar, instantanea, leerAjustesDeIa,
+  probarRedaccion, sincronizar, suscribir,
+} from './sincronizacion.js';
 import {
   cargarConfiguracion,
   codigoDeAutorizacion,
@@ -35,17 +40,18 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { hoy, instanciasEn, sumarDias } from './semana.js';
-import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
+import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
 import { abrirFormularioIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
-  // La agenda no repite su nombre en la cabecera: la vista en la que se está
-  // ya se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es
-  // lo único de esa pantalla que cambia.
-  semana: { titulo: '', pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
+  // La agenda no repite su nombre en la cabecera: la vista en la que se está ya
+  // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
+  // único de esa pantalla que cambia. Por eso su título es una función: cambia
+  // al pasar de semana, y con las demás pestañas no cambia nunca.
+  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirFormularioIdea(ctx) },
   // La pestaña se llama Gente en la barra; la clave conserva el nombre del
   // módulo que la pinta, que es de donde sale.
@@ -411,7 +417,11 @@ function refrescar() {
   ctx.vista = crearVista(datos);
   const definicion = PESTANAS[pestana];
 
-  document.getElementById('tituloPantalla').textContent = definicion.titulo;
+  const titulo = document.getElementById('tituloPantalla');
+  titulo.textContent = typeof definicion.titulo === 'function' ? definicion.titulo() : definicion.titulo;
+  // El de la agenda es una fecha y no un nombre: se compone más largo y se
+  // compone en cifras, así que se dibuja con su propio tamaño.
+  titulo.dataset.pestana = pestana;
   document.getElementById('fab').hidden = !definicion.fab;
 
   // Cada pestaña parte de la pantalla desnuda y le añade las clases de
@@ -480,7 +490,11 @@ function abrirPanelDeSincronizacion() {
  * daría un peso que no tiene y le quitaría sitio a las cuatro que sí.
  */
 function abrirAjustes() {
+  const demostracion = estado().estado === 'demostracion';
+
   abrirHoja('Ajustes', (cuerpo) => {
+    // Quién eres queda fuera de los apartados: es lo primero que uno comprueba
+    // al entrar aquí, y no algo que se venga a cambiar.
     if (sesionActual?.persona?.nombre) {
       cuerpo.append(el('p', {
         class: 'pista',
@@ -488,33 +502,193 @@ function abrirAjustes() {
       }));
     }
 
-    const tema = seleccion(
-      [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
-      localStorage.getItem('agenda.tema') || 'auto',
-    );
-    tema.addEventListener('change', () => aplicarTema(tema.value));
-    cuerpo.append(campo('Aspecto', tema));
+    // Todos empiezan plegados. Ajustes es una lista de cosas que casi nunca se
+    // tocan: enseñarlas todas abiertas obliga a leerlas enteras para encontrar
+    // la única que se venía a buscar.
+    cuerpo.append(acordeon('Aspecto', (dentro) => {
+      const tema = seleccion(
+        [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
+        localStorage.getItem('agenda.tema') || 'auto',
+      );
+      tema.addEventListener('change', () => aplicarTema(tema.value));
+      dentro.append(campo('Tema', tema));
+    }));
 
-    cuerpo.append(bloqueDeVersion());
-    cuerpo.append(bloqueLegal());
+    if (ctx.vista?.esAdministrador() && !demostracion) {
+      cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
+    }
 
-    const demostracion = estado().estado === 'demostracion';
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
-        onclick: () => salir(),
-      }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
-    ]));
+    cuerpo.append(acordeon('La aplicación', (dentro) => {
+      dentro.append(bloqueDeVersion());
+      dentro.append(bloqueLegal());
+    }));
 
-    // La baja no está en la demostración porque allí no hay cuenta que dar de
-    // baja: nada de lo que se ve ha salido nunca de este navegador.
-    if (!demostracion) {
-      cuerpo.append(el('button', {
-        class: 'enlace-discreto', type: 'button',
-        onclick: () => confirmarBaja(),
-      }, ['Eliminar mi cuenta']));
+    cuerpo.append(acordeon('Tu cuenta', (dentro) => {
+      dentro.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+          onclick: () => salir(),
+        }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
+      ]));
+
+      // La baja no está en la demostración porque allí no hay cuenta que dar de
+      // baja: nada de lo que se ve ha salido nunca de este navegador.
+      if (!demostracion) {
+        dentro.append(el('button', {
+          class: 'enlace-discreto', type: 'button',
+          onclick: () => confirmarBaja(),
+        }, ['Eliminar mi cuenta']));
+      }
+    }));
+  }, [
+    // Salir de aquí se hacía tocando fuera de la hoja, que es la convención de
+    // la plataforma pero no se ve. Con los apartados plegados la hoja es corta y
+    // queda mucho fuera que tocar; aun así, quien la busque merece una salida
+    // dibujada.
+    botonIcono('cerrar', { etiqueta: 'Cerrar los ajustes', tono: 'discreto', onclick: cerrarHoja }),
+  ]);
+}
+
+/**
+ * La configuración de la inteligencia artificial: la clave, el modelo y las
+ * instrucciones de lo que la agenda le pide.
+ *
+ * La clave y el modelo son de la instalación entera y no de una función: hoy la
+ * única que los usa es contar un día o un tramo antes de compartirlo, pero lo
+ * que venga después tirará de los mismos. Por eso el apartado se llama por la
+ * herramienta y no por el uso, y las instrucciones van dentro, una por función.
+ *
+ * Solo para administradores, y solo de escritura: la clave se guarda en el
+ * servidor y de vuelta llegan sus cuatro últimos caracteres, lo justo para
+ * reconocer cuál está puesta sin poder copiarla de esta pantalla.
+ *
+ * El botón de probar existe porque un fallo aquí es invisible desde la agenda
+ * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
+ * la clave, el modelo o la instrucción.
+ */
+function bloqueDeRedaccion(seccion) {
+  seccion.append(el('p', { class: 'pista', texto: 'Cargando…' }));
+
+  leerAjustesDeIa()
+    .then((ajustes) => vaciar(seccion).append(...formularioDeRedaccion(ajustes)))
+    .catch((error) => {
+      vaciar(seccion).append(
+        el('p', { class: 'pista', texto: `No he podido leer los ajustes: ${error.message}` }),
+      );
+    });
+}
+
+function formularioDeRedaccion(ajustes) {
+  const clave = entrada({
+    type: 'password', autocomplete: 'off', spellcheck: 'false',
+    placeholder: ajustes.hay_clave ? `Guardada, termina en ${ajustes.cola}` : 'sk-ant-…',
+  });
+
+  // Los modelos los da Anthropic para esa cuenta; si no contesta, la lista de
+  // reserva. El configurado se preselecciona aunque ya no esté en la lista.
+  const lista = ajustes.modelos.some((m) => m.id === ajustes.modelo)
+    ? ajustes.modelos
+    : [{ id: ajustes.modelo, nombre: ajustes.modelo }, ...ajustes.modelos];
+  const modelo = seleccion(lista.map((m) => ({ valor: m.id, texto: m.nombre })), ajustes.modelo);
+
+  const instruccion = el('textarea', { rows: '5', spellcheck: 'false' });
+  instruccion.value = ajustes.instruccion;
+
+  const regalo = el('textarea', { rows: '5', spellcheck: 'false' });
+  regalo.value = ajustes.regalo;
+
+  const traza = el('pre', { class: 'traza', hidden: true });
+  const contar = (texto, clase = 'traza') => {
+    traza.className = clase;
+    traza.textContent = texto;
+    traza.hidden = false;
+  };
+
+  const guardar = el('button', { class: 'boton crecer', type: 'button' }, ['Guardar']);
+  const probar = el('button', { class: 'boton', type: 'button' }, ['Probar']);
+
+  const conBotonesQuietos = async (activo, trabajo) => {
+    const antes = activo.textContent;
+    guardar.disabled = true;
+    probar.disabled = true;
+    activo.textContent = 'Un momento…';
+    try {
+      await trabajo();
+    } finally {
+      activo.textContent = antes;
+      guardar.disabled = false;
+      probar.disabled = false;
+    }
+  };
+
+  guardar.onclick = () => conBotonesQuietos(guardar, async () => {
+    try {
+      // La clave solo se manda si se ha escrito una: el campo en blanco no borra
+      // la que hay, que es lo que esperaría cualquiera al cambiar solo el modelo.
+      const guardado = await guardarAjustesDeIa({
+        clave: clave.value.trim() || undefined,
+        modelo: modelo.value,
+        instruccion: instruccion.value.trim(),
+        regalo: regalo.value.trim(),
+      });
+      clave.value = '';
+      clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
+      avisar('Guardado');
+      refrescar();
+    } catch (error) {
+      contar(`No he podido guardar: ${error.message}`, 'traza mal');
     }
   });
+
+  probar.onclick = () => conBotonesQuietos(probar, async () => {
+    try {
+      const resultado = await probarRedaccion(iso(hoy()));
+      contar(resumenDeLaPrueba(resultado), resultado.texto ? 'traza bien' : 'traza mal');
+    } catch (error) {
+      contar(`No he podido probar: ${error.message}`, 'traza mal');
+    }
+  });
+
+  return [
+    el('p', {
+      class: 'pista',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son dos, contar los días antes de compartirlos y proponer un regalo.',
+    }),
+    campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
+    campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
+      ? 'Lista de reserva: Anthropic no ha respondido con los modelos de la cuenta.'
+      : 'Si falla, se prueba con los demás por orden.'),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Contar los días para compartirlos' }),
+    campo('Instrucción', instruccion, 'Lo que se le pide al modelo. Los eventos se los da la agenda aparte; aquí va solo el encargo.'),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Proponer un regalo' }),
+    campo('Instrucción', regalo, 'Lo que se sabe de la persona —su edad, lo que ha pedido, lo que ya tiene apuntado y lo que recibió— se lo da la agenda aparte. Vacío, vuelve el encargo de origen.'),
+
+    el('div', { class: 'acciones' }, [guardar, probar]),
+    el('p', {
+      class: 'pista',
+      texto: 'Guardar los guarda los dos. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+    }),
+    traza,
+  ];
+}
+
+/** El resultado de probar, con un renglón por intento: modelo, código, tiempo y
+ *  el mensaje de error tal como lo devuelve la API. */
+function resumenDeLaPrueba(resultado) {
+  const renglones = (resultado.intentos || []).map((intento) => {
+    const partes = [intento.modelo, intento.estado ? `HTTP ${intento.estado}` : 'sin respuesta'];
+    if (intento.ms !== null && intento.ms !== undefined) partes.push(`${intento.ms} ms`);
+    if (intento.tipo) partes.push(intento.tipo);
+    if (intento.mensaje) partes.push(intento.mensaje);
+    return `· ${partes.join(' · ')}`;
+  });
+
+  if (resultado.texto) {
+    return [`Ha contestado ${resultado.modelo}:`, '', resultado.texto, '', ...renglones].join('\n');
+  }
+  return [resultado.motivo || 'no ha salido', '', ...renglones].join('\n');
 }
 
 /**

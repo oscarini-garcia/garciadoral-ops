@@ -126,6 +126,18 @@ solo intervienen cuando alguien elimina su cuenta y que se registran en el paso
 4.5, porque salen de la cuenta de Apple Developer. Todo lo demás funciona sin
 ellos.
 
+La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
+la base de datos desde *Ajustes → Inteligencia artificial*, dentro de la propia
+aplicación y solo para administradores. Es lo que enciende las dos cosas que la
+agenda le pide a un modelo: el segundo botón de compartir —el del destello—, que
+cuenta en dos frases un día, la semana, el mes o lo que viene antes de enviarlo,
+y la propuesta de regalo al apuntar una idea para alguien. Sin clave, ninguno de
+los dos botones aparece y todo lo demás funciona igual. El encargo de cada una
+—lo que se le pide al modelo— se reescribe en ese mismo apartado. Se registra
+allí y no aquí porque es lo único de esta instalación que se cambia con cierta
+frecuencia —al rotarla, al cambiar de modelo— y hacerlo con `wrangler` obligaría
+a volver a desplegar cada vez.
+
 El bloque `[vars]` de `api/wrangler.toml` ya viene relleno con los nombres de
 esta instalación; compruébelo antes de desplegar:
 
@@ -149,6 +161,31 @@ compruébela:
 curl https://agenda-familiar-api.EJEMPLO.workers.dev/api/salud
 # {"estado":"ok","ahora":"..."}
 ```
+
+### 2.1 Que no haya que volver a desplegar a mano
+
+Esta primera vez se hace desde su máquina, porque hasta aquí no hay repositorio
+configurado. A partir de ahí lo hace el workflow `desplegar-api.yml` en cuanto
+un cambio de `api/` entra en `main`, igual que el bundle OTA. Solo necesita un
+secreto:
+
+1. En Cloudflare, **My Profile → API Tokens → Create Token**, plantilla **Edit
+   Cloudflare Workers**. Añádale además el permiso **Account → D1 → Edit**, que
+   la plantilla no trae y hace falta para las migraciones.
+2. En GitHub, **Settings → Secrets and variables → Actions → New repository
+   secret**, con el nombre `CLOUDFLARE_API_TOKEN`.
+3. Si ese token ve más de una cuenta de Cloudflare, añada también
+   `CLOUDFLARE_ACCOUNT_ID`. Con una sola cuenta no hace falta.
+
+El workflow pasa las pruebas del Worker antes de subir nada y comprueba
+`/api/salud` después. Se puede lanzar a mano desde la pestaña **Actions**, y
+allí tiene una casilla —*Aplicar también las migraciones de esquema*— para las
+versiones que traen tablas nuevas: es la manera de migrar sin una terminal
+delante. Aplica todas las migraciones menos la de catálogos, que va con
+`INSERT OR REPLACE` y pisaría lo que se haya cambiado desde la aplicación.
+
+Sin el secreto, el workflow falla en el paso de desplegar y no toca nada: el
+despliegue sigue siendo el de siempre, `npm run desplegar`.
 
 ---
 
@@ -899,6 +936,7 @@ error visible: es arruinar una sorpresa.
 | CallMeBot | 0 €, servicio gratuito de un tercero y sin garantía |
 | Dominio | 10–15 € al año. `galoopa.store` ya está pagado; el subdominio no cuesta nada aparte |
 | Apple Developer Program | 99 € al año, solo si quiere la app iOS |
+| API de Anthropic | Se paga por uso y solo si configura la clave. Contar un día o proponer un regalo son unos cientos de palabras: con Haiku, céntimos al mes en un hogar |
 
 ---
 
@@ -922,6 +960,11 @@ error visible: es arruinar una sorpresa.
 | El bundle OTA carga en blanco | `index.html` no quedó en la raíz del zip | Se empaqueta el **contenido** de `publico/`, no la carpeta; el workflow ya lo hace así |
 | La app revierte la actualización sola | No se llamó a `notifyAppReady()` | Lo hace `iniciarNativo()` al arrancar; compruebe que `app.js` lo sigue llamando |
 | El despachador dejó de ejecutarse | GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por defecto. Reactívelo desde Actions y active el workflow `mantenimiento` |
+| Una ruta nueva de la API contesta 404 | El Worker no se ha desplegado. Lance `desplegar-api` desde Actions, o `npm run desplegar` desde `api/`. La web y el OTA se publican solos; el Worker solo desde que existe ese workflow |
+| El botón de contar el día no aparece | No hay clave de Anthropic guardada. Póngala en Ajustes → Inteligencia artificial, que solo ven los administradores |
+| El botón de proponer un regalo no aparece | Lo mismo, o la idea todavía no tiene ninguna persona nombrada: con una etiqueta sola no se propone nada |
+| Contar el día siempre acaba compartiendo la lista tal cual | Algo falla en la llamada al modelo. El botón *Probar* de ese mismo apartado enseña la traza de cada intento: código HTTP, tipo de error y el mensaje de la API |
+| «demasiadas redacciones seguidas» o «demasiadas propuestas seguidas» | El freno por persona y minuto, compartido por las dos. Es deliberado: sin él, la clave de pago del hogar queda abierta a un bucle en la consola del navegador |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
 
 Trazas en vivo del Worker:
@@ -955,6 +998,8 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 1. `wrangler d1 create` y anotar el `database_id`.
 2. `npm run migrar:remoto`.
 3. `wrangler secret put` de los dos secretos y `npm run desplegar`.
+   Después, el secreto `CLOUDFLARE_API_TOKEN` en GitHub (paso 2.1) y ya no hay
+   que volver a desplegar a mano.
 4. Insertar a mano la primera persona administradora.
 5. App ID en Apple.
 6. Proyecto de Pages con salida `pwa/publico` y `config.json` relleno.

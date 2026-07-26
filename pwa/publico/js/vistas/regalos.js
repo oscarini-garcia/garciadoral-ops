@@ -10,10 +10,12 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
-  botonIcono, dobleToque,
+  botonIcono, dobleToque, icono,
 } from '../ui.js';
-import { guardar, retirar } from '../sincronizacion.js';
-import { ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId } from '../modelo.js';
+import { guardar, retirar, sugerirRegalo } from '../sincronizacion.js';
+import {
+  ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId, redaccionDisponible,
+} from '../modelo.js';
 import { iso, hoy } from '../semana.js';
 import { toque } from '../native.js';
 
@@ -56,7 +58,7 @@ export const seccionActual = () => seccion;
 
 function vistaIdeas(ctx) {
   const personas = ctx.vista.personas();
-  const contenedor = el('div', {});
+  const contenedor = el('div', { class: 'cuerpo-ideas' });
 
   contenedor.append(el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Para quién' }),
@@ -88,15 +90,13 @@ function vistaIdeas(ctx) {
 
   contenedor.append(grupo);
 
-  // El mismo gesto que en un día vacío de la agenda: dos toques en el hueco
-  // abren el formulario. Se pide doble y no sencillo porque la lista entera
-  // está a un dedo de distancia mientras se recorre, y un toque suelto no puede
-  // significar «crear». Si hay un filtro puesto, la idea nace ya para esa
-  // persona: es lo que se estaba mirando.
-  dobleToque(contenedor, () => {
-    toque();
-    abrirFormularioIdea(ctx, { paraPersona: filtroPersona });
-  }, { ignorar: 'button, a, input, select, textarea' });
+  // La misma regla que en la agenda: doblar el toque sobre lo que está en
+  // blanco crea ahí. Si hay un filtro de persona puesto, la idea nace ya para
+  // esa persona, que es lo que se estaba mirando.
+  contenedor.append(dobleToque(
+    el('div', { class: 'zona-libre', 'aria-hidden': 'true' }),
+    () => { toque(); abrirFormularioIdea(ctx, { paraPersona: filtroPersona }); },
+  ));
 
   return contenedor;
 }
@@ -543,6 +543,15 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     const titulo = entrada({ value: existente?.titulo || '', placeholder: 'Botas de montar', autofocus: true });
     cuerpo.append(campo('Qué', titulo));
 
+    // La propuesta va aquí y no en un sitio propio porque lo que hace es
+    // rellenar estos campos: se pide desde donde se iba a escribir a mano.
+    const rotulo = el('span', {});
+    const sugerir = el('button', {
+      class: 'boton boton-ia', 'data-tono': 'discreto', type: 'button', hidden: true,
+      onclick: () => proponerUnRegalo(),
+    }, [icono('destello'), rotulo]);
+    cuerpo.append(sugerir);
+
     // Al editar se abre desplegado y sin conmutador: quien corrige viene a por
     // un campo concreto, y esconderlo detrás de un enlace sobra.
     const extra = el('div', { class: 'hoja-seccion', hidden: !existente });
@@ -570,7 +579,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       campo('Para quién', opciones(
         ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
         destinatarios,
-        (v) => { destinatarios = v; },
+        (v) => { destinatarios = v; ajustarSugerencia(); },
       ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'),
       campo('O un perfil', opciones(
         ctx.vista.etiquetas().map((e) => ({ valor: e.id, texto: e.nombre })),
@@ -584,6 +593,60 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       campo('Dónde se compra', establecimiento),
       campo('Enlace', enlace),
     );
+
+    /**
+     * A quién se le está buscando el regalo: la primera persona nombrada.
+     *
+     * Con una etiqueta —«adolescente»— no se propone nada: lo que hace útil a
+     * la propuesta es lo que se sabe de alguien concreto, y de un perfil no se
+     * sabe nada. Sin clave puesta en el servidor tampoco se ofrece: sería un
+     * botón que solo puede fallar.
+     */
+    const destinataria = () => destinatarios.map((id) => ctx.vista.persona(id)).find(Boolean) || null;
+
+    function ajustarSugerencia() {
+      const persona = destinataria();
+      sugerir.hidden = !persona || !redaccionDisponible(ctx.vista.datos);
+      if (persona) rotulo.textContent = `Que lo proponga la IA para ${persona.nombre}`;
+    }
+
+    /**
+     * La propuesta llega en dos líneas —el regalo y por qué encaja— y se
+     * reparte entre el título y la descripción, que es donde se iba a escribir.
+     *
+     * Se pisa lo que hubiera escrito, y a propósito: lo que hubiera va antes
+     * como pista, de modo que escribir «algo para el verano» y pedir la
+     * propuesta es una forma de encargarla, no de perderla.
+     */
+    async function proponerUnRegalo() {
+      const persona = destinataria();
+      if (!persona) return;
+
+      toque();
+      const antes = rotulo.textContent;
+      sugerir.disabled = true;
+      rotulo.textContent = 'Pensando…';
+
+      try {
+        const pista = [titulo.value.trim(), descripcion.value.trim()].filter(Boolean).join('. ');
+        const texto = await sugerirRegalo(persona.id, pista);
+        const lineas = String(texto || '').split('\n').map((l) => l.trim()).filter(Boolean);
+        if (!lineas.length) { avisar('No ha propuesto nada'); return; }
+
+        titulo.value = lineas[0].replace(/^[-–—·*\d.)\s]+/, '');
+        if (lineas.length > 1) descripcion.value = lineas.slice(1).join(' ');
+        // El porqué queda en la descripción, que en una idea nueva está
+        // plegada: se despliega para que se vea lo que se acaba de escribir.
+        if (extra.hidden) conmutador.click();
+      } catch (error) {
+        avisar(error.message || 'No he podido pedir la propuesta');
+      } finally {
+        sugerir.disabled = false;
+        rotulo.textContent = antes;
+      }
+    }
+
+    ajustarSugerencia();
 
     const guardarIdea = async () => {
       if (!titulo.value.trim()) { titulo.focus(); return; }

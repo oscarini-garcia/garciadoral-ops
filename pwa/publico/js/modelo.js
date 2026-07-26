@@ -36,6 +36,15 @@ export const estaActivo = (registro, campo = 'activo') => {
   return valor !== false && valor !== 0 && valor !== '0';
 };
 
+/**
+ * ¿Hay una clave de Anthropic puesta en el servidor?
+ *
+ * La instantánea trae la bandera y nunca la clave. Sirve para no ofrecer el
+ * botón de contar el día cuando detrás no hay nada: pulsarlo daría siempre el
+ * mismo error, y un botón que solo sabe fallar sobra.
+ */
+export const redaccionDisponible = (instantanea) => Boolean(instantanea?.redaccion?.disponible);
+
 export const nuevoId = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 

@@ -66,6 +66,11 @@ const ICONOS = {
   borrar: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/>'
     + '<path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/>'
     + '<path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
+  // Relleno y sin trazo: es una insignia, no un dibujo, y a este tamaño el
+  // contorno la convertiría en una mancha.
+  destello: '<path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z"'
+    + ' fill="currentColor" stroke-width="1"/>',
+  cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
 };
 
 export function icono(nombre) {
@@ -77,13 +82,23 @@ export function icono(nombre) {
   });
 }
 
-/** Botón de solo icono. La etiqueta no se dibuja, pero existe para quien no ve. */
-export function botonIcono(nombre, { etiqueta, tono = null, onclick }) {
+/**
+ * Botón de solo icono. La etiqueta no se dibuja, pero existe para quien no ve.
+ *
+ * `insignia` pega un segundo icono pequeño en la esquina, sobre su propia
+ * moneda de tinta. Sirve para decir «esto es aquello, con algo encima» sin
+ * tocar el dibujo de debajo: el de compartir sigue siendo el del sistema y se
+ * reconoce igual.
+ */
+export function botonIcono(nombre, { etiqueta, tono = null, insignia = null, onclick }) {
   return el('button', {
     class: 'icono-accion', type: 'button',
     'data-tono': tono, 'aria-label': etiqueta, title: etiqueta,
     onclick,
-  }, [icono(nombre)]);
+  }, [
+    icono(nombre),
+    insignia ? el('span', { class: 'icono-insignia', 'aria-hidden': 'true' }, [icono(insignia)]) : null,
+  ]);
 }
 
 // --------------------------------------------------------------------- Hoja --
@@ -143,6 +158,23 @@ export function cerrarHoja() {
 
 export const hayHojaAbierta = () => Boolean(cerrarActual);
 
+/**
+ * Un apartado plegable, con `<details>` y `<summary>` del propio navegador.
+ *
+ * Sin JavaScript por debajo a propósito: el elemento ya se abre al tocarlo y al
+ * pulsar Enter, ya se anuncia como plegado o desplegado a quien no ve, y el
+ * buscador del navegador abre por su cuenta el apartado donde encuentra algo.
+ * Nada de eso saldría gratis con un `div` y una clase.
+ */
+export function acordeon(titulo, construir, { abierta = false } = {}) {
+  const cuerpo = el('div', { class: 'acordeon-cuerpo' });
+  construir(cuerpo);
+  return el('details', { class: 'acordeon', open: abierta }, [
+    el('summary', {}, [el('span', { texto: titulo })]),
+    cuerpo,
+  ]);
+}
+
 // ------------------------------------------------------------------ Gestos --
 
 /**
@@ -197,15 +229,10 @@ export function deslizarHorizontal(nodo, alDeslizar) {
  * llega, siempre y en todas partes, son dos `click` seguidos. Se cuelga del
  * contenedor y no de cada hijo, de modo que los dos toques cuentan aunque el
  * segundo caiga unos píxeles más allá, sobre otra pieza de la misma fila.
- *
- * `ignorar` es un selector de lo que ya tiene acción propia —una tarjeta, un
- * filtro—: los toques que caen ahí no cuentan, de modo que lo que escucha el
- * gesto es el hueco y no la lista entera.
  */
-export function dobleToque(nodo, accion, { ventana = 400, ignorar = null } = {}) {
+export function dobleToque(nodo, accion, { ventana = 400 } = {}) {
   let anterior = 0;
   nodo.addEventListener('click', (evento) => {
-    if (ignorar && evento.target.closest(ignorar)) { anterior = 0; return; }
     // El teclado no tiene doble clic: Enter y Espacio llegan como un clic sin
     // botón detrás (`detail` a cero) y valen por sí solos.
     if (evento.detail === 0) { accion(); return; }

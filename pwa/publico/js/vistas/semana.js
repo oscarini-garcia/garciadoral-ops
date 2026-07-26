@@ -17,8 +17,8 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
   deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
-import { guardar, retirar } from '../sincronizacion.js';
-import { REPETICIONES, nuevoId } from '../modelo.js';
+import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
+import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, instanciasEn, iso,
@@ -40,12 +40,15 @@ export function reiniciarAgenda() {
 }
 
 /**
- * Encabezado de la agenda: de cuándo se está hablando, y luego con qué vista se
- * mira. El periodo va primero y en grande porque es la pregunta que se hace
- * quien llega —«¿qué semana es esta?»— y porque el número del día suelto, sin
- * mes ni año, no la responde.
+ * De cuándo se está hablando. Es el título de la pantalla, en la misma línea
+ * que el indicador y los ajustes: donde las demás pestañas ponen su nombre.
+ *
+ * Es la pregunta que se hace quien llega —«¿qué semana es esta?»— y el número
+ * del día suelto, sin mes ni año, no la responde. Ocupando la línea del título
+ * en lugar de una propia, la agenda gana una fila entera de pantalla, que en un
+ * teléfono es un día más de semana a la vista.
  */
-function tituloDePeriodo() {
+export function tituloDeAgenda() {
   if (modo === 'semana') return formatearRango(lunesDe(ancla));
   if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
   const desde = hoy();
@@ -58,37 +61,35 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
     onclick: () => { mover(pasos); ctx.refrescar(); },
   }, [rotulo]);
 
+  // Una sola fila de mandos: con qué vista se mira y por dónde se anda. El
+  // rótulo del periodo no está aquí, sino arriba, ocupando la línea del título
+  // de la pantalla (`tituloDeAgenda`).
   vaciar(subcabecera).append(
-    el('div', { class: 'agenda-controles' }, [
-      el('div', { class: 'periodo' }, [
-        el('h2', { class: 'periodo-titulo', texto: tituloDePeriodo() }),
-        // La lista arranca siempre en hoy y llega hasta donde llegue: no hay
-        // periodo anterior ni siguiente al que saltar.
-        modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
-          paso('‹', -1, 'Anterior'),
-          paso('›', 1, 'Siguiente'),
-        ]),
+    el('div', { class: 'vistas' }, [
+      el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
+        ...['semana', 'mes', 'lista'].map((nombre) =>
+          el('button', {
+            type: 'button',
+            'aria-pressed': modo === nombre ? 'true' : 'false',
+            onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
+          }, [nombre[0].toUpperCase() + nombre.slice(1)]),
+        ),
       ]),
-      el('div', { class: 'vistas' }, [
-        el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
-          ...['semana', 'mes', 'lista'].map((nombre) =>
-            el('button', {
-              type: 'button',
-              'aria-pressed': modo === nombre ? 'true' : 'false',
-              onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
-            }, [nombre[0].toUpperCase() + nombre.slice(1)]),
-          ),
-        ]),
-        // Volver es tan necesario como irse: con las flechas y el
-        // deslizamiento, tres gestos distraídos dejan la agenda en un mes que
-        // no le importa a nadie y sin forma evidente de regresar. En la lista
-        // no hace falta, porque siempre arranca en hoy.
-        modo === 'lista' ? null : el('button', {
-          class: 'boton-hoy empujar', type: 'button',
-          'aria-label': 'Volver a hoy',
-          onclick: () => { toque(); ancla = hoy(); ultimoPaso = 0; ctx.refrescar(); },
-        }, ['Hoy']),
+      // La lista arranca siempre en hoy y llega hasta donde llegue: no hay
+      // periodo anterior ni siguiente al que saltar, ni sitio al que volver.
+      modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
+        paso('‹', -1, 'Anterior'),
+        paso('›', 1, 'Siguiente'),
       ]),
+      el('div', { class: `compartir-periodo${modo === 'lista' ? ' empujar' : ''}` }, accionesDelPeriodo(ctx)),
+      // Volver es tan necesario como irse: con las flechas y el deslizamiento,
+      // tres gestos distraídos dejan la agenda en un mes que no le importa a
+      // nadie y sin forma evidente de regresar.
+      modo === 'lista' ? null : el('button', {
+        class: 'boton-hoy', type: 'button',
+        'aria-label': 'Volver a hoy',
+        onclick: () => { toque(); ancla = hoy(); ultimoPaso = 0; ctx.refrescar(); },
+      }, ['Hoy']),
     ]),
   );
 
@@ -113,6 +114,120 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
     ultimoPaso = 0;
   }
   pantalla.append(cuerpo);
+}
+
+/**
+ * Los días que abarca lo que se está mirando, para compartirlo.
+ *
+ * La lista no es un periodo: arranca en hoy y llega a seis meses vista, y
+ * mandar eso entero da un mensaje que nadie lee. Desde ahí se comparte **lo que
+ * viene en siete días**, que es lo mismo que manda el plan de los domingos: así
+ * no hay dos ideas distintas de «lo que viene» rondando la aplicación.
+ */
+function diasDelPeriodo() {
+  if (modo === 'semana') return diasDeLaSemana(lunesDe(ancla));
+  if (modo === 'lista') return Array.from({ length: 7 }, (_, i) => sumarDias(hoy(), i));
+
+  const primero = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
+  const cuantos = new Date(ancla.getFullYear(), ancla.getMonth() + 1, 0).getDate();
+  return Array.from({ length: cuantos }, (_, i) => sumarDias(primero, i));
+}
+
+/** El rótulo de lo que se comparte. No sirve `tituloDeAgenda`: en la lista dice
+ *  «desde Julio de 2026», que no es el tramo que sale por el compartir. */
+function tituloDeLoCompartido(dias) {
+  if (modo === 'semana') return formatearRango(dias[0]);
+  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
+  return `Del ${dias[0].getDate()} de ${MESES_LARGOS[dias[0].getMonth()]}`
+    + ` al ${dias[6].getDate()} de ${MESES_LARGOS[dias[6].getMonth()]}`;
+}
+
+function repartoDelPeriodo(ctx, dias) {
+  return repartirPorDia(instanciasEn(ctx.vista.datos, dias[0], dias[dias.length - 1]), dias);
+}
+
+/**
+ * El periodo entero como texto: el rótulo y, debajo, un bloque por día con
+ * algo. Los días vacíos no salen —en un mes son la mayoría— y con ellos se iría
+ * en blanco media pantalla del mensaje.
+ */
+function textoDelPeriodo(ctx, dias, reparto) {
+  const bloques = [];
+  for (const dia of dias) {
+    const apariciones = reparto.get(iso(dia)) || [];
+    if (!apariciones.length) continue;
+    const lineas = apariciones.map((aparicion) => {
+      const hora = horaDe(aparicion);
+      const cara = ctx.vista.caraDe(aparicion.evento);
+      return [
+        cara.emoji,
+        hora ? `${hora} ·` : null,
+        cara.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+        aparicion.evento.ubicacion ? `· ${aparicion.evento.ubicacion}` : null,
+      ].filter(Boolean).join(' ');
+    });
+    bloques.push([formatearFechaLarga(dia), ...lineas].join('\n'));
+  }
+  return bloques;
+}
+
+/** Los dos botones de compartir de la cabecera, con el mismo par de dibujos que
+ *  la hoja de un día: lo que cambia es cuánto abarcan, no lo que hacen. */
+function accionesDelPeriodo(ctx) {
+  const dias = diasDelPeriodo();
+  const reparto = repartoDelPeriodo(ctx, dias);
+  const bloques = textoDelPeriodo(ctx, dias, reparto);
+  // Un periodo sin nada no se ofrece: no habría nada que enviar.
+  if (!bloques.length) return [];
+
+  const titulo = tituloDeLoCompartido(dias);
+  const talCual = () => compartirTexto(titulo, `${titulo}\n\n${bloques.join('\n\n')}`);
+
+  const plano = botonIcono('compartir', {
+    etiqueta: `Compartir ${nombreDelPeriodo()}`,
+    onclick: () => { toque(); talCual(); },
+  });
+  if (!redaccionDisponible(ctx.vista.datos)) return [plano];
+
+  const contado = botonIcono('compartir', {
+    etiqueta: `Compartir ${nombreDelPeriodo()} contado`,
+    insignia: 'destello',
+    onclick: () => contarElPeriodo(dias, reparto, titulo, talCual, [plano, contado]),
+  });
+  return [plano, contado];
+}
+
+const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : modo === 'lista' ? 'lo que viene' : 'la semana');
+
+async function contarElPeriodo(dias, reparto, titulo, talCual, botones) {
+  toque();
+  for (const boton of botones) boton.disabled = true;
+
+  let texto = null;
+  let fallo = null;
+  try {
+    texto = await redactarPeriodo(iso(dias[0]), iso(dias[dias.length - 1]), dias.map((dia) => ({
+      fecha: iso(dia),
+      eventos: (reparto.get(iso(dia)) || []).map((aparicion) => aparicion.evento.id),
+    })));
+  } catch (error) {
+    fallo = error;
+  } finally {
+    for (const boton of botones) boton.disabled = false;
+  }
+
+  if (!texto) {
+    if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
+    avisar('No he podido contarlo: va la lista tal cual');
+    await talCual();
+    return;
+  }
+  await compartirTexto(titulo, texto);
+}
+
+async function compartirTexto(titulo, texto) {
+  const enviado = await compartir({ titulo, texto });
+  if (!enviado) avisar('No he podido compartirlo');
 }
 
 function mover(pasos) {
@@ -235,7 +350,33 @@ function vistaMes(ctx) {
   if (!delDia.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
   for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx));
 
-  return el('div', {}, [rejilla, detalle]);
+  // El día del mes que no tiene nada se llena igual que la fila vacía de la
+  // semana: doblando el toque sobre su hueco.
+  if (!delDia.length) dobleToque(detalle, () => { toque(); abrirFormularioEvento(ctx, { fecha: ancla }); });
+
+  return el('div', { class: 'cuerpo-agenda' }, [
+    rejilla,
+    detalle,
+    zonaLibre(ctx, () => ancla),
+  ]);
+}
+
+/**
+ * El blanco que queda por debajo del contenido, que también sirve para crear.
+ *
+ * En la semana el hueco de un día vacío es un sitio evidente donde doblar el
+ * toque; en el mes y en la lista no hay filas, y lo único despejado es lo que
+ * sobra al final. Se le da el mismo gesto para que la regla sea una sola:
+ * doblar el toque sobre lo que está en blanco crea un evento ahí.
+ *
+ * Qué día es «ahí» lo dice quien llama, y en el momento del toque: en el mes,
+ * el que esté seleccionado; en la lista, que siempre arranca en hoy, hoy.
+ */
+function zonaLibre(ctx, diaDe) {
+  return dobleToque(
+    el('div', { class: 'zona-libre', 'aria-hidden': 'true' }),
+    () => { toque(); abrirFormularioEvento(ctx, { fecha: diaDe() }); },
+  );
 }
 
 // ---------------------------------------------------------------- Lista --
@@ -245,11 +386,14 @@ function vistaLista(ctx) {
   const hasta = sumarDias(desde, 180);
   const instancias = instanciasEn(ctx.vista.datos, desde, hasta).sort((a, b) => a.inicio - b.inicio);
 
+  const contenedor = el('div', { class: 'cuerpo-agenda' });
+
   if (!instancias.length) {
-    return el('p', { class: 'vacio', texto: 'No hay nada en los próximos seis meses.' });
+    contenedor.append(el('p', { class: 'vacio', texto: 'No hay nada en los próximos seis meses.' }));
+    contenedor.append(zonaLibre(ctx, hoy));
+    return contenedor;
   }
 
-  const contenedor = el('div', {});
   let grupoActual = null;
   let nodo = null;
 
@@ -262,6 +406,7 @@ function vistaLista(ctx) {
     }
     nodo.append(tarjetaDeEvento({ instancia, evento: instancia.evento, dia: soloFecha(instancia.inicio), continuacion: false }, ctx));
   }
+  contenedor.append(zonaLibre(ctx, hoy));
   return contenedor;
 }
 
@@ -311,19 +456,76 @@ export function abrirDia(fecha, ctx) {
       class: 'boton', type: 'button',
       onclick: () => abrirFormularioEvento(ctx, { fecha }),
     }, ['Añadir un evento este día']));
-  }, [
-    // Un día se comparte tal cual se ve: lo que hay en la hoja es ya lo visible
-    // para quien mira, de modo que no puede salir por ahí un evento reservado.
-    // En un día vacío no se ofrece, porque no habría nada que enviar.
-    apariciones.length ? botonIcono('compartir', {
-      etiqueta: 'Compartir el día',
-      onclick: () => compartirDia(fecha, apariciones, ctx),
-    }) : null,
-  ]);
+  }, accionesDelDia(fecha, apariciones, ctx));
 
   // El mismo gesto que en la semana y en el mes, un piso más abajo: aquí lo que
   // pasa es el día. Se cuelga del cuerpo, que la hoja rehace en cada apertura.
   deslizarHorizontal(contenido, (pasos) => { toque(); abrirDia(sumarDias(fecha, pasos), ctx); });
+}
+
+/**
+ * Los dos botones de la cabecera del día: compartir la lista y compartirla
+ * contada.
+ *
+ * Un día se comparte tal cual se ve: lo que hay en la hoja es ya lo visible
+ * para quien mira, de modo que no puede salir por ahí un evento reservado. En
+ * un día vacío no se ofrece ninguno de los dos, porque no habría nada que
+ * enviar.
+ *
+ * El segundo es el mismo icono con un destello encima: dice «esto es
+ * compartir, con algo añadido» sin obligar a aprender un dibujo nuevo. Solo
+ * aparece si el servidor tiene clave; si no, sobraría un botón que únicamente
+ * sabría fallar.
+ */
+function accionesDelDia(fecha, apariciones, ctx) {
+  if (!apariciones.length) return [];
+
+  const compartirTalCual = botonIcono('compartir', {
+    etiqueta: 'Compartir el día',
+    onclick: () => compartirDia(fecha, apariciones, ctx),
+  });
+  if (!redaccionDisponible(ctx.vista.datos)) return [compartirTalCual];
+
+  const contado = botonIcono('compartir', {
+    etiqueta: 'Compartir contado',
+    insignia: 'destello',
+    onclick: () => contarElDia(fecha, apariciones, ctx, [compartirTalCual, contado]),
+  });
+  return [compartirTalCual, contado];
+}
+
+/**
+ * Compartir el día redactado por un modelo.
+ *
+ * No se ofrece revisar el texto antes: el botón es «compartir contado», no un
+ * editor, y una hoja intermedia convertiría un gesto en un trámite. Si algo
+ * falla —sin red, sin clave, el modelo caído— se comparte la lista tal cual y
+ * se dice por qué: quedarse sin compartir sería el peor de los desenlaces.
+ */
+async function contarElDia(fecha, apariciones, ctx, botones) {
+  toque();
+  for (const boton of botones) boton.disabled = true;
+
+  let texto = null;
+  let fallo = null;
+  try {
+    texto = await redactarDia(iso(fecha), apariciones.map((aparicion) => aparicion.evento.id));
+  } catch (error) {
+    fallo = error;
+  } finally {
+    for (const boton of botones) boton.disabled = false;
+  }
+
+  if (!texto) {
+    // La traza de los intentos solo llega si quien mira puede arreglarlo; en la
+    // consola sirve para depurar sin tener que reproducirlo a ciegas.
+    if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
+    avisar('No he podido contarlo: va la lista tal cual');
+    await compartirDia(fecha, apariciones, ctx);
+    return;
+  }
+
+  await compartirTexto(formatearFechaLarga(fecha), texto);
 }
 
 /**
@@ -345,8 +547,7 @@ async function compartirDia(fecha, apariciones, ctx) {
     ].filter(Boolean).join(' ');
   });
 
-  const enviado = await compartir({ titulo, texto: `${titulo}\n${lineas.join('\n')}` });
-  if (!enviado) avisar('No he podido compartirlo');
+  await compartirTexto(titulo, `${titulo}\n${lineas.join('\n')}`);
 }
 
 // -------------------------------------------------------- Detalle de evento --
