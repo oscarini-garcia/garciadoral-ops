@@ -663,7 +663,7 @@ function formularioDeRedaccion(ajustes) {
     campo('Instrucción', instruccion, 'Lo que se le pide al modelo. Los eventos se los da la agenda aparte; aquí va solo el encargo.'),
 
     el('h4', { class: 'subtitulo-ajuste', texto: 'Proponer un regalo' }),
-    campo('Instrucción', regalo, 'Lo que se sabe de la persona —su edad, lo que ha pedido, lo que ya tiene apuntado y lo que recibió— se lo da la agenda aparte. Vacío, vuelve el encargo de origen.'),
+    campo('Instrucción', regalo, 'Se pide una tanda de cinco, y la agenda espera una por línea: si reescribes esto, conserva esa forma. Lo que se sabe de la persona —su edad, lo que ha pedido, lo que ya tiene apuntado y lo que recibió— se lo da aparte. Vacío, vuelve el encargo de origen.'),
 
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {

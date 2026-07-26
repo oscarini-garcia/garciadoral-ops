@@ -251,19 +251,20 @@ export async function redactarPeriodo(desde, hasta, dias) {
 }
 
 /**
- * Una propuesta de regalo para una persona.
+ * Una tanda de cinco regalos propuestos para una persona.
  *
- * Viaja el identificador de la persona y, como mucho, lo que quien apunta lleve
- * escrito en el formulario: lo que se sabe de ella —sus datos, lo que ha
- * pedido, lo que ya tiene apuntado y lo que recibió— lo reúne el Worker con la
- * instantánea filtrada de quien pide.
+ * Viajan el identificador de la persona, lo que quien apunta lleve escrito en
+ * el formulario y los títulos que ya se han propuesto, para que la tanda
+ * siguiente no repita a la anterior. Lo que se sabe de ella —sus datos, lo que
+ * ha pedido, lo que ya tiene apuntado y lo que recibió— lo reúne el Worker con
+ * la instantánea filtrada de quien pide.
  */
-export async function sugerirRegalo(personaId, pista = '') {
-  const { texto } = await peticion('/api/regalo/sugerir', {
+export async function sugerirRegalos(personaId, { pista = '', descartadas = [] } = {}) {
+  const { propuestas } = await peticion('/api/regalo/sugerir', {
     method: 'POST',
-    body: JSON.stringify({ persona_id: personaId, pista }),
+    body: JSON.stringify({ persona_id: personaId, pista, descartadas }),
   });
-  return texto;
+  return propuestas || [];
 }
 
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */

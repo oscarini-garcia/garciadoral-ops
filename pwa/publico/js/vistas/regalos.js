@@ -12,7 +12,7 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
   botonIcono, dobleToque, icono,
 } from '../ui.js';
-import { guardar, retirar, sugerirRegalo } from '../sincronizacion.js';
+import { guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
 import {
   ESTADOS_REGALO, estaActivo, formatearImporte, nuevoId, redaccionDisponible,
 } from '../modelo.js';
@@ -511,9 +511,12 @@ function abrirFormularioOcasion(ctx, { duplicarDe = null } = {}) {
 // ----------------------------------------------------- Apuntar y editar --
 
 /**
- * Captura en un gesto: un campo de título y un botón de guardar. La
- * clasificación se ofrece debajo pero no se reclama. Si registrar una idea
- * cuesta más de diez segundos, no se registra (specs/ux.md §2 y §3).
+ * Captura en un gesto: el qué, para quién y por qué, y un botón de guardar. El
+ * resto de la clasificación se ofrece debajo pero no se reclama. Si registrar
+ * una idea cuesta más de diez segundos, no se registra (specs/ux.md §2 y §3).
+ *
+ * Para quién sube por encima del pliegue aunque sea clasificación: es lo que
+ * decide a quién se le oculta la idea, y lo que enciende la propuesta de la IA.
  *
  * Corregir entra por la misma puerta que en la agenda: la misma hoja, con todo
  * desplegado —quien viene a cambiar algo ya sabe qué campo busca— y el borrado
@@ -541,16 +544,55 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
 
   abrirHoja(existente ? 'Editar idea' : 'Apuntar una idea', (cuerpo) => {
     const titulo = entrada({ value: existente?.titulo || '', placeholder: 'Botas de montar', autofocus: true });
-    cuerpo.append(campo('Qué', titulo));
 
-    // La propuesta va aquí y no en un sitio propio porque lo que hace es
-    // rellenar estos campos: se pide desde donde se iba a escribir a mano.
-    const rotulo = el('span', {});
-    const sugerir = el('button', {
-      class: 'boton boton-ia', 'data-tono': 'discreto', type: 'button', hidden: true,
-      onclick: () => proponerUnRegalo(),
-    }, [icono('destello'), rotulo]);
-    cuerpo.append(sugerir);
+    // El destello vive dentro del campo que va a rellenar, al final, como la
+    // lupa de un buscador: no gasta una línea y no hay que explicar qué campo
+    // toca. Solo aparece cuando hay una persona a quien regalarle algo.
+    const pedir = el('button', {
+      class: 'destello-campo', type: 'button', hidden: true,
+      onclick: () => abrirPropuestas(),
+    }, [icono('destello')]);
+
+    const campoQue = campo('Qué', titulo);
+    campoQue.append(pedir);
+    cuerpo.append(campoQue);
+
+    // ------------------------------------------------------- Las propuestas --
+
+    const texto = el('div', { class: 'propuesta-texto', 'aria-live': 'polite' });
+    const cuenta = el('span', { class: 'propuesta-cuenta' });
+    const atras = el('button', {
+      class: 'propuesta-flecha', type: 'button', 'aria-label': 'Propuesta anterior',
+      onclick: () => mover(-1),
+    }, ['‹']);
+    const adelante = el('button', {
+      class: 'propuesta-flecha', type: 'button', 'aria-label': 'Propuesta siguiente',
+      onclick: () => mover(1),
+    }, ['›']);
+    const usarla = el('button', {
+      class: 'boton-mini', 'data-tono': 'principal', type: 'button', onclick: () => usarLaPropuesta(),
+    }, ['Usarla']);
+    const otras = el('button', {
+      class: 'boton-mini', type: 'button', onclick: () => pedirPropuestas({ mas: true }),
+    }, ['Otras cinco']);
+
+    const carrusel = el('div', { class: 'propuesta', hidden: true }, [
+      el('div', { class: 'propuesta-cuerpo' }, [atras, texto, adelante]),
+      el('div', { class: 'propuesta-pie' }, [usarla, otras, cuenta]),
+    ]);
+    cuerpo.append(carrusel);
+
+    // ------------------------------------------------------- Los demás campos --
+
+    const descripcion = el('textarea', { placeholder: 'Para acordarte dentro de seis meses' });
+    descripcion.value = existente?.descripcion || '';
+
+    cuerpo.append(campo('Para quién', opciones(
+      ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
+      destinatarios,
+      (v) => { destinatarios = v; ajustarPedir(); },
+    ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'));
+    cuerpo.append(campo('Descripción', descripcion));
 
     // Al editar se abre desplegado y sin conmutador: quien corrige viene a por
     // un campo concreto, y esconderlo detrás de un enlace sobra.
@@ -565,8 +607,6 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     const avisoEtiquetas = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: !etiquetas.length });
     avisoEtiquetas.textContent = 'Las etiquetas clasifican pero no ocultan: una idea etiquetada como «adolescente» la ven también las hijas. Para reservarla, nombra a la persona.';
 
-    const descripcion = el('textarea', { placeholder: 'Para acordarte dentro de seis meses' });
-    descripcion.value = existente?.descripcion || '';
     const categoria = seleccion(
       [{ valor: '', texto: 'Sin categoría' }, ...ctx.vista.categorias().map((c) => ({ valor: c.id, texto: c.nombre }))],
       existente?.categoria_id || '',
@@ -576,23 +616,19 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     const enlace = entrada({ type: 'url', placeholder: 'https://', value: existente?.enlace || '' });
 
     extra.append(
-      campo('Para quién', opciones(
-        ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
-        destinatarios,
-        (v) => { destinatarios = v; ajustarSugerencia(); },
-      ), 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.'),
       campo('O un perfil', opciones(
         ctx.vista.etiquetas().map((e) => ({ valor: e.id, texto: e.nombre })),
         etiquetas,
         (v) => { etiquetas = v; avisoEtiquetas.hidden = v.length === 0; },
       )),
       avisoEtiquetas,
-      campo('Descripción', descripcion),
       campo('Categoría', categoria),
       campo('Precio aproximado', precio),
       campo('Dónde se compra', establecimiento),
       campo('Enlace', enlace),
     );
+
+    // ---------------------------------------------------------- La propuesta --
 
     /**
      * A quién se le está buscando el regalo: la primera persona nombrada.
@@ -604,49 +640,125 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
      */
     const destinataria = () => destinatarios.map((id) => ctx.vista.persona(id)).find(Boolean) || null;
 
-    function ajustarSugerencia() {
+    // La tanda vive mientras la hoja esté abierta. «Otras cinco» no la sustituye:
+    // añade al final, de modo que se puede volver atrás a la que gustaba.
+    let tanda = [];
+    let indice = 0;
+    let tandaDe = null;
+    let pistaDeLaTanda = '';
+
+    function ajustarPedir() {
       const persona = destinataria();
-      sugerir.hidden = !persona || !redaccionDisponible(ctx.vista.datos);
-      if (persona) rotulo.textContent = `Que lo proponga la IA para ${persona.nombre}`;
-    }
+      const hay = Boolean(persona) && redaccionDisponible(ctx.vista.datos);
+      pedir.hidden = !hay;
+      // El hueco dentro del campo se reserva solo cuando el botón está: si no,
+      // el título escribe de borde a borde.
+      if (hay) campoQue.setAttribute('data-con-destello', '');
+      else campoQue.removeAttribute('data-con-destello');
+      if (persona) pedir.setAttribute('aria-label', `Que la IA proponga un regalo para ${persona.nombre}`);
 
-    /**
-     * La propuesta llega en dos líneas —el regalo y por qué encaja— y se
-     * reparte entre el título y la descripción, que es donde se iba a escribir.
-     *
-     * Se pisa lo que hubiera escrito, y a propósito: lo que hubiera va antes
-     * como pista, de modo que escribir «algo para el verano» y pedir la
-     * propuesta es una forma de encargarla, no de perderla.
-     */
-    async function proponerUnRegalo() {
-      const persona = destinataria();
-      if (!persona) return;
-
-      toque();
-      const antes = rotulo.textContent;
-      sugerir.disabled = true;
-      rotulo.textContent = 'Pensando…';
-
-      try {
-        const pista = [titulo.value.trim(), descripcion.value.trim()].filter(Boolean).join('. ');
-        const texto = await sugerirRegalo(persona.id, pista);
-        const lineas = String(texto || '').split('\n').map((l) => l.trim()).filter(Boolean);
-        if (!lineas.length) { avisar('No ha propuesto nada'); return; }
-
-        titulo.value = lineas[0].replace(/^[-–—·*\d.)\s]+/, '');
-        if (lineas.length > 1) descripcion.value = lineas.slice(1).join(' ');
-        // El porqué queda en la descripción, que en una idea nueva está
-        // plegada: se despliega para que se vea lo que se acaba de escribir.
-        if (extra.hidden) conmutador.click();
-      } catch (error) {
-        avisar(error.message || 'No he podido pedir la propuesta');
-      } finally {
-        sugerir.disabled = false;
-        rotulo.textContent = antes;
+      // Cambiar de persona invalida lo propuesto para la anterior.
+      if (tandaDe && persona?.id !== tandaDe) {
+        tanda = [];
+        indice = 0;
+        tandaDe = null;
+        carrusel.hidden = true;
       }
     }
 
-    ajustarSugerencia();
+    /** El destello: la primera vez pide; después vuelve a enseñar lo que ya hay,
+     *  que no cuesta nada y es lo que espera quien lo cerró sin usarlo. */
+    function abrirPropuestas() {
+      toque();
+      if (tanda.length) { carrusel.hidden = false; pintarPropuesta(); return; }
+      pedirPropuestas({ mas: false });
+    }
+
+    function mover(pasos) {
+      indice = Math.min(tanda.length - 1, Math.max(0, indice + pasos));
+      pintarPropuesta();
+    }
+
+    /**
+     * El marco no se mueve: solo cambia el texto de dentro. Es lo que permite
+     * pasar cinco propuestas seguidas sin que «Usarla» se escape de debajo del
+     * dedo, y por eso el hueco del texto tiene el alto reservado en el CSS.
+     */
+    function pintarPropuesta() {
+      const actual = tanda[indice];
+      vaciar(texto).append(
+        el('p', { class: 'propuesta-que', texto: actual.que }),
+        actual.porque ? el('p', { class: 'propuesta-porque', texto: actual.porque }) : null,
+      );
+      cuenta.textContent = `${indice + 1} / ${tanda.length}`;
+      atras.disabled = indice === 0;
+      adelante.disabled = indice >= tanda.length - 1;
+      usarla.disabled = false;
+      otras.disabled = false;
+    }
+
+    function esperando() {
+      carrusel.hidden = false;
+      vaciar(texto).append(el('p', { class: 'propuesta-porque', texto: 'Pensando…' }));
+      cuenta.textContent = '';
+      for (const boton of [atras, adelante, usarla, otras]) boton.disabled = true;
+    }
+
+    /**
+     * Una tanda son cinco de una vez, porque lo caro de la llamada es contarle
+     * al modelo quién es la persona: pasar de una a otra no vuelve a pedir nada.
+     *
+     * La pista es lo que hubiera escrito **antes** de pedir la primera, y se
+     * conserva: si se mandara lo que hay en los campos, la segunda tanda
+     * llevaría dentro la propuesta de la primera y el modelo se repetiría.
+     */
+    async function pedirPropuestas({ mas }) {
+      const persona = destinataria();
+      if (!persona) return;
+      if (mas) toque();
+
+      if (!mas) {
+        pistaDeLaTanda = [titulo.value.trim(), descripcion.value.trim()].filter(Boolean).join('. ');
+      }
+      const teniamos = tanda.length;
+      esperando();
+
+      try {
+        const nuevas = await sugerirRegalos(persona.id, {
+          pista: pistaDeLaTanda,
+          descartadas: tanda.map((propuesta) => propuesta.que),
+        });
+        if (!nuevas.length) {
+          avisar('No ha propuesto nada');
+          if (!teniamos) carrusel.hidden = true; else pintarPropuesta();
+          return;
+        }
+        tanda = mas ? [...tanda, ...nuevas] : nuevas;
+        tandaDe = persona.id;
+        // Al añadir se salta a la primera de las nuevas; las anteriores siguen
+        // ahí, a un toque de la flecha de atrás.
+        indice = mas ? teniamos : 0;
+        pintarPropuesta();
+      } catch (error) {
+        avisar(error.message || 'No he podido pedir la propuesta');
+        if (!teniamos) carrusel.hidden = true; else pintarPropuesta();
+      }
+    }
+
+    /** Aceptar baja la propuesta a los campos y recoge la tarjeta. La tanda se
+     *  queda: volver a tocar el destello la enseña por donde iba. */
+    function usarLaPropuesta() {
+      const actual = tanda[indice];
+      if (!actual) return;
+      toque();
+      titulo.value = actual.que;
+      if (actual.porque) descripcion.value = actual.porque;
+      carrusel.hidden = true;
+    }
+
+    ajustarPedir();
+
+    // ----------------------------------------------------------- Guardar --
 
     const guardarIdea = async () => {
       if (!titulo.value.trim()) { titulo.focus(); return; }

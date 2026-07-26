@@ -45,10 +45,12 @@ export const INSTRUCCION_REGALO_POR_DEFECTO = [
   'Propones regalos para una familia. Te doy lo que se sabe de la persona: su',
   'edad, lo que se le ha apuntado, lo que ella misma ha pedido, las ideas que ya',
   'hay para ella y lo que ya ha recibido otros años.',
-  'Propón un solo regalo, concreto y comprable —no una categoría—, que no repita',
-  'ninguna de las ideas ni de los regalos que te doy y que encaje con su edad.',
-  'Responde en dos líneas y nada más: la primera, el regalo en menos de ocho',
-  'palabras; la segunda, una frase corta que diga por qué encaja.',
+  'Propón CINCO regalos distintos entre sí, concretos y comprables —no',
+  'categorías—, que no repitan ninguna de las ideas ni de los regalos que te doy',
+  'y que encajen con su edad.',
+  'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada una con esta',
+  'forma: «regalo en menos de ocho palabras — una frase corta que diga por qué',
+  'encaja».',
   'En español de España, sin emojis, sin viñetas y sin comillas.',
 ].join(' ');
 
@@ -60,7 +62,12 @@ const MAXIMO_DIAS = 40;
 // Doce por lista: más allá de eso el modelo deja de leer y empieza a resumir, y
 // lo que importa de estas listas es no repetir lo que ya hay.
 const MAXIMO_POR_LISTA = 12;
+// Las ya propuestas se le devuelven al modelo para que la tanda siguiente no
+// repita a la anterior. Con más de treinta la lista pesa más que el encargo, y
+// nadie pasa de ahí sin haberse rendido antes.
+const MAXIMO_DESCARTADAS = 30;
 const TOPE_DE_PISTA = 200;
+const PROPUESTAS_POR_TANDA = 5;
 const LIMITE_POR_MINUTO = 6;
 const TOPE_DE_SALIDA = 400;
 
@@ -281,7 +288,10 @@ export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = []
  * abre ninguna puerta, porque lo que el modelo conteste vuelve a la pantalla de
  * quien lo escribió y a ningún otro sitio; se recorta por si acaso.
  */
-export function componerMaterialDeRegalo(instantanea, { personaId, pista = '', hoy = null } = {}) {
+export function componerMaterialDeRegalo(
+  instantanea,
+  { personaId, pista = '', descartadas = [], hoy = null } = {},
+) {
   const persona = (instantanea.personas || []).find((p) => p.id === personaId);
   if (!persona) return { titulo: '', lineas: [] };
 
@@ -323,6 +333,17 @@ export function componerMaterialDeRegalo(instantanea, { personaId, pista = '', h
   const dicha = String(pista || '').replace(/\s+/g, ' ').trim().slice(0, TOPE_DE_PISTA);
   if (dicha) bloque('Lo que apunta quien lo pide', [dicha]);
 
+  // Lo ya propuesto en esta misma sesión. Sin esto, pedir otra tanda devuelve
+  // casi la anterior: el material que ve el modelo es idéntico.
+  const yaDichas = descartadas
+    .map((titulo) => String(titulo || '').trim())
+    .filter(Boolean)
+    .slice(0, MAXIMO_DESCARTADAS);
+  if (yaDichas.length) {
+    lineas.push('Ya has propuesto esto, no lo repitas ni propongas variantes suyas:');
+    lineas.push(...yaDichas.map((titulo) => `  ${titulo}`));
+  }
+
   return { titulo: `Un regalo para ${persona.nombre}`, lineas };
 }
 
@@ -343,11 +364,11 @@ function edadDe(persona, hoy) {
 
 // ----------------------------------------------------------------- Llamada --
 
-async function intentar({ clave, modelo, instruccion, material, buscar }) {
+async function intentar({ clave, modelo, instruccion, material, tope, buscar }) {
   const arranque = Date.now();
   const cuerpo = {
     model: modelo,
-    max_tokens: TOPE_DE_SALIDA,
+    max_tokens: tope || TOPE_DE_SALIDA,
     system: instruccion,
     messages: [{
       role: 'user',
@@ -410,7 +431,7 @@ async function intentar({ clave, modelo, instruccion, material, buscar }) {
  * proponer un regalo. Sin ella se usa el de contar, que es el que la
  * configuración llama así desde que era el único.
  */
-export async function redactar({ configuracion, material, instruccion, buscar = fetch }) {
+export async function redactar({ configuracion, material, instruccion, tope, buscar = fetch }) {
   if (!configuracion.clave) {
     return { texto: null, modelo: null, intentos: [], motivo: 'no hay clave configurada' };
   }
@@ -427,6 +448,7 @@ export async function redactar({ configuracion, material, instruccion, buscar = 
         modelo,
         instruccion: instruccion || configuracion.instruccion || INSTRUCCION_POR_DEFECTO,
         material,
+        tope,
         buscar,
       });
     } catch (error) {
@@ -438,6 +460,38 @@ export async function redactar({ configuracion, material, instruccion, buscar = 
   }
 
   return { texto: null, modelo: null, intentos, motivo: 'ningún modelo ha contestado' };
+}
+
+/**
+ * Las cinco propuestas, sacadas del texto que devuelve el modelo.
+ *
+ * Se le pide una línea por propuesta, numerada, con el regalo y el porqué
+ * separados por una raya. Se interpreta con la manga ancha que conviene a algo
+ * escrito por un modelo: sirve cualquier numeración, cualquiera de las tres
+ * rayas o los dos puntos, y una línea sin separador vale igual —queda el regalo
+ * y se pierde el porqué, que es lo prescindible—.
+ *
+ * Interpretar aquí y no en el teléfono no es un capricho: así el cliente recibe
+ * una lista, y el formato de la respuesta se prueba en las pruebas del Worker,
+ * que es donde se sabe qué se le pidió al modelo.
+ */
+export function interpretarPropuestas(texto, cuantas = PROPUESTAS_POR_TANDA) {
+  const propuestas = [];
+
+  for (const cruda of String(texto || '').split('\n')) {
+    const linea = cruda.replace(/^\s*(?:\d+\s*[.)\-—–:]?|[-*•])\s*/, '').trim();
+    if (!linea) continue;
+
+    const corte = linea.match(/\s+[—–-]\s+|:\s+/);
+    const que = (corte ? linea.slice(0, corte.index) : linea).replace(/^[«"']|[»"'.]$/g, '').trim();
+    const porque = corte ? linea.slice(corte.index + corte[0].length).trim() : '';
+    if (!que) continue;
+
+    propuestas.push({ que, porque });
+    if (propuestas.length >= cuantas) break;
+  }
+
+  return propuestas;
 }
 
 // ------------------------------------------------------------------- Freno --

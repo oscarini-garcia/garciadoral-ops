@@ -21,7 +21,7 @@
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
  *   GET    /api/registro    · registro completo para el generador del plan semanal
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
- *   POST   /api/regalo/sugerir · una propuesta de regalo para una persona
+ *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
@@ -64,6 +64,7 @@ import {
   componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
+  interpretarPropuestas,
   leerConfiguracion,
   modelosDisponibles,
   redactar,
@@ -416,13 +417,18 @@ async function contarElDia(peticion, env) {
 }
 
 /**
- * Un regalo propuesto para una persona.
+ * Una tanda de regalos propuestos para una persona.
  *
- * El cliente manda a quién y, si quien apunta ha escrito algo, esa pista. Lo
- * que se le cuenta al modelo lo compone el Worker con la instantánea filtrada
- * de quien pide: sus atributos, lo que ha pedido, las ideas que ya hay y lo que
- * recibió otros años. Una idea reservada para alguien no puede asomar por aquí,
- * porque aquí no se lee el registro entero.
+ * Son cinco de una vez, y no una, porque lo caro de esta llamada es contarle al
+ * modelo quién es la persona: eso se manda igual para una que para cinco, así
+ * que pasar de una propuesta a otra en el teléfono no cuesta nada. Pedir otra
+ * tanda sí es otra llamada, y lleva las ya propuestas para no repetirlas.
+ *
+ * El cliente manda a quién, la pista que quien apunta llevara escrita y los
+ * títulos que ya ha visto. Lo que se le cuenta al modelo lo compone el Worker
+ * con la instantánea filtrada de quien pide: sus atributos, lo que ha pedido,
+ * las ideas que ya hay y lo que recibió otros años. Una idea reservada para
+ * alguien no puede asomar por aquí, porque aquí no se lee el registro entero.
  *
  * Comparte el freno con la redacción del día: es la misma cuenta de pago y el
  * mismo bucle en la consola el que la gastaría.
@@ -433,22 +439,32 @@ async function sugerirUnRegalo(peticion, env) {
     throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
   }
 
-  const { persona_id: personaId, pista = '' } = await peticion.json().catch(() => ({}));
+  const {
+    persona_id: personaId, pista = '', descartadas = [],
+  } = await peticion.json().catch(() => ({}));
   if (!personaId) return json({ error: 'falta la persona' }, 400);
 
   const configuracion = await leerConfiguracion(env.DB);
   const registro = await leerRegistro(env.DB);
-  const material = componerMaterialDeRegalo(componerInstantanea(registro, lector), { personaId, pista });
+  const material = componerMaterialDeRegalo(componerInstantanea(registro, lector), {
+    personaId, pista, descartadas,
+  });
 
   if (!material.lineas.length) return json({ error: 'esa persona no está' }, 404);
 
-  const resultado = await redactar({ configuracion, material, instruccion: configuracion.regalo });
+  // Cinco propuestas no caben en el tope de dos frases con el que se cuenta un
+  // día: con él, la quinta llega cortada a la mitad.
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.regalo, tope: 700,
+  });
 
-  if (!resultado.texto) {
+  const propuestas = interpretarPropuestas(resultado.texto);
+
+  if (!propuestas.length) {
     console.warn('sugerencia fallida', JSON.stringify(resultado.intentos));
     return json(
       {
-        texto: null,
+        propuestas: [],
         motivo: resultado.motivo || 'ningún modelo ha contestado',
         intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
       },
@@ -456,7 +472,7 @@ async function sugerirUnRegalo(peticion, env) {
     );
   }
 
-  return json({ texto: resultado.texto, modelo: resultado.modelo });
+  return json({ propuestas, modelo: resultado.modelo });
 }
 
 async function leerAjustesDeIa(peticion, env) {

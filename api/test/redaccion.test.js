@@ -22,6 +22,7 @@ import {
   componerMaterialDePeriodo,
   componerMaterialDeRegalo,
   configuracionPublica,
+  interpretarPropuestas,
   modelosDisponibles,
   redactar,
 } from '../src/redaccion.js';
@@ -264,6 +265,21 @@ test('la pista de quien apunta se recorta y va al final', () => {
   assert.equal(ultima.length <= 202, true);
 });
 
+test('lo ya propuesto se le devuelve al modelo para que no se repita', () => {
+  const material = componerMaterialDeRegalo(CATALOGO, {
+    personaId: 'p-marta', hoy: '2026-07-26', descartadas: ['Hamaca de playa', 'Gafas de bucear'],
+  });
+
+  const desde = material.lineas.indexOf('Ya has propuesto esto, no lo repitas ni propongas variantes suyas:');
+  assert.notEqual(desde, -1);
+  assert.deepEqual(material.lineas.slice(desde + 1), ['  Hamaca de playa', '  Gafas de bucear']);
+});
+
+test('sin nada propuesto todavía no se le dice nada de repetir', () => {
+  const material = componerMaterialDeRegalo(CATALOGO, { personaId: 'p-marta', hoy: '2026-07-26' });
+  assert.equal(material.lineas.some((l) => l.startsWith('Ya has propuesto')), false);
+});
+
 test('una persona que no está en la instantánea no da material ninguno', () => {
   const material = componerMaterialDeRegalo(CATALOGO, { personaId: 'p-de-otra-casa' });
   assert.deepEqual(material.lineas, []);
@@ -287,6 +303,46 @@ test('sin encargo propio guardado se usa el de origen', () => {
     ...CONFIGURACION, regalo: INSTRUCCION_REGALO_POR_DEFECTO, guardada_en: null,
   });
   assert.equal(publica.regalo, INSTRUCCION_REGALO_POR_DEFECTO);
+});
+
+// -------------------------------------------------- Las cinco propuestas --
+
+test('las cinco líneas numeradas se convierten en cinco propuestas', () => {
+  const propuestas = interpretarPropuestas([
+    '1. Hamaca de playa plegable — Se lleva la bici a todas partes.',
+    '2. Gafas de bucear con tubo — Este año le tocan las calas del norte.',
+    '3. Altavoz que aguanta el agua — El suyo no sale del cuarto.',
+    '4. Toalla de microfibra grande — La suya ocupa media mochila.',
+    '5. Cantimplora térmica de un litro — Sale a montar en agosto.',
+  ].join('\n'));
+
+  assert.equal(propuestas.length, 5);
+  assert.deepEqual(propuestas[0], {
+    que: 'Hamaca de playa plegable',
+    porque: 'Se lleva la bici a todas partes.',
+  });
+  assert.equal(propuestas[4].que, 'Cantimplora térmica de un litro');
+});
+
+test('se admite lo que el modelo suele hacer de más: viñetas, comillas y dos puntos', () => {
+  const propuestas = interpretarPropuestas([
+    '- «Hamaca de playa»: se la lleva a todas partes.',
+    '2) Gafas de bucear – le tocan las calas.',
+    '• Toalla grande',
+  ].join('\n'));
+
+  assert.deepEqual(propuestas, [
+    { que: 'Hamaca de playa', porque: 'se la lleva a todas partes.' },
+    { que: 'Gafas de bucear', porque: 'le tocan las calas.' },
+    { que: 'Toalla grande', porque: '' },
+  ]);
+});
+
+test('las líneas de más se descartan, y una respuesta vacía no da propuestas', () => {
+  const seis = Array.from({ length: 6 }, (_, i) => `${i + 1}. Regalo ${i + 1} — porque sí`).join('\n');
+  assert.equal(interpretarPropuestas(seis).length, 5);
+  assert.deepEqual(interpretarPropuestas(''), []);
+  assert.deepEqual(interpretarPropuestas(null), []);
 });
 
 // ----------------------------------------------------------- Configuración --

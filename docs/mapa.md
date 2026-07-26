@@ -49,7 +49,7 @@ tener que recorrer la aplicación entera cada vez.
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día y proponer un regalo.
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · leerConfiguracion · configuracionPublica
-  guardarConfiguracion · cadenaDeModelos · modelosDisponibles · componerMaterial · …y 4 más
+  guardarConfiguracion · cadenaDeModelos · modelosDisponibles · componerMaterial · …y 5 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -130,7 +130,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
-- `POST /api/regalo/sugerir` — una propuesta de regalo para una persona
+- `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
@@ -197,7 +197,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**152** en total.
+**157** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -207,7 +207,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
-- `api/test/redaccion.test.js` — 31
+- `api/test/redaccion.test.js` — 36
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 
