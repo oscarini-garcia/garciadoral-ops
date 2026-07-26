@@ -27,9 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- Nada abierto ahora mismo. Lo pendiente de construir está en el apartado 7 del
-  `README`: los calendarios externos, la copia periódica de salvaguarda y la
-  parte configurable del recordatorio previo.
+- **Sugerencia de regalo con IA.** Pendiente: al apuntar una idea con una
+  persona nombrada, un botón que proponga el regalo, con el prompt editable
+  desde los ajustes por un administrador. Se hereda el modelo y la credencial de
+  otra parte que todavía no está en el repositorio; queda a la espera de ese
+  commit.
+- **Presupuesto.** El panel está retirado de la pestaña de Regalos mientras se
+  decide qué forma tiene. Lo que sostiene sigue en pie y sin tocar: la escritura
+  de `presupuesto` en el Worker, el envío del importe a los administradores en la
+  instantánea, `gastoDe` en `modelo.js` y las reglas de la tabla en el CSS.
+- Lo demás pendiente de construir está en el apartado 7 del `README`: los
+  calendarios externos, la copia periódica de salvaguarda y la parte configurable
+  del recordatorio previo.
 
 ## Codificación de archivos generados
 

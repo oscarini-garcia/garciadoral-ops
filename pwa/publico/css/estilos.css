@@ -220,9 +220,10 @@ button { background: none; border: 0; cursor: pointer; }
 }
 /* La agenda estira su cuerpo hasta el final de la pantalla: el deslizamiento
    que pasa de semana se escucha ahí, y por debajo del domingo es donde el
-   pulgar encuentra sitio libre. */
-.pantalla-agenda { display: flex; flex-direction: column; }
-.pantalla-agenda > * { flex: 1 0 auto; }
+   pulgar encuentra sitio libre. Las ideas lo estiran por lo mismo: el hueco
+   de debajo de la última es donde los dos toques apuntan la siguiente. */
+.pantalla-agenda, .pantalla-ideas { display: flex; flex-direction: column; }
+.pantalla-agenda > *, .pantalla-ideas > * { flex: 1 0 auto; }
 
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;

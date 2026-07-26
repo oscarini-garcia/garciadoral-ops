@@ -156,7 +156,11 @@ export function crearVista(instantanea) {
       (instantanea.atributos_persona || []).filter((a) => a.persona_id === personaId && estaActivo(a)),
 
     /** Gasto registrado y número de regalos sin importe. Distinguir ambas cosas
-     *  evita mostrar una desviación favorable inexistente (spec funcional §6.3). */
+     *  evita mostrar una desviación favorable inexistente (spec funcional §6.3).
+     *
+     *  El panel que lo pintaba está retirado de la interfaz mientras se decide
+     *  qué forma tiene; el dato lo sigue transmitiendo el servidor y la consulta
+     *  se conserva para cuando vuelva. */
     gastoDe(ocasionId, personaId) {
       const regalos = api.regalosPara(ocasionId, personaId);
       const conImporte = regalos.filter((r) => typeof r.coste_real === 'number');

@@ -94,11 +94,11 @@ tener que recorrer la aplicación entera cada vez.
 
 - **buscar.js** — Búsqueda global sobre Ideas y Ocasiones, que es el alcance de la primera versión (spec…
   reiniciarBusqueda · pintarBuscar
-- **familia.js** — Familia: el registro de personas y la ficha de cada una.
+- **familia.js** — Gente: el registro de personas y la ficha de cada una.
   pintarFamilia · abrirFicha
-- **regalos.js** — Regalos: el banco de ideas y las campañas.
+- **regalos.js** — Regalos: las ideas y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirDetalleIdea
-  abrirDetalleRegalo · abrirSelectorDeRegalo · abrirCapturaDeIdea
+  abrirDetalleRegalo · abrirSelectorDeRegalo · abrirFormularioIdea
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · pintarAgenda · abrirDia · abrirDetalleEvento · bloqueDeComentarios
   abrirFormularioEvento · anclaActual

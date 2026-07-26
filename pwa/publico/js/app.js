@@ -4,7 +4,7 @@
  * La arquitectura es la opción D de `specs/ux.md`: la semana abre la
  * aplicación, la coordinación de regalos vive en su propia pestaña —se visita
  * con intención, no de paso— y la ficha de persona de la opción C hace de
- * pantalla de detalle dentro de Familia.
+ * pantalla de detalle dentro de Gente.
  *
  * El botón de crear pertenece a la pantalla y no a la aplicación: su acción
  * depende de dónde esté quien lo pulsa. Un botón genérico obligaría a elegir el
@@ -37,7 +37,7 @@ import {
 } from './native.js';
 import { hoy, instanciasEn, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
-import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
+import { abrirFormularioIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
@@ -46,8 +46,10 @@ const PESTANAS = {
   // ya se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es
   // lo único de esa pantalla que cambia.
   semana: { titulo: '', pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
-  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirCapturaDeIdea(ctx) },
-  familia: { titulo: 'Familia', pintar: pintarFamilia, fab: (ctx) => abrirCapturaDeIdea(ctx) },
+  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirFormularioIdea(ctx) },
+  // La pestaña se llama Gente en la barra; la clave conserva el nombre del
+  // módulo que la pinta, que es de donde sale.
+  familia: { titulo: 'Gente', pintar: pintarFamilia, fab: (ctx) => abrirFormularioIdea(ctx) },
   // En las pantallas sin acción de creación el botón no aparece.
   buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
 };

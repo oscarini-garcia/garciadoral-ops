@@ -197,10 +197,15 @@ export function deslizarHorizontal(nodo, alDeslizar) {
  * llega, siempre y en todas partes, son dos `click` seguidos. Se cuelga del
  * contenedor y no de cada hijo, de modo que los dos toques cuentan aunque el
  * segundo caiga unos píxeles más allá, sobre otra pieza de la misma fila.
+ *
+ * `ignorar` es un selector de lo que ya tiene acción propia —una tarjeta, un
+ * filtro—: los toques que caen ahí no cuentan, de modo que lo que escucha el
+ * gesto es el hueco y no la lista entera.
  */
-export function dobleToque(nodo, accion, { ventana = 400 } = {}) {
+export function dobleToque(nodo, accion, { ventana = 400, ignorar = null } = {}) {
   let anterior = 0;
   nodo.addEventListener('click', (evento) => {
+    if (ignorar && evento.target.closest(ignorar)) { anterior = 0; return; }
     // El teclado no tiene doble clic: Enter y Espacio llegan como un clic sin
     // botón detrás (`detail` a cero) y valen por sí solos.
     if (evento.detail === 0) { accion(); return; }
