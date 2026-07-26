@@ -75,8 +75,8 @@ tener que recorrer la aplicación entera cada vez.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **modelo.js** — Consultas sobre la instantánea local.
-  EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · estaActivo · redaccionDisponible · nuevoId
-  ahora · crearVista · ESTADOS_REGALO · REPETICIONES · …y 1 más
+  EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO · estaActivo
+  redaccionDisponible · nuevoId · ahora · crearVista · …y 3 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios

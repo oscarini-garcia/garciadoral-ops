@@ -11,7 +11,9 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar,
 } from '../ui.js';
 import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
-import { CIRCULOS, TAMANO_FAMILIA, formatearImporte, nuevoId } from '../modelo.js';
+import {
+  CIRCULOS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
+} from '../modelo.js';
 import { MESES_LARGOS, hoy, parsearMomento } from '../semana.js';
 import { abrirCapturaDeIdea, abrirDetalleIdea, abrirDetalleRegalo } from './regalos.js';
 
@@ -563,7 +565,6 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
     const nombre = entrada({ value: persona?.nombre || '', placeholder: 'Nombre' });
     const apellidos = entrada({ value: persona?.apellidos || '', placeholder: 'Apellidos' });
     const nacimiento = el('input', { type: 'date', value: persona?.fecha_nacimiento || '' });
-    const parentesco = entrada({ value: persona?.parentesco || '', placeholder: 'hija, abuelo, sobrino…' });
     const rol = seleccion(
       [{ valor: '', texto: 'Sin cuenta' }, { valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
       persona?.tiene_cuenta ? persona.rol : '',
@@ -581,14 +582,57 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
       persona?.circulo || circulo,
     );
 
+    // El parentesco depende del círculo, así que el círculo se pregunta antes.
+    const parentesco = el('select', { 'aria-label': 'Parentesco' });
+    const otro = entrada({ value: '', placeholder: 'el marido de mi prima…' });
+    const campoOtro = campo('Y cuál es', otro, 'Se guarda tal cual, y así aparece bajo su nombre.');
+
+    // Dentro de casa el parentesco no es descriptivo: de él sale lo que los
+    // otros tres leen. Conviene decirlo donde se elige, y solo ahí.
+    const pista = el('p', { class: 'pista' });
+
+    const ajustarOtro = () => { campoOtro.hidden = parentesco.value !== PARENTESCO_OTRO; };
+
+    /** Rehace la lista al cambiar de círculo, conservando lo elegido si sigue. */
+    const poblar = (elegido) => {
+      const opciones = PARENTESCOS[grupo.value] || PARENTESCOS.extendida;
+      vaciar(parentesco).append(
+        el('option', { value: '' }, ['Sin decir']),
+        ...opciones.map((valor) => el('option', { value: valor }, [valor])),
+        el('option', { value: PARENTESCO_OTRO }, ['Otro…']),
+      );
+      parentesco.value = opciones.includes(elegido) || elegido === PARENTESCO_OTRO ? elegido : '';
+      pista.textContent = grupo.value === 'familia'
+        ? 'De esto sale lo que cada uno de casa lee bajo el nombre de los demás: una hija ve «mamá» donde su madre se ve a sí misma.'
+        : '';
+      pista.hidden = !pista.textContent;
+      ajustarOtro();
+    };
+
+    // Lo que ya estuviera escrito y no figure en la lista —de antes de que
+    // hubiera lista, o de otro círculo— no se pierde: cae en «Otro» con su
+    // texto puesto.
+    const escrito = persona?.parentesco || '';
+    const enLaLista = (PARENTESCOS[persona?.circulo || circulo] || []).includes(escrito);
+    if (escrito && !enLaLista) otro.value = escrito;
+    poblar(escrito && !enLaLista ? PARENTESCO_OTRO : escrito);
+
+    parentesco.addEventListener('change', ajustarOtro);
+    grupo.addEventListener('change', () => {
+      poblar(parentesco.value === PARENTESCO_OTRO ? PARENTESCO_OTRO : parentesco.value);
+    });
+
     cuerpo.append(
       campo('Nombre', nombre),
       campo('Apellidos', apellidos),
       campo('Fecha de nacimiento', nacimiento, 'De aquí sale su cumpleaños en la agenda, todos los años y sin tocar nada.'),
-      campo('Parentesco', parentesco),
       campo('Círculo', grupo, hayHueco
         ? `${CIRCULOS.familia} es el hogar y son ${TAMANO_FAMILIA}: no es un grupo que crezca.`
         : `${CIRCULOS.familia} ya está completa con ${TAMANO_FAMILIA}. Para cambiar a alguien de sitio, hazlo primero en su ficha.`),
+      el('div', { class: 'campo' }, [
+        el('label', { texto: 'Parentesco' }), parentesco, pista,
+      ]),
+      campoOtro,
       campo('Acceso', rol,
         persona?.tiene_cuenta
           ? 'Quitarle la cuenta deshace su vínculo con Apple: para volver a entrar tendría que solicitarlo otra vez.'
@@ -604,7 +648,9 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
             nombre: nombre.value.trim(),
             apellidos: apellidos.value.trim(),
             fecha_nacimiento: nacimiento.value || null,
-            parentesco: parentesco.value.trim(),
+            parentesco: parentesco.value === PARENTESCO_OTRO
+              ? otro.value.trim()
+              : parentesco.value,
             circulo: grupo.value,
             tiene_cuenta: rol.value ? 1 : 0,
             rol: rol.value || null,

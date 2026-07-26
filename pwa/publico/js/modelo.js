@@ -30,6 +30,37 @@ export const CIRCULOS = {
 export const TAMANO_FAMILIA = 4;
 
 /**
+ * Los parentescos que se ofrecen al dar de alta a alguien, por círculo.
+ *
+ * Antes era un campo libre, y un campo libre aquí se llena de variantes de lo
+ * mismo —«mamá», «madre», «Mama»— que luego no se pueden leer. Dentro de casa
+ * importa además que se escriban tal cual, porque de ahí sale lo que cada uno
+ * ve bajo el nombre de los demás (specs/ux.md §7.1).
+ *
+ * Están en orden de cercanía y no alfabético: se elige de una lista corta
+ * mirando, no leyéndola entera.
+ */
+export const PARENTESCOS = {
+  familia: ['madre', 'padre', 'hija', 'hijo'],
+  extendida: [
+    'abuela', 'abuelo',
+    'hermana', 'hermano',
+    'tía', 'tío',
+    'prima', 'primo',
+    'sobrina', 'sobrino',
+    'nieta', 'nieto',
+    'suegra', 'suegro',
+    'cuñada', 'cuñado',
+    'nuera', 'yerno',
+    'madrina', 'padrino',
+  ],
+  amigos: ['amiga', 'amigo', 'vecina', 'vecino', 'compañera', 'compañero'],
+};
+
+/** El valor que abre el campo libre, para lo que no entre en ninguna lista. */
+export const PARENTESCO_OTRO = '__otro';
+
+/**
  * Emoji con el que arranca un título, si es que arranca con uno.
  *
  * Cuenta como uno solo la secuencia entera —el emoji, su selector de
