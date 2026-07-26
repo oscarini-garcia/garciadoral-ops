@@ -1,0 +1,801 @@
+<meta charset="utf-8">
+<title>La idea de punta a punta: la ficha, los verbos y los deseos</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
+     incluida la escala de papel elevado de las hojas. La Newsreader no puede
+     cargarse desde fuera, así que queda Georgia, que es su propio repuesto. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --paper-alto: #FFFDFA;
+    --paper-alto-2:#F6F2EA;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --paper-alto: #1E282D;
+      --paper-alto-2:#253238;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --regalo:     #E48FAE;
+      --regalo-suave:#33202A;
+      --aviso:      #E0A253;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --paper-alto-2: #253238;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .parte p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 340px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* ------------------------------------------------------------- La tabla -- */
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); }
+  .comparativa .ojo { color: var(--aviso); }
+  .desplazable { overflow-x: auto; }
+
+  /* --------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 340px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden; font-size: 14px;
+  }
+  .tel-cabecera { padding: 11px 14px 0; display: flex; align-items: baseline; gap: 10px; }
+  .tel-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 21px; }
+  .tel-cabecera .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); margin-left: auto; }
+  .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; margin: 9px 14px 0; }
+  .seg i { font-style: normal; padding: 5px 10px; border-radius: 7px; font-size: 12.5px; color: var(--ink-soft); cursor: pointer; }
+  .seg i.on { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
+  .tel-cuerpo { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 13px; }
+
+  .grupo-rot { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .fichas { display: flex; flex-direction: column; gap: 7px; margin-top: 5px; }
+  .ficha {
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2);
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
+  }
+  .ficha-fila { display: flex; align-items: baseline; gap: 8px; }
+  .ficha-nombre { font-size: 14.5px; font-weight: 500; }
+  .ficha-pista { font-size: 12px; color: var(--ink-soft); }
+  .ficha-pista b { font-weight: 500; color: var(--ink); }
+  .marca {
+    margin-left: auto; font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+    background: var(--regalo-suave); color: var(--regalo); white-space: nowrap;
+  }
+  .marca.listo { background: var(--tinta-suave); color: var(--tinta); }
+  .marca.nadie { background: transparent; color: var(--aviso); border: 1px solid currentColor; }
+  .vacio { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 14px 0; }
+
+  /* Las pastillas del filtro, que aquí son media propuesta. */
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; background: var(--paper-2); color: var(--ink-soft); }
+  .chip.on { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .chip.mio { border-style: dashed; }
+
+  /* La hoja abierta, para enseñar la ficha de una idea. */
+  .hoja {
+    width: 340px; max-width: 100%; background: var(--paper-alto);
+    border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sombra);
+    padding: 15px 16px 17px; display: flex; flex-direction: column; gap: 13px; font-size: 14px;
+  }
+  .hoja-cab { display: flex; align-items: center; gap: 8px; }
+  .hoja-cab h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 19px; }
+  .verbos { margin-left: auto; display: flex; gap: 6px; }
+  .verbo { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 9px; display: grid; place-items: center; font-size: 12px; background: var(--paper-alto-2); color: var(--ink-soft); }
+  .verbo.peligro { color: var(--regalo); }
+  .hoja p.cuerpo { font-size: 13.5px; color: var(--ink-soft); }
+  .campos { display: flex; flex-direction: column; gap: 7px; }
+  .campo-fila { display: grid; grid-template-columns: 112px 1fr; gap: 10px; font-size: 13px; align-items: start; }
+  .campo-fila > span:first-child { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); padding-top: 3px; }
+  .botonera { display: flex; gap: 7px; margin-top: 2px; }
+  .boton-falso { flex: 1; text-align: center; font-size: 13px; padding: 8px 10px; border-radius: 10px; background: var(--tinta); color: var(--paper); }
+  .boton-falso.discreto { background: var(--paper-alto-2); color: var(--ink); border: 1px solid var(--line); }
+
+  /* --------------------------------------------------------------- Diagrama -- */
+
+  .ciclo {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+  }
+  .paso {
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+    background: var(--paper); font-size: 13.5px;
+  }
+  .paso.acento { border-color: var(--tinta); color: var(--tinta); }
+  .paso.fin { border-style: dashed; color: var(--ink-faint); }
+  .flecha { color: var(--ink-faint); font-family: var(--mono); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+  .lista-seca strong { color: var(--ink); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>La idea de punta a punta: la ficha, los verbos y los deseos</h1>
+    <p>
+      Seis peticiones que, mirándolas juntas, son una sola: <strong>la idea es
+      hoy la mitad de sí misma</strong>. Se apunta con seis campos y se enseña
+      con tres, se corrige por una puerta y se borra por otra, y lo que uno pide
+      para sí mismo vive de prestado al final de una lista que no es la suya.
+    </p>
+    <p>
+      Debajo va lo que hay hoy, y luego las cuatro decisiones: cómo se enseña una
+      idea, qué verbos tiene, cómo se llama lo que ahora se llama «en curso» y
+      dónde vive «Mis deseos».
+    </p>
+  </header>
+
+  <!-- ------------------------------------------------- Lo que hay hoy -- -->
+
+  <section class="opcion" style="border-top: 0; padding-top: 0;">
+    <div class="opcion-cabeza">
+      <h2>Lo que pides, y lo que hay</h2>
+      <p>
+        Cinco de las seis cosas son ciertas tal cual las cuentas. La sexta es
+        media verdad, y conviene decirlo antes de construir nada.
+      </p>
+    </div>
+    <div class="desplazable">
+      <table class="comparativa">
+        <thead>
+          <tr><th>Lo que pides</th><th>Lo que hay hoy</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ver todos los campos rellenos al abrir una idea</td>
+            <td>
+              La descripción <strong>sí se enseña</strong>. Lo que falta es el
+              <strong>precio</strong>, que se pide en el formulario y no aparece
+              en ninguna parte de la hoja. Y lo demás —para quién, categoría,
+              dónde se compra, quién la apuntó— va todo apelmazado en una sola
+              línea gris de las que no se leen.
+            </td>
+          </tr>
+          <tr>
+            <td>Lo mismo en «lo que pido yo»</td>
+            <td>
+              Es la misma hoja, así que le falta lo mismo. Y además le sobra: le
+              dice «Para Óscar · apuntada por Óscar» a Óscar.
+            </td>
+          </tr>
+          <tr>
+            <td>Quitar «Duplicar»</td>
+            <td class="ojo">
+              Está en la hoja de toda idea. <strong>Es la única salida de una
+              idea cerrada</strong>: cerrada es terminal por diseño, y la manera
+              de reutilizarla es duplicarla (specs/modelo-datos.md §5.2). Hay que
+              decidir qué pasa con eso.
+            </td>
+          </tr>
+          <tr>
+            <td>Borrar como icono, junto a editar</td>
+            <td>
+              Hoy borrar vive <em>dentro</em> del formulario, con una regla
+              escrita: «borrar es una operación de edición, y está donde se
+              edita». Es la misma en los eventos. Cambiarla aquí obliga a decidir
+              si cambia también allí.
+            </td>
+          </tr>
+          <tr>
+            <td>«En curso» no me gusta</td>
+            <td>
+              Es el estado que toma una idea cuando ya se ha llevado a una
+              ocasión. El nombre está en la base <code>en_curso</code> y en la
+              pastilla de la tarjeta. Solo hay que cambiar lo segundo.
+            </td>
+          </tr>
+          <tr>
+            <td>Partir Ideas en dos secciones</td>
+            <td>
+              Hoy es una lista sola con un rótulo que cuenta —«7 ideas»— y las
+              que están en curso llevan pastilla, pero se leen mezcladas con las
+              demás.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota pega">
+      <p>
+        <strong>Un cabo suelto que me he encontrado mirando esto.</strong> El
+        banco de ideas enseña las activas y las que están en curso; las
+        <em>descartadas</em> y las <em>cerradas</em> no salen. Pero la hoja de
+        una idea descartada ofrece «Reactivar», y la de una cerrada ofrece
+        «Duplicar». A las dos solo se llega hoy <strong>desde Buscar</strong>,
+        que sí las lista. No está roto, pero es una puerta que casi nadie va a
+        encontrar. Lo digo porque decide cuánto importa quitar «Duplicar».
+      </p>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------ La ficha -- -->
+
+  <div class="parte">
+    <p class="rotulo">Primera decisión</p>
+    <h2>Cómo se enseña una idea al abrirla</h2>
+    <p>
+      Los campos son seis: qué, descripción, para quién, categoría, precio y
+      dónde se compra, más el enlace. Enseñarlos todos es fácil; el problema es
+      que casi siempre hay dos rellenos y cuatro vacíos, y una ficha con cuatro
+      huecos parece un formulario a medio hacer.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h3>La línea de siempre, con lo que falta</h3></div>
+      <p>
+        Se queda la línea gris de un solo renglón y se le añade el precio.
+        Cambio de una línea de código.
+      </p>
+    </div>
+    <div class="par">
+      <div class="hoja">
+        <div class="hoja-cab">
+          <h4>Botas de montar</h4>
+          <div class="verbos"><span class="verbo">✎</span></div>
+        </div>
+        <p class="cuerpo">Las de caña alta que miró en Decathlon, talla 38.</p>
+        <p class="ficha-pista">Para Marta · 80–120 € · Deporte · Decathlon · apuntada por Ana</p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Nada nuevo que diseñar, y la hoja sigue cabiendo en una pantalla.</span></div>
+        <div class="si"><span>+</span><span>Los campos vacíos no dejan huecos: lo que no está, no se escribe.</span></div>
+        <div class="no"><span>−</span><span>Cinco datos distintos separados por puntos medios es justo lo que nadie lee. El precio entra donde no se va a ver.</span></div>
+        <div class="no"><span>−</span><span>No resuelve lo de «lo que pido yo»: sigue diciéndote que la apuntaste tú.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h3>Una ficha con etiquetas, solo de lo relleno</h3></div>
+      <p>
+        La descripción arriba, como texto. Debajo, una fila por campo <em>que
+        tenga algo</em>, con su etiqueta a la izquierda. Lo vacío no existe.
+      </p>
+    </div>
+    <div class="par">
+      <div class="hoja">
+        <div class="hoja-cab">
+          <h4>Botas de montar</h4>
+          <div class="verbos"><span class="verbo">✎</span><span class="verbo peligro">🗑</span></div>
+        </div>
+        <p class="cuerpo">Las de caña alta que miró en Decathlon, talla 38.</p>
+        <div class="campos">
+          <div class="campo-fila"><span>Para</span><span>Marta</span></div>
+          <div class="campo-fila"><span>Precio</span><span>80–120 €</span></div>
+          <div class="campo-fila"><span>Categoría</span><span>Deporte</span></div>
+          <div class="campo-fila"><span>Dónde</span><span>Decathlon</span></div>
+          <div class="campo-fila"><span>Enlace</span><span style="color:var(--tinta)">decathlon.es/botas…</span></div>
+          <div class="campo-fila"><span>Apuntada por</span><span>Ana</span></div>
+        </div>
+        <div class="botonera">
+          <span class="boton-falso">Llevar a una ocasión</span>
+          <span class="boton-falso discreto">Descartar</span>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se lee de un vistazo, y cada dato se encuentra siempre en el mismo sitio.</span></div>
+        <div class="si"><span>+</span><span>Deja quitar filas sin que se note el hueco: en un deseo propio se van «Para» y «Apuntada por», que ahí no dicen nada.</span></div>
+        <div class="si"><span>+</span><span>Es la forma del formulario, en el mismo orden: mirar y corregir dejan de ser dos mapas distintos.</span></div>
+        <div class="no"><span>−</span><span>Una idea con solo un título ocupa más alto que hoy para decir lo mismo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h3>El formulario, apagado</h3></div>
+      <p>
+        La hoja de detalle desaparece: tocar una idea abre directamente el
+        formulario, con todo relleno y editable. Un solo sitio para mirar y para
+        corregir.
+      </p>
+    </div>
+    <div class="par">
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Una pantalla menos que mantener, y «editar» deja de existir como verbo.</span></div>
+        <div class="si"><span>+</span><span>Imposible que la ficha y el formulario se desincronicen.</span></div>
+        <div class="no"><span>−</span><span>Abrir para mirar y encontrarse el teclado y seis cajas es la manera más rápida de cambiar algo sin querer.</span></div>
+        <div class="no"><span>−</span><span>Rompe la regla de la aplicación entera —se mira en el detalle, se corrige en el formulario—, que es la misma en eventos, ocasiones y personas.</span></div>
+      </div>
+      <div class="nota">
+        <p>
+          Lo apunto porque es la salida obvia cuando lo que se pide es «ver todos
+          los campos», pero <strong>no la recomiendo</strong>: la aplicación
+          separa mirar de tocar en todas sus pantallas y esa separación es la que
+          hace que se pueda abrir cualquier cosa sin miedo.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h3>Y una cosa más, la vaya donde vaya</h3>
+      <p>
+        Una idea que ya está cogida no dice <em>dónde</em>. Ahora que existe la
+        pantalla de Regalos, la ficha puede decirlo y llevar allí: «Apartada en
+        Cumpleaños de Marta 2026, en 6 días». Es el mismo enlace que ya tiene el
+        regalo hacia su ocasión, en sentido contrario.
+      </p>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------ Los verbos -- -->
+
+  <div class="parte">
+    <p class="rotulo">Segunda decisión</p>
+    <h2>Los verbos: quitar «Duplicar» y subir «Borrar»</h2>
+    <p>
+      Hoy la hoja de una idea tiene cuatro botones —Llevar a una ocasión,
+      Duplicar, Descartar y, arriba, Editar— y el borrado está escondido dentro
+      del formulario. Son demasiados para una pantalla donde solo se mira.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h3>Borrar arriba, y solo arriba</h3></div>
+      <p>
+        El icono de la papelera se pone junto al de editar, en la cabecera de la
+        hoja, y <strong>se quita del formulario</strong>. Un verbo, un sitio.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Es lo que pides, y deja el cuerpo de la hoja con dos botones en lugar de cuatro.</span></div>
+      <div class="si"><span>+</span><span>Borrar deja de estar escondido detrás de «editar», que es donde nadie lo busca.</span></div>
+      <div class="no"><span>−</span><span>Un icono de borrar a un dedo de distancia en la pantalla donde uno solo venía a mirar. Se compensa preguntando antes, como ya hace la ocasión.</span></div>
+      <div class="no"><span>−</span><span>Deja a las ideas distintas de los eventos, donde borrar sigue dentro del formulario. O se cambian los dos, o conviven dos reglas.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h3>Borrar arriba, y también donde estaba</h3></div>
+      <p>Igual que D, pero el formulario conserva el suyo.</p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Nadie que ya supiera dónde estaba lo pierde.</span></div>
+      <div class="no"><span>−</span><span>El mismo verbo en dos sitios de la misma hoja partida en dos. Es lo que en un mes hace que uno no sepa cuál es el bueno.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">F</span><h3>«Duplicar» fuera del todo</h3></div>
+      <p>
+        Desaparece. Reutilizar una idea del año pasado pasa a ser escribirla otra
+        vez, que son los diez segundos que la aplicación se pone a sí misma como
+        límite.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Es lo que pides, y es el botón que nadie usa: duplicar una idea deja dos ideas iguales, y eso casi siempre es un error, no una intención.</span></div>
+      <div class="si"><span>+</span><span>El caso que resolvía —la idea cerrada— solo se alcanza desde Buscar, así que se pierde poco.</span></div>
+      <div class="no"><span>−</span><span>Hay que corregir <code>specs/modelo-datos.md</code> §5.2, que dice que una idea cerrada se reutiliza duplicándola. Pasaría a no reutilizarse.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">G</span><h3>«Duplicar» solo en las cerradas</h3></div>
+      <p>
+        Fuera del caso normal, que es el que estorba, y se queda únicamente en la
+        hoja de una idea ya cerrada, donde es la única salida.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>La colonia que se regala todos los años se recupera con un toque en vez de reescribirse.</span></div>
+      <div class="si"><span>+</span><span>El modelo no cambia: lo que dice la especificación sigue siendo verdad.</span></div>
+      <div class="no"><span>−</span><span>Un botón que aparece y desaparece según el estado es un botón que nadie sabe que existe.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h3>«Descartar» se queda, y no es lo mismo que borrar</h3>
+      <p>
+        Descartar no destruye nada: la idea se aparta y se puede reactivar, y es
+        una decisión que se toma mirándola —«esto ya no le pega»—. Borrar la
+        retira. Que convivan está bien mientras se llamen distinto y solo uno
+        pregunte antes.
+      </p>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------ El nombre -- -->
+
+  <div class="parte">
+    <p class="rotulo">Tercera decisión</p>
+    <h2>Cómo llamar a «en curso»</h2>
+    <p>
+      El estado dice que esa idea ya se ha llevado a una ocasión y que alguien
+      está con ella. «En curso» suena a expediente, y además choca con las
+      ocasiones, que ya usan «en marcha». El valor de la base
+      —<code>en_curso</code>— no hace falta tocarlo: esto es solo cómo se
+      escribe en pantalla.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="desplazable">
+      <table class="comparativa">
+        <thead>
+          <tr><th>En la pastilla</th><th>Las dos secciones</th><th>Qué tiene y qué no</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>apartada</strong></td>
+            <td>Apartadas · Libres</td>
+            <td>
+              Es lo que de verdad ha pasado: alguien la ha apartado para una
+              fecha. Corta, sin ambigüedad y se dice en casa. Y «libre» dice
+              exactamente lo contrario sin tener que explicarlo.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>cogida</strong></td>
+            <td>Cogidas · Sin coger</td>
+            <td>
+              La más natural de todas —«esa ya está cogida»— y la más corta. El
+              verbo tiene otra lectura en media América Latina, cosa que aquí
+              seguramente da igual.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>ya es regalo</strong></td>
+            <td>Ya son regalo · Todavía no</td>
+            <td>
+              La más exacta: literalmente ha pasado a ser un regalo, y de paso
+              enseña que las dos pantallas son la misma cosa en dos momentos. Es
+              larga para una pastilla, y las largas parten el título en dos
+              líneas.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>reservada</strong></td>
+            <td>Reservadas · Libres</td>
+            <td class="ojo">
+              Suena bien, pero «reservado» ya significa otra cosa en la
+              aplicación: es la marca de lo que no ve todo el mundo. Dos
+              significados para la misma palabra en la misma pantalla.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------- Las secciones -- -->
+
+  <div class="parte">
+    <p class="rotulo">Cuarta decisión</p>
+    <h2>Las dos secciones, y dónde va «Mis deseos»</h2>
+    <p>
+      Las secciones son fáciles. Lo que hay que decidir es el orden, y sobre todo
+      qué pasa con lo que uno se apunta para sí mismo cuando deja de estar al
+      final de la lista.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">H</span><h3>Libres arriba, apartadas debajo</h3></div>
+      <p>
+        Primero lo que se puede usar, que es a lo que se viene; debajo, lo que ya
+        está cogido, que se mira para no comprarlo dos veces.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Regalos</h4><span class="punto"></span></div>
+        <div class="seg"><i class="on">Ideas</i><i>Regalos</i><i>Ocasiones</i></div>
+        <div class="tel-cuerpo">
+          <div>
+            <p class="grupo-rot">Para quién</p>
+            <div class="chips" style="margin-top:6px">
+              <span class="chip on">Todo</span>
+              <span class="chip mio">Mis deseos</span>
+              <span class="chip">Marta</span>
+              <span class="chip">la abuela</span>
+              <span class="chip">Rosa</span>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Libres · 2</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Hamaca de playa</span></div>
+                <span class="ficha-pista">Para la abuela · 40–70 € · de Óscar</span>
+              </div>
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Curso de cerámica</span></div>
+                <span class="ficha-pista">Sin destinatario · de Óscar</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Apartadas · 1</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Botas de montar</span><span class="marca">apartada</span></div>
+                <span class="ficha-pista">Para Marta · Cumpleaños de Marta 2026 · en 6 días</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Lo primero que se ve es lo que se puede coger, que es la pregunta que trae a esta pantalla.</span></div>
+        <div class="si"><span>+</span><span>Las apartadas siguen a la vista: esconderlas es invitar a que alguien compre lo mismo otra vez.</span></div>
+        <div class="si"><span>+</span><span>Cada apartada puede decir a qué ocasión se fue, que es lo que hoy no dice ninguna.</span></div>
+        <div class="no"><span>−</span><span>Con veinte ideas libres, las apartadas quedan a un dedo largo de desplazamiento.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">I</span><h3>Apartadas plegadas al final</h3></div>
+      <p>
+        Igual que H, pero el segundo grupo va en un apartado plegable, como «Ya
+        pasaron» en la pantalla de Regalos, con su cuenta en el rótulo.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>La lista de lo aprovechable queda entera en una pantalla, aunque el año acumule.</span></div>
+      <div class="si"><span>+</span><span>Es un gesto que ya existe en la pestaña, así que no hay nada nuevo que aprender.</span></div>
+      <div class="no"><span>−</span><span>Plegado, el aviso de «esto ya está cogido» solo lo da un número. Y ese aviso es justamente para el que no se acuerda de mirar.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">J</span><h3>«Mis deseos», una pastilla más entre las de gente</h3></div>
+      <p>
+        Va en la misma fila, justo después de «Todo» y antes de las personas: las
+        dos fijas juntas, y las que van y vienen detrás. Con ella puesta, la
+        lista es <strong>una sola</strong> —un deseo propio nunca se te muestra
+        apartado, porque no puedes enterarte de que alguien lo ha cogido— y el
+        hueco de abajo apunta directamente un deseo.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Regalos</h4><span class="punto"></span></div>
+        <div class="seg"><i class="on">Ideas</i><i>Regalos</i><i>Ocasiones</i></div>
+        <div class="tel-cuerpo">
+          <div>
+            <p class="grupo-rot">Para quién</p>
+            <div class="chips" style="margin-top:6px">
+              <span class="chip">Todo</span>
+              <span class="chip on mio">Mis deseos</span>
+              <span class="chip">Marta</span>
+              <span class="chip">la abuela</span>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Lo que pides tú · 2</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Auriculares con cancelación</span></div>
+                <span class="ficha-pista">180 € · Tecnología</span>
+              </div>
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Una mochila de 40 litros</span></div>
+                <span class="ficha-pista">Sin precio</span>
+              </div>
+            </div>
+            <p class="ficha-pista" style="margin-top:9px">
+              Esto lo ve tu familia en tu ficha. Si alguien te lo acaba regalando
+              no te enterarás por aquí: eso se coordina sin ti.
+            </p>
+          </div>
+          <p class="vacio">Dos toques en el hueco apuntan otro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Apuntarte algo deja de ser un efecto secundario de nombrarte a ti mismo: es un sitio al que se va.</span></div>
+        <div class="si"><span>+</span><span>La pastilla está siempre en el mismo punto de la fila, aunque la gente con ideas cambie.</span></div>
+        <div class="si"><span>+</span><span>El formulario ya sabe hacerlo: es una idea con «para quién» puesto en ti, que es exactamente lo que hoy la convierte en deseo.</span></div>
+        <div class="no"><span>−</span><span>Es una pastilla que no es una persona en una fila que se titula «Para quién». Se arregla llamando a la fila de otro modo, o no llamándola de ninguno.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">K</span><h3>«Mis deseos», una sección propia arriba</h3></div>
+      <p>
+        En lugar de una pastilla, un cuarto apartado en el conmutador de arriba:
+        <em>Ideas · Mis deseos · Regalos · Ocasiones</em>.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Imposible de confundir con un filtro de gente.</span></div>
+      <div class="no"><span>−</span><span>Cuatro pestañas dentro de una pestaña. El conmutador deja de leerse de un vistazo justo cuando ya cuenta un ciclo de tres pasos.</span></div>
+      <div class="no"><span>−</span><span>Le da a lo que uno pide el mismo peso que a todo lo que la casa regala, y no lo tiene.</span></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ Lo que yo haría -- -->
+
+  <div class="parte">
+    <p class="rotulo">Recomendación</p>
+    <h2>Lo que yo haría</h2>
+  </div>
+
+  <section class="opcion" style="border-top:0; padding-top:0">
+    <div class="nota">
+      <p>
+        <strong>B, D, F, «apartada», H y J.</strong>
+      </p>
+      <p>
+        <strong>B</strong>, la ficha con etiquetas y sin filas vacías, porque es
+        la única que resuelve a la vez lo que falta —el precio— y lo que sobra
+        —«para Óscar, apuntada por Óscar»—, y de paso deja sitio para decir a qué
+        ocasión se fue.
+      </p>
+      <p>
+        <strong>D</strong>, borrar arriba y solo arriba: dos sitios para el mismo
+        verbo es peor que cualquiera de los dos. Y con confirmación, como ya hace
+        borrar una ocasión.
+      </p>
+      <p>
+        <strong>F</strong>, duplicar fuera. Corrijo la frase de la
+        especificación: una idea cerrada ya no se reutiliza, se vuelve a
+        escribir. Si prefieres no perder eso, <strong>G</strong> cuesta lo mismo.
+      </p>
+      <p>
+        <strong>«Apartada»</strong> para la pastilla, con las secciones
+        <em>Libres</em> y <em>Apartadas</em>. «Cogida» es igual de buena y más
+        de casa; elige por oído.
+      </p>
+      <p>
+        <strong>H</strong> sin plegar, porque el grupo de apartadas está ahí
+        justamente para que alguien tropiece con él. Cuando un diciembre lo llene,
+        se pliega —que es <strong>I</strong>— y no habrá que rehacer nada.
+      </p>
+      <p>
+        <strong>J</strong>, la pastilla, y le quito el rótulo «Para quién» a la
+        fila: con «Mis deseos» dentro ya no es una fila de personas, y ninguna
+        otra pantalla titula sus filtros.
+      </p>
+    </div>
+
+    <div class="ciclo" style="margin-top:4px">
+      <span class="paso">Se apunta</span>
+      <span class="flecha">→</span>
+      <span class="paso">Libre</span>
+      <span class="flecha">→</span>
+      <span class="paso acento">Apartada</span>
+      <span class="flecha">→</span>
+      <span class="paso">Regalo por comprar</span>
+      <span class="flecha">→</span>
+      <span class="paso">Listo</span>
+      <span class="flecha">→</span>
+      <span class="paso fin">Cerrada</span>
+    </div>
+    <p style="color:var(--ink-soft); font-size:14.5px">
+      Con esto, las tres pantallas de la pestaña cuentan la misma historia con
+      las mismas palabras de punta a punta, y una idea deja de perder la mitad de
+      sí misma al abrirla.
+    </p>
+  </section>
+
+  <!-- --------------------------------------------------- Lo que decides -- -->
+
+  <div class="parte">
+    <p class="rotulo">Para decidir</p>
+    <h2>Lo que hace falta que decidas</h2>
+  </div>
+
+  <section class="opcion" style="border-top:0; padding-top:0">
+    <ol class="lista-seca">
+      <li><strong>La ficha</strong>: A (la línea de siempre con el precio), <strong>B</strong> (etiquetas, solo lo relleno) o C (el formulario directamente).</li>
+      <li><strong>Borrar</strong>: <strong>D</strong> (solo arriba, y se va del formulario) o E (arriba y también en el formulario). Y si el cambio alcanza también a los eventos, o las ideas se quedan solas con la regla nueva.</li>
+      <li><strong>Duplicar</strong>: <strong>F</strong> (fuera del todo) o G (solo en las cerradas).</li>
+      <li><strong>El nombre de «en curso»</strong>: <strong>apartada</strong>, cogida, ya es regalo… o el que se te ocurra leyendo estos.</li>
+      <li><strong>Las secciones</strong>: <strong>H</strong> (las dos abiertas) o I (las apartadas plegadas).</li>
+      <li><strong>Mis deseos</strong>: <strong>J</strong> (pastilla) o K (sección propia arriba).</li>
+    </ol>
+  </section>
+
+</div>
