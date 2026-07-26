@@ -522,34 +522,3 @@ export function seleccion(opciones, valor, atributos = {}) {
   return nodo;
 }
 
-/** Grupo de botones de selección múltiple o única, por reconocimiento y no por
- *  memoria: se muestran las opciones en lugar de pedir que se escriban. */
-export function opciones(lista, seleccionadas, alCambiar, { unica = false } = {}) {
-  const elegidas = new Set(seleccionadas);
-  const contenedor = el('div', { class: 'opciones' });
-
-  for (const opcion of lista) {
-    const boton = el('button', {
-      type: 'button',
-      class: 'opcion',
-      'aria-pressed': elegidas.has(opcion.valor) ? 'true' : 'false',
-      onclick: () => {
-        if (unica) {
-          elegidas.clear();
-          for (const otro of contenedor.children) otro.setAttribute('aria-pressed', 'false');
-          elegidas.add(opcion.valor);
-          boton.setAttribute('aria-pressed', 'true');
-        } else if (elegidas.has(opcion.valor)) {
-          elegidas.delete(opcion.valor);
-          boton.setAttribute('aria-pressed', 'false');
-        } else {
-          elegidas.add(opcion.valor);
-          boton.setAttribute('aria-pressed', 'true');
-        }
-        alCambiar([...elegidas]);
-      },
-    }, [opcion.texto]);
-    contenedor.append(boton);
-  }
-  return contenedor;
-}

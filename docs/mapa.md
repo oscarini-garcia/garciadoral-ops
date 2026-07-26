@@ -75,6 +75,8 @@ tener que recorrer la aplicación entera cada vez.
 - **app.js** — Arranque y navegación.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
+- **gente.js** — El campo con el que se elige gente, en todas las pantallas que lo piden.
+  campoDeGente
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO · GENEROS
   estaActivo · redaccionDisponible · normalizar · nuevoId · …y 5 más
@@ -93,7 +95,7 @@ tener que recorrer la aplicación entera cada vez.
   listarSolicitudes · resolverSolicitud · redactarDia · …y 7 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
-  cerrarHoja · hayHojaAbierta · …y 11 más
+  cerrarHoja · hayHojaAbierta · …y 10 más
 
 ### `pwa/publico/js/vistas/` · Las cuatro secciones de la aplicación
 
