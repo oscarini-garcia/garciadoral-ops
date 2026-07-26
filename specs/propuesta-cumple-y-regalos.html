@@ -1,0 +1,518 @@
+<meta charset="utf-8">
+<title>El cumpleaños en la agenda y la elección de regalos — propuesta</title>
+
+<style>
+  :root {
+    color-scheme: light dark;
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28,43,51,.06), 0 8px 24px rgba(28,43,51,.06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --paper-alto: #1E282D; --hueco: #131B1F; --hueco-linea: #2C3A41;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"], :root[data-theme="claro"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="dark"], :root[data-theme="oscuro"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --hueco: #131B1F; --hueco-linea: #2C3A41;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 23px; }
+  h3 { font-size: 19px; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: .87em; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p, .parte-cabeza p { color: var(--ink-soft); max-width: 68ch; }
+
+  .parte { display: flex; flex-direction: column; gap: 26px; border-top: 2px solid var(--tinta); padding-top: 20px; }
+  .parte-cabeza { display: flex; flex-direction: column; gap: 9px; }
+  .numero { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--tinta); }
+
+  .opcion { display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--line); padding-top: 20px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 68ch; }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  .pareja { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .con-juicio { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 880px) { .con-juicio { grid-template-columns: auto 1fr; } }
+  .pie { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-top: 7px; text-align: center; }
+
+  /* --------------------------------------------------------- La hoja ----- */
+
+  .hoja {
+    width: 262px;
+    background: var(--paper-alto);
+    border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--sombra);
+    padding: 9px 14px 15px;
+    display: flex; flex-direction: column; gap: 10px;
+    font-size: 13px;
+  }
+  .asa { width: 32px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 2px; }
+  .cabecera { display: flex; align-items: flex-start; gap: 9px; }
+  .cabecera h4 { margin: 0; flex: 1; font-family: var(--serif); font-weight: 500; font-size: 16px; color: var(--ink); }
+  .iconos { display: flex; gap: 5px; flex: none; }
+  .ico {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--tinta-suave); color: var(--tinta); font-size: 13px;
+  }
+  .ico.discreto { background: var(--paper-2); color: var(--ink-soft); }
+
+  .fila { display: flex; align-items: center; gap: 9px; }
+  .fila .emoji { font-size: 23px; }
+  .fila .cuerpo { display: flex; flex-direction: column; gap: 1px; }
+  .fila .cuerpo .a { color: var(--ink); }
+  .fila .cuerpo .b { color: var(--ink-soft); font-size: 11.5px; }
+  .anios { color: var(--tinta); font-weight: 600; }
+
+  .grupo { display: flex; flex-direction: column; gap: 6px; }
+  .grupo-titulo { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; display: flex; align-items: center; gap: 9px;
+  }
+  .tarjeta .txt { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .tarjeta .n { color: var(--ink); }
+  .tarjeta .p { color: var(--ink-soft); font-size: 11px; }
+  .tarjeta.marcada { border-color: var(--tinta); background: var(--tinta-suave); }
+
+  .casilla {
+    width: 19px; height: 19px; border-radius: 6px; flex: none;
+    border: 1.6px solid var(--hueco-linea); background: var(--hueco);
+  }
+  .casilla.on { background: var(--tinta); border-color: var(--tinta); color: var(--paper-alto); display: grid; place-items: center; font-size: 12px; }
+
+  .etiqueta { display: inline-block; background: var(--paper-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 11.5px; color: var(--ink-soft); }
+  .pista { color: var(--ink-soft); font-size: 11.5px; }
+  .boton { text-align: center; border-radius: 9px; padding: 9px 12px; font-size: 13px; background: var(--tinta); color: var(--paper-alto); }
+  .boton.discreto { background: var(--paper-3); color: var(--ink); }
+  .enlace { color: var(--ink-soft); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+  .campo-busca {
+    background: var(--hueco); border: 1px solid var(--hueco-linea); border-radius: 9px;
+    padding: 8px 10px; color: var(--ink-faint); font-size: 12.5px;
+  }
+  .conmutador { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-soft); }
+  .interruptor { width: 32px; height: 19px; border-radius: 999px; background: var(--paper-3); position: relative; flex: none; }
+  .interruptor::after { content: ''; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: var(--paper-alto); box-shadow: var(--sombra); }
+  .interruptor.on { background: var(--tinta); }
+  .interruptor.on::after { left: 15px; }
+  .pie-fijo { border-top: 1px solid var(--line); padding-top: 9px; margin-top: 2px; }
+  .tachado { color: var(--ink-faint); text-decoration: line-through; }
+
+  .flujo { display: flex; flex-direction: column; gap: 7px; counter-reset: paso; }
+  .flujo li { list-style: none; display: grid; grid-template-columns: 22px 1fr; gap: 10px; color: var(--ink-soft); }
+  .flujo li::before {
+    counter-increment: paso; content: counter(paso);
+    font-family: var(--mono); font-size: 11px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 20px; height: 20px; display: grid; place-items: center;
+  }
+  .flujo li b { color: var(--ink); font-weight: 600; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line); border-left: 3px solid var(--tinta);
+    border-radius: 12px; padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota.aviso { border-left-color: var(--aviso); }
+  .nota p { color: var(--ink-soft); max-width: 70ch; }
+  .nota strong { color: var(--ink); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>El cumpleaños en la agenda, y elegir varios regalos de una vez</h1>
+    <p>
+      Dos cosas que se tocan: lo que se ve al abrir un cumpleaños desde la agenda, y lo que
+      pasa al pulsar «añadir un regalo». Antes de las opciones, un hallazgo que cambia el
+      planteamiento de la primera.
+    </p>
+  </header>
+
+  <div class="nota aviso">
+    <p>
+      <strong>Hay dos hojas de cumpleaños en la aplicación, y no se parecen.</strong>
+    </p>
+    <p>
+      La de <strong>Regalos → Ocasiones</strong> (<code>abrirCumple</code>) ya dice cuántos
+      cumple, escribe la felicitación con el modelo, enseña los regalos y enlaza a la ficha.
+    </p>
+    <p>
+      La de la <strong>agenda</strong> (el detalle de un evento derivado) no dice la edad, no
+      tiene felicitación, enseña «Quién va» con una sola persona —la del propio cumpleaños— y
+      no tiene botón de editar, solo una frase que dice que se corrige en la ficha.
+    </p>
+    <p>
+      Lo que pides es, casi punto por punto, convertir la segunda en la primera. Por eso la
+      primera opción de abajo no es «arreglar la de la agenda» sino «que la agenda abra la que
+      ya existe».
+    </p>
+  </div>
+
+  <!-- ================================================== PARTE 1 ========== -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Parte 1</p>
+      <h2>La hoja de un cumpleaños</h2>
+      <p>
+        Lo que pides: <strong>cuántos años cumple</strong>, <strong>fuera «Quién va»</strong>
+        —es su cumpleaños, ya está dicho— y un <strong>botón de editar</strong> que lleve a la
+        ficha de esa persona en modo editor, para cambiarle la fecha si hace falta.
+      </p>
+    </div>
+
+    <div class="pareja">
+      <div>
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera">
+            <h4>Cumpleaños de Mariona</h4>
+            <div class="iconos"><span class="ico discreto">↑</span></div>
+          </div>
+          <div class="fila">
+            <span class="emoji">🎂</span>
+            <span class="cuerpo">
+              <span class="a">jueves 30 de Julio</span>
+              <span class="b">Todo el día · Cumpleaños</span>
+            </span>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Mariona</span></div>
+          </div>
+          <p class="pista">Este cumpleaños sale de la ficha de la persona. Para corregirlo, cambia allí su fecha de nacimiento.</p>
+          <div class="grupo">
+            <p class="grupo-titulo">Regalos</p>
+            <div class="boton discreto">Añadir un regalo para Mariona</div>
+          </div>
+        </div>
+        <p class="pie">Hoy · desde la agenda</p>
+      </div>
+      <div>
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera">
+            <h4>Cumpleaños de Mariona</h4>
+            <div class="iconos"><span class="ico">✎</span><span class="ico discreto">↑</span></div>
+          </div>
+          <div class="fila">
+            <span class="emoji">🎂</span>
+            <span class="cuerpo">
+              <span class="a">jueves 30 de Julio · <span class="anios">cumple 9 años</span></span>
+              <span class="b">en 4 días</span>
+            </span>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">La felicitación</p>
+            <div class="tarjeta"><span class="txt"><span class="n">¡Felicidades, Mariona! Que cumplas…</span><span class="p">‹ 1 de 5 ›  ·  Copiar</span></span></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Regalos</p>
+            <div class="boton discreto">Añadir regalos para Mariona</div>
+          </div>
+          <span class="enlace">Ver la ficha de Mariona</span>
+        </div>
+        <p class="pie">Propuesta</p>
+      </div>
+    </div>
+
+    <!-- 1A -->
+    <section class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>La agenda abre la hoja que ya existe</h3></div>
+        <p>
+          Tocar un cumpleaños en la agenda deja de abrir el detalle de evento y abre
+          <code>abrirCumple</code>, la misma hoja que Regalos. Se le añade lo que pides —el
+          botón de editar— y lo que la de la agenda tenía y esta no: los comentarios.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <ol class="flujo">
+          <li><b>Tocas el cumpleaños</b> en la semana, el mes o la lista.</li>
+          <li>Se abre <b>la hoja del cumpleaños</b>: fecha, cuántos cumple, cuánto falta.</li>
+          <li>Debajo, <b>la felicitación</b> —cinco propuestas que se pasan y se copian— y <b>los regalos</b>.</li>
+          <li>Arriba, <b>editar</b> y <b>compartir</b>, igual que en cualquier evento.</li>
+          <li>El propio cumpleaños sigue enseñando el sello de «por aquí no se mira».</li>
+        </ol>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>Una sola hoja de cumpleaños, no dos que se van separando con cada cambio.</span></div>
+          <div class="si"><span>+</span><span>La felicitación aparece donde de verdad se ve venir el cumpleaños: en la agenda.</span></div>
+          <div class="si"><span>+</span><span>Lo de «Quién va» desaparece solo, porque esa hoja nunca lo tuvo.</span></div>
+          <div class="no"><span>−</span><span>Un cumpleaños deja de comportarse como el resto de los eventos de la agenda.</span></div>
+          <div class="no"><span>−</span><span>Hay que llevarse los comentarios a esa hoja, o se pierden por el camino.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1B -->
+    <section class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">B</span><h3>Arreglar la de la agenda por su cuenta</h3></div>
+        <p>
+          La hoja de la agenda se queda donde está y se le añade la edad, se le quita «Quién
+          va» y se le pone el botón de editar. Las dos hojas siguen existiendo, cada una en su
+          pestaña.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <ol class="flujo">
+          <li><b>Tocas el cumpleaños</b> y se abre el detalle de evento de siempre.</li>
+          <li>La línea de la fecha dice ahora <b>«cumple 9 años»</b>.</li>
+          <li><b>Sin «Quién va»</b>: en un cumpleaños es siempre la misma persona.</li>
+          <li>Arriba, <b>editar</b>, que abre el formulario de la persona.</li>
+        </ol>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>Cambio pequeño y contenido: no mueve nada de Regalos.</span></div>
+          <div class="si"><span>+</span><span>Un cumpleaños se sigue abriendo como cualquier otro evento.</span></div>
+          <div class="no"><span>−</span><span>Deja dos hojas de cumpleaños, y la felicitación sigue escondida en Regalos.</span></div>
+          <div class="no"><span>−</span><span>Cada mejora futura hay que hacerla dos veces, o se separan más.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="nota">
+      <p><strong>Dos cosas que hay que decidir en cualquiera de las dos:</strong></p>
+      <p>
+        <strong>Qué edad se enseña.</strong> La del cumpleaños que se está mirando, no la del
+        próximo: si abres el de Julio de 2027 desde el mes, tiene que decir diez y no nueve. Se
+        saca del año de la aparición, que la agenda ya tiene en la mano.
+      </p>
+      <p>
+        <strong>A dónde se vuelve al guardar.</strong> Al tocar editar se abre el formulario de
+        la persona; propongo que al guardar <strong>se vuelva al cumpleaños</strong>, ya con la
+        fecha nueva, en lugar de quedarse en la ficha. Se ha ido a corregir un dato, no a
+        visitar a nadie.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== PARTE 2 ========== -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Parte 2</p>
+      <h2>Elegir regalos: varias ideas de una vez</h2>
+      <p>
+        Hoy, «Asociar un regalo» pide para quién, lista las ideas en dos grupos y
+        <strong>al tocar una, la asocia y cierra</strong>. Para tres regalos hay que repetir
+        todo tres veces.
+      </p>
+      <p>
+        Y el segundo grupo, «El resto de las ideas», son <strong>todas</strong> las demás,
+        incluidas las que alguien apuntó para otra persona. Lo que pides —las de esa persona y
+        las que no tienen a nadie detrás— es además una lista más corta y más honesta.
+      </p>
+    </div>
+
+    <!-- 2A -->
+    <section class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>Casillas, y un botón que cuenta</h3></div>
+        <p>
+          Cada idea lleva su casilla. Abajo, un botón que dice cuántas van:
+          <em>Añadir 2 regalos</em>. Mientras no haya ninguna marcada, está apagado.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera"><h4>Regalos para Mariona</h4></div>
+          <div class="grupo">
+            <p class="grupo-titulo">Apuntadas para Mariona</p>
+            <div class="tarjeta marcada"><span class="casilla on">✓</span><span class="txt"><span class="n">Bicicleta de montaña</span><span class="p">de Ana</span></span></div>
+            <div class="tarjeta"><span class="casilla"></span><span class="txt"><span class="n">Casco de hípica</span><span class="p">de Óscar</span></span></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Sin destinatario</p>
+            <div class="tarjeta marcada"><span class="casilla on">✓</span><span class="txt"><span class="n">Juego de mesa cooperativo</span><span class="p">de Ana</span></span></div>
+            <div class="tarjeta"><span class="casilla"></span><span class="txt"><span class="n">Auriculares</span><span class="p">de Marta</span></span></div>
+          </div>
+          <div class="pie-fijo">
+            <div class="boton">Añadir 2 regalos</div>
+          </div>
+          <span class="enlace">Un regalo suelto, sin idea previa</span>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>La casilla dice sin ambigüedad que se puede marcar más de una.</span></div>
+          <div class="si"><span>+</span><span>El botón cuenta, así que se sabe qué va a pasar antes de pulsarlo.</span></div>
+          <div class="si"><span>+</span><span>Se puede desmarcar sin consecuencias: nada se guarda hasta el final.</span></div>
+          <div class="no"><span>−</span><span>Para un solo regalo —el caso más común— son dos toques en lugar de uno.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2B -->
+    <section class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">B</span><h3>Se marca tocando, y el contador va arriba</h3></div>
+        <p>
+          Sin casillas: la tarjeta entera se marca al tocarla y se queda en tinta. El verbo va
+          en la cabecera de la hoja, junto al título, que es donde ya viven los verbos en esta
+          aplicación.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera">
+            <h4>Regalos para Mariona</h4>
+            <div class="iconos"><span class="ico">✓ 2</span></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Apuntadas para Mariona</p>
+            <div class="tarjeta marcada"><span class="txt"><span class="n">Bicicleta de montaña</span><span class="p">de Ana</span></span></div>
+            <div class="tarjeta"><span class="txt"><span class="n">Casco de hípica</span><span class="p">de Óscar</span></span></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Sin destinatario</p>
+            <div class="tarjeta marcada"><span class="txt"><span class="n">Juego de mesa cooperativo</span><span class="p">de Ana</span></span></div>
+            <div class="tarjeta"><span class="txt"><span class="n">Auriculares</span><span class="p">de Marta</span></span></div>
+          </div>
+          <span class="enlace">Un regalo suelto, sin idea previa</span>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>Más limpio: ni casillas ni pie fijo, y el verbo donde ya se busca.</span></div>
+          <div class="si"><span>+</span><span>El área de toque es la tarjeta entera, que en un teléfono se agradece.</span></div>
+          <div class="no"><span>−</span><span>Sin casilla no se ve que se pueda marcar más de una hasta que se marca la segunda.</span></div>
+          <div class="no"><span>−</span><span>El contador arriba queda lejos del pulgar y de donde se está mirando.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2C -->
+    <section class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">C</span><h3>Con buscador y un conmutador para ver el resto</h3></div>
+        <p>
+          La A, más dos cosas para cuando el banco de ideas crece: un campo para filtrar
+          escribiendo y un conmutador <em>Ver todas las ideas</em>, apagado de entrada, que
+          despliega las apuntadas para otras personas.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera"><h4>Regalos para Mariona</h4></div>
+          <div class="campo-busca">Buscar entre las ideas</div>
+          <div class="grupo">
+            <p class="grupo-titulo">Apuntadas para Mariona</p>
+            <div class="tarjeta marcada"><span class="casilla on">✓</span><span class="txt"><span class="n">Bicicleta de montaña</span><span class="p">de Ana</span></span></div>
+            <div class="tarjeta"><span class="casilla"></span><span class="txt"><span class="n">Casco de hípica</span><span class="p">de Óscar</span></span></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Sin destinatario</p>
+            <div class="tarjeta"><span class="casilla"></span><span class="txt"><span class="n">Juego de mesa cooperativo</span><span class="p">de Ana</span></span></div>
+          </div>
+          <div class="conmutador"><span class="interruptor"></span> Ver también las de otras personas</div>
+          <div class="pie-fijo"><div class="boton">Añadir 1 regalo</div></div>
+          <span class="enlace">Un regalo suelto, sin idea previa</span>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>La lista de entrada es corta y toda pertinente: nada que descartar leyendo.</span></div>
+          <div class="si"><span>+</span><span>El resto no se pierde, solo deja de estorbar: está a un toque.</span></div>
+          <div class="si"><span>+</span><span>Aguanta cuando el banco tenga cuarenta ideas, que es cuando esto empieza a doler.</span></div>
+          <div class="no"><span>−</span><span>Tres controles en una hoja que hasta ahora no tenía ninguno.</span></div>
+          <div class="no"><span>−</span><span>Con seis ideas en total, el buscador sobra y el conmutador casi.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="nota">
+      <p><strong>Lo que hay que decidir aparte del cómo se marca:</strong></p>
+      <p>
+        <strong>El «Para quién» desaparece cuando se viene de un cumpleaños.</strong> Hoy la
+        hoja lo pregunta siempre, y viniendo de un cumpleaños la respuesta ya está dada. El
+        título pasa a decirlo —«Regalos para Mariona»— y el campo solo aparece cuando de verdad
+        hay varios candidatos, que es al venir de un evento con varios participantes.
+      </p>
+      <p>
+        <strong>Qué es «sin destinatario».</strong> Una idea cuyas orientaciones no nombran a
+        ninguna persona: las que están apuntadas solo con una etiqueta —«adolescente»,
+        «viajera»— o las que no tienen ninguna. Son las que sirven para cualquiera, y por eso
+        acompañan siempre a las de la persona.
+      </p>
+      <p>
+        <strong>Qué pasa al terminar.</strong> Se crean N regalos en la ocasión, se cierra la
+        hoja y el aviso dice cuántos: «3 regalos asociados». Si la ocasión no existía todavía
+        —un cumpleaños que nadie había abierto—, se crea una sola vez, no una por regalo.
+      </p>
+    </div>
+  </section>
+
+  <!-- ================================================== Cierre =========== -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Lo que yo haría</p>
+      <h2>1A + 2C</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>1A</strong>, que la agenda abra la hoja de cumpleaños que ya existe. No es solo
+        más barato: es que las tres cosas que pides —la edad, quitar «Quién va» y el botón de
+        editar— son exactamente las diferencias entre las dos hojas. Arreglar la de la agenda
+        por separado deja dos sitios que hacen casi lo mismo y que a partir de mañana empiezan
+        a separarse otra vez. Lo único que hay que cuidar es llevarse los comentarios.
+      </p>
+      <p>
+        <strong>2C</strong> para los regalos, aunque con una salvedad: el buscador solo cuando
+        haya de qué buscar. Se puede dejar la hoja con casillas, secciones y conmutador, y que
+        el campo de filtrar aparezca a partir de, digamos, doce ideas. Así hoy es la A y el día
+        que el banco crezca es la C sin tocar nada.
+      </p>
+      <p>
+        De la parte 2, la decisión que más cambia el día a día no es la casilla: es
+        <strong>dejar de listar las ideas apuntadas para otras personas</strong>. Eso solo ya
+        acorta la lista a la mitad.
+      </p>
+    </div>
+  </section>
+
+</div>
