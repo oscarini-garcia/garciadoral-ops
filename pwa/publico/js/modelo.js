@@ -248,6 +248,20 @@ export function crearVista(instantanea) {
         .map(([id]) => id);
     },
 
+    /** Quiénes aparecen en más eventos. Es el respaldo del buscador de gente en
+     *  la agenda, igual que `masRegaladas` lo es en los regalos. */
+    masEnEventos() {
+      const cuenta = new Map();
+      for (const evento of instantanea.eventos || []) {
+        if (!estaActivo(evento)) continue;
+        for (const participante of evento.participantes || []) {
+          if (!participante.persona_id) continue;
+          cuenta.set(participante.persona_id, (cuenta.get(participante.persona_id) || 0) + 1);
+        }
+      }
+      return [...cuenta.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    },
+
     ideasPara: (personaId) =>
       (instantanea.ideas || []).filter(
         (i) => estaActivo(i, 'activa') && i.tipo === 'sugerencia'

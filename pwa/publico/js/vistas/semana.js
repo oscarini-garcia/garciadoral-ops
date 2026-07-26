@@ -14,7 +14,7 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar, icono,
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
   deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
@@ -25,6 +25,7 @@ import {
   isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import { abrirDetalleRegalo, abrirSelectorDeRegalo } from './regalos.js';
+import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 
 let modo = 'semana';
@@ -817,15 +818,23 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     notas.value = borrador.notas;
     const repite = seleccion(REPETICIONES.map((r) => ({ valor: r.valor, texto: r.texto })), borrador.repeticion);
 
-    const gente = ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre }));
-
     avanzado.append(
       campo('A qué hora', hora, 'Déjala vacía si dura todo el día.'),
       campo('Qué es', tipo, 'El tipo elige el emoji y propone si el evento lleva regalos. Para otro emoji, empieza el título con él.'),
-      campo('De quién es', opciones(gente, borrador.protagonistas, (v) => { borrador.protagonistas = v; }),
-        'Determina a quién se le ocultan los regalos de este evento y qué ideas se proponen al asociarlos.'),
-      campo('Quién más va', opciones(gente, borrador.asistentes, (v) => { borrador.asistentes = v; }),
-        'Solo informativo.'),
+      campoDeGente(ctx, {
+        etiqueta: 'De quién es',
+        pista: 'Determina a quién se le ocultan los regalos de este evento y qué ideas se proponen al asociarlos.',
+        elegidos: borrador.protagonistas,
+        alCambiar: (ids) => { borrador.protagonistas = ids; },
+        memoria: 'evento',
+      }),
+      campoDeGente(ctx, {
+        etiqueta: 'Quién más va',
+        pista: 'Solo informativo.',
+        elegidos: borrador.asistentes,
+        alCambiar: (ids) => { borrador.asistentes = ids; },
+        memoria: 'evento',
+      }),
       campo('Dónde', lugar),
       campo('Se repite', repite),
       campo('Notas', notas),
@@ -877,6 +886,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
             ],
           };
           await guardar('evento', existente ? existente.id : nuevoId(), campos);
+          recordarElegidos('evento', [...borrador.protagonistas, ...borrador.asistentes]);
           toque('media');
           cerrarHoja();
           avisar(existente ? 'Evento actualizado' : 'Evento creado');
