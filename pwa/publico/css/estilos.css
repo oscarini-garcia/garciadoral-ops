@@ -718,10 +718,28 @@ button { background: none; border: 0; cursor: pointer; }
 .eleccion-idea[aria-pressed="true"] .casilla { background: var(--tinta); border-color: var(--tinta); }
 .casilla .icono-svg svg { width: 13px; height: 13px; stroke-width: 2.6; }
 
-/* «Ver también las de otras personas»: la casilla del sistema, que ya sabe
-   anunciarse y responder al teclado. */
+/* «Ver también las de otras personas»: sigue siendo la casilla del sistema,
+   que ya sabe anunciarse y responder al teclado, pero pintada a mano. Con el
+   dibujo del sistema, `accent-color` solo tiñe la marcada: la vacía la pintaba
+   el teléfono de negro y quedaba un cuadrado macizo en medio de la hoja. Se le
+   quita el dibujo y se le dan el hueco y la tinta de `.casilla`, que es la que
+   tiene al lado, con la marca hecha de dos bordes girados. */
 .conmutador { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--ink-soft); min-height: var(--toque); }
-.conmutador input { width: 19px; height: 19px; accent-color: var(--tinta); flex: none; }
+.conmutador input {
+  appearance: none; -webkit-appearance: none;
+  width: 21px; height: 21px; border-radius: 6px; flex: none; margin: 0;
+  display: grid; place-items: center;
+  border: 1.6px solid var(--hueco-linea); background: var(--hueco);
+}
+.conmutador input:checked { background: var(--tinta); border-color: var(--tinta); }
+.conmutador input::after {
+  content: ''; width: 10px; height: 5px;
+  border-left: 2.4px solid var(--paper); border-bottom: 2.4px solid var(--paper);
+  border-radius: 1px;
+  transform: translateY(-1.5px) rotate(-45deg);
+  opacity: 0;
+}
+.conmutador input:checked::after { opacity: 1; }
 
 /* Apartado plegable. El triángulo del navegador se retira y en su lugar va un
    ángulo a la derecha, que es donde el pulgar lo espera en un teléfono. */
