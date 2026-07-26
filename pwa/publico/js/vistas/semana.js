@@ -317,15 +317,27 @@ function vistaSemana(ctx) {
       }
     }
 
+    // Un día con una sola cosa abre esa cosa, no la lista de una cosa: la hoja
+    // del día sería un rodeo con un único destino a la vista. Con dos o más sí
+    // hay algo que elegir, y entonces se abre el día entero.
+    const unico = apariciones.length === 1 ? apariciones[0] : null;
+
     const fila = el('div', { class: 'dia', 'data-hoy': iso(dia) === clavehoy ? 'si' : 'no' }, [
       el('button', {
         class: 'dia-fecha', type: 'button',
+        // El botón dibuja un día, así que su etiqueta empieza por el día: si
+        // solo lleva a un evento, lo dice detrás. «Ver» delante del título
+        // tartamudearía con cualquiera que empiece por un verbo.
         'aria-label': vacio
           ? `Crear un evento el ${formatearFechaLarga(dia)}`
-          : `Ver el ${formatearFechaLarga(dia)}`,
+          : unico
+            ? `${formatearFechaLarga(dia)}: ${ctx.vista.caraDe(unico.evento).titulo}`
+            : `Ver el ${formatearFechaLarga(dia)}`,
         // En un día vacío no hay día que abrir: la hoja no tendría más que el
         // botón de añadir, que es justo lo que hace el doble toque de la fila.
-        onclick: vacio ? null : () => abrirDia(dia, ctx),
+        onclick: vacio
+          ? null
+          : () => (unico ? abrirDetalleEvento(unico.evento.id, ctx, unico) : abrirDia(dia, ctx)),
       }, [
         el('div', { class: 'dia-inicial', texto: INICIALES_DIA[(dia.getDay() + 6) % 7] }),
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
