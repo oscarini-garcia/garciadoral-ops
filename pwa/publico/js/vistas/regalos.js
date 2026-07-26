@@ -911,8 +911,24 @@ export function abrirSelectorDeRegalo(
     const pie = el('button', { class: 'boton crecer', type: 'button', disabled: true });
     cuerpo.append(lista, conmutador, el('div', { class: 'acciones' }, [pie]));
 
-    const marca = (idea) => {
+    /**
+     * Una idea de la lista. `conDestino` añade para quién está apuntada, y solo
+     * lo llevan las de otras personas: en los otros dos grupos el destinatario
+     * lo dice ya el rótulo —«Apuntadas para Marta», «Sin destinatario»— y
+     * repetirlo en cada línea sería ruido. Ahí, en cambio, hace falta para
+     * saber a quién se la estás quitando.
+     */
+    const marca = (idea, { conDestino = false } = {}) => {
       const puesta = marcadas.has(idea.id);
+      const destinos = conDestino
+        ? (idea.orientaciones || [])
+          .map((o) => (o.persona_id ? ctx.vista.nombre(o.persona_id) : ctx.vista.etiqueta(o.etiqueta_id)?.nombre))
+          .filter(Boolean)
+        : [];
+      const pista = [
+        destinos.length ? `para ${destinos.join(', ')}` : null,
+        `de ${ctx.vista.nombre(idea.autor_id)}`,
+      ].filter(Boolean).join(' · ');
       const fila = el('button', {
         class: 'tarjeta eleccion-idea', type: 'button',
         'aria-pressed': puesta ? 'true' : 'false',
@@ -925,14 +941,14 @@ export function abrirSelectorDeRegalo(
         el('span', { class: 'casilla', 'aria-hidden': 'true' }, [puesta ? icono('visto') : null]),
         el('span', { class: 'eleccion-texto' }, [
           el('span', { class: 'eleccion-nombre', texto: idea.titulo }),
-          el('span', { class: 'eleccion-pista', texto: `de ${ctx.vista.nombre(idea.autor_id)}` }),
+          el('span', { class: 'eleccion-pista', texto: pista }),
         ]),
       ]);
       return fila;
     };
 
-    const grupo = (rotulo, ideas) => (ideas.length
-      ? [el('p', { class: 'grupo-titulo', texto: rotulo }), ...ideas.map(marca)]
+    const grupo = (rotulo, ideas, opciones = {}) => (ideas.length
+      ? [el('p', { class: 'grupo-titulo', texto: rotulo }), ...ideas.map((idea) => marca(idea, opciones))]
       : []);
 
     function pintar() {
@@ -946,7 +962,7 @@ export function abrirSelectorDeRegalo(
       vaciar(lista).append(
         ...grupo(para ? `Apuntadas para ${ctx.vista.nombre(para)}` : 'Apuntadas', suyas),
         ...grupo('Sin destinatario', sueltas),
-        ...(verOtras ? grupo('De otras personas', otras) : []),
+        ...(verOtras ? grupo('De otras personas', otras, { conDestino: true }) : []),
       );
       if (!suyas.length && !sueltas.length && !(verOtras && otras.length)) {
         lista.append(el('p', {
