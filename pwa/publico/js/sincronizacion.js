@@ -228,10 +228,23 @@ export function resolverSolicitud(cuerpo) {
  * pide, de modo que desde aquí no se le puede meter nada.
  */
 export async function redactarDia(fecha, eventos) {
-  const { texto } = await peticion('/api/redactar', {
+  return conAvisoDeOmitidos(await peticion('/api/redactar', {
     method: 'POST',
     body: JSON.stringify({ fecha, eventos }),
-  });
+  }));
+}
+
+/**
+ * El servidor dice cuántos identificadores no ha sabido resolver. Si hay
+ * alguno, lo que se ha redactado cuenta menos de lo que se estaba mirando.
+ *
+ * No se le enseña a quien comparte —el texto sigue valiendo, y no es cosa
+ * suya—, pero queda en la consola: así se ve a la primera, en lugar de
+ * descubrirlo porque un mensaje sale corto. Pasó con los cumpleaños derivados,
+ * que el servidor descartaba sin decir nada.
+ */
+function conAvisoDeOmitidos({ texto, omitidos }) {
+  if (omitidos) console.warn(`la redacción dejó fuera ${omitidos} evento(s) que el servidor no reconoce`);
   return texto;
 }
 
@@ -243,11 +256,10 @@ export async function redactarDia(fecha, eventos) {
  * de su propia instantánea.
  */
 export async function redactarPeriodo(desde, hasta, dias) {
-  const { texto } = await peticion('/api/redactar', {
+  return conAvisoDeOmitidos(await peticion('/api/redactar', {
     method: 'POST',
     body: JSON.stringify({ desde, hasta, dias }),
-  });
-  return texto;
+  }));
 }
 
 /**

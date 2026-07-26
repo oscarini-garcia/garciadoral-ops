@@ -169,15 +169,16 @@ button { background: none; border: 0; cursor: pointer; }
 .cabecera-fila { display: flex; align-items: baseline; gap: 12px; }
 .titulo-pantalla {
   font-family: var(--serif);
-  font-weight: 500; font-size: 26px; letter-spacing: -.01em;
+  font-weight: 500; font-size: 29px; letter-spacing: -.01em;
   min-width: 0; text-wrap: balance;
 }
-/* El de la agenda es una fecha y no un nombre: va en cifras, se compone mucho
-   más largo y tiene que caber al lado del indicador. Con el mes escrito entero
-   solo desborda la semana que cambia de año, una al año, que se parte en dos
-   antes que recortar el rótulo siempre. */
+/* El de la agenda es una fecha y no un nombre: va en cifras y se compone mucho
+   más largo, así que se queda algo por debajo del de las demás pestañas. Cabe
+   más que antes porque el indicador ya no lleva palabra al lado. Con el mes
+   escrito entero solo desborda la semana que cambia de año, una al año, que se
+   parte en dos antes que recortar el rótulo siempre. */
 .titulo-pantalla[data-pestana="semana"] {
-  font-size: 20px;
+  font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
 /* La agenda no pone título: allí la cabecera se queda con el indicador y los
@@ -187,13 +188,18 @@ button { background: none; border: 0; cursor: pointer; }
 .subcabecera { display: flex; align-items: center; gap: 8px; padding: 8px 0 10px; flex-wrap: wrap; }
 .subcabecera:empty { padding: 0 0 10px; }
 
+/* Solo el punto, con sitio alrededor para que el dedo lo encuentre: sin la
+   palabra, el blanco que la rodea es lo único que lo hace tocable. */
 .sync {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: center;
   margin-left: auto;
-  font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+  width: 28px; height: 28px; margin-right: -4px;
+  border-radius: 50%;
   color: var(--ink-faint);
 }
-.sync i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); }
+.sync i { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); }
+.sync:hover { background: var(--paper-2); }
 .sync[data-estado="sincronizando"] i { background: var(--aviso); animation: latido 1.1s ease-in-out infinite; }
 .sync[data-estado="sin-conexion"] i { background: var(--ink-faint); }
 .sync[data-estado="error"] i { background: var(--regalo); }
@@ -251,7 +257,9 @@ button { background: none; border: 0; cursor: pointer; }
   font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
   padding: 7px 4px;
 }
-.tab-icono { font-size: 19px; line-height: 1; }
+/* Dibujados sobre la rejilla de 24, igual que los de dentro de la
+   aplicación: heredan el color de la pestaña y con él su estado. */
+.tab-icono { width: 22px; height: 22px; display: block; }
 .tab[aria-current="page"] { color: var(--tinta); }
 
 .fab {
@@ -276,8 +284,8 @@ button { background: none; border: 0; cursor: pointer; }
   flex: none;
 }
 .seg button {
-  min-height: 36px; padding: 5px 10px; border-radius: 7px;
-  font-size: 14.5px; color: var(--ink-soft);
+  min-height: 38px; padding: 6px 12px; border-radius: 7px;
+  font-size: 15.5px; color: var(--ink-soft);
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
 
@@ -297,11 +305,12 @@ button { background: none; border: 0; cursor: pointer; }
 .vistas .icono-accion { width: 34px; height: 34px; }
 .vistas .icono-accion .icono-svg svg { width: 17px; height: 17px; }
 
-/* En un teléfono los cuatro grupos no caben —se pasan de ochenta píxeles—, y
-   las flechas son lo único que sobra: el deslizamiento lateral hace ya eso
-   mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en cuanto hay sitio,
-   que es donde el ratón no tiene deslizamiento con el que pasar de semana. */
-@media (max-width: 479px) {
+/* Los cuatro grupos —vistas, flechas, compartir y «Hoy»— no caben en la anchura
+   de un teléfono, y las flechas son lo único que sobra: el deslizamiento
+   lateral hace ya eso mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en
+   cuanto hay sitio, que es también donde el ratón se queda sin deslizamiento
+   con el que pasar de semana. El corte está medido: a 410 px entran justas. */
+@media (max-width: 409px) {
   .vistas .paso { display: none; }
   .compartir-periodo { margin-left: auto; }
 }
@@ -311,9 +320,9 @@ button { background: none; border: 0; cursor: pointer; }
 }
 /* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
 .boton-hoy {
-  min-height: 36px; padding: 5px 12px; border-radius: 999px;
+  min-height: 38px; padding: 6px 14px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--paper-2);
-  font-size: 14.5px; color: var(--ink-soft);
+  font-size: 15.5px; color: var(--ink-soft);
 }
 .boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
 
@@ -517,6 +526,22 @@ button { background: none; border: 0; cursor: pointer; }
 .boton-mini[data-tono="principal"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
 .boton-mini:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
+
+/* Una de las maneras de compartir, en la hoja que se abre al tocar el botón.
+   Lleva su dibujo a la izquierda y su explicación debajo del nombre, que es lo
+   que un icono suelto en una cabecera no puede decir. */
+.eleccion {
+  display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+  min-height: var(--toque); padding: 11px 13px;
+  border: 1px solid var(--line); border-radius: var(--radio);
+  background: var(--paper-2); color: var(--ink);
+}
+.eleccion:hover { background: var(--paper-3); }
+.eleccion:disabled { opacity: .5; cursor: default; }
+.eleccion .icono-accion { flex: none; }
+.eleccion-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eleccion-nombre { font-size: 15.5px; }
+.eleccion-pista { font-size: 13px; color: var(--ink-soft); }
 
 /* Apartado plegable. El triángulo del navegador se retira y en su lugar va un
    ángulo a la derecha, que es donde el pulgar lo espera en un teléfono. */

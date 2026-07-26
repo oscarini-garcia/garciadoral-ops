@@ -1,0 +1,423 @@
+<meta charset="utf-8">
+<title>Los iconos de la barra — opciones</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css).
+     La Newsreader no puede cargarse desde fuera, así que queda Georgia, que es
+     su propio repuesto en la cadena de la aplicación. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --aviso:      #E0A253;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E; --aviso: #E0A253;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 28px 20px 72px;
+  }
+  .hoja { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 21px; }
+  p { margin: 0; }
+
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 340px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* ---------------------------------------------------------- La barra -- */
+
+  .marco {
+    width: 340px; max-width: 100%;
+    border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+    box-shadow: var(--sombra); background: var(--paper);
+  }
+  .relleno { height: 26px; background: var(--paper-2); }
+
+  .tabbar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+  }
+  .tab {
+    min-height: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
+    padding: 7px 4px;
+    font-family: inherit;
+    background: none; border: 0;
+  }
+  .tab svg { width: 22px; height: 22px; display: block; }
+  .tab[aria-current] { color: var(--tinta); }
+
+  /* Los caracteres de ahora, para comparar. */
+  .glifo { font-size: 19px; line-height: 1.1; }
+
+  /* B — el activo se rellena. */
+  .rellena .tab[aria-current] svg .relleno-activo { fill: currentColor; }
+
+  /* C — sello macizo. */
+  .sello .tab svg { width: 21px; height: 21px; }
+
+  /* D — solo palabras. */
+  .palabras .tab { gap: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 13px 4px; }
+  .palabras .tab[aria-current] { position: relative; }
+  .palabras .tab[aria-current]::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 2.5px; border-radius: 0 0 3px 3px; background: var(--tinta);
+  }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+</style>
+
+<div class="hoja">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Los iconos de la barra de abajo</h1>
+    <p>
+      Hoy son cuatro caracteres de la tabla Unicode —<span class="glifo">▤ ◈ ◍ ⌕</span>—
+      que cada sistema dibuja a su manera: cambian de grosor, de tamaño y de alineación
+      entre iOS, Android y el navegador, y ninguno de los cuatro dice qué hay detrás.
+      Cinco maneras de sustituirlos, todas con dibujo propio sobre la misma rejilla de 24
+      que ya usan los iconos de dentro de la aplicación.
+    </p>
+  </header>
+
+  <!-- ----------------------------------------------------------- Ahora -- -->
+
+  <section class="opcion" style="border-top: 0; padding-top: 0;">
+    <div class="opcion-cabeza">
+      <h2>Como está ahora</h2>
+      <p>Para tener el punto de partida a la vista.</p>
+    </div>
+    <div class="marco">
+      <div class="relleno"></div>
+      <nav class="tabbar">
+        <button class="tab" aria-current="page"><span class="glifo">▤</span>Semana</button>
+        <button class="tab"><span class="glifo">◈</span>Regalos</button>
+        <button class="tab"><span class="glifo">◍</span>Familia</button>
+        <button class="tab"><span class="glifo">⌕</span>Buscar</button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- A -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">A</span>
+        <h2>Trazo, como los iconos de dentro</h2>
+      </div>
+      <p>
+        Calendario, regalo, personas y lupa, dibujados con el mismo trazo de 1,8 y las
+        mismas puntas redondeadas que el lápiz de editar o la caja de compartir. La barra
+        deja de ser el único sitio de la aplicación con otra iconografía.
+      </p>
+    </div>
+    <div class="par">
+      <div class="marco">
+        <div class="relleno"></div>
+        <nav class="tabbar">
+          <button class="tab" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg>
+            Semana
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"/><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/></svg>
+            Regalos
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.6"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.4a4 4 0 0 1 0 7.2"/></svg>
+            Familia
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+            Buscar
+          </button>
+        </nav>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Una sola iconografía en toda la aplicación, y la misma que ya se conoce de las hojas.</span></div>
+        <div class="si"><span>+</span><span>Se dibujan igual en todas partes: no dependen de la fuente del sistema.</span></div>
+        <div class="no"><span>−</span><span>Son los iconos de siempre. No aportan nada propio a esta agenda.</span></div>
+        <div class="no"><span>−</span><span>Activo y no activo solo se distinguen por el color, que a 22 px es poca diferencia.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- B -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">B</span>
+        <h2>El mismo trazo, y el activo se rellena</h2>
+      </div>
+      <p>
+        Idéntico dibujo, pero la pestaña en la que se está se rellena de tinta. Es la
+        convención de la plataforma, y resuelve lo que el color solo no resuelve: dónde
+        estoy se ve de reojo, sin comparar dos tonos de verde a media luz.
+      </p>
+    </div>
+    <div class="par">
+      <div class="marco">
+        <div class="relleno"></div>
+        <nav class="tabbar rellena">
+          <button class="tab" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect class="relleno-activo" x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18" stroke="var(--paper)"/><path d="M8 3v4M16 3v4"/></svg>
+            Semana
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"/><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/></svg>
+            Regalos
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.6"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.4a4 4 0 0 1 0 7.2"/></svg>
+            Familia
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+            Buscar
+          </button>
+        </nav>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Dónde estoy se ve por la forma y no solo por el color: sirve también a quien no distingue el verde.</span></div>
+        <div class="si"><span>+</span><span>Es lo que hacen las aplicaciones del sistema, así que no hay nada que aprender.</span></div>
+        <div class="no"><span>−</span><span>Dos dibujos por pestaña en lugar de uno. Más código y más que mantener cuando cambie el juego.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- C -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">C</span>
+        <h2>Sello: formas macizas, sin contorno</h2>
+      </div>
+      <p>
+        Manchas de tinta sobre papel, que es de donde salió la identidad de esta
+        aplicación. A tamaño de barra un contorno de 1,8 se emborrona; una forma llena se
+        lee de un vistazo y a cualquier tamaño.
+      </p>
+    </div>
+    <div class="par">
+      <div class="marco">
+        <div class="relleno"></div>
+        <nav class="tabbar sello">
+          <button class="tab" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="17" rx="3"/><rect x="6" y="1.5" width="2.4" height="5" rx="1.2"/><rect x="15.6" y="1.5" width="2.4" height="5" rx="1.2"/><rect x="6" y="12" width="12" height="2.6" rx="1.3" fill="var(--paper)"/><rect x="6" y="16.4" width="7" height="2.6" rx="1.3" fill="var(--paper)"/></svg>
+            Semana
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="7.5" width="19" height="4.6" rx="1.4"/><rect x="4.5" y="12.8" width="15" height="8.2" rx="2"/><rect x="10.7" y="7.5" width="2.6" height="13.5"/><path d="M11.2 7.2C9.8 5.6 8.4 4.6 7.2 4.6a1.9 1.9 0 0 0 0 3.8h4z"/><path d="M12.8 7.2c1.4-1.6 2.8-2.6 4-2.6a1.9 1.9 0 0 1 0 3.8h-4z"/></svg>
+            Regalos
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8.5" cy="8" r="3.6"/><circle cx="16.8" cy="9.4" r="2.6"/><path d="M2.4 20a6.1 6.1 0 0 1 12.2 0z"/><path d="M15.6 20a4.6 4.6 0 0 1 6.1-4.3V20z"/></svg>
+            Familia
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.2 4.2a1.4 1.4 0 0 0 2-2l-4.2-4.2A7.5 7.5 0 0 0 10.5 3zm0 2.8a4.7 4.7 0 1 1 0 9.4 4.7 4.7 0 0 1 0-9.4z"/></svg>
+            Buscar
+          </button>
+        </nav>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se lee a cualquier tamaño y con el móvil en movimiento, que es como se usa esto.</span></div>
+        <div class="si"><span>+</span><span>Es lo que más se parece al papel y la tinta del prototipo del que salió la aplicación.</span></div>
+        <div class="no"><span>−</span><span>Choca con los iconos de trazo de las hojas: la aplicación tendría dos lenguajes.</span></div>
+        <div class="no"><span>−</span><span>Macizo pesa: cuatro manchas seguidas piden más atención de la que merece una barra.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- D -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">D</span>
+        <h2>Sin iconos: solo la palabra</h2>
+      </div>
+      <p>
+        Cuatro destinos con nombres cortos e inconfundibles. Un icono al lado de la palabra
+        «Regalos» no añade nada que la palabra no diga ya, y en cambio ocupa. La pestaña
+        activa se marca con una barra de tinta arriba, del lado por donde entra el
+        contenido.
+      </p>
+    </div>
+    <div class="par">
+      <div class="marco">
+        <div class="relleno"></div>
+        <nav class="tabbar palabras">
+          <button class="tab" aria-current="page">Semana</button>
+          <button class="tab">Regalos</button>
+          <button class="tab">Familia</button>
+          <button class="tab">Buscar</button>
+        </nav>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cero ambigüedad: nadie tiene que descifrar un dibujo.</span></div>
+        <div class="si"><span>+</span><span>La barra baja de 62 a 44 px de alto. Casi veinte píxeles más de agenda.</span></div>
+        <div class="si"><span>+</span><span>Nada que rehacer el día que se añada una pestaña o se cambie un nombre.</span></div>
+        <div class="no"><span>−</span><span>Una barra sin dibujos se reconoce peor de reojo: hay que leer para saber dónde se está.</span></div>
+        <div class="no"><span>−</span><span>Se sale de la convención de la plataforma, y en una aplicación de familia eso se nota.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- E -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">E</span>
+        <h2>Dibujos de esta agenda, no los genéricos</h2>
+      </div>
+      <p>
+        No el calendario de cualquier aplicación, sino <strong>la tira de la semana</strong>,
+        que es exactamente lo que se ve al entrar. No la caja de regalo, sino
+        <strong>la etiqueta</strong>, que es como se anotan las ideas. No dos siluetas
+        iguales, sino <strong>cabezas de tamaños distintos</strong>, que es lo que hay en
+        una familia. La lupa se queda: esa no se mejora.
+      </p>
+    </div>
+    <div class="par">
+      <div class="marco">
+        <div class="relleno"></div>
+        <nav class="tabbar">
+          <button class="tab" aria-current="page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M3 7v10M8 5v14M13 8v8M18 4v16"/></svg>
+            Semana
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.6V5a1.5 1.5 0 0 1 1.5-1.5h6.6a1.5 1.5 0 0 1 1.06.44l7.4 7.4a1.5 1.5 0 0 1 0 2.12l-6.6 6.6a1.5 1.5 0 0 1-2.12 0l-7.4-7.4a1.5 1.5 0 0 1-.44-1.06z"/><circle cx="7.8" cy="7.8" r="1.3" fill="currentColor" stroke="none"/></svg>
+            Regalos
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="9" r="2.6"/><circle cx="13.5" cy="7" r="3.4"/><circle cx="19.4" cy="10.2" r="2"/><path d="M2.5 19.5a4 4 0 0 1 8 0"/><path d="M8.6 19.5a5 5 0 0 1 9.8 0"/></svg>
+            Familia
+          </button>
+          <button class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+            Buscar
+          </button>
+        </nav>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>La barra deja de parecer la de cualquier aplicación y pasa a ser la de esta.</span></div>
+        <div class="si"><span>+</span><span>La tira de la semana es literalmente lo que hay detrás de esa pestaña.</span></div>
+        <div class="no"><span>−</span><span>La tira de la semana hay que aprenderla: la primera vez no dice «calendario».</span></div>
+        <div class="no"><span>−</span><span>Tres cabezas a 22 px se juntan; sostiene mal el tamaño pequeño.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ Cierre -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que yo haría</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>B</strong>. Es la A —una sola iconografía en toda la aplicación, la misma
+        que las hojas— más lo único que la A no resuelve: que la pestaña activa se
+        distingue solo por el color. Rellenarla lo arregla por la forma, que es lo que hay
+        que hacer cuando el color es la única señal.
+      </p>
+      <p>
+        <strong>D</strong> es la que más gana de verdad: veinte píxeles de alto en un
+        teléfono no son poco, y con cuatro nombres tan claros el dibujo no está aportando
+        información. Si te parece demasiado desnuda, se puede quedar en la manga.
+      </p>
+      <p>
+        <strong>E</strong> es la más bonita y la que peor envejece: la tira de la semana
+        hay que aprenderla, y una barra de navegación es justo el sitio donde no se debe
+        pedir eso.
+      </p>
+    </div>
+  </section>
+
+</div>

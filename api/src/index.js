@@ -397,6 +397,15 @@ async function contarElDia(peticion, env) {
   const configuracion = await leerConfiguracion(env.DB);
   const registro = await leerRegistro(env.DB);
   const material = materialDe(componerInstantanea(registro, lector), cuerpo);
+
+  // Un identificador que el servidor no sabe resolver es un fallo suyo, no de
+  // quien pide: significa que el dispositivo compone algo que aquí no se
+  // reconoce, y el modelo cuenta entonces una semana incompleta sin que nadie
+  // se entere. Ya pasó una vez con los cumpleaños derivados.
+  if (material.omitidos?.length) {
+    console.warn('redacción con eventos sin resolver', JSON.stringify(material.omitidos));
+  }
+
   const resultado = await redactar({ configuracion, material });
 
   if (!resultado.texto) {
@@ -413,7 +422,11 @@ async function contarElDia(peticion, env) {
     );
   }
 
-  return json({ texto: resultado.texto, modelo: resultado.modelo });
+  return json({
+    texto: resultado.texto,
+    modelo: resultado.modelo,
+    omitidos: material.omitidos?.length || 0,
+  });
 }
 
 /**
@@ -517,6 +530,7 @@ async function probarLaRedaccion(peticion, env) {
     motivo: resultado.motivo || null,
     intentos: resultado.intentos,
     material: material.lineas,
+    omitidos: material.omitidos || [],
   });
 }
 
