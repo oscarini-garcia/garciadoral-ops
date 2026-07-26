@@ -721,19 +721,50 @@ function campoDeFecha(valorInicial) {
     value: aTextoDeFecha(valorInicial),
   });
 
+  /**
+   * La salida del teclado numérico.
+   *
+   * El de iPhone no trae tecla de retorno —son diez cifras y poco más—, así que
+   * de este campo no se sale escribiendo: hay que tocar fuera, y encima el
+   * teclado tapa media hoja. Este botón es la salida, y solo está mientras el
+   * campo tiene el foco: fuera de ahí no serviría para nada.
+   *
+   * Va con `pointerdown` y no con `click`. Tocarlo quita el foco antes de que
+   * llegue el `click`, con lo que el botón se escondería y el toque acabaría
+   * sobre lo que hubiera debajo; frenando el `pointerdown` el foco no se mueve y
+   * el cierre lo hace este código, cuando quiere.
+   */
+  const listo = el('button', {
+    class: 'fecha-listo', type: 'button', hidden: true,
+    onpointerdown: (evento) => { evento.preventDefault(); texto.blur(); },
+  }, ['Listo']);
+
   control.addEventListener('input', () => { texto.value = aTextoDeFecha(control.value); });
+  texto.addEventListener('focus', () => { listo.hidden = false; });
   texto.addEventListener('input', () => {
     aplicarMascara(texto);
     const iso = deTextoDeFecha(texto.value);
-    if (iso !== null) control.value = iso;
+    if (iso === null) return;
+    control.value = iso;
+    // Con la fecha entera y buena no queda nada que teclear: el teclado se
+    // retira solo y no hay que ir a buscar por dónde salir. Si los ocho dígitos
+    // no forman una fecha —un 31 de febrero—, se queda abierto a propósito: que
+    // siga ahí es el aviso de que algo no cuadra.
+    if (texto.value.length === 10) texto.blur();
   });
-  texto.addEventListener('blur', () => { texto.value = aTextoDeFecha(control.value); });
+  texto.addEventListener('blur', () => {
+    listo.hidden = true;
+    texto.value = aTextoDeFecha(control.value);
+  });
 
   return {
     control,
     campo: el('div', { class: 'campo' }, [
       el('label', { texto: 'Fecha de nacimiento' }),
-      el('div', { class: 'fecha-doble' }, [control, texto]),
+      el('div', { class: 'fecha-doble' }, [
+        control,
+        el('div', { class: 'fecha-escrita' }, [texto, listo]),
+      ]),
       el('p', {
         class: 'pista',
         texto: 'De aquí sale su cumpleaños en la agenda, todos los años y sin tocar nada. Se puede elegir en el calendario o escribirla.',

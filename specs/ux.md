@@ -339,6 +339,13 @@ En orden de cercanía y no alfabético: de una lista corta se elige mirando, no 
 
 Las dos escriben sobre el mismo valor y se copian la una a la otra. La casilla enmascara siempre, pero solo se cree lo que sea una fecha entera y válida —el 31 de febrero no cuela—; no protesta mientras se escribe, y al salir del campo se corrige sola a lo que haya guardado.
 
+**Y una salida, porque el teclado numérico de iPhone no tiene retorno.** De esta casilla no se sale escribiendo: hay que tocar fuera, y el teclado tapa media hoja. Así que hay dos maneras de salir, y ninguna pide buscarla:
+
+- **Sola**, en cuanto los ocho dígitos forman una fecha buena. No queda nada que teclear, así que el teclado se retira.
+- **Con «Listo»**, un botón dentro de la casilla que solo está mientras el campo tiene el foco —fuera de ahí no serviría para nada—. Es la salida cuando la fecha aún está a medias.
+
+Si los ocho dígitos **no** forman una fecha, el teclado se queda abierto a propósito: que siga ahí es el aviso de que algo no cuadra, y «Listo» sigue estando para salir igualmente.
+
 ### 7.2 La ficha
 
 **El círculo no se dice en ninguna parte**, ni en la ficha ni en la tabla de resultados. A las dos se llega desde él, y en la tabla ocupaba media columna para repetir lo que el parentesco dice mejor: «tía» sitúa a alguien más deprisa que «Familia Extendida». Lo que va es el parentesco, el mismo relativo a quien mira —donde la rejilla ponía «mamá», la ficha no puede poner «madre»—; y cuando no hay ninguno escrito, **«amiga»** o **«amigo»** según el género, que es lo que queda por decir de alguien de quien no se ha dicho nada.
