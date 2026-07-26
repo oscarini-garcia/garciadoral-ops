@@ -592,12 +592,15 @@ export function abrirCumple(personaId, ctx, { dia = null, comentariosDe = null, 
     }
 
     if (comentariosDe) cuerpo.append(bloqueDeComentarios('evento', comentariosDe, ctx));
-
-    cuerpo.append(el('button', {
-      class: 'enlace-discreto', type: 'button',
-      onclick: () => abrirFicha(personaId, ctx),
-    }, [`Ver la ficha de ${persona.nombre}`]));
   }, [
+    // Quién es va delante de qué se le cambia: primero se mira y luego se
+    // corrige, que es el orden en que se usan. Antes esto era un enlace al pie
+    // de la hoja, debajo de los comentarios, donde había que bajar a buscarlo.
+    botonIcono('informacion', {
+      etiqueta: `Ver la ficha de ${persona.nombre}`,
+      tono: 'discreto',
+      onclick: () => abrirFicha(personaId, ctx),
+    }),
     // Editar un cumpleaños es editar la fecha de nacimiento de quien lo cumple:
     // el verbo lleva derecho al formulario de la persona, y al guardar se vuelve
     // aquí. Se ha ido a corregir un dato, no a visitar a nadie.
