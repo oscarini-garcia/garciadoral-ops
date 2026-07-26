@@ -126,6 +126,15 @@ solo intervienen cuando alguien elimina su cuenta y que se registran en el paso
 4.5, porque salen de la cuenta de Apple Developer. Todo lo demás funciona sin
 ellos.
 
+La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
+la base de datos desde *Ajustes → Contar el día con IA*, dentro de la propia
+aplicación y solo para administradores. Es lo que enciende el segundo botón de
+compartir un día, el que lo cuenta en dos frases antes de enviarlo. Sin clave, el
+botón sencillamente no aparece y todo lo demás funciona igual. Se registra allí y
+no aquí porque es lo único de esta instalación que se cambia con cierta
+frecuencia —al rotarla, al cambiar de modelo— y hacerlo con `wrangler` obligaría
+a volver a desplegar cada vez.
+
 El bloque `[vars]` de `api/wrangler.toml` ya viene relleno con los nombres de
 esta instalación; compruébelo antes de desplegar:
 
@@ -899,6 +908,7 @@ error visible: es arruinar una sorpresa.
 | CallMeBot | 0 €, servicio gratuito de un tercero y sin garantía |
 | Dominio | 10–15 € al año. `galoopa.store` ya está pagado; el subdominio no cuesta nada aparte |
 | Apple Developer Program | 99 € al año, solo si quiere la app iOS |
+| API de Anthropic | Se paga por uso y solo si configura la clave. Contar un día son unos cientos de palabras: con Haiku, céntimos al mes en un hogar |
 
 ---
 
@@ -922,6 +932,9 @@ error visible: es arruinar una sorpresa.
 | El bundle OTA carga en blanco | `index.html` no quedó en la raíz del zip | Se empaqueta el **contenido** de `publico/`, no la carpeta; el workflow ya lo hace así |
 | La app revierte la actualización sola | No se llamó a `notifyAppReady()` | Lo hace `iniciarNativo()` al arrancar; compruebe que `app.js` lo sigue llamando |
 | El despachador dejó de ejecutarse | GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por defecto. Reactívelo desde Actions y active el workflow `mantenimiento` |
+| El botón de contar el día no aparece | No hay clave de Anthropic guardada, o quien mira no es administrador. Póngala en Ajustes → Contar el día con IA |
+| Contar el día siempre acaba compartiendo la lista tal cual | Algo falla en la llamada al modelo. El botón *Probar* de ese mismo apartado enseña la traza de cada intento: código HTTP, tipo de error y el mensaje de la API |
+| «demasiadas redacciones seguidas» | El freno por persona y minuto. Es deliberado: sin él, la clave de pago del hogar queda abierta a un bucle en la consola del navegador |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
 
 Trazas en vivo del Worker:

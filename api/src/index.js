@@ -20,6 +20,10 @@
  *   GET    /api/solicitudes · bandeja de quien espera (administradores)
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
  *   GET    /api/registro    · registro completo para el generador del plan semanal
+ *   POST   /api/redactar    · el día de hoy, contado por un modelo
+ *   GET    /api/ia          · configuración de la redacción (administradores)
+ *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
+ *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
  */
 
 import { verificarTokenDeApple } from './apple.js';
@@ -52,8 +56,24 @@ import {
 import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
+import {
+  cabeUnaMas,
+  componerMaterial,
+  configuracionPublica,
+  guardarConfiguracion,
+  leerConfiguracion,
+  modelosDisponibles,
+  redactar,
+} from './redaccion.js';
 
 const TIPOS_JSON = { 'content-type': 'application/json; charset=utf-8' };
+
+// Un día inventado para el botón de probar de Ajustes, cuando el de verdad no
+// tiene nada. Lo que se prueba es la configuración, no la agenda.
+const MATERIAL_DE_PRUEBA = {
+  titulo: 'martes 14 de Abril',
+  lineas: ['09:00 · Dentista de Marta · Calle Mayor 3', '17:30 · Entreno de baloncesto', 'todo el día · Cumpleaños de la abuela'],
+};
 
 function json(cuerpo, estado = 200, cabeceras = {}) {
   return new Response(JSON.stringify(cuerpo), {
@@ -268,7 +288,7 @@ async function darDeBaja(peticion, env) {
 async function sincronizar(peticion, env) {
   const lector = await lectorAutenticado(peticion, env);
   const registro = await leerRegistro(env.DB);
-  const instantanea = componerInstantanea(registro, lector);
+  const instantanea = await conBanderaDeRedaccion(env, componerInstantanea(registro, lector));
 
   await env.DB.prepare(
     `INSERT INTO dispositivo (id, persona_id, plataforma, ultima_sincronizacion)
@@ -305,7 +325,7 @@ async function recibirCambios(peticion, env) {
   // siempre con lo que le corresponde ver, incluido lo que acaba de dejar de
   // corresponderle por haber pasado a ser destinatario de algo.
   const registro = await leerRegistro(env.DB);
-  return json({ resultados, instantanea: componerInstantanea(registro, lector) });
+  return json({ resultados, instantanea: await conBanderaDeRedaccion(env, componerInstantanea(registro, lector)) });
 }
 
 async function conflictosPendientes(peticion, env) {
@@ -332,6 +352,101 @@ async function registroCompleto(peticion, env) {
   return json(registro);
 }
 
+// ------------------------------------------------------- Redacción con IA --
+
+/**
+ * El dispositivo necesita saber si el botón de contar el día tiene algo detrás.
+ * Va la bandera, nunca la clave: la instantánea la recibe todo el mundo.
+ */
+async function conBanderaDeRedaccion(env, instantanea) {
+  const { clave } = await leerConfiguracion(env.DB);
+  return { ...instantanea, redaccion: { disponible: Boolean(clave) } };
+}
+
+/**
+ * El día de hoy, contado por un modelo.
+ *
+ * El cliente manda una fecha y los identificadores de lo que está viendo; el
+ * texto que llega al modelo se compone aquí, a partir de la instantánea
+ * filtrada de quien pide, de modo que ni se le puede inyectar nada ni puede
+ * salir por ahí un evento que esa persona no ve.
+ */
+async function contarElDia(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas redacciones seguidas; prueba dentro de un minuto');
+  }
+
+  const { fecha, eventos = [] } = await peticion.json().catch(() => ({}));
+  if (!fecha) return json({ error: 'falta la fecha' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterial(componerInstantanea(registro, lector), fecha, eventos);
+  const resultado = await redactar({ configuracion, material });
+
+  if (!resultado.texto) {
+    // El motivo se cuenta entero solo a quien puede arreglarlo. Al resto le
+    // basta con saber que no ha podido ser: su aplicación comparte tal cual.
+    console.warn('redacción fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        texto: null,
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ texto: resultado.texto, modelo: resultado.modelo });
+}
+
+async function leerAjustesDeIa(peticion, env) {
+  await administradorAutenticado(peticion, env);
+  const configuracion = await leerConfiguracion(env.DB);
+  const { modelos, de } = await modelosDisponibles(configuracion.clave);
+  return json({ ...configuracionPublica(configuracion), modelos, modelos_de: de });
+}
+
+async function guardarAjustesDeIa(peticion, env) {
+  const administrador = await administradorAutenticado(peticion, env);
+  const { clave, modelo, instruccion } = await peticion.json().catch(() => ({}));
+  const configuracion = await guardarConfiguracion(env.DB, administrador, { clave, modelo, instruccion });
+  return json(configuracionPublica(configuracion));
+}
+
+/**
+ * Redacta y devuelve la traza entera, haya salido bien o mal: con qué modelo se
+ * intentó, qué contestó cada uno y cuánto tardó. Es lo que convierte «no
+ * funciona» en algo que se puede mirar.
+ */
+async function probarLaRedaccion(peticion, env) {
+  const administrador = await administradorAutenticado(peticion, env);
+  const { fecha, eventos = [] } = await peticion.json().catch(() => ({}));
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const propio = componerMaterial(
+    componerInstantanea(registro, administrador),
+    fecha || new Date().toISOString().slice(0, 10),
+    eventos,
+  );
+
+  // Probar tiene que probar aunque el día esté vacío: lo que se comprueba es la
+  // clave, el modelo y la instrucción, no que hoy haya algo que contar.
+  const material = propio.lineas.length ? propio : MATERIAL_DE_PRUEBA;
+  const resultado = await redactar({ configuracion, material });
+
+  return json({
+    texto: resultado.texto,
+    modelo: resultado.modelo,
+    motivo: resultado.motivo || null,
+    intentos: resultado.intentos,
+    material: material.lineas,
+  });
+}
+
 // ---------------------------------------------------------------------------
 
 // La resolución va por cuerpo y no por ruta con parámetro porque aquí los
@@ -350,6 +465,10 @@ const RUTAS = [
   ['GET', '/api/solicitudes', bandeja],
   ['POST', '/api/solicitudes/resolver', resolverSolicitud],
   ['GET', '/api/registro', registroCompleto],
+  ['POST', '/api/redactar', contarElDia],
+  ['GET', '/api/ia', leerAjustesDeIa],
+  ['POST', '/api/ia', guardarAjustesDeIa],
+  ['POST', '/api/ia/probar', probarLaRedaccion],
 ];
 
 export default {

@@ -17,8 +17,8 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
   deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
-import { guardar, retirar } from '../sincronizacion.js';
-import { REPETICIONES, nuevoId } from '../modelo.js';
+import { guardar, redactarDia, retirar } from '../sincronizacion.js';
+import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, instanciasEn, iso,
@@ -311,19 +311,77 @@ export function abrirDia(fecha, ctx) {
       class: 'boton', type: 'button',
       onclick: () => abrirFormularioEvento(ctx, { fecha }),
     }, ['Añadir un evento este día']));
-  }, [
-    // Un día se comparte tal cual se ve: lo que hay en la hoja es ya lo visible
-    // para quien mira, de modo que no puede salir por ahí un evento reservado.
-    // En un día vacío no se ofrece, porque no habría nada que enviar.
-    apariciones.length ? botonIcono('compartir', {
-      etiqueta: 'Compartir el día',
-      onclick: () => compartirDia(fecha, apariciones, ctx),
-    }) : null,
-  ]);
+  }, accionesDelDia(fecha, apariciones, ctx));
 
   // El mismo gesto que en la semana y en el mes, un piso más abajo: aquí lo que
   // pasa es el día. Se cuelga del cuerpo, que la hoja rehace en cada apertura.
   deslizarHorizontal(contenido, (pasos) => { toque(); abrirDia(sumarDias(fecha, pasos), ctx); });
+}
+
+/**
+ * Los dos botones de la cabecera del día: compartir la lista y compartirla
+ * contada.
+ *
+ * Un día se comparte tal cual se ve: lo que hay en la hoja es ya lo visible
+ * para quien mira, de modo que no puede salir por ahí un evento reservado. En
+ * un día vacío no se ofrece ninguno de los dos, porque no habría nada que
+ * enviar.
+ *
+ * El segundo es el mismo icono con un destello encima: dice «esto es
+ * compartir, con algo añadido» sin obligar a aprender un dibujo nuevo. Solo
+ * aparece si el servidor tiene clave; si no, sobraría un botón que únicamente
+ * sabría fallar.
+ */
+function accionesDelDia(fecha, apariciones, ctx) {
+  if (!apariciones.length) return [];
+
+  const compartirTalCual = botonIcono('compartir', {
+    etiqueta: 'Compartir el día',
+    onclick: () => compartirDia(fecha, apariciones, ctx),
+  });
+  if (!redaccionDisponible(ctx.vista.datos)) return [compartirTalCual];
+
+  const contado = botonIcono('compartir', {
+    etiqueta: 'Compartir contado',
+    insignia: 'destello',
+    onclick: () => contarElDia(fecha, apariciones, ctx, [compartirTalCual, contado]),
+  });
+  return [compartirTalCual, contado];
+}
+
+/**
+ * Compartir el día redactado por un modelo.
+ *
+ * No se ofrece revisar el texto antes: el botón es «compartir contado», no un
+ * editor, y una hoja intermedia convertiría un gesto en un trámite. Si algo
+ * falla —sin red, sin clave, el modelo caído— se comparte la lista tal cual y
+ * se dice por qué: quedarse sin compartir sería el peor de los desenlaces.
+ */
+async function contarElDia(fecha, apariciones, ctx, botones) {
+  toque();
+  for (const boton of botones) boton.disabled = true;
+
+  let texto = null;
+  let fallo = null;
+  try {
+    texto = await redactarDia(iso(fecha), apariciones.map((aparicion) => aparicion.evento.id));
+  } catch (error) {
+    fallo = error;
+  } finally {
+    for (const boton of botones) boton.disabled = false;
+  }
+
+  if (!texto) {
+    // La traza de los intentos solo llega si quien mira puede arreglarlo; en la
+    // consola sirve para depurar sin tener que reproducirlo a ciegas.
+    if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
+    avisar('No he podido contarlo: va la lista tal cual');
+    await compartirDia(fecha, apariciones, ctx);
+    return;
+  }
+
+  const enviado = await compartir({ titulo: formatearFechaLarga(fecha), texto });
+  if (!enviado) avisar('No he podido compartirlo');
 }
 
 /**

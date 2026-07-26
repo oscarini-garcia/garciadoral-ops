@@ -195,7 +195,12 @@ async function peticion(camino, opciones = {}) {
     // resolver, la persona que ya tiene cuenta— viene explicado en el cuerpo, y
     // ese texto es lo único que se le puede enseñar a quien mira la pantalla.
     const datos = await respuesta.json().catch(() => ({}));
-    throw new Error(datos.error || `la API respondió ${respuesta.status}`);
+    const error = new Error(datos.error || datos.motivo || `la API respondió ${respuesta.status}`);
+    // El cuerpo entero viaja con el error: la redacción devuelve ahí la traza de
+    // los intentos, que es lo que se enseña al administrador para depurar.
+    error.estado = respuesta.status;
+    error.datos = datos;
+    throw error;
   }
   return respuesta.json();
 }
@@ -212,6 +217,33 @@ export async function listarSolicitudes() {
 export function resolverSolicitud(cuerpo) {
   return peticion('/api/solicitudes/resolver', { method: 'POST', body: JSON.stringify(cuerpo) });
 }
+
+// --------------------------------------------------------------- Redacción --
+
+/**
+ * Pide al servidor el texto de un día, contado por un modelo.
+ *
+ * Solo viajan la fecha y los identificadores de lo que se está viendo: el texto
+ * que llega al modelo lo compone el Worker con la instantánea filtrada de quien
+ * pide, de modo que desde aquí no se le puede meter nada.
+ */
+export async function redactarDia(fecha, eventos) {
+  const { texto } = await peticion('/api/redactar', {
+    method: 'POST',
+    body: JSON.stringify({ fecha, eventos }),
+  });
+  return texto;
+}
+
+/** Los ajustes de la redacción. Reservados a administradores por el Worker. */
+export const leerAjustesDeIa = () => peticion('/api/ia');
+
+export const guardarAjustesDeIa = (campos) =>
+  peticion('/api/ia', { method: 'POST', body: JSON.stringify(campos) });
+
+/** Redacta y devuelve la traza entera, salga bien o mal. */
+export const probarRedaccion = (fecha, eventos = []) =>
+  peticion('/api/ia/probar', { method: 'POST', body: JSON.stringify({ fecha, eventos }) });
 
 export async function sincronizar() {
   if (configuracion.demostracion || sincronizando) return instantaneaActual;

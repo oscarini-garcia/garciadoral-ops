@@ -46,6 +46,10 @@ tener que recorrer la aplicación entera cada vez.
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
+- **redaccion.js** — Redacción del mensaje de un día con la API de Anthropic.
+  MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO · leerConfiguracion
+  configuracionPublica · guardarConfiguracion · cadenaDeModelos · modelosDisponibles
+  componerMaterial · redactar · …y 1 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -71,8 +75,8 @@ tener que recorrer la aplicación entera cada vez.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **modelo.js** — Consultas sobre la instantánea local.
-  EMOJI_POR_DEFECTO · estaActivo · nuevoId · ahora · crearVista · ESTADOS_REGALO
-  REPETICIONES · formatearImporte
+  EMOJI_POR_DEFECTO · estaActivo · redaccionDisponible · nuevoId · ahora · crearVista
+  ESTADOS_REGALO · REPETICIONES · formatearImporte
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -85,7 +89,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · sincronizar
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 4 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
   cerrarHoja · hayHojaAbierta · …y 7 más
@@ -125,6 +129,10 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/solicitudes` — bandeja de quien espera (administradores)
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
+- `POST /api/redactar` — el día de hoy, contado por un modelo
+- `GET  /api/ia` — configuración de la redacción (administradores)
+- `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
+- `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
 
 ## Workflows
 
@@ -187,7 +195,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**121** en total.
+**137** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -197,6 +205,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
+- `api/test/redaccion.test.js` — 16
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 
