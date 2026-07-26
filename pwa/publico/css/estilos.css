@@ -40,6 +40,15 @@
   /* La de las tarjetas decía «esto está apoyado». Una hoja no está apoyada:
      está encima, y a bastante altura. */
   --sombra-alta:  0 -2px 6px rgba(28, 43, 51, .10), 0 -20px 50px rgba(28, 43, 51, .22);
+  /* El hueco donde se escribe. No es un peldaño de la escala de papeles: esa
+     va en direcciones distintas según el tema —hacia el gris en claro, hacia la
+     luz en oscuro—, y un campo tiene que hundirse en los dos. Un hueco no se
+     levanta. Va uno por plano, porque dentro de una hoja el papel es otro y el
+     hueco tiene que seguir quedando por debajo del suyo. */
+  --hueco:            #F0EBE0;
+  --hueco-linea:      #DCD6C9;
+  --hueco-alto:       #F5F0E7;
+  --hueco-alto-linea: #E3DDD0;
 
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
   --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -74,6 +83,10 @@
     --borde-alto:   rgba(231, 238, 241, .07);
     --velo:         rgba(0, 0, 0, .68);
     --sombra-alta:  0 -2px 6px rgba(0, 0, 0, .5), 0 -20px 50px rgba(0, 0, 0, .6);
+    --hueco:            #0A0F11;
+    --hueco-linea:      #2A363C;
+    --hueco-alto:       #131B1F;
+    --hueco-alto-linea: #2C3A41;
   }
 }
 
@@ -88,6 +101,8 @@
   --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA; --paper-alto-3: #EDE8DE;
   --borde-alto: rgba(28,43,51,.06); --velo: rgba(8,16,20,.55);
   --sombra-alta: 0 -2px 6px rgba(28,43,51,.10), 0 -20px 50px rgba(28,43,51,.22);
+  --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+  --hueco-alto: #F5F0E7; --hueco-alto-linea: #E3DDD0;
 }
 :root[data-tema="oscuro"] {
   --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
@@ -98,6 +113,8 @@
   --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
   --borde-alto: rgba(231,238,241,.07); --velo: rgba(0,0,0,.68);
   --sombra-alta: 0 -2px 6px rgba(0,0,0,.5), 0 -20px 50px rgba(0,0,0,.6);
+  --hueco: #0A0F11; --hueco-linea: #2A363C;
+  --hueco-alto: #131B1F; --hueco-alto-linea: #2C3A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -516,8 +533,8 @@ button { background: none; border: 0; cursor: pointer; }
 .campo > label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
 .campo input, .campo select, .campo textarea {
   min-height: var(--toque);
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--hueco);
+  border: 1px solid var(--hueco-linea);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 16.5px; /* de 16 para arriba, o iOS hace zoom al enfocar */
@@ -676,6 +693,8 @@ button { background: none; border: 0; cursor: pointer; }
   --paper:   var(--paper-alto);
   --paper-2: var(--paper-alto-2);
   --paper-3: var(--paper-alto-3);
+  --hueco:       var(--hueco-alto);
+  --hueco-linea: var(--hueco-alto-linea);
 
   position: fixed; z-index: 41; left: 0; right: 0; bottom: 0;
   max-height: 88dvh; overflow-y: auto;
