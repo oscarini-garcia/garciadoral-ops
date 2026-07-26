@@ -511,6 +511,10 @@ button { background: none; border: 0; cursor: pointer; }
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .persona-nota { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+/* Los años que hará, un peldaño por detrás de la fecha: acompañan, no compiten
+   con el dato que se ha venido a mirar. */
+.persona-anos { color: var(--ink-faint); opacity: .8; }
+.persona-nota[data-pronto="si"] .persona-anos { color: var(--ink-faint); }
 /* Lo que cumple dentro de un mes se dice en tinta; la fecha que falta, no en
    blanco —un hueco no se ve— sino escrita y apagada. */
 .persona-nota[data-pronto="si"] { color: var(--tinta); }
@@ -526,6 +530,47 @@ button { background: none; border: 0; cursor: pointer; }
 .persona-mas:hover { background: var(--paper-2); border-color: var(--tinta); }
 .persona-mas:hover .persona-mas-signo, .persona-mas:hover .persona-quien { color: var(--tinta); }
 .persona-mas-signo { font-size: 21px; line-height: 1; color: var(--ink-faint); }
+
+/* Buscar devuelve una tabla y no una rejilla: es donde hace falta el nombre
+   entero —lo que distingue a dos Marías—, de quién es y cuándo cumple, en tres
+   columnas que se leen hacia abajo de un vistazo. */
+.tabla-personas { overflow-x: auto; }
+.tabla-personas table { border-collapse: collapse; width: 100%; }
+.tabla-personas th, .tabla-personas td {
+  text-align: left; padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.tabla-personas th {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-faint); font-weight: 400;
+  padding-top: 0;
+}
+.tabla-personas td { font-size: 15px; }
+.tabla-personas td:nth-child(2) { color: var(--ink-soft); font-size: 13.5px; }
+.tabla-personas td:last-child { text-align: right; padding-right: 0; white-space: nowrap; }
+.tabla-personas tbody tr { cursor: pointer; }
+.tabla-personas tbody tr:hover { background: var(--paper-2); }
+.tabla-personas tbody tr:last-child td { border-bottom: 0; }
+
+/* El aspa que borra la búsqueda. `type="search"` trae una del navegador, pero
+   en la cáscara de iOS no aparece, que es justo donde se usa esto. */
+.buscador { position: relative; }
+.buscador input { padding-right: 40px; }
+.buscador-aspa {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--ink-faint); font-size: 13px; line-height: 1;
+}
+.buscador-aspa:hover { background: var(--paper-3); color: var(--ink); }
+/* La `x` nativa de WebKit sobraría al lado de la nuestra. */
+.buscador input::-webkit-search-cancel-button { display: none; }
+
+/* La fecha, con las dos maneras de ponerla una al lado de la otra: el selector
+   del sistema para lo cercano, y el texto para 1947, que en un calendario está
+   a setenta y nueve pantallas. */
+.fecha-doble { display: flex; gap: 8px; }
+.fecha-doble > * { flex: 1 1 0; min-width: 0; }
 
 /* --------------------------------------------------------------- Formulario -- */
 

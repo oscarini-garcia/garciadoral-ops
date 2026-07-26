@@ -12,9 +12,11 @@ import {
 } from '../ui.js';
 import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
 import {
-  CIRCULOS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
+  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
 } from '../modelo.js';
-import { MESES_LARGOS, diasHastaElCumple, parsearMomento, proximoAniversario } from '../semana.js';
+import {
+  MESES_LARGOS, aniosQueCumple, diasHastaElCumple, parsearMomento, proximoAniversario,
+} from '../semana.js';
 import { abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea } from './regalos.js';
 
 /** Cuál de los dos círculos abiertos se está mirando. Se conserva entre
@@ -61,13 +63,30 @@ export function pintarFamilia(pantalla, subcabecera, ctx) {
     placeholder: 'Buscar una persona',
     'aria-label': 'Buscar una persona',
   });
+  // La aspa que borra. `type="search"` trae una del navegador, pero en la
+  // cáscara de iOS no aparece, que es justo donde se usa esto.
+  const aspa = el('button', {
+    class: 'buscador-aspa', type: 'button', 'aria-label': 'Borrar la búsqueda',
+    onclick: () => {
+      buscador.value = '';
+      consulta = '';
+      componer(vaciar(cuerpo), ctx);
+      ajustarAspa();
+      buscador.focus();
+    },
+  }, ['✕']);
+
+  const ajustarAspa = () => { aspa.hidden = !buscador.value; };
+
   // Al escribir se repinta solo el cuerpo y no la pantalla entera: repintarla
   // rehace el campo y se pierde el foco entre letra y letra.
   buscador.addEventListener('input', () => {
     consulta = buscador.value;
     componer(vaciar(cuerpo), ctx);
+    ajustarAspa();
   });
-  subcabecera.append(el('div', { class: 'campo crecer' }, [buscador]));
+  ajustarAspa();
+  subcabecera.append(el('div', { class: 'campo crecer buscador' }, [buscador, aspa]));
 
   componer(cuerpo, ctx);
   pantalla.append(cuerpo);
@@ -109,18 +128,76 @@ function circulosPorSeparado(cuerpo, ctx) {
   return [familia, abiertos];
 }
 
+/**
+ * Buscar no devuelve una rejilla sino una tabla.
+ *
+ * Una celda de rejilla da para un nombre corto y poco más, y el resultado de
+ * una búsqueda es justo donde hace falta lo contrario: el nombre entero con sus
+ * apellidos —que es lo que distingue a dos Marías—, de quién es y cuándo
+ * cumple, en tres columnas que se leen de un vistazo hacia abajo.
+ */
 function resultadosDeBusqueda(ctx) {
-  const encontradas = ctx.vista.personas().filter((persona) => encaja(persona, consulta));
+  const encontradas = ordenar(ctx.vista.personas().filter((p) => encaja(p, consulta)));
+
+  if (!encontradas.length) {
+    return el('div', { class: 'grupo' }, [
+      el('p', { class: 'vacio', texto: 'Nadie con ese nombre.' }),
+    ]);
+  }
 
   return el('div', { class: 'grupo' }, [
     el('p', {
       class: 'grupo-titulo',
       texto: encontradas.length === 1 ? '1 persona' : `${encontradas.length} personas`,
     }),
-    encontradas.length
-      // Al buscar no se ofrece el «+»: no habría círculo al que asignarlo.
-      ? rejilla(encontradas, ctx, { conCirculo: true })
-      : el('p', { class: 'vacio', texto: 'Nadie con ese nombre.' }),
+    el('div', { class: 'tabla-personas' }, [
+      el('table', {}, [
+        el('thead', {}, [
+          el('tr', {}, [
+            el('th', { scope: 'col', texto: 'Quién' }),
+            el('th', { scope: 'col', texto: 'De qué' }),
+            el('th', { scope: 'col', texto: 'Cumple' }),
+          ]),
+        ]),
+        el('tbody', {}, encontradas.map((persona) => {
+          const quien = comoSeLlama(persona, ctx);
+          return el('tr', {
+            tabindex: '0', role: 'button',
+            onclick: () => abrirFicha(persona.id, ctx),
+            onkeydown: (evento) => {
+              if (evento.key === 'Enter' || evento.key === ' ') {
+                evento.preventDefault();
+                abrirFicha(persona.id, ctx);
+              }
+            },
+          }, [
+            el('td', { texto: [persona.nombre, persona.apellidos].filter(Boolean).join(' ') }),
+            // El círculo entre paréntesis detrás del parentesco: «tía (Familia
+            // Extendida)», que es la pregunta que trae a alguien a buscar.
+            el('td', {
+              texto: [quien, `(${CIRCULOS[persona.circulo] || CIRCULOS.extendida})`]
+                .filter(Boolean).join(' '),
+            }),
+            el('td', {}, [celdaDeCumple(persona)]),
+          ]);
+        })),
+      ]),
+    ]),
+  ]);
+}
+
+function celdaDeCumple(persona) {
+  if (!persona.fecha_nacimiento) {
+    return el('span', { class: 'persona-nota', 'data-falta': 'si', texto: 'sin fecha' });
+  }
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  const dias = diasHastaElCumple(persona);
+  const anos = aniosQueCumple(persona);
+  return el('span', { class: 'persona-nota', 'data-pronto': dias <= 30 ? 'si' : null }, [
+    document.createTextNode(
+      `${nacimiento.getDate()} ${MESES_LARGOS[nacimiento.getMonth()].slice(0, 3)}`,
+    ),
+    anos ? el('span', { class: 'persona-anos', texto: ` (${anos})` }) : null,
   ]);
 }
 
@@ -129,16 +206,11 @@ function resultadosDeBusqueda(ctx) {
  * inventado no decían nada que no dijera él. Lo que queda es lo que se consulta
  * de verdad —de quién es, y cuándo cumple—, y cabe más en menos alto.
  */
-function rejilla(personas, ctx, { columnas = 0, anadirA = null, conCirculo = false } = {}) {
+function rejilla(personas, ctx, { columnas = 0, anadirA = null } = {}) {
   const celdas = ordenar(personas).map((persona) =>
     el('button', { class: 'persona', type: 'button', onclick: () => abrirFicha(persona.id, ctx) }, [
       el('span', { class: 'persona-nombre', texto: persona.nombre }),
-      el('span', {
-        class: 'persona-quien',
-        texto: conCirculo
-          ? [CIRCULOS[persona.circulo], comoSeLlama(persona, ctx)].filter(Boolean).join(' · ')
-          : comoSeLlama(persona, ctx),
-      }),
+      el('span', { class: 'persona-quien', texto: comoSeLlama(persona, ctx) }),
       notaDeCumple(persona),
     ]),
   );
@@ -179,15 +251,35 @@ function ordenar(personas) {
  * será menos útil pero nunca falso.
  */
 const PAPELES = {
-  madre: { generacion: 'mayor', desdeAbajo: 'mamá' },
-  mama: { generacion: 'mayor', desdeAbajo: 'mamá' },
-  padre: { generacion: 'mayor', desdeAbajo: 'papá' },
-  papa: { generacion: 'mayor', desdeAbajo: 'papá' },
-  hija: { generacion: 'menor', desdeAbajo: 'hermana', desdeArriba: 'hija' },
-  hijo: { generacion: 'menor', desdeAbajo: 'hermano', desdeArriba: 'hijo' },
+  madre: { generacion: 'mayor', genero: 'f' },
+  mama: { generacion: 'mayor', genero: 'f' },
+  padre: { generacion: 'mayor', genero: 'm' },
+  papa: { generacion: 'mayor', genero: 'm' },
+  hija: { generacion: 'menor', genero: 'f' },
+  hijo: { generacion: 'menor', genero: 'm' },
+  // «Lóver» dice la relación pero no el género, que es justo el caso para el
+  // que existe el campo: sin él no habría manera de saber si quien mira desde
+  // abajo tiene que leer «mamá» o «papá».
+  lover: { generacion: 'mayor', genero: null },
 };
 
 const papel = (persona) => PAPELES[normalizar(persona?.parentesco)] || null;
+
+/**
+ * Si es «ella» o «él», para elegir la palabra.
+ *
+ * Manda lo que se haya puesto en la ficha; si está en blanco, se deduce de la
+ * propia palabra del parentesco, que en castellano casi siempre lo lleva
+ * dentro. Y si tampoco, se cae del lado femenino sin más razón que tener que
+ * elegir una: es una etiqueta de dos palabras bajo un nombre, no un juicio.
+ */
+function generoDe(persona) {
+  if (persona?.genero === 'f' || persona?.genero === 'm') return persona.genero;
+  return papel(persona)?.genero || 'f';
+}
+
+const enGenero = (persona, femenino, masculino) =>
+  (generoDe(persona) === 'm' ? masculino : femenino);
 
 /**
  * Qué es esta persona **para quien está mirando**.
@@ -211,8 +303,12 @@ function comoSeLlama(persona, ctx) {
   const mio = papel(ctx.vista.persona(ctx.vista.yo?.id));
   if (!suyo || !mio) return persona.parentesco;
 
-  if (mio.generacion === 'menor') return suyo.desdeAbajo;
-  if (suyo.generacion === 'menor') return suyo.desdeArriba;
+  if (mio.generacion === 'menor') {
+    return suyo.generacion === 'mayor'
+      ? enGenero(persona, 'mamá', 'papá')
+      : enGenero(persona, 'hermana', 'hermano');
+  }
+  if (suyo.generacion === 'menor') return enGenero(persona, 'hija', 'hijo');
   // Los dos adultos de una casa de cuatro. Es la única inferencia que da un
   // paso más allá del dato: nadie ha escrito que sean pareja, se deduce de que
   // comparten el hogar y la generación. Si alguna vez no fuera cierto, es esta
@@ -227,11 +323,13 @@ function notaDeCumple(persona) {
     return el('span', { class: 'persona-nota', 'data-falta': 'si', texto: 'sin fecha' });
   }
   const dias = diasHastaElCumple(persona);
-  return el('span', {
-    class: 'persona-nota',
-    'data-pronto': dias <= 30 ? 'si' : null,
-    texto: proximoCumple(persona),
-  });
+  const anos = aniosQueCumple(persona);
+  return el('span', { class: 'persona-nota', 'data-pronto': dias <= 30 ? 'si' : null }, [
+    document.createTextNode(proximoCumple(persona)),
+    // Los años que hará, no los que tiene: es la cifra que se está buscando
+    // cuando uno mira esta línea, que es para decidir un regalo.
+    anos ? el('span', { class: 'persona-anos', texto: ` (${anos})` }) : null,
+  ]);
 }
 
 // ---------------------------------------------------------------- Bandeja --
@@ -537,6 +635,65 @@ function abrirFormularioAtributo(personaId, ctx) {
 }
 
 /**
+ * La fecha de nacimiento, con dos maneras de ponerla.
+ *
+ * El selector del sistema es cómodo para lo cercano y penoso para lo lejano:
+ * poner 1947 exige recorrer setenta y nueve pantallas de calendario, y las
+ * fechas que se meten aquí son sobre todo de gente mayor. Así que al lado va
+ * una casilla de texto en `dd/mm/aaaa`, que es como se dice una fecha en voz
+ * alta y se escribe de un tirón.
+ *
+ * Las dos escriben sobre el mismo valor y se copian la una a la otra. La de
+ * texto solo se cree lo que sea una fecha entera y válida; mientras se escribe
+ * no borra nada ni protesta, y al salir del campo se corrige sola a lo que haya
+ * guardado. `control.value` es siempre el ISO que se guarda, o cadena vacía.
+ */
+function campoDeFecha(valorInicial) {
+  const control = el('input', { type: 'date', value: valorInicial || '' });
+  const texto = entrada({
+    inputmode: 'numeric', placeholder: 'dd/mm/aaaa', 'aria-label': 'Fecha de nacimiento escrita',
+    value: aTextoDeFecha(valorInicial),
+  });
+
+  control.addEventListener('input', () => { texto.value = aTextoDeFecha(control.value); });
+  texto.addEventListener('input', () => {
+    const iso = deTextoDeFecha(texto.value);
+    if (iso !== null) control.value = iso;
+  });
+  texto.addEventListener('blur', () => { texto.value = aTextoDeFecha(control.value); });
+
+  return {
+    control,
+    campo: el('div', { class: 'campo' }, [
+      el('label', { texto: 'Fecha de nacimiento' }),
+      el('div', { class: 'fecha-doble' }, [control, texto]),
+      el('p', {
+        class: 'pista',
+        texto: 'De aquí sale su cumpleaños en la agenda, todos los años y sin tocar nada. Se puede elegir en el calendario o escribirla.',
+      }),
+    ]),
+  };
+}
+
+const aTextoDeFecha = (iso) => {
+  if (!iso) return '';
+  const [a, m, d] = iso.split('-');
+  return a && m && d ? `${d}/${m}/${a}` : '';
+};
+
+/** El ISO correspondiente, o `null` si lo escrito todavía no es una fecha. */
+function deTextoDeFecha(texto) {
+  const partes = String(texto).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!partes) return null;
+  const [, d, m, a] = partes.map(Number);
+  // El redondeo de JavaScript convierte el 31 de febrero en el 3 de marzo sin
+  // decir nada; se comprueba que la fecha construida sea la que se pidió.
+  const fecha = new Date(a, m - 1, d);
+  if (fecha.getFullYear() !== a || fecha.getMonth() !== m - 1 || fecha.getDate() !== d) return null;
+  return `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+/**
  * Alta y edición de personas, reservada a los administradores. La carga inicial
  * del registro es manual a propósito: una importación desde los contactos del
  * teléfono arrastraría duplicados y datos irrelevantes (spec funcional §2).
@@ -548,7 +705,12 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
   abrirHoja(persona ? `Ficha de ${persona.nombre}` : 'Nueva persona', (cuerpo) => {
     const nombre = entrada({ value: persona?.nombre || '', placeholder: 'Nombre' });
     const apellidos = entrada({ value: persona?.apellidos || '', placeholder: 'Apellidos' });
-    const nacimiento = el('input', { type: 'date', value: persona?.fecha_nacimiento || '' });
+    const { control: nacimiento, campo: campoNacimiento } = campoDeFecha(persona?.fecha_nacimiento);
+    const genero = seleccion(
+      [{ valor: '', texto: 'Sin decir' }, ...Object.entries(GENEROS).map(([valor, texto]) => ({ valor, texto }))],
+      persona?.genero || '',
+      { 'aria-label': 'Género' },
+    );
     const rol = seleccion(
       [{ valor: '', texto: 'Sin cuenta' }, { valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
       persona?.tiene_cuenta ? persona.rol : '',
@@ -609,7 +771,8 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
     cuerpo.append(
       campo('Nombre', nombre),
       campo('Apellidos', apellidos),
-      campo('Fecha de nacimiento', nacimiento, 'De aquí sale su cumpleaños en la agenda, todos los años y sin tocar nada.'),
+      campoNacimiento,
+      campo('Género', genero, 'Solo sirve para nombrar bien: elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando el parentesco no lo dice.'),
       campo('Círculo', grupo, hayHueco
         ? `${CIRCULOS.familia} es el hogar y son ${TAMANO_FAMILIA}: no es un grupo que crezca.`
         : `${CIRCULOS.familia} ya está completa con ${TAMANO_FAMILIA}. Para cambiar a alguien de sitio, hazlo primero en su ficha.`),
@@ -635,6 +798,7 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
             parentesco: parentesco.value === PARENTESCO_OTRO
               ? otro.value.trim()
               : parentesco.value,
+            genero: genero.value || null,
             circulo: grupo.value,
             tiene_cuenta: rol.value ? 1 : 0,
             rol: rol.value || null,

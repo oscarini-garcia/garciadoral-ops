@@ -317,6 +317,12 @@ Se infiere del dato, no se pregunta: nadie escribe dos veces lo mismo. Fuera de 
 
 De todo esto, la única inferencia que va más allá del dato es **«pareja»**: nadie ha escrito que los dos adultos lo sean, se deduce de que comparten hogar y generación. Es una línea de código y se quita sola si algún día deja de ser cierto.
 
+**El género, que solo existe para nombrar bien.** La ficha lleva un campo de género —femenino, masculino, o sin decir— del que la aplicación no saca nada más: sirve para elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando la palabra del parentesco no lo lleva dentro. El caso que lo hizo falta es **«lóver»**, que dice la relación y calla el género: sin el campo no habría manera de saber qué tiene que leer una hija. Cuando está en blanco se deduce de la propia palabra, que en castellano casi siempre lo dice; y si tampoco, se cae del lado femenino sin más razón que tener que elegir uno.
+
+Que «lóver» se traduzca a «mamá» o «papá» supone que esa pareja es madre o padre de las crías. Cuando no lo sea, están **«madrastra»** y **«padrastro»** en la misma lista, que se leen tal cual y no se traducen.
+
+**Los años que hará, entre paréntesis.** Junto a la fecha o a los días que faltan va la edad que cumple —`en 6 d (16)`, `3 nov (48)`—, que es la cifra que se está buscando cuando uno mira esa línea, porque es la que decide el regalo. Los que hará, no los que tiene.
+
 **El parentesco se elige de una lista, distinta en cada círculo.** Era un campo libre, y un campo libre aquí se llena de variantes de lo mismo —«mamá», «madre», «Mama»— que después no hay quien lea. Dentro de casa importa el doble, porque de ese texto sale la traducción de arriba. Como el parentesco depende del círculo, el círculo se pregunta antes en el formulario, y la lista se rehace al cambiarlo conservando lo elegido si sigue estando.
 
 | Círculo | Se ofrece |
@@ -326,6 +332,22 @@ De todo esto, la única inferencia que va más allá del dato es **«pareja»**:
 | Amigos | amiga y amigo, vecina y vecino, compañera y compañero |
 
 En orden de cercanía y no alfabético: de una lista corta se elige mirando, no leyéndola entera. Encima de todas, **Sin decir**, porque el dato no es obligatorio; y al final, **Otro…**, que abre un campo libre para lo que no entre en ninguna lista —«el marido de mi prima»— y se guarda tal cual. Lo que ya estuviera escrito de antes, o quedara fuera de lista al mover a alguien de círculo, no se pierde: reaparece en *Otro* con su texto puesto.
+
+**La fecha de nacimiento, con las dos maneras de ponerla.** El selector del sistema es cómodo para lo cercano y penoso para lo lejano: poner 1947 exige recorrer setenta y nueve pantallas de calendario, y las fechas que se meten aquí son sobre todo de gente mayor. Al lado va una casilla en `dd/mm/aaaa`, que es como se dice una fecha en voz alta y se escribe de un tirón. Las dos escriben sobre el mismo valor y se copian la una a la otra; la de texto solo se cree lo que sea una fecha entera y válida —el 31 de febrero no cuela—, no protesta mientras se escribe, y al salir del campo se corrige sola a lo que haya guardado.
+
+### 7.2 Buscar
+
+El buscador vive en la subcabecera, sobre los tres círculos, y lleva **un aspa que lo vacía y devuelve la pantalla a como estaba**, con la pestaña que hubiera abierta. `type="search"` trae una del navegador, pero en la cáscara de iOS no aparece, que es justo donde se usa esto.
+
+Lo que devuelve **no es una rejilla sino una tabla**. Una celda de rejilla da para un nombre corto y poco más, y el resultado de una búsqueda es donde hace falta lo contrario: tres columnas que se leen hacia abajo de un vistazo.
+
+| Quién | De qué | Cumple |
+|---|---|---|
+| Rosa Ejemplo | tía (Familia Extendida) | 21 ago (54) |
+| el abuelo | abuelo (Familia Extendida) | 5 mar (80) |
+| Javi Ejemplo | tío (Familia Extendida) | sin fecha |
+
+El nombre va entero, con apellidos, que es lo que distingue a dos Marías. El círculo va entre paréntesis detrás del parentesco, porque «de quién es esta persona» es la pregunta que trae a alguien a buscar. Y el orden es el mismo de las rejillas: por el aniversario que viene, y los sin fecha al final.
 
 **El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
 

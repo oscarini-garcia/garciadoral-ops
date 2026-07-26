@@ -149,7 +149,11 @@ export function diasHastaElCumple(persona) {
 /**
  * Los años que cumple en ese aniversario, que no son los cumplidos: el día
  * mismo son los mismos, y a partir del día siguiente se habla ya del próximo.
- * Es la misma cuenta que hace el Worker al pedir la felicitación.
+ *
+ * Es la cifra que se busca al mirar a alguien para decidir un regalo, y por eso
+ * la piden tres sitios: la rejilla de Gente —«3 nov (48)»—, la lista de
+ * cumpleaños de Ocasiones y el Worker al componer la felicitación, que hace esta
+ * misma cuenta con las fechas del registro.
  */
 export function aniosQueCumple(persona) {
   const nacimiento = parsearMomento(persona.fecha_nacimiento);
