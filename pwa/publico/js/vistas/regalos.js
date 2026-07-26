@@ -207,6 +207,28 @@ function esDeCumple(ocasion, ctx) {
 
 /** La ocasión del cumpleaños que viene, si es que alguien ya abrió una. Se ata
  *  por la fecha exacta: la del año pasado no sirve para el de este año. */
+/**
+ * La persona de un cumpleaños derivado, si el evento es uno.
+ *
+ * Los cumpleaños no son filas de `evento`: se componen en el dispositivo con un
+ * identificador `derivado:cumpleanos:<persona>` (specs/modelo-datos.md §7.4).
+ * Saber distinguirlos importa aquí porque una ocasión **no puede apuntar a
+ * ellos**: `ocasion.evento_id` tiene clave foránea contra `evento`, y el
+ * servidor rechaza la fila entera —y con ella el regalo que colgaba de la
+ * ocasión— sin que en el teléfono se note más que la desaparición.
+ */
+export function personaDelCumple(evento, ctx) {
+  const marca = /^derivado:cumpleanos:(.+)$/.exec(evento?.id || '');
+  return marca ? ctx.vista.persona(marca[1]) : null;
+}
+
+/** La ocasión de un evento, sea una fila de `evento` o un cumpleaños derivado.
+ *  Al derivado lo ata la fecha y el participante, no el identificador. */
+export function ocasionDeEvento(evento, ctx) {
+  const persona = personaDelCumple(evento, ctx);
+  return persona ? ocasionDelCumple(persona, ctx) : ctx.vista.ocasionDeEvento(evento.id);
+}
+
 function ocasionDelCumple(persona, ctx) {
   const dia = iso(proximoAniversario(persona));
   return (ctx.vista.datos.ocasiones || []).find(
@@ -935,9 +957,20 @@ export function abrirSelectorDeRegalo(
     pintar();
   });
 }
-/** Cuando se asocia un regalo desde un evento que todavía no tiene ocasión
- *  vinculada, esta se crea de forma automática (spec funcional §6.4). */
+
+/**
+ * Cuando se asocia un regalo desde un evento que todavía no tiene ocasión
+ * vinculada, esta se crea de forma automática (spec funcional §6.4).
+ *
+ * Un cumpleaños sale por la puerta de al lado: su ocasión no lleva `evento_id`
+ * —no hay fila a la que apuntar— y se reconoce por la fecha y el participante.
+ * Escribirlo era perder el regalo: el servidor rechazaba la ocasión por clave
+ * foránea, con ella el regalo, y en el teléfono solo se veía desaparecer.
+ */
 async function asegurarOcasionDe(evento, ctx) {
+  const cumpleanero = personaDelCumple(evento, ctx);
+  if (cumpleanero) return asegurarOcasionDelCumple(cumpleanero, ctx);
+
   const existente = ctx.vista.ocasionDeEvento(evento.id);
   if (existente) return existente;
 
@@ -967,7 +1000,6 @@ async function crearRegalo(ctx, { ocasionId, destinatario, idea }) {
     autor_id: ctx.vista.yo.id,
     activo: 1,
   });
-
 }
 
 /** Quien recibe algo pasa a participar en la ocasión. Se llama una sola vez por

@@ -106,8 +106,9 @@ tener que recorrer la aplicación entera cada vez.
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **regalos.js** — Regalos: las ideas y las ocasiones.
-  reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirCumple
-  abrirDetalleIdea · abrirDetalleRegalo · abrirSelectorDeRegalo · abrirFormularioIdea
+  reiniciarRegalos · pintarRegalos · seccionActual · personaDelCumple · ocasionDeEvento
+  abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo · abrirSelectorDeRegalo
+  …y 1 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
   abrirFormularioEvento · anclaActual
@@ -166,10 +167,10 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
 - **`specs/modelo-datos.md`**
   `api/src/filtrado.js` §7.3 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
   `pwa/publico/js/modelo.js` · `pwa/publico/js/semana.js` §7.4
-  `pwa/publico/js/sincronizacion.js` §1 · `scripts/agenda/__init__.py` §2, §4, §6
-  `scripts/agenda/modelo.py` §4 · `scripts/agenda/semana.py` §2.4, §7.4
-  `scripts/agenda/visibilidad.py` · `tests/test_modelo.py` §4
-  `tests/test_visibilidad.py` §6
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/vistas/regalos.js` §7.4
+  `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/modelo.py` §4
+  `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
+  `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
 - **`specs/plan-semanal.md`**
   `api/src/index.js` §9 · `api/src/visibilidad.js` §5
   `scripts/agenda/__init__.py` §3, §4, §6 · `scripts/agenda/fuente.py` §12.1
@@ -205,7 +206,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**181** en total.
+**183** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -213,6 +214,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_modelo.py` — 24
 - `tests/test_plan_semanal.py` — 11
 - `tests/test_semana.py` — 13
+- `tests/test_service_worker.py` — 2
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
 - `api/test/redaccion.test.js` — 54
