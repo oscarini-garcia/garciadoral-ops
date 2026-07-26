@@ -32,6 +32,33 @@ jobs:
       # la aplicación abierta hasta que sube `VERSION` en `sw.js`. Olvidarlo no
       # rompe nada visible: simplemente se sigue viendo lo de antes, y desde
       # fuera parece que el cambio no se hizo.
+      # Lo mismo por la otra vía. La app de iPhone no lee la web: aplica el
+      # bundle OTA, y `ota.yml` solo corta uno nuevo si `pwa/package.json` trae
+      # una versión que aún no tiene release. Cambiar `pwa/publico/**` sin subir
+      # esa versión hace que el workflow corra, no publique nada y no diga nada:
+      # el cambio queda en la web y no llega al teléfono.
+      - name: Comprobar que el OTA sube de versión si cambia lo que empaqueta
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if ! git diff --name-only "$BASE" HEAD | grep -q '^pwa/publico/'; then
+            echo "No cambia nada de pwa/publico/; el OTA no tiene que moverse."
+            exit 0
+          fi
+          antes=$(git show "$BASE:pwa/package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+          ahora=$(node -p "require('./pwa/package.json').version")
+          if [ "$antes" = "$ahora" ]; then
+            echo "Cambia pwa/publico/ y la versión del OTA sigue en $ahora."
+            echo ""
+            echo "Suba \"version\" en pwa/package.json: sin eso, ota.yml ve que"
+            echo "esa versión ya tiene release, no corta bundle nuevo, y la app"
+            echo "de iPhone se queda con lo anterior sin que nada lo diga."
+            exit 1
+          fi
+          echo "OTA $antes → $ahora, correcto."
+
       - name: Comprobar que el service worker sube de versión si cambia lo que cachea
         if: github.event_name == 'pull_request'
         env:

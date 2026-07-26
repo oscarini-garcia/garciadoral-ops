@@ -27,11 +27,14 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- **Al tocar un módulo o el CSS, sube `VERSION` en `pwa/publico/sw.js`.** El
-  service worker los sirve de la caché antes que de la red, así que sin ese
-  cambio lo nuevo no llega a quien ya tenga la aplicación abierta: no falla
-  nada, simplemente se sigue viendo lo de antes. Desde fuera parece que el
-  cambio no se hizo. `pruebas.yml` lo comprueba ahora en cada PR.
+- **Al tocar cualquier cosa de `pwa/publico/`, sube dos versiones, no una.**
+  Son dos caminos distintos y ninguno avisa si se olvida:
+  `VERSION` en `pwa/publico/sw.js` es lo que hace que el **navegador** deje de
+  servir los módulos de su caché; y `version` en `pwa/package.json` es lo que
+  hace que `ota.yml` corte un bundle nuevo para la **app de iPhone** —si esa
+  versión ya tiene release, el workflow corre, no publica nada y calla—. Los dos
+  fallos se ven igual: el cambio está en el repositorio y en la pantalla sigue lo
+  de antes. `pruebas.yml` comprueba las dos en cada PR.
 - **Queda una migración por aplicar: `0007_estado_regalo.sql`**, que convierte a
   «comprado» lo que estuviera «envuelto». Es corriente y no `.unavez` —se puede
   repetir sin consecuencias—, así que basta con marcar la casilla de las
