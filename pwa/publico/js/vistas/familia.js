@@ -8,8 +8,9 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar,
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar, botonIcono,
 } from '../ui.js';
+import { compartir, toque } from '../native.js';
 import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
 import {
   CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
@@ -518,6 +519,14 @@ function anosQueHara(persona) {
     - parsearMomento(persona.fecha_nacimiento).getFullYear();
 }
 
+/** «Cumple el 1 de agosto, y hará 16». La edad detrás, que es lo que se
+ *  pregunta justo después de la fecha. */
+function textoDeCumpleanos(persona) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  const cuando = `Cumple el ${nacimiento.getDate()} de ${MESES_LARGOS[nacimiento.getMonth()].toLowerCase()}`;
+  return `${cuando}, y hará ${anosQueHara(persona)}`;
+}
+
 // ------------------------------------------------------------------ Ficha --
 
 export function abrirFicha(personaId, ctx) {
@@ -531,15 +540,19 @@ export function abrirFicha(personaId, ctx) {
       el('div', {}, [
         el('p', {
           texto: [
-            CIRCULOS[persona.circulo] || CIRCULOS.extendida,
-            // El mismo «para quién» que en la rejilla: si allí pone «mamá», al
-            // abrir la ficha no puede poner «madre».
-            esMia ? null : comoSeLlama(persona, ctx),
+            // El círculo no se dice: en la rejilla ya se venía de él, y aquí
+            // solo repetía lo que la pantalla anterior acababa de enseñar. Lo
+            // que hace falta es de quién es esta persona, que es el parentesco
+            // —el mismo «para quién» que en la rejilla, para que lo que allí
+            // ponía «mamá» no ponga «madre» al abrirse—. Y cuando no hay
+            // parentesco escrito, el círculo vuelve como último recurso, que es
+            // lo que deja «Amigos» bajo el nombre de un amigo sin más dato.
+            esMia ? null : (comoSeLlama(persona, ctx) || CIRCULOS[persona.circulo] || CIRCULOS.extendida),
             persona.tiene_cuenta ? persona.rol : 'sin cuenta',
           ].filter(Boolean).join(' · '),
         }),
         persona.fecha_nacimiento
-          ? el('p', { class: 'pista', texto: `Cumple el ${parsearMomento(persona.fecha_nacimiento).getDate()} de ${MESES_LARGOS[parsearMomento(persona.fecha_nacimiento).getMonth()]}` })
+          ? el('p', { class: 'pista', texto: textoDeCumpleanos(persona) })
           : null,
       ]),
     ]));
@@ -617,15 +630,59 @@ export function abrirFicha(personaId, ctx) {
       ]));
     }
 
-    if (ctx.vista.esAdministrador()) {
-      cuerpo.append(el('div', { class: 'acciones' }, [
-        el('button', {
-          class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+    // Editar no vive al pie: va arriba, junto al título, igual que en el
+    // detalle de un evento (specs/ux.md §7.1).
+  }, [
+    ctx.vista.esAdministrador()
+      ? botonIcono('editar', {
+          etiqueta: 'Editar la ficha',
           onclick: () => abrirFormularioPersona(ctx, { id: personaId }),
-        }, ['Editar la ficha']),
-      ]));
-    }
-  });
+        })
+      : null,
+    botonIcono('compartir', {
+      etiqueta: `Compartir los datos de ${persona.nombre}`,
+      tono: 'discreto',
+      onclick: async () => {
+        toque();
+        const enviado = await compartir({
+          titulo: persona.nombre,
+          texto: textoDeLaPersona(persona, ctx),
+        });
+        if (!enviado) avisar('No he podido compartirlo');
+      },
+    }),
+  ]);
+}
+
+/**
+ * Lo que sale al compartir una persona.
+ *
+ * Va la cara pública y nada más: cómo se llama, de quién es, cuándo cumple y lo
+ * que conviene recordar de ella —las tallas, las alergias—, que es justo lo que
+ * se le manda a quien pregunta qué comprarle. **Ni una palabra de la dimensión
+ * de regalos**: ni deseos, ni ideas apuntadas, ni histórico. Es la misma regla
+ * que en el evento, y aquí importa más, porque este texto sale del hogar.
+ *
+ * Sin redacción por IA: los datos de una persona son cuatro líneas de hechos y
+ * contarlos «en dos frases» solo podría estropearlos.
+ */
+function textoDeLaPersona(persona, ctx) {
+  const quien = persona.id === ctx.vista.yo?.id
+    ? null
+    : (comoSeLlama(persona, ctx) || CIRCULOS[persona.circulo] || CIRCULOS.extendida);
+
+  const lineas = [
+    [persona.nombre, persona.apellidos].filter(Boolean).join(' '),
+    quien,
+    persona.fecha_nacimiento ? textoDeCumpleanos(persona) : null,
+  ].filter(Boolean);
+
+  const atributos = ctx.vista.atributosDe(persona.id);
+  if (atributos.length) {
+    lineas.push('', ...atributos.map((a) => `${a.clave}: ${a.valor}`));
+  }
+
+  return lineas.join('\n');
 }
 
 function abrirFormularioAtributo(personaId, ctx) {

@@ -285,7 +285,27 @@ En orden de cercanía y no alfabético: de una lista corta se elige mirando, no 
 
 **La fecha de nacimiento, con las dos maneras de ponerla.** El selector del sistema es cómodo para lo cercano y penoso para lo lejano: poner 1947 exige recorrer setenta y nueve pantallas de calendario, y las fechas que se meten aquí son sobre todo de gente mayor. Al lado va una casilla en `dd/mm/aaaa`, que es como se dice una fecha en voz alta y se escribe de un tirón. Las dos escriben sobre el mismo valor y se copian la una a la otra; la de texto solo se cree lo que sea una fecha entera y válida —el 31 de febrero no cuela—, no protesta mientras se escribe, y al salir del campo se corrige sola a lo que haya guardado.
 
-### 7.2 Buscar
+### 7.2 La ficha
+
+**El círculo no se dice.** A la ficha se llega desde la rejilla de su círculo, así que repetirlo era enseñar lo que la pantalla anterior acababa de decir. En su lugar va el parentesco —el mismo relativo a quien mira: donde la rejilla ponía «mamá», la ficha no puede poner «madre»—. Cuando no hay parentesco escrito, el círculo vuelve como último recurso, que es lo que deja «Amigos» bajo el nombre de un amigo sin más dato.
+
+**El cumpleaños con la edad detrás**: «Cumple el 1 de agosto, y hará 16». Es lo que se pregunta justo después de la fecha.
+
+**Editar y compartir van arriba, junto al título**, como en el detalle de un evento, y no en un botón al pie. Editar solo lo ven los administradores.
+
+Compartir exporta **la cara pública y nada más**: cómo se llama, de quién es, cuándo cumple y lo que conviene recordar de ella —las tallas, las alergias—, que es justo lo que se le manda a quien pregunta qué comprarle.
+
+```
+Marta Ejemplo
+hija
+Cumple el 1 de agosto, y hará 16
+
+talla de calzado: 39
+```
+
+Ni una palabra de la dimensión de regalos: ni deseos, ni ideas apuntadas, ni histórico. Es la misma regla que rige el compartir de un evento, y aquí importa más, porque este texto sale del hogar. Tampoco se ofrece la redacción por IA: los datos de una persona son cuatro líneas de hechos, y contarlos «en dos frases» solo podría estropearlos.
+
+### 7.3 Buscar
 
 El buscador vive en la subcabecera, sobre los tres círculos, y lleva **un aspa que lo vacía y devuelve la pantalla a como estaba**, con la pestaña que hubiera abierta. `type="search"` trae una del navegador, pero en la cáscara de iOS no aparece, que es justo donde se usa esto.
 

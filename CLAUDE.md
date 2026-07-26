@@ -34,7 +34,7 @@ pendiente. El hook lo inyecta al final del mapa.
   está—. La pantalla de Gente está decidida y construida: tres círculos
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con
   conmutador y sin avatares, el parentesco relativo a quien mira y el género
-  para afinarlo. Está en `specs/ux.md` §7.1 y §7.2; el porqué de la elección se
+  para afinarlo. Está en `specs/ux.md` §7.1 a §7.3; el porqué de la elección se
   conserva en `specs/propuesta-familia-circulos.html`.
 - **Presupuesto.** El panel está retirado de la pestaña de Regalos mientras se
   decide qué forma tiene. Lo que sostiene sigue en pie y sin tocar: la escritura
