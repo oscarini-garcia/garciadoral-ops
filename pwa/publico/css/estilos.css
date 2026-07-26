@@ -297,11 +297,12 @@ button { background: none; border: 0; cursor: pointer; }
 .vistas .icono-accion { width: 34px; height: 34px; }
 .vistas .icono-accion .icono-svg svg { width: 17px; height: 17px; }
 
-/* En un teléfono los cuatro grupos no caben —se pasan de ochenta píxeles—, y
-   las flechas son lo único que sobra: el deslizamiento lateral hace ya eso
-   mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en cuanto hay sitio,
-   que es donde el ratón no tiene deslizamiento con el que pasar de semana. */
-@media (max-width: 479px) {
+/* Los cuatro grupos —vistas, flechas, compartir y «Hoy»— no caben en la anchura
+   de un teléfono, y las flechas son lo único que sobra: el deslizamiento
+   lateral hace ya eso mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en
+   cuanto hay sitio, que es también donde el ratón se queda sin deslizamiento
+   con el que pasar de semana. El corte está medido: a 410 px entran justas. */
+@media (max-width: 409px) {
   .vistas .paso { display: none; }
   .compartir-periodo { margin-left: auto; }
 }
@@ -467,6 +468,22 @@ button { background: none; border: 0; cursor: pointer; }
 .boton[data-tono="peligro"] { background: transparent; color: var(--regalo); }
 .boton:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
+
+/* Una de las maneras de compartir, en la hoja que se abre al tocar el botón.
+   Lleva su dibujo a la izquierda y su explicación debajo del nombre, que es lo
+   que un icono suelto en una cabecera no puede decir. */
+.eleccion {
+  display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+  min-height: var(--toque); padding: 11px 13px;
+  border: 1px solid var(--line); border-radius: var(--radio);
+  background: var(--paper-2); color: var(--ink);
+}
+.eleccion:hover { background: var(--paper-3); }
+.eleccion:disabled { opacity: .5; cursor: default; }
+.eleccion .icono-accion { flex: none; }
+.eleccion-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eleccion-nombre { font-size: 15.5px; }
+.eleccion-pista { font-size: 13px; color: var(--ink-soft); }
 
 /* Apartado plegable. El triángulo del navegador se retira y en su lugar va un
    ángulo a la derecha, que es donde el pulgar lo espera en un teléfono. */
