@@ -193,7 +193,9 @@ El nombre del primer apartado es el que se usa en casa para esas fechas. Mientra
 └──────────────────────────────┘
 ```
 
-**Los dos se pliegan, y arrancan distintos.** Las fechas señaladas van abiertas porque es a lo que se viene: son pocas y son las que hay que empujar. Los cumpleaños van plegados, con el próximo escrito en el rótulo: la lista entera es larga —está toda la familia— y la pregunta que trae aquí a alguien casi siempre es *quién es el siguiente*, que así se contesta sin desplegar nada. Lo que se pliegue se queda plegado mientras dure la sesión, porque la pantalla se rehace en cada sincronización y si no, plegar algo duraría unos segundos.
+**Los dos se pliegan, y los dos arrancan abiertos.** Lo que se viene a mirar está en los dos, y plegar sirve para quitar de en medio lo que hoy estorbe, no para tener que abrir algo cada vez que se entra. El rótulo de los cumpleaños dice de todos modos quién es el próximo y cuánto falta, que es lo que hace que plegarlos no cueste nada. Lo que se pliegue se queda plegado mientras dure la sesión, porque la pantalla se rehace en cada sincronización y si no, plegar algo duraría unos segundos.
+
+**Cada cumpleaños dice tres cosas y ninguna dos veces.** El nombre va entero, con apellidos, que es lo que distingue a dos Marías en una lista que las lleva a todas. A la derecha, cuánto falta: en días si es pronto, y por la fecha —«el 12 de Mayo»— cuando queda medio año, que es lo único que significa algo a esa distancia. **Con los de casa la cuenta atrás no se apaga nunca**: sus cumpleaños se llevan así todo el año, y «en 213 días» dice algo que su fecha no dice. Debajo, los años que cumple y qué hay pensado; y la fecha entera **solo cuando arriba van los días**, porque si la pastilla ya dice el día, escribirlo otra vez dos renglones más abajo es leer dos veces lo mismo.
 
 **Los cumpleaños no son filas de nada.** Salen de la fecha de nacimiento de cada ficha, igual que en la agenda, y se ordenan por el aniversario que viene: primero el que está más cerca. No se editan ni se borran desde aquí —se corrigen en la ficha, que es el dato de origen— y por eso su pastilla no lleva verbos detrás. A quien no tiene fecha no se le inventa una: no sale en la lista, pero al pie se dice cuántos son, porque un cumpleaños del que la agenda no va a avisar nunca es algo que conviene saber.
 
@@ -278,7 +280,9 @@ La pantalla se llama **Gente** en la barra, y *Familia* es uno de los tres círc
 
 Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto círculo obligaría a decidir en cada alta a cuál va cada quien, que es justo la pregunta que esta pantalla evita.
 
-**La forma.** Los cuatro de casa, arriba y siempre, en una fila de cuatro columnas. Debajo, un conmutador entre los otros dos círculos y una sola rejilla que cambia de contenido. Así la pantalla no crece cuando crecen los amigos, y queda dicho sin escribirlo que el hogar no es un grupo más.
+**La forma.** Los cuatro de casa, arriba y siempre, en una fila de cuatro columnas. Debajo, un conmutador entre los otros dos círculos y una sola lista que cambia de contenido. Así la pantalla no crece cuando crecen los amigos, y queda dicho sin escribirlo que el hogar no es un grupo más.
+
+**Rejilla arriba, lista abajo, y no por capricho.** La rejilla es para la familia: son cuatro y se reconocen por el hueco que ocupan, de modo que la forma ahorra leer. En Extendida y en Amigos la gente crece, y con ella los nombres largos, los parentescos que no caben en una celda y las dos Marías que solo distingue el apellido; ahí hace falta lo contrario, que es la lista de §7.3. Es **la misma** que devuelve el buscador, a propósito: son la misma pregunta hecha de dos maneras, y contestarla con dos formas distintas obligaría a aprenderlas por separado.
 
 ```
 ┌──────────────────────────────┐
@@ -370,7 +374,7 @@ Ni una palabra de la dimensión de regalos: ni deseos, ni ideas apuntadas, ni hi
 
 El buscador vive en la subcabecera, sobre los tres círculos, y lleva **un aspa que lo vacía y devuelve la pantalla a como estaba**, con la pestaña que hubiera abierta. `type="search"` trae una del navegador, pero en la cáscara de iOS no aparece, que es justo donde se usa esto.
 
-Lo que devuelve **no es una rejilla sino una tabla**. Una celda de rejilla da para un nombre corto y poco más, y el resultado de una búsqueda es donde hace falta lo contrario: tres columnas que se leen hacia abajo de un vistazo.
+Lo que devuelve **no es una rejilla sino una tabla** — la misma que dibujan los dos círculos abiertos. Tres columnas que se leen hacia abajo de un vistazo:
 
 | Quién | De qué | Cumple |
 |---|---|---|
@@ -382,7 +386,7 @@ El nombre va entero, con apellidos, que es lo que distingue a dos Marías. Y el 
 
 **El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
 
-**El «+» es una celda más de la rejilla**, con el borde discontinuo y el tamaño de una persona, al final del círculo al que pertenece. Puesto ahí no tiene que preguntar a cuál se añade. Familia no lo ofrece: quien intente crecerla se encuentra con que no hay por dónde, que es la manera más barata de sostener que son cuatro. El botón flotante desaparece de esta pantalla, porque un segundo «+» encima que hiciera otra cosa dejaría dos signos iguales con dos significados.
+**El «+» va al pie de la lista de su círculo**, con el borde discontinuo y el nombre del círculo escrito. Puesto ahí no tiene que preguntar a cuál se añade, que es lo que importaba. Familia no lo ofrece: quien intente crecerla se encuentra con que no hay por dónde, que es la manera más barata de sostener que son cuatro. El botón flotante desaparece de esta pantalla, porque un segundo «+» encima que hiciera otra cosa dejaría dos signos iguales con dos significados.
 
 **El buscador está encima de todo, no dentro de una pestaña.** Es el defecto conocido del conmutador —tener que acertar la pestaña antes de buscar—, y se resuelve así: mientras hay algo escrito la pantalla deja de estar dividida y enseña un único resultado sobre los tres círculos, con el círculo de cada persona escrito bajo su nombre. Al borrar la búsqueda vuelve la pestaña que estaba. Busca por nombre, apellidos y parentesco, e ignora las tildes: «abuel» tiene que dar con los dos abuelos aunque ninguno se llame así.
 

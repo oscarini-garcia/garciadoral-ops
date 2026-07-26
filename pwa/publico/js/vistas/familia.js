@@ -13,7 +13,8 @@ import {
 import { compartir, toque } from '../native.js';
 import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
 import {
-  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
+  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte,
+  nombreCompleto, nuevoId,
 } from '../modelo.js';
 import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, parsearMomento, proximoAniversario,
@@ -166,7 +167,7 @@ function tablaDePersonas(personas, ctx) {
             }
           },
         }, [
-          el('td', { texto: [persona.nombre, persona.apellidos].filter(Boolean).join(' ') }),
+          el('td', { texto: nombreCompleto(persona) }),
           el('td', { texto: deQuienEs(persona, ctx) }),
           el('td', {}, [celdaDeCumple(persona)]),
         ])),
@@ -677,7 +678,7 @@ function textoDeLaPersona(persona, ctx) {
     : deQuienEs(persona, ctx);
 
   const lineas = [
-    [persona.nombre, persona.apellidos].filter(Boolean).join(' '),
+    nombreCompleto(persona),
     quien,
     persona.fecha_nacimiento ? textoDeCumpleanos(persona) : null,
   ].filter(Boolean);
