@@ -23,6 +23,33 @@
   --sello-text: #5B7288;
   --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
 
+  /* El plano de arriba. Las hojas superpuestas no se sirven sobre el mismo
+     papel que las pestañas: llevan el suyo, un peldaño por encima, y dentro de
+     ellas la escala de papeles se recalcula entera (véase `.hoja`) para que lo
+     que va dentro conserve su relieve. En claro es un pliego más blanco y menos
+     cálido; en oscuro es **más claro**, que es como se lee la elevación cuando
+     no hay luz: lo que está más cerca recibe más. */
+  --paper-alto:   #FFFDFA;
+  --paper-alto-2: #F6F2EA;
+  --paper-alto-3: #EDE8DE;
+  --borde-alto:   rgba(28, 43, 51, .06);
+  /* El velo era un negro fijo para los dos temas, y en el oscuro no separaba
+     nada. Va uno por tema, y de paso más denso: lo de detrás deja de competir
+     con lo que se ha venido a leer. */
+  --velo:         rgba(8, 16, 20, .55);
+  /* La de las tarjetas decía «esto está apoyado». Una hoja no está apoyada:
+     está encima, y a bastante altura. */
+  --sombra-alta:  0 -2px 6px rgba(28, 43, 51, .10), 0 -20px 50px rgba(28, 43, 51, .22);
+  /* El hueco donde se escribe. No es un peldaño de la escala de papeles: esa
+     va en direcciones distintas según el tema —hacia el gris en claro, hacia la
+     luz en oscuro—, y un campo tiene que hundirse en los dos. Un hueco no se
+     levanta. Va uno por plano, porque dentro de una hoja el papel es otro y el
+     hueco tiene que seguir quedando por debajo del suyo. */
+  --hueco:            #F0EBE0;
+  --hueco-linea:      #DCD6C9;
+  --hueco-alto:       #F5F0E7;
+  --hueco-alto-linea: #E3DDD0;
+
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
   --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
@@ -50,6 +77,16 @@
     --sello-line: rgba(156, 176, 186, .22);
     --sello-text: #9CB0BA;
     --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    --paper-alto:   #1E282D;
+    --paper-alto-2: #253238;
+    --paper-alto-3: #2C3C43;
+    --borde-alto:   rgba(231, 238, 241, .07);
+    --velo:         rgba(0, 0, 0, .68);
+    --sombra-alta:  0 -2px 6px rgba(0, 0, 0, .5), 0 -20px 50px rgba(0, 0, 0, .6);
+    --hueco:            #0A0F11;
+    --hueco-linea:      #2A363C;
+    --hueco-alto:       #131B1F;
+    --hueco-alto-linea: #2C3A41;
   }
 }
 
@@ -61,6 +98,11 @@
   --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
   --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
   --sello-bg: #E9EEF3; --sello-line: rgba(110,134,158,.22); --sello-text: #5B7288;
+  --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA; --paper-alto-3: #EDE8DE;
+  --borde-alto: rgba(28,43,51,.06); --velo: rgba(8,16,20,.55);
+  --sombra-alta: 0 -2px 6px rgba(28,43,51,.10), 0 -20px 50px rgba(28,43,51,.22);
+  --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+  --hueco-alto: #F5F0E7; --hueco-alto-linea: #E3DDD0;
 }
 :root[data-tema="oscuro"] {
   --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
@@ -68,6 +110,11 @@
   --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
   --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
   --sello-bg: #1A252B; --sello-line: rgba(156,176,186,.22); --sello-text: #9CB0BA;
+  --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
+  --borde-alto: rgba(231,238,241,.07); --velo: rgba(0,0,0,.68);
+  --sombra-alta: 0 -2px 6px rgba(0,0,0,.5), 0 -20px 50px rgba(0,0,0,.6);
+  --hueco: #0A0F11; --hueco-linea: #2A363C;
+  --hueco-alto: #131B1F; --hueco-alto-linea: #2C3A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -486,8 +533,8 @@ button { background: none; border: 0; cursor: pointer; }
 .campo > label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
 .campo input, .campo select, .campo textarea {
   min-height: var(--toque);
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--hueco);
+  border: 1px solid var(--hueco-linea);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 16.5px; /* de 16 para arriba, o iOS hace zoom al enfocar */
@@ -665,14 +712,37 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* -------------------------------------------------------------- Hoja modal -- */
 
-.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(8, 16, 20, .42); }
+.scrim { position: fixed; inset: 0; z-index: 40; background: var(--velo); }
+
+/**
+ * La hoja es el plano de arriba, y se dibuja como tal.
+ *
+ * Las cuatro pestañas son el suelo: siempre están y se pasa de una a otra sin
+ * salir de ninguna. Todo lo que llega en una hoja —el día, el evento, el
+ * formulario, Ajustes, compartir— está encima, y de ahí hay que salir antes de
+ * seguir. Antes los dos planos compartían papel, borde y la sombra suave de las
+ * tarjetas, de modo que la diferencia había que deducirla del contenido.
+ *
+ * Lo que hace que esto salga barato es la línea de abajo: dentro de la hoja se
+ * redefine la escala entera de papeles, no solo el fondo. Todo lo que va dentro
+ * —tarjetas, campos, botones discretos, apartados— está escrito contra
+ * `--paper-2` y `--paper-3`, así que se recalcula solo sobre el papel elevado y
+ * conserva exactamente el relieve que tenía. Sin esto habría que repasar una a
+ * una cada pieza que vive en una hoja.
+ */
 .hoja {
+  --paper:   var(--paper-alto);
+  --paper-2: var(--paper-alto-2);
+  --paper-3: var(--paper-alto-3);
+  --hueco:       var(--hueco-alto);
+  --hueco-linea: var(--hueco-alto-linea);
+
   position: fixed; z-index: 41; left: 0; right: 0; bottom: 0;
   max-height: 88dvh; overflow-y: auto;
   background: var(--paper);
   border-radius: 18px 18px 0 0;
-  border-top: 1px solid var(--line);
-  box-shadow: var(--sombra);
+  border-top: 1px solid var(--borde-alto);
+  box-shadow: var(--sombra-alta);
   padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 14px;
   animation: subir .22s cubic-bezier(.22, .8, .3, 1);
