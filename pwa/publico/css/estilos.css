@@ -919,6 +919,10 @@ button { background: none; border: 0; cursor: pointer; }
 }
 
 .lista { display: flex; flex-direction: column; gap: 8px; }
+
+/* Un dato de una persona se escribe de corrido y puede traer saltos de línea
+   dentro, así que se respetan tal cual. */
+.dato { white-space: pre-wrap; overflow-wrap: anywhere; }
 .comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
 .comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
 .comentario p { font-size: 15px; }

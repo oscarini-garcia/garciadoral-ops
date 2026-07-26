@@ -568,8 +568,9 @@ export function abrirFicha(personaId, ctx) {
     cuerpo.append(el('div', { class: 'grupo' }, [
       el('p', { class: 'grupo-titulo', texto: 'Lo que conviene recordar' }),
       atributos.length
+        // `pre-wrap` porque ahora el dato puede traer saltos de línea dentro.
         ? el('div', { class: 'lista' }, atributos.map((atributo) =>
-            el('p', { texto: `${atributo.clave}: ${atributo.valor}` })))
+            el('p', { class: 'dato', texto: textoDelDato(atributo) })))
         : el('p', { class: 'pista', texto: 'Nada apuntado todavía.' }),
       el('button', {
         class: 'enlace-discreto', type: 'button',
@@ -685,36 +686,53 @@ function textoDeLaPersona(persona, ctx) {
 
   const atributos = ctx.vista.atributosDe(persona.id);
   if (atributos.length) {
-    lineas.push('', ...atributos.map((a) => `${a.clave}: ${a.valor}`));
+    lineas.push('', ...atributos.map(textoDelDato));
   }
 
   return lineas.join('\n');
 }
 
+/**
+ * Un dato es una casilla y no dos.
+ *
+ * Eran «qué dato» y «cuál es», que obliga a partir en dos algo que se piensa de
+ * una pieza. Casi nada de lo que conviene recordar de alguien tiene esa forma:
+ * «le da vergüenza que le canten el cumpleaños» no es una clave con su valor, y
+ * meterlo a la fuerza salía como «vergüenza: que le canten». Así que se escribe
+ * de corrido, y en varias líneas si hacen falta.
+ *
+ * Por debajo sigue siendo la misma fila —`clave` y `valor` de
+ * `atributo_persona`—, con la clave en blanco: cambiar el esquema por esto
+ * costaría una migración y dejaría atrás lo ya escrito. Lo de antes se sigue
+ * leyendo, con su «clave: valor» delante.
+ */
 function abrirFormularioAtributo(personaId, ctx) {
-  // Las claves son de creación libre, y se sugieren las ya usadas en el hogar:
-  // un catálogo cerrado envejecería mal (spec funcional §2).
-  const usadas = [...new Set((ctx.vista.datos.atributos_persona || []).map((a) => a.clave))];
-
   abrirHoja('Añadir un dato', (cuerpo) => {
-    const clave = entrada({ placeholder: 'talla de calzado', list: 'claves-usadas' });
-    const lista = el('datalist', { id: 'claves-usadas' }, usadas.map((valor) => el('option', { value: valor })));
-    const valor = entrada({ placeholder: '39' });
-    cuerpo.append(campo('Qué dato', clave), lista, campo('Cuál es', valor));
+    const texto = el('textarea', {
+      rows: '4',
+      placeholder: 'Talla de calzado 39. Le tiran los libros de cocina y no come frutos secos.',
+    });
+    cuerpo.append(campo('Qué conviene recordar', texto,
+      'Lo que sirva para acertar con ella: tallas, alergias, aficiones, manías.'));
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
-          if (!clave.value.trim() || !valor.value.trim()) return;
+          if (!texto.value.trim()) return;
           await guardar('atributo_persona', nuevoId(), {
-            persona_id: personaId, clave: clave.value.trim(), valor: valor.value.trim(), activo: 1,
+            persona_id: personaId, clave: '', valor: texto.value.trim(), activo: 1,
           });
           cerrarHoja(); ctx.refrescar();
         },
       }, ['Guardar']),
+      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });
 }
+
+/** Lo escrito de corrido va tal cual; lo de antes conserva su «clave: valor». */
+const textoDelDato = (atributo) =>
+  (atributo.clave ? `${atributo.clave}: ${atributo.valor}` : atributo.valor);
 
 /**
  * La fecha de nacimiento, con dos maneras de ponerla.
