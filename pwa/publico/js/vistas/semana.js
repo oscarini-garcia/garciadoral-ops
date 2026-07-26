@@ -24,7 +24,7 @@ import {
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, instanciasEn, iso,
   isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
-import { abrirDetalleRegalo, abrirSelectorDeRegalo } from './regalos.js';
+import { abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 
@@ -686,7 +686,9 @@ function bloqueDeRegalos(evento, ctx) {
     ]);
   }
 
-  const ocasion = ctx.vista.ocasionDeEvento(evento.id);
+  // Un cumpleaños no es una fila de `evento`, así que su ocasión no lo apunta:
+  // la busca por fecha y participante quien sabe hacerlo.
+  const ocasion = ocasionDeEvento(evento, ctx);
   const regalos = ocasion ? ctx.vista.regalosDe(ocasion.id) : [];
 
   return el('div', { class: 'grupo' }, [
