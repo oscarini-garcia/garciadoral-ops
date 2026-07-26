@@ -233,10 +233,10 @@ Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto c
 │ Familia            ⟳    ⚙   │
 │ ⌕ Buscar una persona         │
 ├──────────────────────────────┤
-│ FAMILIA                      │
+│ FAMILIA          (lo ve Marta)│
 │ ┌─────┐┌─────┐┌─────┐┌─────┐ │
 │ │Marta││Óscar││Lucía││ Ana │ │
-│ │hija ││padre││hija ││madre│ │
+│ │ yo  ││papá ││herma││mamá │ │
 │ │en 6d││3 nov││19feb││12may│ │
 │ └─────┘└─────┘└─────┘└─────┘ │
 │                              │
@@ -253,6 +253,17 @@ Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto c
 ```
 
 **Sin avatares.** Las iniciales sobre un color inventado no decían nada que no dijera el nombre, que va justo debajo. En su lugar va lo que de verdad se consulta —de quién es y cuándo cumple—, que además cabe en menos alto. El avatar se conserva en la cabecera de la ficha, donde identifica de quién es la hoja abierta y no compite con nada.
+
+**El parentesco, dentro de casa, se dice respecto a quien mira.** El campo lo escribió quien dio de alta a esa persona, y es el papel que ocupa en el hogar: «madre», «padre», «hija». Puesto tal cual bajo el nombre no dice nada de nadie —Marta leía «madre» junto a Ana, que no es la madre de nadie en abstracto sino la suya—, así que en el círculo de casa se traduce a lo que esa persona es para quien tiene el teléfono en la mano:
+
+| Mira | Ve a los mayores | Ve a los pequeños | Se ve a sí mismo |
+|---|---|---|---|
+| una hija | mamá, papá | hermana, hermano | yo |
+| la madre o el padre | pareja | hija, hijo | yo |
+
+Se infiere del dato, no se pregunta: nadie escribe dos veces lo mismo. Fuera de ese círculo no hay nada que inferir —la tía es la tía mire quien mire— y se deja lo escrito; tampoco se infiere cuando quien mira no es de casa, porque para alguien de fuera «madre» y «padre» sí describen el hogar. Lo que no encaje en esas formas se deja tal cual: menos útil, pero nunca falso. La ficha usa la misma traducción, para que no diga «madre» lo que en la rejilla ponía «mamá».
+
+De todo esto, la única inferencia que va más allá del dato es **«pareja»**: nadie ha escrito que los dos adultos lo sean, se deduce de que comparten hogar y generación. Es una línea de código y se quita sola si algún día deja de ser cierto.
 
 **El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
 

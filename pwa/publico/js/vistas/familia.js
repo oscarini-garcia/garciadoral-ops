@@ -134,8 +134,8 @@ function rejilla(personas, ctx, { columnas = 0, anadirA = null, conCirculo = fal
       el('span', {
         class: 'persona-quien',
         texto: conCirculo
-          ? [CIRCULOS[persona.circulo], persona.parentesco].filter(Boolean).join(' · ')
-          : persona.parentesco,
+          ? [CIRCULOS[persona.circulo], comoSeLlama(persona, ctx)].filter(Boolean).join(' · ')
+          : comoSeLlama(persona, ctx),
       }),
       notaDeCumple(persona),
     ]),
@@ -161,6 +161,61 @@ function rejilla(personas, ctx, { columnas = 0, anadirA = null, conCirculo = fal
 /** Lo que cumple antes, primero; y al final quien no tiene fecha, junto. */
 function ordenar(personas) {
   return [...personas].sort((a, b) => diasHastaElCumple(a) - diasHastaElCumple(b));
+}
+
+// ------------------------------------------------------- Quién es cada uno --
+
+/**
+ * Los papeles de casa, tal como los escribe quien da de alta a alguien.
+ *
+ * De cada uno se guardan dos cosas: en qué generación está, y cómo lo llama
+ * quien mira desde la de abajo —los mayores son «mamá» y «papá»; los pequeños,
+ * entre ellos, «hermana» y «hermano»—.
+ *
+ * El parentesco es texto libre, así que aquí solo se reconocen las formas que
+ * se usan de verdad. Lo que no encaje no se fuerza: se deja lo escrito, que
+ * será menos útil pero nunca falso.
+ */
+const PAPELES = {
+  madre: { generacion: 'mayor', desdeAbajo: 'mamá' },
+  mama: { generacion: 'mayor', desdeAbajo: 'mamá' },
+  padre: { generacion: 'mayor', desdeAbajo: 'papá' },
+  papa: { generacion: 'mayor', desdeAbajo: 'papá' },
+  hija: { generacion: 'menor', desdeAbajo: 'hermana', desdeArriba: 'hija' },
+  hijo: { generacion: 'menor', desdeAbajo: 'hermano', desdeArriba: 'hijo' },
+};
+
+const papel = (persona) => PAPELES[normalizar(persona?.parentesco)] || null;
+
+/**
+ * Qué es esta persona **para quien está mirando**.
+ *
+ * El parentesco de la ficha lo escribió quien la creó, y es el papel que ocupa
+ * en la casa: «madre», «padre», «hija». Puesto tal cual bajo el nombre no dice
+ * nada de nadie —Marta leía «madre» junto a Ana, que no es la madre de nadie en
+ * abstracto sino la suya—, así que dentro del círculo de casa se traduce: quien
+ * mira desde abajo ve «mamá», «papá» y «hermana»; quien mira desde arriba ve
+ * «hija» e «hijo».
+ *
+ * Fuera de ese círculo no hay nada que inferir —la tía es la tía mire quien
+ * mire— y se deja lo escrito. Tampoco se infiere cuando quien mira no es de
+ * casa: para alguien de fuera, «madre» y «padre» sí describen la casa.
+ */
+function comoSeLlama(persona, ctx) {
+  if (persona.circulo !== 'familia') return persona.parentesco;
+  if (persona.id === ctx.vista.yo?.id) return 'yo';
+
+  const suyo = papel(persona);
+  const mio = papel(ctx.vista.persona(ctx.vista.yo?.id));
+  if (!suyo || !mio) return persona.parentesco;
+
+  if (mio.generacion === 'menor') return suyo.desdeAbajo;
+  if (suyo.generacion === 'menor') return suyo.desdeArriba;
+  // Los dos adultos de una casa de cuatro. Es la única inferencia que da un
+  // paso más allá del dato: nadie ha escrito que sean pareja, se deduce de que
+  // comparten el hogar y la generación. Si alguna vez no fuera cierto, es esta
+  // línea la que hay que quitar.
+  return 'pareja';
 }
 
 function notaDeCumple(persona) {
@@ -374,7 +429,9 @@ export function abrirFicha(personaId, ctx) {
         el('p', {
           texto: [
             CIRCULOS[persona.circulo] || CIRCULOS.extendida,
-            persona.parentesco,
+            // El mismo «para quién» que en la rejilla: si allí pone «mamá», al
+            // abrir la ficha no puede poner «madre».
+            esMia ? null : comoSeLlama(persona, ctx),
             persona.tiene_cuenta ? persona.rol : 'sin cuenta',
           ].filter(Boolean).join(' · '),
         }),
