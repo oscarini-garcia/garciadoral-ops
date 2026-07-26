@@ -1,0 +1,734 @@
+<meta charset="utf-8">
+<title>Pedir otro regalo, y el orden del formulario — opciones</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
+     para que lo que se ve aquí sea lo que se verá allí. La Newsreader no puede
+     cargarse desde fuera, así que queda Georgia, que es su propio repuesto en
+     la cadena de la aplicación. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --regalo:     #E48FAE;
+      --regalo-suave:#33202A;
+      --aviso:      #E0A253;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 28px 20px 72px;
+  }
+  .hoja { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .parte {
+    border-top: 2px solid var(--ink); padding-top: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .parte p { color: var(--ink-soft); max-width: 62ch; }
+
+  /* -------------------------------------------------------------- Opciones -- */
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 720px) { .par { grid-template-columns: 320px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* --------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 320px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden;
+    font-size: 14px;
+  }
+  .tel-estado {
+    display: flex; align-items: center; justify-content: flex-end; gap: 7px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-faint);
+    padding: 9px 14px 0;
+  }
+  .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); }
+  .tel-fondo { padding: 10px 14px 0; opacity: .35; display: flex; flex-direction: column; gap: 7px; }
+  .tel-fondo .barra { height: 9px; border-radius: 999px; background: var(--paper-3); }
+  .tel-fondo .barra.corta { width: 45%; }
+
+  /* La hoja modal, dibujada sobre el propio teléfono. */
+  .tel-hoja {
+    background: var(--paper); border-top: 1px solid var(--line);
+    box-shadow: 0 -10px 24px rgba(28, 43, 51, .07);
+    padding: 9px 14px 16px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .asa { width: 34px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 3px; }
+  .hoja-cabecera { display: flex; align-items: center; gap: 10px; }
+  .hoja-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 17px; }
+  .hoja-cabecera .acciones-icono { margin-left: auto; display: inline-flex; gap: 6px; }
+  .icono-accion {
+    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    color: var(--ink-faint);
+  }
+  .icono-accion svg { width: 17px; height: 17px; }
+  .icono-accion.peligro { color: var(--regalo); }
+
+  /* Los campos del formulario de una idea. */
+  .campo { display: flex; flex-direction: column; gap: 4px; }
+  .campo > .rot { font-size: 10.5px; }
+  .control {
+    border: 1px solid var(--line); border-radius: 9px; background: var(--paper-2);
+    padding: 8px 10px; font-size: 13.5px; min-height: 34px;
+  }
+  .control.vacio { color: var(--ink-faint); }
+  .control.area { min-height: 52px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px;
+    font-size: 12.5px; color: var(--ink-soft); background: var(--paper-2);
+  }
+  .chip.on { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .plegado { font-size: 13px; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
+  .acciones { display: flex; gap: 8px; }
+  .boton {
+    border-radius: 9px; padding: 9px 15px; font-size: 14px; font-weight: 500;
+    background: var(--tinta); color: var(--paper); text-align: center;
+  }
+  .boton.discreto { background: var(--paper-3); color: var(--ink); font-weight: 400; }
+  .boton.crecer { flex: 1; }
+
+  /* El botón de la IA: el destello delante del rótulo. */
+  .boton-ia {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    border-radius: 9px; padding: 9px 12px; font-size: 13.5px;
+    background: var(--paper-3); color: var(--ink);
+  }
+  .boton-ia svg { width: 14px; height: 14px; color: var(--tinta); flex: none; }
+
+  /* La tarjeta con lo que ha propuesto el modelo. */
+  .propuesta {
+    border: 1px solid var(--tinta); border-radius: 12px; background: var(--tinta-suave);
+    padding: 11px 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .propuesta .que { font-size: 14.5px; font-weight: 500; }
+  .propuesta .porque { font-size: 12.5px; color: var(--ink-soft); }
+  .propuesta .pie { display: flex; gap: 7px; align-items: center; }
+  .propuesta .mini {
+    border-radius: 8px; padding: 6px 12px; font-size: 12.5px;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+  }
+  .propuesta .mini.principal { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .propuesta .cuenta { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); }
+
+  .listado { display: flex; flex-direction: column; gap: 7px; }
+  .listado .propuesta { background: var(--paper-2); border-color: var(--line); }
+  .listado .propuesta.elegida { background: var(--tinta-suave); border-color: var(--tinta); }
+
+  .aviso-burbuja {
+    align-self: center; background: var(--ink); color: var(--paper);
+    border-radius: 999px; padding: 5px 14px; font-size: 12px;
+  }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+  .lista-seca strong { color: var(--ink); }
+</style>
+
+<div class="hoja">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Pedir otro regalo, y el orden del formulario</h1>
+    <p>
+      Dos decisiones sobre la hoja de apuntar una idea. La primera: cómo se enseña lo que
+      propone el modelo y cómo se le pide otra cosa. La segunda: en qué orden van los campos.
+      Van juntas porque la propuesta cae dentro del formulario, y lo que se decida de una
+      mueve a la otra.
+    </p>
+  </header>
+
+  <!-- --------------------------------------------------- Lo que hay hoy -- -->
+
+  <section class="opcion" style="border-top: 0; padding-top: 0;">
+    <div class="opcion-cabeza">
+      <h2>Cómo está hoy, y qué falla</h2>
+      <p>
+        Sí se puede pedir más de una vez: el botón sigue ahí y se puede pulsar las veces que
+        haga falta. Lo que pasa al pulsarlo por segunda vez es el problema.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo">
+          <div class="barra"></div>
+          <div class="barra corta"></div>
+        </div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control">Cámara instantánea de bolsillo</div>
+          </div>
+          <div class="boton-ia">
+            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            Que lo proponga la IA para Marta
+          </div>
+          <div class="plegado">Dejarlo así</div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area">Lleva meses pidiéndola y no la tiene.</div>
+          </div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="no"><span>−</span><span><strong>Pisa lo escrito sin avisar.</strong> La propuesta cae directamente en el título y en la descripción. Si lo que había era bueno, ya no está.</span></div>
+        <div class="no"><span>−</span><span><strong>Repetir se muerde la cola.</strong> La pista que viaja es lo que hay escrito en los campos, y la segunda vez eso es justo lo que acaba de proponer: el modelo tiende a repetirse a sí mismo.</span></div>
+        <div class="no"><span>−</span><span>No se ve que se pueda pedir otra. El botón dice «que lo proponga», no «otra».</span></div>
+        <div class="si"><span>+</span><span>Un solo toque, ninguna pantalla nueva, y lo propuesto queda donde se va a corregir.</span></div>
+      </div>
+    </div>
+    <div class="nota pega">
+      <p>
+        <strong>Esto se arregla en cualquiera de las opciones</strong>, y conviene decirlo
+        aparte porque no es una cuestión de dibujo: la pista original —lo que se había escrito
+        antes de pedir nada— se guarda al pulsar la primera vez y es la que se manda siempre,
+        y al modelo se le pasa además la lista de lo que ya ha propuesto en esta sesión, con
+        el encargo de no repetirlo. Sin eso, «otra» devuelve casi lo mismo.
+      </p>
+      <p>
+        El freno del servidor son <strong>seis peticiones por persona y minuto</strong>,
+        compartidas con contar el día. Da para cinco o seis «otra» seguidas, que es más de lo
+        que nadie pide de verdad, pero conviene que el aviso lo diga con esas palabras cuando
+        se llegue.
+      </p>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Primera decisión</p>
+    <h2>Dónde aparece lo que propone el modelo</h2>
+    <p>Cuatro maneras, de la más barata a la más ambiciosa.</p>
+  </div>
+
+  <!-- ----------------------------------------------------------------- A -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">A</span>
+        <h2>Como ahora, con el botón dicho de otra manera</h2>
+      </div>
+      <p>
+        La propuesta sigue cayendo en los campos, pero el botón cambia de rótulo en cuanto
+        hay una: pasa a decir «Proponer otra». Se arreglan la pista y la repetición, y no se
+        toca nada más.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control">Cámara instantánea de bolsillo</div>
+          </div>
+          <div class="boton-ia">
+            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            Proponer otra para Marta
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area">Lleva meses pidiéndola y no la tiene.</div>
+          </div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Un toque por propuesta. Nada que aceptar, nada que cerrar.</span></div>
+        <div class="si"><span>+</span><span>Es media hora de trabajo: el rótulo, la memoria de la pista y el «no repitas».</span></div>
+        <div class="no"><span>−</span><span>Sigue pisando lo escrito. Quien tenía media descripción hecha la pierde y no hay vuelta atrás.</span></div>
+        <div class="no"><span>−</span><span>Comparar dos propuestas es imposible: la segunda borra a la primera.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- B -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">B</span>
+        <h2>Una hoja encima, con «Otra» y «Usarla»</h2>
+      </div>
+      <p>
+        Lo que pediste, tal cual: la propuesta llega en su propia hoja modal, sobre el
+        formulario. «Otra» pide una nueva sin salir; «Usarla» la escribe en los campos y
+        cierra; cerrar sin más no toca nada.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo">
+          <div class="barra"></div>
+          <div class="barra corta"></div>
+          <div class="barra"></div>
+        </div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera">
+            <h4>Para Marta</h4>
+            <span class="acciones-icono">
+              <span class="icono-accion">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+              </span>
+            </span>
+          </div>
+          <div class="propuesta">
+            <div class="que">Cámara instantánea de bolsillo</div>
+            <div class="porque">Lleva meses pidiéndola y no la tiene.</div>
+          </div>
+          <div class="acciones">
+            <div class="boton crecer">Usarla</div>
+            <div class="boton discreto">Otra</div>
+          </div>
+          <p class="rot" style="text-align:center">2ª de este rato · quedan 4 este minuto</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Nada se escribe hasta que se acepta. Lo que hubiera en los campos está a salvo.</span></div>
+        <div class="si"><span>+</span><span>«Otra» es un botón de verdad, con su sitio: no hay que adivinar que el de arriba se puede volver a pulsar.</span></div>
+        <div class="no"><span>−</span><span><strong>La aplicación solo tiene una hoja.</strong> Abrir la segunda cierra la primera: habría que apilarlas —pieza nueva— o rehacer el formulario al volver, con riesgo de perder lo escrito. Es, con diferencia, la opción más cara.</span></div>
+        <div class="no"><span>−</span><span>Tapa el formulario, así que no se ve dónde va a caer lo que se acepta.</span></div>
+        <div class="no"><span>−</span><span>Dos toques por propuesta buena: pedirla y aceptarla.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- C -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">C</span>
+        <h2>Una tarjeta dentro del formulario</h2>
+      </div>
+      <p>
+        Lo mismo que B —se ve antes de aceptar, y se puede pedir otra— pero sin segunda hoja:
+        la propuesta aparece como una tarjeta debajo del botón, con los campos a la vista
+        justo debajo. «Usarla» la baja a los campos y la tarjeta desaparece.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+          </div>
+          <div class="boton-ia">
+            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            Que lo proponga la IA para Marta
+          </div>
+          <div class="propuesta">
+            <div class="que">Hamaca de playa plegable</div>
+            <div class="porque">Se lleva la bici a todas partes y esto le cabe detrás.</div>
+            <div class="pie">
+              <span class="mini principal">Usarla</span>
+              <span class="mini">Otra</span>
+              <span class="cuenta">2ª de 6</span>
+            </div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Nada se pisa hasta aceptar, igual que en B, y se ve el campo donde va a caer.</span></div>
+        <div class="si"><span>+</span><span>Sin hoja nueva: la pieza es una tarjeta más dentro de la que ya está abierta. Barato y sin riesgo de perder lo escrito.</span></div>
+        <div class="si"><span>+</span><span>La cuenta —«2ª de 6»— dice de paso que esto tiene un límite, sin un aviso aparte.</span></div>
+        <div class="no"><span>−</span><span>La hoja crece: en un teléfono pequeño, con la tarjeta puesta hay que bajar para ver Guardar.</span></div>
+        <div class="no"><span>−</span><span>Dos toques por propuesta buena, como en B.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- D -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">D</span>
+        <h2>Tres de golpe, y se elige</h2>
+      </div>
+      <p>
+        Una sola llamada devuelve tres propuestas distintas y se tocan para elegir. «Otras
+        tres» pide una tanda nueva, que ya sabe cuáles se descartaron. Elegir entre varias es
+        más fácil que juzgar una sola: para un regalo, que es cuestión de gusto, importa.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control vacio">algo para el verano</div>
+          </div>
+          <div class="boton-ia">
+            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            Que lo proponga la IA para Marta
+          </div>
+          <div class="listado">
+            <div class="propuesta elegida">
+              <div class="que">Hamaca de playa plegable</div>
+              <div class="porque">Se lleva la bici a todas partes y esto le cabe detrás.</div>
+            </div>
+            <div class="propuesta">
+              <div class="que">Gafas de bucear con tubo</div>
+              <div class="porque">Este año le tocan las calas del norte.</div>
+            </div>
+            <div class="propuesta">
+              <div class="que">Altavoz que aguanta el agua</div>
+              <div class="porque">Escucha música en todas partes y el suyo no sale del cuarto.</div>
+            </div>
+          </div>
+          <div class="acciones">
+            <div class="boton discreto crecer">Otras tres</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Elegir es más fácil que aceptar o rechazar, y sale mejor: entre tres, casi siempre hay una que vale.</span></div>
+        <div class="si"><span>+</span><span>Una llamada por tanda. Tres propuestas cuestan casi lo mismo que una, y el freno del minuto deja de ser un problema.</span></div>
+        <div class="no"><span>−</span><span>Ocupa toda la hoja: el formulario se va abajo del todo y hay que desplazarse para llegar a Guardar.</span></div>
+        <div class="no"><span>−</span><span>Es lo más largo de esperar: tres propuestas tardan más que una, y son varios segundos con el botón parado.</span></div>
+        <div class="no"><span>−</span><span>Al modelo hay que pedirle un formato de tres, que es más frágil que dos líneas sueltas.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Segunda decisión</p>
+    <h2>El orden del formulario de la idea</h2>
+    <p>
+      Guardar ya está al final desde este mismo trabajo. Lo que queda por decidir es qué se ve
+      por encima sin desplegar nada: hoy solo el título, y la descripción está escondida
+      detrás de «Clasificarla», que es justo donde cae la mitad de lo que propone el modelo.
+    </p>
+  </div>
+
+  <!-- ----------------------------------------------------------------- E -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">E</span>
+        <h2>Qué y Descripción, uno detrás de otro</h2>
+      </div>
+      <p>
+        La descripción sube y se queda pegada al título. Detrás de «Clasificarla» quedan la
+        persona, el perfil, la categoría, el precio, el sitio y el enlace.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control vacio">Botas de montar</div>
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Las dos cosas que escribe una persona, juntas y en el orden en que se piensan.</span></div>
+        <div class="si"><span>+</span><span>Lo que propone el modelo cae entero a la vista, sin desplegar nada.</span></div>
+        <div class="no"><span>−</span><span>El botón de la IA no aparece: sin desplegar no hay a quién nombrar, y la propuesta es lo que más se venía a buscar.</span></div>
+        <div class="no"><span>−</span><span>La captura en diez segundos gana un campo que casi nunca se rellena de primeras.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- F -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">F</span>
+        <h2>Qué, Para quién y Descripción</h2>
+      </div>
+      <p>
+        Igual que E, con la persona por medio. Es el campo que decide dos cosas importantes
+        —a quién se le oculta la idea y si se puede proponer un regalo—, y es lo único de la
+        parte plegada que se toca casi siempre.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control vacio">Botas de montar</div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span>
+              <span class="chip">Óscar</span>
+              <span class="chip on">Marta</span>
+              <span class="chip">Lucía</span>
+              <span class="chip">la abuela</span>
+            </div>
+          </div>
+          <div class="boton-ia">
+            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            Que lo proponga la IA para Marta
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="plegado">Clasificarla</div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El botón de la IA aparece sin desplegar nada: nombrar a alguien está a un toque.</span></div>
+        <div class="si"><span>+</span><span>Lo que decide la ocultación deja de estar escondido, que es donde peor está.</span></div>
+        <div class="si"><span>+</span><span>El orden se lee como la frase que uno piensa: qué, para quién, por qué.</span></div>
+        <div class="no"><span>−</span><span>Es la hoja más alta de las tres. Con seis personas, la fila de nombres ocupa dos líneas.</span></div>
+        <div class="no"><span>−</span><span>Deja «Clasificarla» con lo residual —categoría, precio, sitio, enlace—, y el rótulo se queda grande para lo que esconde.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ----------------------------------------------------------------- G -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">G</span>
+        <h2>Sin plegar nada</h2>
+      </div>
+      <p>
+        Se retira el conmutador y el formulario se muestra entero, en un orden fijo, con
+        Guardar al final. Es lo que ya pasa al editar una idea, extendido también a crearla.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-hoja" style="border-top:0">
+          <div class="asa"></div>
+          <div class="hoja-cabecera"><h4>Apuntar una idea</h4></div>
+          <div class="campo">
+            <span class="rot">Qué</span>
+            <div class="control vacio">Botas de montar</div>
+          </div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips">
+              <span class="chip">Ana</span><span class="chip">Óscar</span>
+              <span class="chip on">Marta</span><span class="chip">Lucía</span>
+            </div>
+          </div>
+          <div class="boton-ia">
+            <svg viewBox="0 0 24 24"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor"/></svg>
+            Que lo proponga la IA para Marta
+          </div>
+          <div class="campo">
+            <span class="rot">Descripción</span>
+            <div class="control area vacio">Para acordarte dentro de seis meses</div>
+          </div>
+          <div class="campo">
+            <span class="rot">Categoría</span>
+            <div class="control vacio">Sin categoría</div>
+          </div>
+          <div class="campo">
+            <span class="rot">Precio aproximado</span>
+            <div class="control vacio">120</div>
+          </div>
+          <div class="acciones">
+            <div class="boton crecer">Guardar</div>
+            <div class="boton discreto">Cancelar</div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Una sola hoja para crear y para editar: nada que aprender dos veces.</span></div>
+        <div class="si"><span>+</span><span>Ningún campo escondido, ningún «¿dónde estaba el enlace?».</span></div>
+        <div class="no"><span>−</span><span>Se lleva por delante la captura en diez segundos, que es el punto del que sale toda esta pantalla (specs/ux.md §2 y §3): ocho campos para apuntar «botas de montar» en la cola del supermercado.</span></div>
+        <div class="no"><span>−</span><span>Guardar queda fuera de pantalla desde el primer momento.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- Cierre -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que yo haría</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>C y F.</strong> La tarjeta dentro del formulario hace lo que pides —ver la
+        propuesta antes de que toque nada, «otra» las veces que haga falta y un «usarla» que
+        la baja a los campos— sin la pieza nueva que exige la hoja modal, que es la única
+        parte de todo esto con riesgo de romper algo. Y con la persona arriba, la propuesta
+        está a un toque de distancia en lugar de a dos.
+      </p>
+      <p>
+        <strong>D me tienta</strong>, y si me dices que sí lo hago en su lugar: para un
+        regalo, elegir entre tres es mejor que aceptar una, y sale más barato en llamadas.
+        Lo que me frena es que llena la hoja entera y deja el formulario debajo del pliegue
+        justo cuando lo que quieres es guardar.
+      </p>
+      <p>
+        <strong>Sea cual sea</strong>, van dentro las dos correcciones de la nota de arriba:
+        la pista original se guarda y se manda siempre —no la propuesta anterior—, y al
+        modelo se le dice qué lleva propuesto para que no se repita.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que hace falta que decidas</h2>
+    </div>
+    <ol class="lista-seca">
+      <li><strong>Una de A, B, C o D</strong> para la propuesta. Si no dices nada, va C.</li>
+      <li><strong>Una de E, F o G</strong> para el orden. Si no dices nada, va F.</li>
+      <li>
+        Si prefieres D, dime si quieres <strong>tres o cuatro</strong> propuestas por tanda:
+        con cuatro se llena la pantalla, con dos casi no hay donde elegir.
+      </li>
+    </ol>
+  </section>
+
+</div>
