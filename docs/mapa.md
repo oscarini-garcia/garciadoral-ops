@@ -49,7 +49,7 @@ tener que recorrer la aplicación entera cada vez.
 - **redaccion.js** — Redacción del mensaje de un día con la API de Anthropic.
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO · leerConfiguracion
   configuracionPublica · guardarConfiguracion · cadenaDeModelos · modelosDisponibles
-  componerMaterial · redactar · …y 1 más
+  componerMaterial · componerMaterialDePeriodo · …y 2 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -89,7 +89,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 4 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 5 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
   cerrarHoja · hayHojaAbierta · …y 7 más
@@ -104,8 +104,8 @@ tener que recorrer la aplicación entera cada vez.
   reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirDetalleIdea
   abrirDetalleRegalo · abrirSelectorDeRegalo · abrirCapturaDeIdea
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
-  reiniciarAgenda · pintarAgenda · abrirDia · abrirDetalleEvento · bloqueDeComentarios
-  abrirFormularioEvento · anclaActual
+  reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
+  bloqueDeComentarios · abrirFormularioEvento · anclaActual
 
 ### `herramientas/` · Utilidades de desarrollo
 
@@ -129,7 +129,7 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/solicitudes` — bandeja de quien espera (administradores)
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
-- `POST /api/redactar` — el día de hoy, contado por un modelo
+- `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
@@ -137,6 +137,7 @@ tener que recorrer la aplicación entera cada vez.
 ## Workflows
 
 - **despachador** (`7 7 * * *`, workflow_dispatch) — Sondeo diario que despacha lo vencido, en lugar de dispararse a la hora exacta del mensaje:…
+- **desplegar la API** (push, workflow_dispatch) — Sube el Worker a Cloudflare cuando cambia `api/`.
 - **mantenimiento** (`13 4 1 * *`, workflow_dispatch) — GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por…
 - **bundle OTA** (push, workflow_dispatch) — Publica el bundle web que las apps iOS se descargan solas.
 - **plan-semanal** (`11 15 * * 0`, `11 17 * * 0`, `11 19 * * 0`, `11 21 * * 0`, workflow_dispatch) — El plan de la semana entrante, compuesto por destinatario y entregado por CallMeBot…
@@ -195,7 +196,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**137** en total.
+**143** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -205,7 +206,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
-- `api/test/redaccion.test.js` — 16
+- `api/test/redaccion.test.js` — 22
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 

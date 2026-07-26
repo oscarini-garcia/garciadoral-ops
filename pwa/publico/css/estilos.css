@@ -170,6 +170,15 @@ button { background: none; border: 0; cursor: pointer; }
 .titulo-pantalla {
   font-family: var(--serif);
   font-weight: 500; font-size: 26px; letter-spacing: -.01em;
+  min-width: 0; text-wrap: balance;
+}
+/* El de la agenda es una fecha y no un nombre: va en cifras, se compone mucho
+   más largo y tiene que caber al lado del indicador. Con el mes escrito entero
+   solo desborda la semana que cambia de año, una al año, que se parte en dos
+   antes que recortar el rótulo siempre. */
+.titulo-pantalla[data-pestana="semana"] {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
 }
 /* La agenda no pone título: allí la cabecera se queda con el indicador y los
    ajustes, que van igualmente contra el borde porque quien empuja es el
@@ -223,6 +232,10 @@ button { background: none; border: 0; cursor: pointer; }
    pulgar encuentra sitio libre. */
 .pantalla-agenda { display: flex; flex-direction: column; }
 .pantalla-agenda > * { flex: 1 0 auto; }
+/* El mes y la lista reparten ese alto entre su contenido y el blanco del
+   final, que es lo que recibe el doble toque para crear. */
+.cuerpo-agenda { display: flex; flex-direction: column; }
+.zona-libre { flex: 1 0 auto; min-height: 64px; }
 
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
@@ -257,9 +270,13 @@ button { background: none; border: 0; cursor: pointer; }
 .seg {
   display: inline-flex; gap: 3px; padding: 3px;
   background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+  /* Sus rótulos no encogen: si se le quita anchura, el texto se sale por
+     debajo del borde en lugar de estrecharse. Antes que eso, que baje de línea
+     lo que venga detrás. */
+  flex: none;
 }
 .seg button {
-  min-height: 36px; padding: 5px 13px; border-radius: 7px;
+  min-height: 36px; padding: 5px 10px; border-radius: 7px;
   font-size: 14.5px; color: var(--ink-soft);
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
@@ -268,27 +285,37 @@ button { background: none; border: 0; cursor: pointer; }
 .paso button { width: 36px; height: 36px; border-radius: 8px; color: var(--ink-soft); font-size: 19px; }
 .paso button:hover { background: var(--paper-2); }
 
-/* Los controles de la agenda, en dos líneas: primero de cuándo se habla y
-   luego con qué vista se mira. El periodo lleva el mes y el año porque el
-   número del día, solo, no dice en qué punto del calendario está uno. */
-.agenda-controles { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-.periodo { display: flex; align-items: center; gap: 8px; min-height: 36px; }
-.vistas { display: flex; align-items: center; gap: 8px; }
+/* Los mandos de la agenda, en una sola fila: con qué vista se mira, por dónde
+   se anda y cómo se lleva uno lo que ve. De cuándo se habla lo dice el título
+   de la pantalla, arriba, que es una fila que la agenda ya tenía puesta y no
+   estaba usando.
+   Son cuatro grupos en la anchura de un teléfono, así que el hueco entre ellos
+   es corto y los botones de compartir, algo más finos que los de una hoja. */
+.vistas { display: flex; align-items: center; gap: 6px; width: 100%; flex-wrap: wrap; }
+.compartir-periodo { display: inline-flex; gap: 6px; }
+.compartir-periodo:empty { display: none; }
+.vistas .icono-accion { width: 34px; height: 34px; }
+.vistas .icono-accion .icono-svg svg { width: 17px; height: 17px; }
+
+/* En un teléfono los cuatro grupos no caben —se pasan de ochenta píxeles—, y
+   las flechas son lo único que sobra: el deslizamiento lateral hace ya eso
+   mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en cuanto hay sitio,
+   que es donde el ratón no tiene deslizamiento con el que pasar de semana. */
+@media (max-width: 479px) {
+  .vistas .paso { display: none; }
+  .compartir-periodo { margin-left: auto; }
+}
+/* En los teléfonos estrechos de verdad, el conmutador aprieta un poco más. */
+@media (max-width: 360px) {
+  .seg button { padding: 5px 7px; font-size: 13.5px; }
+}
 /* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
 .boton-hoy {
-  min-height: 36px; padding: 5px 15px; border-radius: 999px;
+  min-height: 36px; padding: 5px 12px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--paper-2);
   font-size: 14.5px; color: var(--ink-soft);
 }
 .boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
-.periodo-titulo {
-  font-family: var(--serif);
-  font-weight: 500; font-size: 20px; letter-spacing: -.01em;
-  font-variant-numeric: tabular-nums;
-  /* Con el mes escrito entero solo desborda la semana que cambia de año, una
-     al año: en lugar de recortar el rótulo siempre, esa se parte en dos. */
-  min-width: 0; text-wrap: balance;
-}
 
 .empujar { margin-left: auto; }
 

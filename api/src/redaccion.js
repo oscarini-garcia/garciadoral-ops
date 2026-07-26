@@ -28,14 +28,19 @@ export const MODELOS_DE_RESERVA = [
 export const MODELO_POR_DEFECTO = MODELOS_DE_RESERVA[0].id;
 
 export const INSTRUCCION_POR_DEFECTO = [
-  'Eres quien escribe los recados de una familia. Te doy los eventos de un día.',
-  'Escribe un mensaje corto para WhatsApp que los cuente en dos o tres frases,',
-  'en español de España, en tono llano y cálido.',
+  'Eres quien escribe los recados de una familia. Te doy lo que hay en un día o',
+  'en unos cuantos días seguidos. Escribe un mensaje corto para WhatsApp que lo',
+  'cuente en dos o tres frases —cuatro si son muchos días—, en español de España,',
+  'en tono llano y cálido.',
   'No inventes nada que no esté en la lista, no añadas saludo ni despedida,',
   'y no uses emojis. Responde solo con el mensaje.',
 ].join(' ');
 
 const MAXIMO_EVENTOS = 20;
+// Un periodo da para más, pero no para todo: un mes cargado son cuarenta o
+// cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
+const MAXIMO_EVENTOS_PERIODO = 60;
+const MAXIMO_DIAS = 40;
 const LIMITE_POR_MINUTO = 6;
 const TOPE_DE_SALIDA = 400;
 
@@ -145,10 +150,31 @@ export async function modelosDisponibles(clave, buscar = fetch) {
 
 // -------------------------------------------------------------- El material --
 
-function formatearFecha(fecha) {
+function partes(fecha) {
   const [anio, mes, dia] = String(fecha).split('-').map(Number);
-  const momento = new Date(Date.UTC(anio, (mes || 1) - 1, dia || 1));
-  return `${NOMBRES_DIA[momento.getUTCDay()]} ${dia} de ${MESES[(mes || 1) - 1]}`;
+  return { anio, mes: mes || 1, dia: dia || 1 };
+}
+
+function formatearFecha(fecha) {
+  const { anio, mes, dia } = partes(fecha);
+  const momento = new Date(Date.UTC(anio, mes - 1, dia));
+  return `${NOMBRES_DIA[momento.getUTCDay()]} ${dia} de ${MESES[mes - 1]}`;
+}
+
+/** «del 20 al 26 de Julio de 2026», con el mes y el año repetidos solo cuando
+ *  el tramo los cruza. Es el encabezado que ve el modelo, y también lo único
+ *  que le dice de cuándo se está hablando. */
+function formatearRango(desde, hasta) {
+  const a = partes(desde);
+  const b = partes(hasta);
+  if (a.anio !== b.anio) {
+    return `del ${a.dia} de ${MESES[a.mes - 1]} de ${a.anio} al ${b.dia} de ${MESES[b.mes - 1]} de ${b.anio}`;
+  }
+  if (a.mes !== b.mes) {
+    return `del ${a.dia} de ${MESES[a.mes - 1]} al ${b.dia} de ${MESES[b.mes - 1]} de ${b.anio}`;
+  }
+  if (a.dia === b.dia) return `${formatearFecha(desde)} de ${a.anio}`;
+  return `del ${a.dia} al ${b.dia} de ${MESES[b.mes - 1]} de ${b.anio}`;
 }
 
 function horaDe(evento) {
@@ -169,14 +195,50 @@ export function componerMaterial(instantanea, fecha, ids = []) {
 
   for (const id of ids.slice(0, MAXIMO_EVENTOS)) {
     const evento = visibles.get(id);
-    if (!evento) continue;
-    const hora = horaDe(evento);
-    lineas.push([hora ? `${hora} ·` : 'todo el día ·', evento.titulo, evento.ubicacion ? `· ${evento.ubicacion}` : null]
-      .filter(Boolean)
-      .join(' '));
+    if (evento) lineas.push(lineaDe(evento));
   }
 
   return { titulo: formatearFecha(fecha), lineas };
+}
+
+function lineaDe(evento) {
+  const hora = horaDe(evento);
+  return [hora ? `${hora} ·` : 'todo el día ·', evento.titulo, evento.ubicacion ? `· ${evento.ubicacion}` : null]
+    .filter(Boolean)
+    .join(' ');
+}
+
+/**
+ * Lo mismo, pero de un tramo de días: la semana o el mes que se está mirando,
+ * o lo que viene en los próximos siete.
+ *
+ * El reparto por días lo manda el dispositivo, y a propósito: una repetición se
+ * expande allí, y traer esa regla al Worker sería una tercera copia de algo que
+ * este repositorio ya duplica a conciencia solo dos veces. Lo que el cliente
+ * manda son fechas e identificadores —nunca texto—, así que por aquí sigue sin
+ * poder colarse nada: el título, la hora y el sitio salen de la instantánea
+ * filtrada de quien pide, y el encabezado se compone aquí a partir del tramo.
+ */
+export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = [] }) {
+  const visibles = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+  const lineas = [];
+  let cuenta = 0;
+
+  for (const jornada of dias.slice(0, MAXIMO_DIAS)) {
+    const delDia = [];
+    for (const id of jornada.eventos || []) {
+      if (cuenta >= MAXIMO_EVENTOS_PERIODO) break;
+      const evento = visibles.get(id);
+      if (!evento) continue;
+      delDia.push(`  ${lineaDe(evento)}`);
+      cuenta += 1;
+    }
+    // Los días sin nada no se le cuentan al modelo: son la mayoría de un mes y
+    // solo servirían para que redactara sobre lo que no pasa.
+    if (delDia.length) lineas.push(`${formatearFecha(jornada.fecha)}:`, ...delDia);
+  }
+
+  return { titulo: formatearRango(desde, hasta), lineas };
 }
 
 // ----------------------------------------------------------------- Llamada --

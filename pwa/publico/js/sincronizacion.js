@@ -235,6 +235,21 @@ export async function redactarDia(fecha, eventos) {
   return texto;
 }
 
+/**
+ * Lo mismo con un tramo de días —la semana, el mes, lo que viene—.
+ *
+ * El reparto por días va desde aquí porque las repeticiones se expanden aquí:
+ * el Worker recibe fechas e identificadores, y compone el texto con los títulos
+ * de su propia instantánea.
+ */
+export async function redactarPeriodo(desde, hasta, dias) {
+  const { texto } = await peticion('/api/redactar', {
+    method: 'POST',
+    body: JSON.stringify({ desde, hasta, dias }),
+  });
+  return texto;
+}
+
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */
 export const leerAjustesDeIa = () => peticion('/api/ia');
 

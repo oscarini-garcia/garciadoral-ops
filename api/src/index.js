@@ -20,7 +20,7 @@
  *   GET    /api/solicitudes · bandeja de quien espera (administradores)
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
  *   GET    /api/registro    · registro completo para el generador del plan semanal
- *   POST   /api/redactar    · el día de hoy, contado por un modelo
+ *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
@@ -59,6 +59,7 @@ import { componerInstantanea } from './filtrado.js';
 import {
   cabeUnaMas,
   componerMaterial,
+  componerMaterialDePeriodo,
   configuracionPublica,
   guardarConfiguracion,
   leerConfiguracion,
@@ -364,6 +365,16 @@ async function conBanderaDeRedaccion(env, instantanea) {
 }
 
 /**
+ * Un día suelto o un tramo de días, según lo que traiga el cuerpo. Es la misma
+ * petición porque para quien la hace es el mismo gesto: contar lo que está
+ * mirando, sea un día, una semana o lo que viene.
+ */
+function materialDe(instantanea, { fecha, eventos = [], desde, hasta, dias }) {
+  if (desde) return componerMaterialDePeriodo(instantanea, { desde, hasta: hasta || desde, dias });
+  return componerMaterial(instantanea, fecha, eventos);
+}
+
+/**
  * El día de hoy, contado por un modelo.
  *
  * El cliente manda una fecha y los identificadores de lo que está viendo; el
@@ -377,12 +388,12 @@ async function contarElDia(peticion, env) {
     throw new Rechazo('demasiadas redacciones seguidas; prueba dentro de un minuto');
   }
 
-  const { fecha, eventos = [] } = await peticion.json().catch(() => ({}));
-  if (!fecha) return json({ error: 'falta la fecha' }, 400);
+  const cuerpo = await peticion.json().catch(() => ({}));
+  if (!cuerpo.fecha && !cuerpo.desde) return json({ error: 'falta la fecha' }, 400);
 
   const configuracion = await leerConfiguracion(env.DB);
   const registro = await leerRegistro(env.DB);
-  const material = componerMaterial(componerInstantanea(registro, lector), fecha, eventos);
+  const material = materialDe(componerInstantanea(registro, lector), cuerpo);
   const resultado = await redactar({ configuracion, material });
 
   if (!resultado.texto) {

@@ -1,0 +1,94 @@
+name: desplegar la API
+
+# Sube el Worker a Cloudflare cuando cambia `api/`.
+#
+# Antes se hacía a mano, con `npm run desplegar` desde una máquina con wrangler
+# y sesión iniciada. El problema no era el trabajo —son diez segundos— sino que
+# fuera un paso aparte: el código entraba en `main` y el servidor se quedaba
+# atrás sin que nada lo dijera, y las rutas nuevas contestaban 404 hasta que
+# alguien se acordaba. Publicar es parte de mergear, como ya lo es el bundle OTA.
+#
+# **Hace falta un secreto**, `CLOUDFLARE_API_TOKEN`, con permiso de edición sobre
+# Workers Scripts y sobre D1 (Settings → Secrets and variables → Actions). Y, si
+# ese token ve más de una cuenta de Cloudflare, además `CLOUDFLARE_ACCOUNT_ID`.
+# Sin el primero el workflow falla en el paso de desplegar y no toca nada.
+
+on:
+  # Con la casilla de las migraciones, para poder lanzarlo desde el navegador
+  # del móvil cuando una versión trae tablas nuevas.
+  workflow_dispatch:
+    inputs:
+      migrar:
+        description: 'Aplicar también las migraciones de esquema'
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - 'api/src/**'
+      - 'api/wrangler.toml'
+      - 'api/package.json'
+      - '.github/workflows/desplegar-api.yml'
+
+permissions:
+  contents: read
+
+# Dos despliegues a la vez dejarían viviendo al que acabe último, que no tiene
+# por qué ser el último commit.
+concurrency:
+  group: api
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Las pruebas, otra vez y aquí. `pruebas.yml` ya las pasó en la rama, pero
+      # lo que sale de este job se queda sirviendo a la familia en el acto: no
+      # hay revisión por delante ni nadie mirando.
+      - name: Pruebas del Worker
+        working-directory: api
+        run: node --test 'test/*.test.js'
+
+      # Solo a petición, y solo las de esquema. Todas se escriben con
+      # `CREATE TABLE IF NOT EXISTS`, de modo que aplicarlas de nuevo no toca lo
+      # que ya está. Los catálogos (0002) quedan fuera a propósito: van con
+      # `INSERT OR REPLACE` y pisarían lo que se haya cambiado desde la
+      # aplicación.
+      - name: Migraciones de esquema
+        if: inputs.migrar
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for fichero in migraciones/*.sql; do
+            case "$fichero" in *0002_catalogos.sql) echo "· $fichero (catálogos: se salta)"; continue;; esac
+            echo "→ $fichero"
+            npx --yes wrangler@4 d1 execute agenda-familiar --remote --yes --file="$fichero"
+          done
+
+      - name: Desplegar el Worker
+        working-directory: api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 deploy
+
+      # Que el despliegue diga «hecho» no es que la API conteste. Esto sí.
+      - name: Comprobar que responde
+        run: |
+          set -euo pipefail
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' \
+            https://agenda-familiar-api.oscarini.workers.dev/api/salud)
+          echo "/api/salud → $codigo"
+          test "$codigo" = "200"
