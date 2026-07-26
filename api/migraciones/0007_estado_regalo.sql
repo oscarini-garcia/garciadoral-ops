@@ -11,14 +11,7 @@
 -- **comprado**, que es «Listo»; y **entregado**, que es el que cierra el ciclo
 -- —pasa la idea a cerrada y manda el regalo al histórico de quien lo recibió—
 -- (specs/modelo-datos.md §4).
-
-PRAGMA foreign_keys = ON;
-
--- Lo que estuviera envuelto estaba comprado. Es una conversión y no una
--- pérdida: el estado retirado era posterior a la compra.
-UPDATE regalo SET estado = 'comprado', actualizado_en = datetime('now')
- WHERE estado = 'envuelto';
-
+--
 -- El `CHECK` de la tabla sigue admitiendo los cuatro valores a propósito.
 -- Estrecharlo obliga en SQLite a reconstruir la tabla entera —crear, copiar,
 -- borrar y renombrar, con las claves foráneas de `regalo` colgando—, y el
@@ -27,4 +20,15 @@ UPDATE regalo SET estado = 'comprado', actualizado_en = datetime('now')
 -- lado y el beneficio de ninguno.
 --
 -- Se puede repetir sin consecuencias, así que no lleva `.unavez`: la segunda vez
--- no encuentra ninguna fila que convertir.
+-- no encuentra ninguna fila que convertir. Por eso mismo **el fichero termina en
+-- una sentencia y no en comentarios**: se vuelve a ejecutar en cada despliegue
+-- de la API, y lo que queda detrás del último `;` se lo lleva `wrangler` a un
+-- aviso —«leftover buffer from sql.ingest»— que saldría siempre y que no avisa
+-- de nada.
+
+PRAGMA foreign_keys = ON;
+
+-- Lo que estuviera envuelto estaba comprado. Es una conversión y no una
+-- pérdida: el estado retirado era posterior a la compra.
+UPDATE regalo SET estado = 'comprado', actualizado_en = datetime('now')
+ WHERE estado = 'envuelto';
