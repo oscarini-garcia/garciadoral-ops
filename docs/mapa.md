@@ -106,9 +106,9 @@ tener que recorrer la aplicación entera cada vez.
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
-  reiniciarRegalos · pintarRegalos · seccionActual · personaDelCumple · ocasionDeEvento
-  abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo · abrirSelectorDeRegalo
-  …y 1 más
+  reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · personaDelCumple
+  ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo
+  …y 2 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
   abrirFormularioEvento · anclaActual
@@ -183,7 +183,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/semana.js` §8, §10.2
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/ui.js` §1, §3
   `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
-  `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2
+  `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
   `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/modelo.py` §7.1
   `scripts/agenda/semana.py` §10.2
 

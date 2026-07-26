@@ -53,8 +53,21 @@ export function reiniciarRegalos() {
   plegado = { senaladas: false, cumples: false, pasados: true };
 }
 
-/** Las tres secciones, en el orden del ciclo: se apunta, se compra, se celebra. */
-const SECCIONES = [['ideas', 'Ideas'], ['regalos', 'Regalos'], ['ocasiones', 'Ocasiones']];
+/**
+ * Los cuatro apartados. Los tres últimos van en el orden del ciclo —se apunta,
+ * se compra, se celebra— y **Deseos va el primero** porque no es un paso de ese
+ * ciclo: es el único sitio de la pestaña que habla de uno mismo, y ponerlo en
+ * medio partiría la historia por la mitad.
+ *
+ * Se abre en Ideas y no en el primero: lo que se viene a hacer aquí casi siempre
+ * es regalarle algo a alguien.
+ */
+const SECCIONES = [
+  ['deseos', 'Deseos'],
+  ['ideas', 'Ideas'],
+  ['regalos', 'Regalos'],
+  ['ocasiones', 'Ocasiones'],
+];
 
 export function pintarRegalos(pantalla, subcabecera, ctx) {
   vaciar(subcabecera).append(
@@ -70,12 +83,12 @@ export function pintarRegalos(pantalla, subcabecera, ctx) {
   );
 
   vaciar(pantalla);
-  if (seccion === 'ideas') {
+  if (seccion === 'ideas' || seccion === 'deseos') {
     // El cuerpo se estira hasta el final de la pantalla aunque haya tres ideas:
     // el hueco de debajo es donde se apunta la siguiente, y para eso tiene que
     // existir como sitio al que llegar con el dedo.
     pantalla.classList.add('pantalla-ideas');
-    pantalla.append(vistaIdeas(ctx));
+    pantalla.append(seccion === 'deseos' ? vistaDeseos(ctx) : vistaIdeas(ctx));
   } else if (seccion === 'regalos') {
     pantalla.append(vistaRegalos(ctx));
   } else {
@@ -84,6 +97,18 @@ export function pintarRegalos(pantalla, subcabecera, ctx) {
 }
 
 export const seccionActual = () => seccion;
+
+/**
+ * Qué crea el botón flotante, que es uno para toda la pestaña.
+ *
+ * En Deseos apunta un deseo —nace contigo puesto como destinatario, que es lo
+ * que lo convierte en uno—; en cualquier otro apartado, una idea. Un botón que
+ * hiciera siempre lo mismo obligaría a corregir el «para quién» justo en el
+ * apartado que existe para no tener que decirlo.
+ */
+export function nuevoDesdeRegalos(ctx) {
+  return abrirFormularioIdea(ctx, seccion === 'deseos' ? { paraPersona: ctx.vista.yo.id } : {});
+}
 
 // ----------------------------------------------------------------- Ideas --
 
@@ -132,26 +157,8 @@ function vistaIdeas(ctx) {
 
   contenedor.append(grupo);
 
-  /**
-   * Lo que uno se apunta para sí mismo, al final y en su propio grupo.
-   *
-   * Una idea cuyo único destinatario es quien la escribe se guarda como deseo
-   * —si no, la ocultación la haría desaparecer en el acto—, y los deseos no
-   * están en el banco: el banco es lo que se le regala a otros. El resultado
-   * era que apuntarse algo desde aquí parecía no guardarlo. Sigue sin
-   * mezclarse con lo demás, pero se ve donde se escribió.
-   */
-  const mios = ctx.vista.deseosDe(ctx.vista.yo.id);
-  if (mios.length && (!filtroPersona || filtroPersona === ctx.vista.yo.id)) {
-    contenedor.append(el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: 'Lo que pides tú' }),
-      ...mios.map((idea) => tarjetaDeIdea(idea, ctx)),
-      el('p', {
-        class: 'pista',
-        texto: 'Esto lo ve tu familia en tu ficha. Si alguien te lo acaba regalando no te enterarás por aquí: eso se coordina sin ti.',
-      }),
-    ]));
-  }
+  // Lo que uno se apunta para sí mismo ya no está aquí: tiene su propio
+  // apartado, el primero de la fila. Aquí solo hay lo que se le regala a otros.
 
   // La misma regla que en la agenda: doblar el toque sobre lo que está en
   // blanco crea ahí. Si hay un filtro de persona puesto, la idea nace ya para
@@ -164,33 +171,94 @@ function vistaIdeas(ctx) {
   return contenedor;
 }
 
+// ---------------------------------------------------------------- Deseos --
+
+/**
+ * Lo que uno pide, en su propio apartado.
+ *
+ * Estaba al final de la lista de ideas, de prestado, y no es lo mismo: el banco
+ * de ideas es lo que la casa le regala a alguien, y esto es lo único de la
+ * pestaña que habla de uno mismo. Tenerlo aparte hace además que apuntarse algo
+ * deje de ser un efecto secundario de nombrarse a sí mismo en un formulario:
+ * aquí se entra y se apunta, y el «para quién» ya está puesto (specs/ux.md §6.3).
+ *
+ * **Lo que nunca se dice aquí es cómo va.** Un deseo cogido para regalártelo
+ * sigue apareciendo en esta lista igual que los demás: la pastilla que en el
+ * banco avisa de que algo ya está en marcha sería, en tu propia lista, el aviso
+ * de que alguien te ha comprado eso. Por eso la tarjeta va sin ella.
+ */
+function vistaDeseos(ctx) {
+  const contenedor = el('div', { class: 'cuerpo-ideas' });
+  const mios = ctx.vista.deseosDe(ctx.vista.yo.id);
+
+  const grupo = el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: `${mios.length} ${mios.length === 1 ? 'cosa pedida' : 'cosas pedidas'}` }),
+  ]);
+
+  if (!mios.length) {
+    grupo.append(el('p', {
+      class: 'vacio',
+      texto: 'Nada pedido todavía. Dos toques en el hueco apuntan lo que te gustaría que te regalasen.',
+    }));
+  }
+  for (const idea of mios) grupo.append(tarjetaDeIdea(idea, ctx));
+
+  grupo.append(el('p', {
+    class: 'pista',
+    texto: 'Esto lo ve tu familia en tu ficha, y les sale al prepararte un regalo. Si alguien te lo acaba regalando no te enterarás por aquí: eso se coordina sin ti.',
+  }));
+
+  contenedor.append(grupo);
+  contenedor.append(dobleToque(
+    el('div', { class: 'zona-libre', 'aria-hidden': 'true' }),
+    () => { toque(); abrirFormularioIdea(ctx, { paraPersona: ctx.vista.yo.id }); },
+  ));
+
+  return contenedor;
+}
+
+// ----------------------------------------------------------------- Común --
+
+/** El precio de una idea, que puede venir como horquilla o como cifra suelta.
+ *  Lo escriben la tarjeta del banco y la línea del selector, y tiene que salir
+ *  igual en las dos. */
+function precioDe(idea) {
+  if (!idea.precio_min && !idea.precio_max) return null;
+  const desde = formatearImporte(idea.precio_min ?? idea.precio_max);
+  return idea.precio_min && idea.precio_max ? `${desde}–${formatearImporte(idea.precio_max)}` : desde;
+}
+
 function tarjetaDeIdea(idea, ctx) {
   const destinos = (idea.orientaciones || []).map((o) =>
     o.persona_id ? ctx.vista.nombre(o.persona_id) : ctx.vista.etiqueta(o.etiqueta_id)?.nombre,
   ).filter(Boolean);
 
-  const precio = idea.precio_min || idea.precio_max
-    ? `${formatearImporte(idea.precio_min ?? idea.precio_max)}${idea.precio_max && idea.precio_min ? `–${formatearImporte(idea.precio_max)}` : ''}`
-    : null;
+  const precio = precioDe(idea);
 
   return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleIdea(idea.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: idea.titulo }),
       // El estado «en curso» mantiene la idea a la vista, señalada con su
       // ocasión: retirarla invitaría a que otra persona la registrase de nuevo.
-      idea.estado === 'en_curso'
+      //
+      // Sobre lo que uno pide para sí mismo, ese sello no se pinta jamás: ahí
+      // no diría «alguien está con esto», diría «alguien te ha comprado esto».
+      idea.estado === 'en_curso' && !esDeseoPropio(idea, ctx)
         ? el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: 'en curso' })
         : null,
     ]),
     el('p', {
-      texto: [
-        destinos.length ? `Para ${destinos.join(', ')}` : 'Sin destinatario',
-        precio,
-        ctx.vista.categoria(idea.categoria_id)?.nombre,
-        // En un deseo propio, «de Óscar · para Óscar» no dice nada dos veces.
-        idea.autor_id === ctx.vista.yo.id && idea.tipo === 'deseo'
-          ? null : `de ${ctx.vista.nombre(idea.autor_id)}`,
-      ].filter(Boolean).join(' · '),
+      // En lo que uno pide para sí mismo no van ni el destinatario ni el autor:
+      // los dos son quien está mirando, y «Para Marta · de Marta» en la lista de
+      // Marta es decir dos veces lo único que ya se sabe.
+      texto: (esDeseoPropio(idea, ctx)
+        ? [precio, ctx.vista.categoria(idea.categoria_id)?.nombre]
+        : [
+          destinos.length ? `Para ${destinos.join(', ')}` : 'Sin destinatario',
+          precio,
+          ctx.vista.categoria(idea.categoria_id)?.nombre,
+          `de ${ctx.vista.nombre(idea.autor_id)}`,
+        ]).filter(Boolean).join(' · '),
     }),
   ]);
 }
@@ -587,7 +655,7 @@ function tarjetaDeCumple(persona, ctx) {
   const esMio = persona.id === ctx.vista.yo.id;
   const ocasion = ocasionDelCumple(persona, ctx);
   const regalos = ocasion ? ctx.vista.regalosDe(ocasion.id).length : 0;
-  const ideas = ctx.vista.ideasPara(persona.id).length;
+  const ideas = ctx.vista.ideasPara(persona.id).length + ctx.vista.deseosDe(persona.id).length;
 
   // Del cumpleaños propio no se dice cuántos regalos hay, ni siquiera que hay
   // cero: si el recuento apareciera solo cuando existe, su ausencia contaría lo
@@ -595,7 +663,7 @@ function tarjetaDeCumple(persona, ctx) {
   const preparativos = esMio
     ? null
     : regalos ? `${regalos} ${regalos === 1 ? 'regalo' : 'regalos'}`
-      : ideas ? `${ideas} ${ideas === 1 ? 'idea apuntada' : 'ideas apuntadas'}`
+      : ideas ? `${ideas} ${ideas === 1 ? 'cosa pensada' : 'cosas pensadas'}`
         : 'nada pensado todavía';
 
   const falta = cuandoCumple(persona);
@@ -851,7 +919,10 @@ async function copiarFelicitacion(felicitacion) {
 function bloqueDeRegalosDelCumple(persona, ctx, reabrir) {
   const ocasion = ocasionDelCumple(persona, ctx);
   const regalos = ocasion ? ctx.vista.regalosDe(ocasion.id) : [];
-  const ideas = ctx.vista.ideasPara(persona.id);
+  // Lo que ha pedido cuenta igual que lo que se le ha apuntado: las dos cosas
+  // salen al elegir el regalo, así que las dos valen para decir si hay algo
+  // pensado o no hay nada.
+  const ideas = [...ctx.vista.ideasPara(persona.id), ...ctx.vista.deseosDe(persona.id)];
 
   // Quitar uno tiene que rehacer **esta hoja**, no solo la pantalla de detrás:
   // `ctx.refrescar()` repinta la pestaña, pero la hoja se construyó una vez y se
@@ -864,8 +935,8 @@ function bloqueDeRegalosDelCumple(persona, ctx, reabrir) {
     regalos.length ? null : el('p', {
       class: 'pista',
       texto: ideas.length
-        ? `Nada asignado todavía, pero hay ${ideas.length} ${ideas.length === 1 ? 'idea apuntada' : 'ideas apuntadas'} para ${persona.nombre}.`
-        : 'Nada asignado todavía, y ninguna idea apuntada tampoco.',
+        ? `Nada asignado todavía, pero hay ${ideas.length} ${ideas.length === 1 ? 'cosa pensada' : 'cosas pensadas'} para ${persona.nombre}.`
+        : 'Nada asignado todavía, y nada pensado tampoco.',
     }),
     el('button', {
       class: 'boton', 'data-tono': 'discreto', type: 'button',
@@ -1152,6 +1223,21 @@ export function abrirSelectorDeRegalo(
   const deQuien = (idea) => (idea.orientaciones || []).map((o) => o.persona_id).filter(Boolean);
   const encaja = (idea) => !filtro || normalizar(idea.titulo).includes(normalizar(filtro));
 
+  /**
+   * Lo que ha pedido quien va a recibir el regalo.
+   *
+   * No está en el banco de ideas —un deseo es de quien lo escribe, no una idea
+   * que la casa apunta para otro— y por eso hasta ahora no salía por aquí: lo
+   * que alguien pedía solo se podía coger entrando en su ficha, justo cuando lo
+   * que se estaba haciendo era prepararle un regalo. Va el primero de la lista,
+   * porque una cosa que te han pedido gana a cualquier idea.
+   */
+  const pedidas = () => (para ? ctx.vista.deseosDe(para) : []);
+
+  /** Todo lo que se puede elegir ahora mismo, para leer lo marcado de una sola
+   *  lista: los deseos no están en el banco y se perderían al asociar. */
+  const elegibles = () => [...apuntadas, ...pedidas()];
+
   const titulo = para ? `Regalos para ${ctx.vista.nombre(para)}` : 'Asociar un regalo';
 
   abrirHoja(titulo, (cuerpo) => {
@@ -1187,17 +1273,21 @@ export function abrirSelectorDeRegalo(
      * repetirlo en cada línea sería ruido. Ahí, en cambio, hace falta para
      * saber a quién se la estás quitando.
      */
-    const marca = (idea, { conDestino = false } = {}) => {
+    const marca = (idea, { conDestino = false, pedido = false } = {}) => {
       const puesta = marcadas.has(idea.id);
       const destinos = conDestino
         ? (idea.orientaciones || [])
           .map((o) => (o.persona_id ? ctx.vista.nombre(o.persona_id) : ctx.vista.etiqueta(o.etiqueta_id)?.nombre))
           .filter(Boolean)
         : [];
-      const pista = [
-        destinos.length ? `para ${destinos.join(', ')}` : null,
-        `de ${ctx.vista.nombre(idea.autor_id)}`,
-      ].filter(Boolean).join(' · ');
+      // En lo que ha pedido la propia persona, «de Marta» sobra: lo dice el
+      // rótulo del grupo. En su lugar va lo que sí ayuda a decidir.
+      const pista = pedido
+        ? [precioDe(idea), ctx.vista.categoria(idea.categoria_id)?.nombre].filter(Boolean).join(' · ')
+        : [
+          destinos.length ? `para ${destinos.join(', ')}` : null,
+          `de ${ctx.vista.nombre(idea.autor_id)}`,
+        ].filter(Boolean).join(' · ');
       const fila = el('button', {
         class: 'tarjeta eleccion-idea', type: 'button',
         'aria-pressed': puesta ? 'true' : 'false',
@@ -1221,6 +1311,7 @@ export function abrirSelectorDeRegalo(
       : []);
 
     function pintar() {
+      const pide = pedidas().filter(encaja);
       const suyas = apuntadas.filter((i) => para && deQuien(i).includes(para)).filter(encaja);
       // «Sin destinatario» es la idea que no nombra a nadie: la apuntada solo con
       // una etiqueta —«adolescente», «viajera»— o sin nada. Sirve para cualquiera,
@@ -1229,11 +1320,12 @@ export function abrirSelectorDeRegalo(
       const otras = apuntadas.filter((i) => !suyas.includes(i) && !sueltas.includes(i)).filter(encaja);
 
       vaciar(lista).append(
+        ...grupo(para ? `Lo que pide ${ctx.vista.nombre(para)}` : 'Lo que ha pedido', pide, { pedido: true }),
         ...grupo(para ? `Apuntadas para ${ctx.vista.nombre(para)}` : 'Apuntadas', suyas),
         ...grupo('Sin destinatario', sueltas),
         ...(verOtras ? grupo('De otras personas', otras, { conDestino: true }) : []),
       );
-      if (!suyas.length && !sueltas.length && !(verOtras && otras.length)) {
+      if (!pide.length && !suyas.length && !sueltas.length && !(verOtras && otras.length)) {
         lista.append(el('p', {
           class: 'vacio',
           texto: filtro
@@ -1274,7 +1366,7 @@ export function abrirSelectorDeRegalo(
       ctx.refrescar();
     };
 
-    pie.onclick = () => asociar(apuntadas.filter((i) => marcadas.has(i.id)));
+    pie.onclick = () => asociar(elegibles().filter((i) => marcadas.has(i.id)));
 
     pintar();
   });
@@ -1528,7 +1620,11 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     },
   }) : null;
 
-  abrirHoja(existente ? 'Editar idea' : 'Apuntar una idea', (cuerpo) => {
+  // El título dice qué se está apuntando: desde Deseos se viene a pedir algo,
+  // no a apuntarle una idea a otro.
+  const esUnDeseo = existente ? esDeseoPropio(existente, ctx) : paraPersona === ctx.vista.yo.id;
+  abrirHoja(existente ? (esUnDeseo ? 'Editar el deseo' : 'Editar idea')
+    : esUnDeseo ? 'Pedir algo' : 'Apuntar una idea', (cuerpo) => {
     const titulo = entrada({ value: existente?.titulo || '', autofocus: true });
 
     // El destello vive dentro del campo que va a rellenar, al final, como la
@@ -1576,19 +1672,30 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     const descripcion = el('textarea', {});
     descripcion.value = existente?.descripcion || '';
 
-    cuerpo.append(campoDeGente(ctx, {
-      etiqueta: 'Para quién',
-      pista: 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.',
-      elegidos: destinatarios,
-      alCambiar: (ids) => { destinatarios = ids; ajustarPedir(); avisoDeDeseo(); },
-    }));
+    // Pidiendo algo no se pregunta para quién: se sabe. El campo entero sobra, y
+    // con él sobra el aviso de que esto se guarda como un deseo, que era lo que
+    // había que decir cuando uno llegaba aquí sin querer.
+    const pistaDeseo = el('p', { class: 'pista', hidden: true });
+    if (esUnDeseo) {
+      cuerpo.append(el('p', {
+        class: 'pista',
+        texto: 'Es para ti. Lo ve tu familia, y a ti no se te dirá si alguien lo coge.',
+      }));
+    } else {
+      cuerpo.append(campoDeGente(ctx, {
+        etiqueta: 'Para quién',
+        pista: 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.',
+        elegidos: destinatarios,
+        alCambiar: (ids) => { destinatarios = ids; ajustarPedir(); avisoDeDeseo(); },
+      }));
 
-    // Marcarse a uno mismo cambia lo que se está apuntando, y conviene decirlo
-    // antes de guardar: lo que se escribe deja de ser una idea para regalar y
-    // pasa a ser lo que uno pide, que vive en otro sitio.
-    const pistaDeseo = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: true });
-    pistaDeseo.textContent = 'Solo estás tú: esto se guarda como algo que pides, y aparece en tu ficha y en «Lo que pides tú», no entre las ideas para regalar.';
-    cuerpo.append(pistaDeseo);
+      // Marcarse a uno mismo cambia lo que se está apuntando, y conviene decirlo
+      // antes de guardar: lo que se escribe deja de ser una idea para regalar y
+      // pasa a ser lo que uno pide, que vive en otro sitio.
+      pistaDeseo.setAttribute('data-tono', 'aviso');
+      pistaDeseo.textContent = 'Solo estás tú: esto se guarda como algo que pides. Va a Deseos y a tu ficha, no al banco de ideas para regalar.';
+      cuerpo.append(pistaDeseo);
+    }
     function avisoDeDeseo() { pistaDeseo.hidden = !soloParaMi(); }
     cuerpo.append(campo('Descripción', descripcion));
 
@@ -1712,7 +1819,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       toque('media');
       cerrarHoja();
       avisar(existente ? 'Idea actualizada'
-        : soloParaMi() ? 'Apuntado en lo que pides' : 'Idea apuntada');
+        : soloParaMi() ? 'Apuntado en Deseos' : 'Idea apuntada');
       ctx.refrescar();
     };
 
