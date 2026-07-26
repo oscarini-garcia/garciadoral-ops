@@ -17,7 +17,7 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
   deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
-import { guardar, redactarDia, retirar } from '../sincronizacion.js';
+import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, TECHO_EVENTOS_DIA,
@@ -81,6 +81,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
         paso('‹', -1, 'Anterior'),
         paso('›', 1, 'Siguiente'),
       ]),
+      el('div', { class: `compartir-periodo${modo === 'lista' ? ' empujar' : ''}` }, accionesDelPeriodo(ctx)),
       // Volver es tan necesario como irse: con las flechas y el deslizamiento,
       // tres gestos distraídos dejan la agenda en un mes que no le importa a
       // nadie y sin forma evidente de regresar.
@@ -113,6 +114,120 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
     ultimoPaso = 0;
   }
   pantalla.append(cuerpo);
+}
+
+/**
+ * Los días que abarca lo que se está mirando, para compartirlo.
+ *
+ * La lista no es un periodo: arranca en hoy y llega a seis meses vista, y
+ * mandar eso entero da un mensaje que nadie lee. Desde ahí se comparte **lo que
+ * viene en siete días**, que es lo mismo que manda el plan de los domingos: así
+ * no hay dos ideas distintas de «lo que viene» rondando la aplicación.
+ */
+function diasDelPeriodo() {
+  if (modo === 'semana') return diasDeLaSemana(lunesDe(ancla));
+  if (modo === 'lista') return Array.from({ length: 7 }, (_, i) => sumarDias(hoy(), i));
+
+  const primero = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
+  const cuantos = new Date(ancla.getFullYear(), ancla.getMonth() + 1, 0).getDate();
+  return Array.from({ length: cuantos }, (_, i) => sumarDias(primero, i));
+}
+
+/** El rótulo de lo que se comparte. No sirve `tituloDeAgenda`: en la lista dice
+ *  «desde Julio de 2026», que no es el tramo que sale por el compartir. */
+function tituloDeLoCompartido(dias) {
+  if (modo === 'semana') return formatearRango(dias[0]);
+  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
+  return `Del ${dias[0].getDate()} de ${MESES_LARGOS[dias[0].getMonth()]}`
+    + ` al ${dias[6].getDate()} de ${MESES_LARGOS[dias[6].getMonth()]}`;
+}
+
+function repartoDelPeriodo(ctx, dias) {
+  return repartirPorDia(instanciasEn(ctx.vista.datos, dias[0], dias[dias.length - 1]), dias);
+}
+
+/**
+ * El periodo entero como texto: el rótulo y, debajo, un bloque por día con
+ * algo. Los días vacíos no salen —en un mes son la mayoría— y con ellos se iría
+ * en blanco media pantalla del mensaje.
+ */
+function textoDelPeriodo(ctx, dias, reparto) {
+  const bloques = [];
+  for (const dia of dias) {
+    const apariciones = reparto.get(iso(dia)) || [];
+    if (!apariciones.length) continue;
+    const lineas = apariciones.map((aparicion) => {
+      const hora = horaDe(aparicion);
+      const cara = ctx.vista.caraDe(aparicion.evento);
+      return [
+        cara.emoji,
+        hora ? `${hora} ·` : null,
+        cara.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+        aparicion.evento.ubicacion ? `· ${aparicion.evento.ubicacion}` : null,
+      ].filter(Boolean).join(' ');
+    });
+    bloques.push([formatearFechaLarga(dia), ...lineas].join('\n'));
+  }
+  return bloques;
+}
+
+/** Los dos botones de compartir de la cabecera, con el mismo par de dibujos que
+ *  la hoja de un día: lo que cambia es cuánto abarcan, no lo que hacen. */
+function accionesDelPeriodo(ctx) {
+  const dias = diasDelPeriodo();
+  const reparto = repartoDelPeriodo(ctx, dias);
+  const bloques = textoDelPeriodo(ctx, dias, reparto);
+  // Un periodo sin nada no se ofrece: no habría nada que enviar.
+  if (!bloques.length) return [];
+
+  const titulo = tituloDeLoCompartido(dias);
+  const talCual = () => compartirTexto(titulo, `${titulo}\n\n${bloques.join('\n\n')}`);
+
+  const plano = botonIcono('compartir', {
+    etiqueta: `Compartir ${nombreDelPeriodo()}`,
+    onclick: () => { toque(); talCual(); },
+  });
+  if (!redaccionDisponible(ctx.vista.datos)) return [plano];
+
+  const contado = botonIcono('compartir', {
+    etiqueta: `Compartir ${nombreDelPeriodo()} contado`,
+    insignia: 'destello',
+    onclick: () => contarElPeriodo(dias, reparto, titulo, talCual, [plano, contado]),
+  });
+  return [plano, contado];
+}
+
+const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : modo === 'lista' ? 'lo que viene' : 'la semana');
+
+async function contarElPeriodo(dias, reparto, titulo, talCual, botones) {
+  toque();
+  for (const boton of botones) boton.disabled = true;
+
+  let texto = null;
+  let fallo = null;
+  try {
+    texto = await redactarPeriodo(iso(dias[0]), iso(dias[dias.length - 1]), dias.map((dia) => ({
+      fecha: iso(dia),
+      eventos: (reparto.get(iso(dia)) || []).map((aparicion) => aparicion.evento.id),
+    })));
+  } catch (error) {
+    fallo = error;
+  } finally {
+    for (const boton of botones) boton.disabled = false;
+  }
+
+  if (!texto) {
+    if (fallo?.datos?.intentos) console.warn('redacción fallida:', fallo.datos.intentos);
+    avisar('No he podido contarlo: va la lista tal cual');
+    await talCual();
+    return;
+  }
+  await compartirTexto(titulo, texto);
+}
+
+async function compartirTexto(titulo, texto) {
+  const enviado = await compartir({ titulo, texto });
+  if (!enviado) avisar('No he podido compartirlo');
 }
 
 function mover(pasos) {
@@ -410,8 +525,7 @@ async function contarElDia(fecha, apariciones, ctx, botones) {
     return;
   }
 
-  const enviado = await compartir({ titulo: formatearFechaLarga(fecha), texto });
-  if (!enviado) avisar('No he podido compartirlo');
+  await compartirTexto(formatearFechaLarga(fecha), texto);
 }
 
 /**
@@ -433,8 +547,7 @@ async function compartirDia(fecha, apariciones, ctx) {
     ].filter(Boolean).join(' ');
   });
 
-  const enviado = await compartir({ titulo, texto: `${titulo}\n${lineas.join('\n')}` });
-  if (!enviado) avisar('No he podido compartirlo');
+  await compartirTexto(titulo, `${titulo}\n${lineas.join('\n')}`);
 }
 
 // -------------------------------------------------------- Detalle de evento --

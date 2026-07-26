@@ -17,6 +17,7 @@ import {
   MODELOS_DE_RESERVA,
   cadenaDeModelos,
   componerMaterial,
+  componerMaterialDePeriodo,
   configuracionPublica,
   modelosDisponibles,
   redactar,
@@ -82,6 +83,93 @@ test('un día sin nada da un material vacío, y entonces no se llama a nadie', a
 
   assert.equal(resultado.texto, null);
   assert.equal(buscar.llamadas.length, 0);
+});
+
+// ------------------------------------------------------ El material del tramo --
+
+const INSTANTANEA_LARGA = {
+  eventos: [
+    ...INSTANTANEA.eventos,
+    { id: 'e3', titulo: 'Entreno de hípica', inicio: '2026-04-13T18:00:00', jornada_completa: 0 },
+    { id: 'e4', titulo: 'Dentista', inicio: '2026-04-16T10:00:00', jornada_completa: 0 },
+  ],
+};
+
+const SEMANA = {
+  desde: '2026-04-13',
+  hasta: '2026-04-19',
+  dias: [
+    { fecha: '2026-04-13', eventos: ['e3'] },
+    { fecha: '2026-04-14', eventos: ['e1', 'e2'] },
+    { fecha: '2026-04-15', eventos: [] },
+    { fecha: '2026-04-16', eventos: ['e4'] },
+  ],
+};
+
+test('el tramo se compone por días, con el rango por encabezado', () => {
+  const material = componerMaterialDePeriodo(INSTANTANEA_LARGA, SEMANA);
+
+  assert.equal(material.titulo, 'del 13 al 19 de Abril de 2026');
+  assert.deepEqual(material.lineas, [
+    'lunes 13 de Abril:',
+    '  18:00 · Entreno de hípica',
+    'martes 14 de Abril:',
+    '  09:00 · Dentista · Calle Mayor 3',
+    '  todo el día · Cumpleaños de la abuela',
+    'jueves 16 de Abril:',
+    '  10:00 · Dentista',
+  ]);
+});
+
+test('los días sin nada no llegan al modelo', () => {
+  const material = componerMaterialDePeriodo(INSTANTANEA_LARGA, SEMANA);
+  assert.equal(material.lineas.some((l) => l.startsWith('miércoles 15')), false);
+});
+
+test('tampoco en un tramo sale lo que no está en la instantánea de quien pide', () => {
+  const material = componerMaterialDePeriodo(INSTANTANEA_LARGA, {
+    desde: '2026-04-13',
+    hasta: '2026-04-13',
+    dias: [{ fecha: '2026-04-13', eventos: ['reservado', 'e3', 'de-otra-familia'] }],
+  });
+
+  assert.deepEqual(material.lineas, ['lunes 13 de Abril:', '  18:00 · Entreno de hípica']);
+});
+
+test('el rango dice el mes dos veces solo cuando lo cruza, y el año cuando lo cruza', () => {
+  const rango = (desde, hasta) => componerMaterialDePeriodo({ eventos: [] }, { desde, hasta, dias: [] }).titulo;
+
+  assert.equal(rango('2026-04-13', '2026-04-19'), 'del 13 al 19 de Abril de 2026');
+  assert.equal(rango('2026-04-27', '2026-05-03'), 'del 27 de Abril al 3 de Mayo de 2026');
+  assert.equal(rango('2026-12-28', '2027-01-03'), 'del 28 de Diciembre de 2026 al 3 de Enero de 2027');
+  assert.equal(rango('2026-04-14', '2026-04-14'), 'martes 14 de Abril de 2026');
+});
+
+test('un tramo entero vacío no llama a nadie', async () => {
+  const material = componerMaterialDePeriodo(INSTANTANEA_LARGA, {
+    desde: '2026-05-01', hasta: '2026-05-31', dias: [{ fecha: '2026-05-04', eventos: [] }],
+  });
+  assert.equal(material.lineas.length, 0);
+
+  const buscar = fetchDe([respuestaConTexto('no debería llegar aquí')]);
+  const resultado = await redactar({ configuracion: CONFIGURACION, material, buscar });
+  assert.equal(resultado.texto, null);
+  assert.equal(buscar.llamadas.length, 0);
+});
+
+test('un mes desbordado se corta por arriba en lugar de mandarlo entero', () => {
+  const eventos = Array.from({ length: 80 }, (_, i) => ({
+    id: `x${i}`, titulo: `Evento ${i}`, inicio: '2026-04-14T09:00:00', jornada_completa: 0,
+  }));
+  const material = componerMaterialDePeriodo({ eventos }, {
+    desde: '2026-04-01',
+    hasta: '2026-04-30',
+    dias: Array.from({ length: 80 }, (_, i) => ({ fecha: '2026-04-14', eventos: [`x${i}`] })),
+  });
+
+  // Sesenta eventos como mucho, y no más de cuarenta días recorridos.
+  const deEventos = material.lineas.filter((l) => l.startsWith('  '));
+  assert.equal(deEventos.length, 40);
 });
 
 // ----------------------------------------------------------- Configuración --

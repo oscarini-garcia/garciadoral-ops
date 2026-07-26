@@ -270,9 +270,13 @@ button { background: none; border: 0; cursor: pointer; }
 .seg {
   display: inline-flex; gap: 3px; padding: 3px;
   background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+  /* Sus rótulos no encogen: si se le quita anchura, el texto se sale por
+     debajo del borde en lugar de estrecharse. Antes que eso, que baje de línea
+     lo que venga detrás. */
+  flex: none;
 }
 .seg button {
-  min-height: 36px; padding: 5px 13px; border-radius: 7px;
+  min-height: 36px; padding: 5px 10px; border-radius: 7px;
   font-size: 14.5px; color: var(--ink-soft);
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
@@ -281,13 +285,33 @@ button { background: none; border: 0; cursor: pointer; }
 .paso button { width: 36px; height: 36px; border-radius: 8px; color: var(--ink-soft); font-size: 19px; }
 .paso button:hover { background: var(--paper-2); }
 
-/* Los mandos de la agenda, en una sola fila: con qué vista se mira y por dónde
-   se anda. De cuándo se habla lo dice el título de la pantalla, arriba, que es
-   una fila que la agenda ya tenía puesta y no estaba usando. */
-.vistas { display: flex; align-items: center; gap: 8px; width: 100%; }
+/* Los mandos de la agenda, en una sola fila: con qué vista se mira, por dónde
+   se anda y cómo se lleva uno lo que ve. De cuándo se habla lo dice el título
+   de la pantalla, arriba, que es una fila que la agenda ya tenía puesta y no
+   estaba usando.
+   Son cuatro grupos en la anchura de un teléfono, así que el hueco entre ellos
+   es corto y los botones de compartir, algo más finos que los de una hoja. */
+.vistas { display: flex; align-items: center; gap: 6px; width: 100%; flex-wrap: wrap; }
+.compartir-periodo { display: inline-flex; gap: 6px; }
+.compartir-periodo:empty { display: none; }
+.vistas .icono-accion { width: 34px; height: 34px; }
+.vistas .icono-accion .icono-svg svg { width: 17px; height: 17px; }
+
+/* En un teléfono los cuatro grupos no caben —se pasan de ochenta píxeles—, y
+   las flechas son lo único que sobra: el deslizamiento lateral hace ya eso
+   mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en cuanto hay sitio,
+   que es donde el ratón no tiene deslizamiento con el que pasar de semana. */
+@media (max-width: 479px) {
+  .vistas .paso { display: none; }
+  .compartir-periodo { margin-left: auto; }
+}
+/* En los teléfonos estrechos de verdad, el conmutador aprieta un poco más. */
+@media (max-width: 360px) {
+  .seg button { padding: 5px 7px; font-size: 13.5px; }
+}
 /* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
 .boton-hoy {
-  min-height: 36px; padding: 5px 15px; border-radius: 999px;
+  min-height: 36px; padding: 5px 12px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--paper-2);
   font-size: 14.5px; color: var(--ink-soft);
 }

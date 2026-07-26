@@ -129,8 +129,9 @@ ellos.
 La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
 la base de datos desde *Ajustes → Contar el día con IA*, dentro de la propia
 aplicación y solo para administradores. Es lo que enciende el segundo botón de
-compartir un día, el que lo cuenta en dos frases antes de enviarlo. Sin clave, el
-botón sencillamente no aparece y todo lo demás funciona igual. Se registra allí y
+compartir —el del destello—, tanto en un día como en la semana, el mes o lo que
+viene: el que lo cuenta en dos frases antes de enviarlo. Sin clave, ese botón
+sencillamente no aparece y todo lo demás funciona igual. Se registra allí y
 no aquí porque es lo único de esta instalación que se cambia con cierta
 frecuencia —al rotarla, al cambiar de modelo— y hacerlo con `wrangler` obligaría
 a volver a desplegar cada vez.
