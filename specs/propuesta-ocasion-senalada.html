@@ -1,0 +1,638 @@
+<meta charset="utf-8">
+<title>La ocasión de una fecha señalada — propuesta</title>
+
+<style>
+  :root {
+    color-scheme: light dark;
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sello-bg: #E9EEF3; --sello-line: rgba(110,134,158,.22); --sello-text: #5B7288;
+    --sombra: 0 1px 2px rgba(28,43,51,.06), 0 8px 24px rgba(28,43,51,.06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --paper-alto: #1E282D; --hueco: #131B1F; --hueco-linea: #2C3A41;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sello-bg: #1A252B; --sello-line: rgba(156,176,186,.22); --sello-text: #9CB0BA;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"], :root[data-theme="claro"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sello-bg: #E9EEF3; --sello-line: rgba(110,134,158,.22); --sello-text: #5B7288;
+  }
+  :root[data-theme="dark"], :root[data-theme="oscuro"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --hueco: #131B1F; --hueco-linea: #2C3A41;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --sello-bg: #1A252B; --sello-line: rgba(156,176,186,.22); --sello-text: #9CB0BA;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 23px; }
+  h3 { font-size: 19px; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: .87em; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p, .parte-cabeza p { color: var(--ink-soft); max-width: 68ch; }
+
+  .parte { display: flex; flex-direction: column; gap: 26px; border-top: 2px solid var(--tinta); padding-top: 20px; }
+  .parte-cabeza { display: flex; flex-direction: column; gap: 9px; }
+  .numero { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--tinta); }
+
+  .opcion { display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--line); padding-top: 20px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 68ch; }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  .con-juicio { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 880px) { .con-juicio { grid-template-columns: auto 1fr; } }
+  .pareja { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .pie { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-top: 7px; text-align: center; }
+
+  /* --------------------------------------------------------- La hoja ----- */
+
+  .hoja {
+    width: 272px;
+    background: var(--paper-alto);
+    border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: var(--sombra);
+    padding: 9px 14px 15px;
+    display: flex; flex-direction: column; gap: 13px;
+    font-size: 13px;
+  }
+  .asa { width: 32px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 2px; }
+  .cabecera { display: flex; align-items: flex-start; gap: 9px; }
+  .cabecera h4 { margin: 0; flex: 1; font-family: var(--serif); font-weight: 500; font-size: 16px; color: var(--ink); }
+  .iconos { display: flex; gap: 5px; flex: none; }
+  .ico {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: var(--tinta-suave); color: var(--tinta); font-size: 13px;
+  }
+  .ico.discreto { background: var(--paper-2); color: var(--ink-soft); }
+
+  .seccion { display: flex; flex-direction: column; gap: 6px; }
+
+  /* El rótulo de hoy: mono, diminuto, en versalitas. */
+  .rotulo-viejo { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* El rótulo propuesto: el nombre con el cuerpo de un título. */
+  .persona-fila { display: flex; align-items: baseline; gap: 8px; }
+  .persona-nombre { font-family: var(--serif); font-size: 16.5px; font-weight: 500; color: var(--ink); }
+  .mas {
+    margin-left: auto; flex: none; align-self: center;
+    width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    background: var(--tinta-suave); color: var(--tinta); font-size: 16px; line-height: 1;
+  }
+  .cuentas { color: var(--ink-soft); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .cuentas .dinero { color: var(--ink); }
+  .cuentas .falta { color: var(--aviso); }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 999px;
+    padding: 2px 8px; font-size: 10.5px; color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip.dinero { background: var(--tinta-suave); border-color: transparent; color: var(--tinta); }
+  .chip.falta { background: var(--regalo-suave); border-color: transparent; color: var(--regalo); }
+
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; display: flex; align-items: center; gap: 9px;
+  }
+  .tarjeta .txt { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .tarjeta .n { color: var(--ink); }
+  .tarjeta .p { color: var(--ink-soft); font-size: 11px; }
+  .etiqueta { flex: none; background: var(--regalo-suave); color: var(--regalo); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-family: var(--mono); }
+
+  .sello {
+    background: var(--sello-bg); border: 1px dashed var(--sello-line); border-radius: 10px;
+    padding: 12px 10px; text-align: center; color: var(--sello-text);
+  }
+  .sello strong { display: block; font-family: var(--serif); font-weight: 500; font-size: 14px; }
+  .sello span { font-size: 11px; opacity: .85; }
+
+  .pista { color: var(--ink-soft); font-size: 11.5px; }
+  .enlace { color: var(--ink-soft); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+  .boton { text-align: center; border-radius: 9px; padding: 9px 12px; font-size: 13px; background: var(--paper-3); color: var(--ink); }
+  .tachado { color: var(--ink-faint); text-decoration: line-through; }
+
+  .tabla { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .tabla th { text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); padding-bottom: 8px; font-weight: 400; }
+  .tabla td { padding: 8px 12px 8px 0; border-top: 1px solid var(--line); color: var(--ink-soft); vertical-align: top; }
+  .tabla td:first-child { color: var(--ink); white-space: nowrap; }
+  .desplazable { overflow-x: auto; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line); border-left: 3px solid var(--tinta);
+    border-radius: 12px; padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota.aviso { border-left-color: var(--aviso); }
+  .nota p { color: var(--ink-soft); max-width: 70ch; }
+  .nota strong { color: var(--ink); }
+
+  .lista { display: flex; flex-direction: column; gap: 9px; }
+  .lista div { display: grid; grid-template-columns: 14px 1fr; gap: 10px; color: var(--ink-soft); }
+  .lista span:first-child { color: var(--tinta); font-family: var(--mono); }
+  .lista b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>La ocasión de una fecha señalada</h1>
+    <p>
+      Lo que se ve al abrir «Navidad 2026»: una sección por persona con sus regalos. Se pide
+      que el nombre pese más, que cada sección diga cómo va lo suyo —cuántos regalos, cuántos
+      faltan por comprar y cuánto se va a gastar—, que añadir un regalo sea un «+» en esa misma
+      línea, que uno mismo salga siempre y el último, y que los demás vayan por edad.
+    </p>
+    <p>
+      Todos los ejemplos están mirados por <b>Ana</b>, que es de casa y administradora.
+    </p>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════ Lo que hay hoy ══ -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Punto de partida</p>
+      <h2>Lo que hay hoy</h2>
+      <p>
+        El nombre de cada persona es un rótulo de sección como cualquier otro de la aplicación:
+        monoespaciado, diminuto y en versalitas. Debajo, sus regalos y un enlace para añadir.
+        Al final, un botón para duplicar la ocasión para otro año. El orden es el que traiga la
+        base de datos.
+      </p>
+    </div>
+
+    <div class="pareja">
+      <div>
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera">
+            <h4>Navidad 2026</h4>
+            <div class="iconos"><span class="ico">✎</span></div>
+          </div>
+          <div class="seccion">
+            <p class="rotulo-viejo">Marta</p>
+            <div class="tarjeta">
+              <div class="txt"><span class="n">Botas de montar</span><span class="p">lo lleva Ana · 97 €</span></div>
+              <span class="etiqueta">comprado</span>
+            </div>
+            <p class="enlace">Añadir un regalo para Marta</p>
+          </div>
+          <div class="seccion">
+            <p class="rotulo-viejo">Ana</p>
+            <div class="sello"><strong>Por aquí no se mira</strong><span>Vuelve otro día.</span></div>
+          </div>
+          <div style="display: flex; gap: 7px">
+            <div class="boton" style="flex: 1">Duplicar para otro año</div>
+            <div class="boton" style="flex: 1">Darla por cerrada</div>
+          </div>
+        </div>
+        <p class="pie">hoy</p>
+      </div>
+
+      <div class="juicio" style="max-width: 46ch">
+        <div class="no"><span>✗</span><span>El nombre de la persona pesa menos que el título de su regalo, y es lo que organiza la pantalla.</span></div>
+        <div class="no"><span>✗</span><span>No se sabe cómo va lo de nadie sin contar las tarjetas a ojo, y el dinero no aparece por ningún lado.</span></div>
+        <div class="no"><span>✗</span><span>«Añadir un regalo para Marta» ocupa una línea entera por persona, y con seis personas son seis líneas diciendo lo mismo.</span></div>
+        <div class="no"><span>✗</span><span>Quien no participa no sale: si a alguien no se le ha asignado nada todavía, hay que editar la ocasión para que aparezca.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════ 1. La cabecera de cada uno ══ -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Parte 1</p>
+      <h2>La cabecera de cada persona</h2>
+      <p>
+        Tres maneras de meter el nombre grande, tres cuentas y un «+» en el mismo sitio. La
+        pantalla es un teléfono de 390 puntos y las secciones se repiten seis veces, así que lo
+        que se decide aquí se paga —o se ahorra— seis veces.
+      </p>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>Todo en una línea</h3></div>
+        <p>El nombre, las cuentas y el «+» a la misma altura. Es la más compacta y la que menos alto gasta.</p>
+      </div>
+      <div class="con-juicio">
+        <div>
+          <div class="hoja">
+            <div class="asa"></div>
+            <div class="cabecera">
+              <h4>Navidad 2026</h4>
+              <div class="iconos"><span class="ico">✎</span></div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">el abuelo</span>
+                <span class="cuentas">1 · <span class="falta">1 por comprar</span></span>
+                <span class="mas">+</span>
+              </div>
+              <div class="tarjeta">
+                <div class="txt"><span class="n">Manta de viaje</span><span class="p">sin responsable</span></div>
+                <span class="etiqueta">pendiente</span>
+              </div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">Marta Ejemplo</span>
+                <span class="cuentas">3 · <span class="falta">2</span> · <span class="dinero">≈157 €</span></span>
+                <span class="mas">+</span>
+              </div>
+              <div class="tarjeta">
+                <div class="txt"><span class="n">Botas de montar</span><span class="p">lo lleva Ana · 97 €</span></div>
+                <span class="etiqueta">comprado</span>
+              </div>
+            </div>
+          </div>
+          <p class="pie">opción A</p>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>✓</span><span>Lo más denso: seis personas caben casi en una pantalla.</span></div>
+          <div class="no"><span>✗</span><span>No cabe. «Marta Ejemplo» más tres cuentas más el «+» pasa de los 390 puntos, y las cuentas hay que abreviarlas hasta que dejan de decirse solas: ese <code>3 · 2 · ≈157 €</code> no se entiende sin que alguien lo explique.</span></div>
+          <div class="no"><span>✗</span><span>El nombre pierde justo lo que se le quería dar: compite por el ancho en lugar de encabezar.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">B</span><h3>El nombre y el «+» arriba; las cuentas, debajo</h3></div>
+        <p>
+          Dos renglones. En el primero, el nombre con cuerpo de título y el «+» al final de la
+          línea. En el segundo, escrito entero y en voz baja: cuántos regalos hay, cuántos
+          quedan por comprar y cuánto suman.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <div>
+          <div class="hoja">
+            <div class="asa"></div>
+            <div class="cabecera">
+              <h4>Navidad 2026</h4>
+              <div class="iconos"><span class="ico">✎</span></div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">el abuelo</span>
+                <span class="mas">+</span>
+              </div>
+              <p class="cuentas">1 regalo · <span class="falta">1 por comprar</span> · <span class="dinero">≈ 45 €</span></p>
+              <div class="tarjeta">
+                <div class="txt"><span class="n">Manta de viaje</span><span class="p">sin responsable</span></div>
+                <span class="etiqueta">pendiente</span>
+              </div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">la abuela</span>
+                <span class="mas">+</span>
+              </div>
+              <p class="cuentas">2 regalos · todo comprado · <span class="dinero">78 €</span></p>
+              <div class="tarjeta">
+                <div class="txt"><span class="n">Mantel bordado</span><span class="p">lo lleva Óscar · 38 €</span></div>
+                <span class="etiqueta">comprado</span>
+              </div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">Rosa Ejemplo</span>
+                <span class="mas">+</span>
+              </div>
+              <p class="cuentas">Sin nada asignado</p>
+            </div>
+          </div>
+          <p class="pie">opción B</p>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>✓</span><span>Las cuentas caben escritas con todas sus palabras, que es lo que hace que no haya que descifrarlas.</span></div>
+          <div class="si"><span>✓</span><span>El nombre encabeza de verdad: es lo único en su renglón.</span></div>
+          <div class="si"><span>✓</span><span>Es la forma que ya usa la tarjeta de un cumpleaños —título arriba, cuentas debajo en voz baja—, así que la pestaña entera se lee igual.</span></div>
+          <div class="si"><span>✓</span><span>«Por comprar» no es una palabra nueva: es el nombre del estado, el mismo que lleva la pastilla de cada regalo de ahí abajo. El renglón cuenta las pastillas que hay debajo con sus mismas palabras.</span></div>
+          <div class="no"><span>✗</span><span>Un renglón más por persona: unos 18 puntos por seis, media pantalla de teléfono en una Navidad grande.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">C</span><h3>Las cuentas como pastillas</h3></div>
+        <p>Igual que B, pero cada cuenta en su cápsula, y la del dinero y la de lo que falta en su color.</p>
+      </div>
+      <div class="con-juicio">
+        <div>
+          <div class="hoja">
+            <div class="asa"></div>
+            <div class="cabecera">
+              <h4>Navidad 2026</h4>
+              <div class="iconos"><span class="ico">✎</span></div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">Marta Ejemplo</span>
+                <span class="mas">+</span>
+              </div>
+              <div class="chips">
+                <span class="chip">3 regalos</span>
+                <span class="chip falta">2 por comprar</span>
+                <span class="chip dinero">≈ 157 €</span>
+              </div>
+              <div class="tarjeta">
+                <div class="txt"><span class="n">Botas de montar</span><span class="p">lo lleva Ana · 97 €</span></div>
+                <span class="etiqueta">comprado</span>
+              </div>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila">
+                <span class="persona-nombre">Lucía Ejemplo</span>
+                <span class="mas">+</span>
+              </div>
+              <div class="chips">
+                <span class="chip">2 regalos</span>
+                <span class="chip falta">1 por comprar</span>
+                <span class="chip dinero">≈ 90 €</span>
+              </div>
+            </div>
+          </div>
+          <p class="pie">opción C</p>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>✓</span><span>Lo que falta por comprar salta a la vista sin leer: es lo único con color de alarma.</span></div>
+          <div class="no"><span>✗</span><span>Tres pastillas por persona son dieciocho cápsulas de colores en una pantalla, y la de regalos —una idea, un regalo— ya lleva las suyas. Se convierte en un tablero.</span></div>
+          <div class="no"><span>✗</span><span>Con nombres largos, las pastillas se parten en dos filas y el ahorro de altura desaparece.</span></div>
+          <div class="no"><span>✗</span><span>En la aplicación una pastilla es un estado del elemento que la lleva —«comprado», «en curso»—, no un resumen de lo que hay debajo. Aquí significaría otra cosa.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════ 2. Cuánto se gasta ══ -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Parte 2</p>
+      <h2>Qué quiere decir «cuánto se va a gastar»</h2>
+      <p>
+        Aquí no hay una cifra esperando a que la pinten. Un regalo solo tiene importe cuando
+        alguien lo escribe después de comprarlo <code>coste_real</code>; antes de comprarlo, lo
+        más parecido a un precio es el que se le apuntó a la idea, que es opcional y casi nunca
+        está. Así que la pregunta de verdad es qué se hace con lo que no tiene ninguno de los dos.
+      </p>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>Solo lo que ya se ha pagado</h3></div>
+        <p>Se suma <code>coste_real</code> y punto. <code>2 regalos · 1 por comprar · 97 €</code></p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>✓</span><span>Es la única cifra que no se inventa nada.</span></div>
+        <div class="no"><span>✗</span><span>No contesta lo que se preguntaba. En noviembre, cuando de verdad importa saber en cuánto se va a incurrir, casi todo está sin comprar y la cifra sale en cero.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">B</span><h3>Lo pagado, y lo apuntado para lo que falta</h3></div>
+        <p>
+          Una sola cifra: el importe real de lo comprado más el precio de la idea de lo que aún
+          no lo está. Se marca con <code>≈</code> mientras haya alguna estimación dentro, y si
+          algún regalo no tiene ni una cosa ni la otra, se dice cuántos son en lugar de fingir
+          que suman cero.
+        </p>
+      </div>
+      <div class="con-juicio">
+        <div>
+          <div class="hoja" style="gap: 11px">
+            <div class="seccion">
+              <div class="persona-fila"><span class="persona-nombre">la abuela</span><span class="mas">+</span></div>
+              <p class="cuentas">2 regalos · todo comprado · <span class="dinero">78 €</span></p>
+              <p class="pista">los dos con importe: la cifra es exacta y no lleva ≈</p>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila"><span class="persona-nombre">Lucía Ejemplo</span><span class="mas">+</span></div>
+              <p class="cuentas">2 regalos · <span class="falta">1 por comprar</span> · <span class="dinero">≈ 90 €</span></p>
+              <p class="pista">25 € pagados y 65 € apuntados en la idea</p>
+            </div>
+            <div class="seccion">
+              <div class="persona-fila"><span class="persona-nombre">Marta Ejemplo</span><span class="mas">+</span></div>
+              <p class="cuentas">3 regalos · <span class="falta">2 por comprar</span> · <span class="dinero">≈ 157 €</span> · 1 sin precio</p>
+              <p class="pista">el tercero no tiene importe ni precio apuntado, y se dice</p>
+            </div>
+          </div>
+          <p class="pie">opción B</p>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>✓</span><span>Contesta la pregunta que se hizo, y en la época del año en que se hace.</span></div>
+          <div class="si"><span>✓</span><span>No miente por omisión: «1 sin precio» impide leer la suma como si estuviera completa. Es la misma regla que ya sostiene <code>gastoDe</code> en el modelo, escrita en su día para no enseñar una desviación favorable inexistente.</span></div>
+          <div class="si"><span>✓</span><span>Y le da un motivo para existir al precio de la idea, que hoy se pide en el formulario y no se usa en ningún sitio.</span></div>
+          <div class="no"><span>✗</span><span>Mezcla dos cosas distintas en una cifra. El <code>≈</code> lo avisa, pero es un signo pequeño.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">C</span><h3>Dos cifras: gastado y por gastar</h3></div>
+        <p>No se mezclan. <code>3 regalos · 97 € gastados · ≈ 60 € por gastar · 1 sin precio</code></p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>✓</span><span>Cada número significa una sola cosa, y lo comprometido no se confunde con lo pagado.</span></div>
+        <div class="no"><span>✗</span><span>El renglón se va de la pantalla del teléfono y hay que partirlo en dos, con lo que cada persona ocupa cuatro líneas antes del primer regalo.</span></div>
+        <div class="no"><span>✗</span><span>«Cuántos quedan por comprar» ya está dicho al lado; decirlo otra vez en euros es más precisión de la que pedía la pregunta.</span></div>
+      </div>
+    </div>
+
+    <div class="nota aviso">
+      <p><strong>Una cosa que ninguna opción puede arreglar, y conviene saber.</strong></p>
+      <p>
+        Las cuentas se calculan con lo que <em>quien mira</em> tiene delante, y los regalos para
+        uno mismo no se le transmiten nunca. Ana no ve los suyos, así que ninguna suma de esta
+        pantalla es «lo que cuesta la Navidad»: es lo que cuesta la Navidad de los demás, vista
+        por ella. No es un fallo —es la ocultación funcionando—, pero obliga a que ningún rótulo
+        diga «total». Por eso las cifras van por persona y no hay un total de la ocasión: un
+        número así valdría una cosa distinta en cada teléfono, y el primero que comparase dos
+        pantallas sabría exactamente cuánto se ha gastado en él.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════ 3. Quién sale, y en qué orden ══ -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Parte 3</p>
+      <h2>Quién sale y en qué orden</h2>
+      <p>Aquí no hay opciones, sino tres decisiones y una pregunta que dejo abierta.</p>
+    </div>
+
+    <div class="lista">
+      <div><span>1</span><span><b>Uno mismo sale siempre</b>, participe o no de la ocasión, y siempre el último. Su sección es el sello de siempre. Sale aunque no esté entre los participantes porque su ausencia era información: en una Navidad de la casa, no verse a uno mismo dice que nadie le ha puesto nada, que es justo lo que la pantalla existe para no decir.</span></div>
+      <div><span>2</span><span><b>El resto, por edad, los mayores delante.</b> Es el orden en que se piensa en la gente al repartir una Navidad, y no cambia de un día para otro como cambiaría el del próximo cumpleaños.</span></div>
+      <div><span>3</span><span><b>Salen todos los participantes</b>, tengan o no algo asignado: el que no tiene nada es precisamente al que hay que mirar, y su sección lo dice —«Sin nada asignado»— con su «+» al lado.</span></div>
+    </div>
+
+    <div class="nota">
+      <p><strong>La pregunta abierta: quién no tiene fecha de nacimiento.</strong></p>
+      <p>
+        Si el orden es la edad, alguien sin fecha no tiene sitio. Propongo dejarlo al final de
+        los demás, justo antes de uno mismo, y ordenar ese grupo por nombre. Es lo mismo que
+        hace la rejilla de Gente con quien no tiene cumpleaños, así que la regla ya existe en la
+        aplicación y no hay que aprenderla dos veces. La alternativa —ponerlos primero— haría
+        que dar de alta una fecha reordenase media pantalla sin avisar.
+      </p>
+    </div>
+
+    <div class="pareja">
+      <div>
+        <div class="hoja">
+          <div class="asa"></div>
+          <div class="cabecera">
+            <h4>Navidad 2026</h4>
+            <div class="iconos"><span class="ico">✎</span></div>
+          </div>
+          <div class="seccion">
+            <div class="persona-fila"><span class="persona-nombre">el abuelo</span><span class="mas">+</span></div>
+            <p class="cuentas">1 regalo · <span class="falta">1 por comprar</span> · <span class="dinero">≈ 45 €</span></p>
+          </div>
+          <div class="seccion">
+            <div class="persona-fila"><span class="persona-nombre">la abuela</span><span class="mas">+</span></div>
+            <p class="cuentas">2 regalos · todo comprado · <span class="dinero">78 €</span></p>
+          </div>
+          <div class="seccion">
+            <div class="persona-fila"><span class="persona-nombre">Rosa Ejemplo</span><span class="mas">+</span></div>
+            <p class="cuentas">Sin nada asignado</p>
+          </div>
+          <div class="seccion">
+            <div class="persona-fila"><span class="persona-nombre">Marta Ejemplo</span><span class="mas">+</span></div>
+            <p class="cuentas">3 regalos · <span class="falta">2 por comprar</span> · <span class="dinero">≈ 157 €</span> · 1 sin precio</p>
+          </div>
+          <div class="seccion">
+            <div class="persona-fila"><span class="persona-nombre">Lucía Ejemplo</span><span class="mas">+</span></div>
+            <p class="cuentas">2 regalos · <span class="falta">1 por comprar</span> · <span class="dinero">≈ 90 €</span></p>
+          </div>
+          <div class="seccion">
+            <div class="persona-fila"><span class="persona-nombre">Ana Ejemplo</span></div>
+            <div class="sello"><strong>Por aquí no se mira</strong><span>Vuelve otro día.</span></div>
+          </div>
+          <div class="boton">Darla por cerrada</div>
+        </div>
+        <p class="pie">la hoja entera, con B + B</p>
+      </div>
+
+      <div class="juicio" style="max-width: 44ch">
+        <div class="si"><span>✓</span><span>79, 77, 54, 16, 14 y, al final, quien mira. Sin fechas de por medio: el orden se lee sin explicarlo.</span></div>
+        <div class="si"><span>✓</span><span>La sección de uno mismo no lleva «+»: no se le añade un regalo a uno mismo desde aquí, y un botón que solo puede confundir sobra.</span></div>
+        <div class="si"><span>✓</span><span>Rosa está aunque no tenga nada, y su renglón lo dice sin rodeos.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════ 4. Lo que se va ══ -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Parte 4</p>
+      <h2>Lo que se va</h2>
+    </div>
+
+    <div class="desplazable">
+      <table class="tabla">
+        <thead>
+          <tr><th>Se quita</th><th>Qué hacía</th><th>Qué pasa sin ello</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tachado">Duplicar para otro año</td>
+            <td>Abría el formulario con el nombre del año siguiente y las mismas personas ya marcadas. Los importes y los regalos no se traían.</td>
+            <td>Crear la del año que viene son cuatro toques desde «Nueva fecha señalada», y se eligen las personas de ese año —que rara vez son idénticas—. Lo que se pierde es teclear el nombre, y ese es el trabajo que menos cuesta de todos.</td>
+          </tr>
+          <tr>
+            <td class="tachado">Añadir un regalo para X</td>
+            <td>Un enlace por persona, al final de su sección.</td>
+            <td>Lo hace el «+» del rótulo, que está en el mismo sitio en las seis secciones y no se lee seis veces. Es además el mismo signo con el que se da de alta a alguien al pie de cada círculo en Gente.</td>
+          </tr>
+          <tr>
+            <td>Darla por cerrada</td>
+            <td>Archiva la ocasión: mientras siga abierta, sus regalos se quedan a la vista aunque la fecha haya pasado.</td>
+            <td><b>Se queda.</b> No es lo mismo que duplicar: esto sí se hace una vez por ocasión y no tiene otro sitio desde el que hacerse. Al irse duplicar, se queda sola al pie de la hoja, a lo ancho.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota">
+      <p><strong>¿Y si algún día se echa de menos duplicar?</strong></p>
+      <p>
+        Su sitio natural sería el formulario de edición, junto a borrar, y no esta hoja: es una
+        operación sobre la ocasión, no algo que se mira. Pero no lo pondría hasta que se eche de
+        menos de verdad. La Navidad se crea una vez al año.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ Recomendación ══ -->
+
+  <section class="parte">
+    <div class="parte-cabeza">
+      <p class="numero">Recomendación</p>
+      <h2>B y B</h2>
+    </div>
+    <div class="lista">
+      <div><span>·</span><span><b>Parte 1, opción B.</b> El nombre y el «+» arriba, las cuentas debajo escritas enteras. Cuesta un renglón por persona y es lo único que permite decirlas con palabras en lugar de con símbolos. Además es la forma que ya tiene la tarjeta de un cumpleaños, dos pantallas más allá.</span></div>
+      <div><span>·</span><span><b>Parte 2, opción B.</b> Una cifra que junta lo pagado y lo apuntado, con <code>≈</code> cuando lleva estimación dentro y diciendo cuántos regalos no tienen precio ninguno.</span></div>
+      <div><span>·</span><span><b>Parte 3</b>, tal cual: uno mismo siempre y el último, los demás por edad de mayor a menor, y quien no tenga fecha al final de ese grupo.</span></div>
+      <div><span>·</span><span><b>Parte 4</b>, fuera duplicar y fuera el enlace de añadir.</span></div>
+    </div>
+    <p style="color: var(--ink-soft); max-width: 68ch">
+      Si quieres cambiar alguna pieza, se cambian por separado: la cabecera y la regla del
+      dinero no dependen la una de la otra.
+    </p>
+  </section>
+
+</div>
