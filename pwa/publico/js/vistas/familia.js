@@ -14,7 +14,9 @@ import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../s
 import {
   CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte, nuevoId,
 } from '../modelo.js';
-import { MESES_LARGOS, hoy, parsearMomento } from '../semana.js';
+import {
+  MESES_LARGOS, aniosQueCumple, diasHastaElCumple, parsearMomento, proximoAniversario,
+} from '../semana.js';
 import { abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea } from './regalos.js';
 
 /** Cuál de los dos círculos abiertos se está mirando. Se conserva entre
@@ -190,11 +192,12 @@ function celdaDeCumple(persona) {
   }
   const nacimiento = parsearMomento(persona.fecha_nacimiento);
   const dias = diasHastaElCumple(persona);
+  const anos = aniosQueCumple(persona);
   return el('span', { class: 'persona-nota', 'data-pronto': dias <= 30 ? 'si' : null }, [
     document.createTextNode(
       `${nacimiento.getDate()} ${MESES_LARGOS[nacimiento.getMonth()].slice(0, 3)}`,
     ),
-    el('span', { class: 'persona-anos', texto: ` (${anosQueHara(persona)})` }),
+    anos ? el('span', { class: 'persona-anos', texto: ` (${anos})` }) : null,
   ]);
 }
 
@@ -320,11 +323,12 @@ function notaDeCumple(persona) {
     return el('span', { class: 'persona-nota', 'data-falta': 'si', texto: 'sin fecha' });
   }
   const dias = diasHastaElCumple(persona);
+  const anos = aniosQueCumple(persona);
   return el('span', { class: 'persona-nota', 'data-pronto': dias <= 30 ? 'si' : null }, [
     document.createTextNode(proximoCumple(persona)),
     // Los años que hará, no los que tiene: es la cifra que se está buscando
     // cuando uno mira esta línea, que es para decidir un regalo.
-    el('span', { class: 'persona-anos', texto: ` (${anosQueHara(persona)})` }),
+    anos ? el('span', { class: 'persona-anos', texto: ` (${anos})` }) : null,
   ]);
 }
 
@@ -486,22 +490,6 @@ async function resolver(cuerpo, ctx, exito) {
   }
 }
 
-/** La fecha del próximo aniversario, sea este año o el que viene. */
-function proximoAniversario(persona) {
-  const nacimiento = parsearMomento(persona.fecha_nacimiento);
-  const referencia = hoy();
-  const deEsteAno = new Date(referencia.getFullYear(), nacimiento.getMonth(), nacimiento.getDate());
-  return deEsteAno < referencia
-    ? new Date(referencia.getFullYear() + 1, nacimiento.getMonth(), nacimiento.getDate())
-    : deEsteAno;
-}
-
-/** Quien no tiene fecha va al final de su rejilla, no al principio. */
-function diasHastaElCumple(persona) {
-  if (!persona.fecha_nacimiento) return Infinity;
-  return Math.round((proximoAniversario(persona) - hoy()) / 86400000);
-}
-
 function proximoCumple(persona) {
   if (!persona.fecha_nacimiento) return '';
   const proximo = proximoAniversario(persona);
@@ -509,13 +497,6 @@ function proximoCumple(persona) {
   if (dias === 0) return 'hoy 🎂';
   if (dias <= 30) return `en ${dias} d`;
   return `${proximo.getDate()} ${MESES_LARGOS[proximo.getMonth()].slice(0, 3)}`;
-}
-
-/** Los años que cumple en ese aniversario, no los que tiene hoy. */
-function anosQueHara(persona) {
-  if (!persona.fecha_nacimiento) return null;
-  return proximoAniversario(persona).getFullYear()
-    - parsearMomento(persona.fecha_nacimiento).getFullYear();
 }
 
 // ------------------------------------------------------------------ Ficha --
