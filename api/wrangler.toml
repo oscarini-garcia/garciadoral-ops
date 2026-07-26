@@ -37,7 +37,8 @@ REDIRECCION_WEB = "https://garciadoral-ops.galoopa.store"
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
 #   TOKEN_SERVICIO  · credencial del generador del plan semanal (AGENDA_TOKEN)
 #
-# Y los tres de la revocación ante Apple, que solo se usan al darse de baja. Sin
+# Y los tres de la revocación ante Apple, que se usan en las dos bajas: la de una
+# cuenta y la de una solicitud sin aprobar. Sin
 # ellos la baja funciona igual —se deshace el vínculo aquí—, pero no se le avisa
 # a Apple, que es la mitad de la directriz 5.1.1(v) que no se ve. Consulte
 # docs/despliegue-cloudflare.md §4.5.

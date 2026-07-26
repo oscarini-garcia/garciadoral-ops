@@ -213,10 +213,38 @@ async function estadoDeLaSolicitud(peticion, env) {
   return json({ estado: solicitud ? solicitud.estado : 'sin_solicitud' });
 }
 
+/**
+ * Retirar la solicitud propia, que es la baja de quien todavía no es del hogar.
+ *
+ * Se le avisa a Apple igual que en la baja de una cuenta aprobada, y por la
+ * misma razón: quien deja una solicitud ha pasado por Sign in with Apple, de
+ * modo que la aplicación le figura entre las que usan su Apple ID. Borrar aquí
+ * su correo y dejársela puesta allí sería cumplir media directriz.
+ *
+ * De las dos bajas, además, esta es la única que quien revisa la aplicación
+ * puede ejercer: a la cuenta aprobada no va a llegar. Si alguna de las dos
+ * tenía que revocar de verdad, era esta.
+ */
 async function retirar(peticion, env) {
   const espera = await enEspera(peticion, env);
+  const { codigo_apple: codigo } = await peticion.json().catch(() => ({}));
+
+  const revocacion = await revocarEnApple(env, {
+    codigo,
+    plataforma: espera.plataforma,
+    redireccion: env.REDIRECCION_WEB || (env.ORIGENES_PERMITIDOS || '').split(',')[0].trim(),
+  });
+
+  if (!revocacion.revocado) {
+    console.warn(`retirada de una solicitud: no se revocó en Apple (${revocacion.motivo})`, revocacion.detalle || '');
+  }
+
   await retirarSolicitud(env.DB, espera.sub);
-  return json({ retirada: true });
+  return json({
+    retirada: true,
+    revocado_en_apple: revocacion.revocado,
+    motivo_revocacion: revocacion.revocado ? null : revocacion.motivo,
+  });
 }
 
 // ------------------------------------------------------------------ Bandeja --

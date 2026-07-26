@@ -122,7 +122,8 @@ wrangler secret put TOKEN_SERVICIO
 ```
 
 Hay tres secretos más —`APPLE_CLAVE_P8`, `APPLE_CLAVE_ID` y `APPLE_EQUIPO`— que
-solo intervienen cuando alguien elimina su cuenta y que se registran en el paso
+solo intervienen cuando alguien se da de baja —o retira su solicitud desde la
+sala de espera— y que se registran en el paso
 4.5, porque salen de la cuenta de Apple Developer. Todo lo demás funciona sin
 ellos.
 
