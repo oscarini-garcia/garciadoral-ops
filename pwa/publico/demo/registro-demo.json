@@ -526,8 +526,8 @@
           "etiqueta_id": "e-cocina"
         }
       ],
+      "estado": "en_curso",
       "tipo": "sugerencia",
-      "estado": "activa",
       "activa": true
     },
     {
@@ -542,6 +542,22 @@
         }
       ],
       "estado": "activa",
+      "activa": true
+    },
+    {
+      "id": "id-hamaca",
+      "titulo": "Hamaca de playa",
+      "autor_id": "p-oscar",
+      "categoria_id": "casa_cocina",
+      "precio_min": 40,
+      "precio_max": 70,
+      "estado": "en_curso",
+      "orientaciones": [
+        {
+          "persona_id": "p-abuela"
+        }
+      ],
+      "tipo": "sugerencia",
       "activa": true
     }
   ],
@@ -561,6 +577,29 @@
         }
       ],
       "activa": true
+    },
+    {
+      "id": "oc-cumple-abuela-2026",
+      "nombre": "Cumpleaños de la abuela 2026",
+      "fecha": "2026-07-30",
+      "estado": "abierta",
+      "participantes": [
+        "p-abuela"
+      ],
+      "presupuestos": [],
+      "activa": true
+    },
+    {
+      "id": "oc-reyes-2026",
+      "nombre": "Reyes 2026",
+      "fecha": "2026-01-06",
+      "estado": "abierta",
+      "participantes": [
+        "p-marta",
+        "p-lucia"
+      ],
+      "presupuestos": [],
+      "activa": true
     }
   ],
   "regalos": [
@@ -573,6 +612,29 @@
       "estado": "comprado",
       "coste_real": 96.5,
       "categoria_id": "deporte",
+      "compartido": false,
+      "codestinatarios": [],
+      "activo": true
+    },
+    {
+      "id": "rg-hamaca",
+      "ocasion_id": "oc-cumple-abuela-2026",
+      "idea_id": "id-hamaca",
+      "destinatario_principal_id": "p-abuela",
+      "estado": "pendiente",
+      "categoria_id": "casa_cocina",
+      "compartido": false,
+      "codestinatarios": [],
+      "activo": true
+    },
+    {
+      "id": "rg-ceramica",
+      "ocasion_id": "oc-reyes-2026",
+      "idea_id": "id-ceramica",
+      "destinatario_principal_id": "p-lucia",
+      "responsable_id": "p-oscar",
+      "estado": "pendiente",
+      "categoria_id": "experiencias",
       "compartido": false,
       "codestinatarios": [],
       "activo": true

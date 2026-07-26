@@ -113,12 +113,26 @@
     }
   ],
   "atributos_persona": [
-    { "persona_id": "p-marta", "clave": "talla de calzado", "valor": "39" },
-    { "persona_id": "p-abuela", "clave": "alergias", "valor": "frutos secos" }
+    {
+      "persona_id": "p-marta",
+      "clave": "talla de calzado",
+      "valor": "39"
+    },
+    {
+      "persona_id": "p-abuela",
+      "clave": "alergias",
+      "valor": "frutos secos"
+    }
   ],
   "etiquetas": [
-    { "id": "e-adolescente", "nombre": "adolescente" },
-    { "id": "e-cocina", "nombre": "aficionado a la cocina" }
+    {
+      "id": "e-adolescente",
+      "nombre": "adolescente"
+    },
+    {
+      "id": "e-cocina",
+      "nombre": "aficionado a la cocina"
+    }
   ],
   "eventos": [
     {
@@ -130,7 +144,12 @@
       "fin": "2026-01-12T19:30:00",
       "repeticion": "semanal",
       "repeticion_hasta": "2026-12-21",
-      "participantes": [{ "persona_id": "p-marta", "rol": "asistente" }]
+      "participantes": [
+        {
+          "persona_id": "p-marta",
+          "rol": "asistente"
+        }
+      ]
     },
     {
       "id": "ev-dentista",
@@ -138,7 +157,12 @@
       "tipo_id": "cita_medica",
       "inicio": "2026-07-30T10:00:00",
       "fin": "2026-07-30T11:00:00",
-      "participantes": [{ "persona_id": "p-ana", "rol": "protagonista" }]
+      "participantes": [
+        {
+          "persona_id": "p-ana",
+          "rol": "protagonista"
+        }
+      ]
     },
     {
       "id": "ev-torneo",
@@ -147,7 +171,12 @@
       "inicio": "2026-08-01",
       "fin": "2026-08-02",
       "jornada_completa": true,
-      "participantes": [{ "persona_id": "p-marta", "rol": "asistente" }]
+      "participantes": [
+        {
+          "persona_id": "p-marta",
+          "rol": "asistente"
+        }
+      ]
     },
     {
       "id": "ev-comida-abuelos",
@@ -157,8 +186,14 @@
       "inicio": "2026-08-02T14:00:00",
       "lleva_regalos": false,
       "participantes": [
-        { "persona_id": "p-abuela", "rol": "asistente" },
-        { "persona_id": "p-abuelo", "rol": "asistente" }
+        {
+          "persona_id": "p-abuela",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-abuelo",
+          "rol": "asistente"
+        }
       ]
     },
     {
@@ -168,8 +203,14 @@
       "inicio": "2026-07-31T17:00:00",
       "categoria_id": "coordinacion",
       "participantes": [
-        { "persona_id": "p-ana", "rol": "asistente" },
-        { "persona_id": "p-oscar", "rol": "asistente" }
+        {
+          "persona_id": "p-ana",
+          "rol": "asistente"
+        },
+        {
+          "persona_id": "p-oscar",
+          "rol": "asistente"
+        }
       ]
     }
   ],
@@ -182,14 +223,23 @@
       "precio_min": 80,
       "precio_max": 120,
       "estado": "en_curso",
-      "orientaciones": [{ "persona_id": "p-marta" }]
+      "orientaciones": [
+        {
+          "persona_id": "p-marta"
+        }
+      ]
     },
     {
       "id": "id-ceramica",
       "titulo": "Curso de cerámica",
       "autor_id": "p-oscar",
       "categoria_id": "experiencias",
-      "orientaciones": [{ "etiqueta_id": "e-cocina" }]
+      "orientaciones": [
+        {
+          "etiqueta_id": "e-cocina"
+        }
+      ],
+      "estado": "en_curso"
     },
     {
       "id": "id-auriculares",
@@ -197,7 +247,25 @@
       "autor_id": "p-marta",
       "tipo": "deseo",
       "categoria_id": "tecnologia",
-      "orientaciones": [{ "persona_id": "p-marta" }]
+      "orientaciones": [
+        {
+          "persona_id": "p-marta"
+        }
+      ]
+    },
+    {
+      "id": "id-hamaca",
+      "titulo": "Hamaca de playa",
+      "autor_id": "p-oscar",
+      "categoria_id": "casa_cocina",
+      "precio_min": 40,
+      "precio_max": 70,
+      "estado": "en_curso",
+      "orientaciones": [
+        {
+          "persona_id": "p-abuela"
+        }
+      ]
     }
   ],
   "ocasiones": [
@@ -206,8 +274,34 @@
       "nombre": "Cumpleaños de Marta 2026",
       "fecha": "2026-08-01",
       "estado": "abierta",
-      "participantes": ["p-marta"],
-      "presupuestos": [{ "persona_id": "p-marta", "importe": 150 }]
+      "participantes": [
+        "p-marta"
+      ],
+      "presupuestos": [
+        {
+          "persona_id": "p-marta",
+          "importe": 150
+        }
+      ]
+    },
+    {
+      "id": "oc-cumple-abuela-2026",
+      "nombre": "Cumpleaños de la abuela 2026",
+      "fecha": "2026-07-30",
+      "estado": "abierta",
+      "participantes": [
+        "p-abuela"
+      ]
+    },
+    {
+      "id": "oc-reyes-2026",
+      "nombre": "Reyes 2026",
+      "fecha": "2026-01-06",
+      "estado": "abierta",
+      "participantes": [
+        "p-marta",
+        "p-lucia"
+      ]
     }
   ],
   "regalos": [
@@ -220,6 +314,23 @@
       "estado": "comprado",
       "coste_real": 96.5,
       "categoria_id": "deporte"
+    },
+    {
+      "id": "rg-hamaca",
+      "ocasion_id": "oc-cumple-abuela-2026",
+      "idea_id": "id-hamaca",
+      "destinatario_principal_id": "p-abuela",
+      "estado": "pendiente",
+      "categoria_id": "casa_cocina"
+    },
+    {
+      "id": "rg-ceramica",
+      "ocasion_id": "oc-reyes-2026",
+      "idea_id": "id-ceramica",
+      "destinatario_principal_id": "p-lucia",
+      "responsable_id": "p-oscar",
+      "estado": "pendiente",
+      "categoria_id": "experiencias"
     }
   ],
   "comentarios": [

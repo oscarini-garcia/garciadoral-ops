@@ -81,7 +81,7 @@ tener que recorrer la aplicación entera cada vez.
   campoDeGente
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO
-  nombreCompleto · deQuien · GENEROS · estaActivo · redaccionDisponible · …y 7 más
+  nombreCompleto · deQuien · GENEROS · estaActivo · redaccionDisponible · …y 9 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -105,7 +105,7 @@ tener que recorrer la aplicación entera cada vez.
   reiniciarBusqueda · pintarBuscar
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
-- **regalos.js** — Regalos: las ideas y las ocasiones.
+- **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · personaDelCumple · ocasionDeEvento
   abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo · abrirSelectorDeRegalo
   …y 1 más
@@ -166,8 +166,8 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/native.js` §3.5 · `scripts/agenda/modelo.py` §7
 - **`specs/modelo-datos.md`**
   `api/src/filtrado.js` §7.3 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
-  `pwa/publico/js/modelo.js` · `pwa/publico/js/semana.js` §7.4
-  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/vistas/regalos.js` §7.4
+  `pwa/publico/js/modelo.js` §4 · `pwa/publico/js/semana.js` §7.4
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/vistas/regalos.js` §5.2, §7.4
   `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/modelo.py` §4
   `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
   `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
@@ -180,10 +180,10 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
   `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
-  `pwa/publico/js/modelo.js` §7.1 · `pwa/publico/js/semana.js` §8, §10.2
+  `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/semana.js` §8, §10.2
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/ui.js` §1, §3
   `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
-  `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1
+  `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2
   `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/modelo.py` §7.1
   `scripts/agenda/semana.py` §10.2
 

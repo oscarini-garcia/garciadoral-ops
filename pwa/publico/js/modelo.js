@@ -295,6 +295,30 @@ export function crearVista(instantanea) {
           && (i.orientaciones || []).some((o) => o.persona_id === personaId),
       ),
 
+    /**
+     * Los regalos que están en marcha, cada uno con la ocasión de la que cuelga.
+     *
+     * En marcha es todo lo que cuelga de una ocasión **abierta**, esté comprado
+     * o no y haya pasado su fecha o no. Lo que se cierra deja de estar en marcha
+     * y pasa al histórico de quien lo recibió, que se consulta en su ficha: son
+     * las dos mitades de lo mismo y por eso se leen de la misma condición
+     * (specs/ux.md §6.2).
+     *
+     * La ocasión viene pegada porque de ella salen la fecha y el nombre, que es
+     * lo que sitúa cada regalo; buscarla después, fila a fila, sería recorrer la
+     * lista de ocasiones una vez por regalo.
+     */
+    regalosEnMarcha() {
+      const abiertas = new Map(
+        (instantanea.ocasiones || [])
+          .filter((o) => estaActivo(o, 'activa') && o.estado === 'abierta')
+          .map((o) => [o.id, o]),
+      );
+      return (instantanea.regalos || [])
+        .filter((r) => estaActivo(r) && abiertas.has(r.ocasion_id))
+        .map((regalo) => ({ regalo, ocasion: abiertas.get(regalo.ocasion_id) }));
+    },
+
     /** Histórico derivado por consulta sobre las ocasiones cerradas: no existe
      *  entidad de histórico, de modo que no puede divergir del dato de origen. */
     historicoDe(personaId) {
@@ -328,12 +352,38 @@ export function crearVista(instantanea) {
   return api;
 }
 
+/**
+ * Cómo va un regalo. Tres estados, y ninguno de adorno.
+ *
+ * «Envuelto» era el cuarto y se ha ido: no lo marcaba nadie, de modo que su
+ * único efecto era añadir una opción más a un desplegable que contesta a una
+ * pregunta de sí o no. «Entregado» se queda porque es el que cierra el ciclo:
+ * es lo que pasa la idea a cerrada y manda el regalo al histórico de quien lo
+ * recibió (specs/modelo-datos.md §4).
+ *
+ * Se llaman por lo que hay que hacer con ellos y no por su nombre en la base:
+ * «pendiente» no dice qué falta, «Por comprar» sí.
+ */
 export const ESTADOS_REGALO = [
-  { valor: 'pendiente', texto: 'Pendiente' },
-  { valor: 'comprado', texto: 'Comprado' },
-  { valor: 'envuelto', texto: 'Envuelto' },
+  { valor: 'pendiente', texto: 'Por comprar' },
+  { valor: 'comprado', texto: 'Listo' },
   { valor: 'entregado', texto: 'Entregado' },
 ];
+
+/**
+ * El estado de un regalo, leído a prueba de lo que ya está escrito.
+ *
+ * La migración convierte a «comprado» lo que estuviera «envuelto», pero la
+ * instantánea puede llegar antes que ella —el despliegue de la aplicación y el
+ * de la API son dos—. Sin esto, un regalo así caería en un desplegable que no
+ * tiene su valor, y el desplegable enseñaría el primero de la lista: diría «por
+ * comprar» de algo ya comprado.
+ */
+export const estadoDeRegalo = (regalo) => (regalo?.estado === 'envuelto' ? 'comprado' : regalo?.estado || 'pendiente');
+
+/** Cómo se escribe ese estado en pantalla. */
+export const textoDeEstado = (regalo) =>
+  ESTADOS_REGALO.find((e) => e.valor === estadoDeRegalo(regalo))?.texto || estadoDeRegalo(regalo);
 
 export const REPETICIONES = [
   { valor: 'ninguna', texto: 'No se repite' },

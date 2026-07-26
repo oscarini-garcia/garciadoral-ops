@@ -33,7 +33,11 @@ GENEROS = ("f", "m")
 TAMANO_FAMILIA = 4
 TIPOS_IDEA = ("sugerencia", "deseo")
 ESTADOS_IDEA = ("activa", "en_curso", "cerrada", "descartada")
-ESTADOS_REGALO = ("pendiente", "comprado", "envuelto", "entregado")
+#: Tres, desde que se retiró «envuelto»: nadie lo marcaba, y su única
+#: consecuencia era una opción más en un desplegable que pregunta si algo está
+#: comprado o no. Lo que estuviera envuelto se convirtió en comprado
+#: (api/migraciones/0007_estado_regalo.sql).
+ESTADOS_REGALO = ("pendiente", "comprado", "entregado")
 ESTADOS_OCASION = ("abierta", "cerrada")
 ORIGENES_EVENTO = ("manual", "derivado", "importado")
 REPETICIONES = ("ninguna", "semanal", "mensual", "anual")

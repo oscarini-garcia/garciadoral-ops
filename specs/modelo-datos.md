@@ -109,7 +109,7 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 | compartido | Indicador |
 | responsable_id | Persona con cuenta |
 | coste_real | Opcional |
-| estado | pendiente, comprado, envuelto, entregado |
+| estado | pendiente, comprado, entregado |
 | categoria_id | Heredada de la idea salvo modificación |
 
 **CoDestinatarioRegalo.** Personas adicionales implicadas en un regalo compartido. La ocultación alcanza al destinatario principal y a todas ellas.
@@ -195,7 +195,7 @@ stateDiagram-v2
     [*] --> Activa: captura
     Activa --> EnCurso: promoción a una ocasión
     EnCurso --> Activa: retirada de la ocasión
-    EnCurso --> Cerrada: regalo entregado
+    EnCurso --> Cerrada: regalo entregado u ocasión cerrada
     Activa --> Descartada: acción manual
     EnCurso --> Descartada: acción manual
     Descartada --> Activa: reactivación
@@ -204,17 +204,21 @@ stateDiagram-v2
 
 Las transiciones hacia En curso y hacia Cerrada se derivan de lo que ocurre en la ocasión vinculada. Solo el descarte y la reactivación son manuales.
 
+Cierran la idea las dos maneras que tiene un regalo de terminar: que se entregue, o que su ocasión se dé por cerrada. Contar solo la primera dejaba en el banco ideas En curso para siempre, señaladas con una ocasión archivada que ya nunca las iba a liberar.
+
 ### 5.2 Regalo
 
 ```mermaid
 stateDiagram-v2
     [*] --> Pendiente
     Pendiente --> Comprado
-    Comprado --> Envuelto
-    Envuelto --> Entregado
     Comprado --> Entregado
     Entregado --> [*]
 ```
+
+Son tres, y en pantalla se llaman por lo que falta por hacer con ellos: Pendiente es «Por comprar», Comprado es «Listo» y Entregado se llama igual. Hubo un cuarto —Envuelto, entre los dos últimos— y se retiró: nadie lo marcaba, de modo que su único efecto era añadir una opción más a un desplegable que contesta a una pregunta de sí o no. Lo que estuviera envuelto se convirtió en comprado (`api/migraciones/0007_estado_regalo.sql`).
+
+Entregado es el final explícito, y es lo que cierra la idea de la que salió el regalo y lo manda al histórico de quien lo recibió. El otro final es que la ocasión se dé por cerrada, con lo que quedara sin comprar archivado tal cual.
 
 El registro del coste real es opcional en cualquiera de las transiciones.
 
@@ -223,7 +227,7 @@ El registro del coste real es opcional en cualquiera de las transiciones.
 ```mermaid
 stateDiagram-v2
     [*] --> Abierta
-    Abierta --> Cerrada: todos los regalos entregados o descartados
+    Abierta --> Cerrada: todos los regalos entregados, o cierre manual
     Cerrada --> [*]
 ```
 

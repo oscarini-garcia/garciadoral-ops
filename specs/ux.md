@@ -171,7 +171,7 @@ En marzo, el bloque de Navidad no aparece y su espacio lo ocupan el próximo cum
 
 ### 6.1 La pantalla de ocasiones, como se construyó
 
-Lo que sigue no es una opción sino la decisión tomada. La pestaña de Regalos se quedó con las dos secciones de esta opción —Ideas y Ocasiones—, y esto es lo que hay dentro de la segunda.
+Lo que sigue no es una opción sino la decisión tomada. La pestaña de Regalos se quedó con las secciones de esta opción —Ideas y Ocasiones, y más tarde Regalos entre las dos (§6.2)—, y esto es lo que hay dentro de la última.
 
 **Hay dos tipos de ocasión, y por eso hay dos apartados.** Una **fecha señalada** —Navidad, Reyes, un aniversario— es una ronda: mucha gente, muchos regalos y una coordinación que dura semanas. Un **cumpleaños** es lo contrario: una persona, una fecha que vuelve sola cada año y, casi siempre, un mensaje que mandar. Mezclados en una sola lista había que leerla entera para encontrar cualquiera de las dos cosas.
 
@@ -180,7 +180,7 @@ El nombre del primer apartado es el que se usa en casa para esas fechas. Mientra
 ```
 ┌──────────────────────────────┐
 │ Regalos            ⟳    ⚙   │
-│ ┌ Ideas ┬ Ocasiones ┐        │
+│ ┌ Ideas ┬ Regalos ┬ Ocasiones ┐│
 ├──────────────────────────────┤
 │ Fechas señaladas  1 en marcha ⌃│
 │ ┌──────────────────────────┐ │
@@ -218,6 +218,51 @@ Debajo, un enlace a su ficha, que es donde está todo lo demás.
 **Borrar pregunta, y pregunta diciendo qué se lleva por delante.** Los regalos cuelgan de la ocasión, y una Navidad con ocho apuntados no puede desaparecer de un dedo distraído. Se retiran con ella: dejarlos vivos apuntando a una ocasión que ya no está los volvería invisibles pero no inexistentes, y sus ideas se quedarían «en curso» para siempre, señaladas con una ocasión que nadie puede abrir. Las ideas se quedan en el banco, libres para otra ocasión.
 
 **Cuándo dejará de servir.** El día que las fechas señaladas cerradas se acumulen —una Navidad al año— el apartado pedirá archivarlas o agruparlas por año. Nada de lo de aquí lo impide.
+
+### 6.2 La pantalla de regalos, como se construyó
+
+Entre Ideas y Ocasiones hay una tercera sección, y existe porque el ciclo se contaba a trozos. Una **idea** se apunta suelta; en un cumpleaños o en una fecha señalada se convierte en un **regalo** para alguien; el regalo espera mientras se compra; y termina cuando se entrega o cuando su ocasión se da por cerrada. De ese ciclo, la aplicación enseñaba el principio —el banco de ideas— y el contenedor —la ocasión—, pero no la parte de en medio, que es donde está el trabajo: qué falta por comprar y quién lo lleva. Para responder a eso había que abrir las ocasiones una por una y sumar de cabeza.
+
+Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una idea con estados sería justo lo que se cuenta— y no conviene: una idea sirve para varias personas y varios años, un regalo es de una persona y de una fecha; el regalo tiene responsable, coste y ocasión, que en una idea están vacíos siempre; y sobre todo se ocultan de manera distinta, que es la pieza central del modelo. Lo que se funde es el relato, no las filas.
+
+```
+┌──────────────────────────────┐
+│ Regalos            ⟳    ⚙   │
+│ ┌ Ideas ┬ Regalos ┬ Ocasiones ┐│
+├──────────────────────────────┤
+│ (Todos) ( Los que llevo yo ) (Sin nadie)│
+│ POR COMPRAR · 2              │
+│ ┌──────────────────────────┐ │
+│ │ Botas de montar  lo llevas tú│
+│ │ para Marta · Cumpleaños de │
+│ │ Marta 2026 · en 6 días   │ │
+│ └──────────────────────────┘ │
+│ ┌──────────────────────────┐ │
+│ │ Hamaca de playa  sin nadie│ │
+│ │ para la abuela · … · en 4 días│
+│ └──────────────────────────┘ │
+│ LISTOS · 1                   │
+│ ┌──────────────────────────┐ │
+│ │ Curso de cerámica  lo lleva Ana│
+│ │ para Rosa · Navidad 2026 · 38 €│
+│ └──────────────────────────┘ │
+│ Ya pasaron              1  ⌄ │
+└──────────────────────────────┘
+```
+
+**Se ordena por estado y no por ocasión.** La pregunta que se trae aquí es «¿qué me falta por comprar?», y esa se contesta de una vez para todas las fechas; por ocasión ya está la pantalla de al lado. Son dos grupos, *Por comprar* y *Listos*, y cada uno dice cuántos lleva en el rótulo.
+
+**La pastilla de la derecha dice quién lo lleva**, que es lo que hay que repartir. *Sin nadie* va marcado en color de aviso: no es un error, pero es lo único de la lista que pide que alguien haga algo. Con dos excepciones, que son los dos casos en los que el estado dice algo que el rótulo del grupo no dice ya: lo entregado, que dentro de *Listos* es lo único que se distingue del resto, y lo que se quedó sin comprar cuando la fecha ya pasó.
+
+**Los tres filtros de arriba son los tres cortes que se hacen de verdad**: todos, los que llevo yo y los que no lleva nadie. En un hogar de cuatro, la mitad de los regalos son de otros y en la lista solo estorban; y *sin nadie* convierte la pantalla en la lista de lo que hay que repartir antes de que llegue la fecha.
+
+**Pasada la fecha, nada desaparece solo.** Los regalos de una ocasión cuya fecha ya se fue bajan a un apartado plegado al final —*Ya pasaron*—, con lo que quedó sin comprar señalado. Archivar es esconder, y esconder solo lo que se ha terminado a medias sería esconder justamente lo que hay que mirar: una Navidad que se celebra el 26, o un cumpleaños que se junta el sábado siguiente, siguen haciendo falta el día después. Lo que los archiva de verdad es **dar la ocasión por cerrada**, que es un verbo que se ejerce a mano desde la ocasión y que manda sus regalos al histórico de quien los recibió.
+
+**Cerrar se pregunta**, porque no tiene vuelta: da por cerradas también las ideas que salieron de allí, exactamente igual que ocurre ya cuando el último regalo se marca como entregado. Una idea cerrada es terminal por diseño; para volver a usarla se duplica.
+
+**Desde un regalo se sale por dos puertas: su ocasión y su destinatario.** Un regalo no se entiende solo —se entiende por la fecha a la que va y por la persona que lo va a recibir—, y desde esta lista no había otra manera de llegar a ninguna de las dos. Cuando la ocasión es un cumpleaños, el enlace lleva a la hoja del cumpleaños y no a la genérica: es allí donde de verdad se prepara, con los años, la felicitación y el resto de los regalos.
+
+**Cuándo dejará de servir.** El día que un diciembre acumule treinta regalos, los dos grupos pedirán partirse por ocasión dentro de cada estado. Los filtros de arriba aguantan ese volumen; los rótulos, seguramente no.
 
 ---
 
