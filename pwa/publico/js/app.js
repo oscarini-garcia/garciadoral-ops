@@ -742,9 +742,9 @@ function bloqueLegal() {
   }, [texto]);
 
   return el('p', { class: 'pista' }, [
-    enlace('/privacidad.html', 'Privacidad'),
+    enlace('/privacidad', 'Privacidad'),
     ' · ',
-    enlace('/soporte.html', 'Ayuda y contacto'),
+    enlace('/soporte', 'Ayuda y contacto'),
   ]);
 }
 
