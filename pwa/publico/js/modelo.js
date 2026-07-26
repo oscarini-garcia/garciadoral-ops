@@ -75,6 +75,33 @@ export const PARENTESCOS = {
 export const PARENTESCO_OTRO = '__otro';
 
 /**
+ * El nombre entero, con los apellidos si los hay.
+ *
+ * Es lo que va en las listas donde se lee un nombre y no se habla de alguien:
+ * los apellidos son lo que distingue a dos Marías, y hay quien está dado de
+ * alta sin ellos —«la abuela»—, así que se pega solo lo que exista. Dentro de
+ * una frase no se usa: «un regalo para Marta Ruiz Gómez» no lo dice nadie.
+ */
+export const nombreCompleto = (persona) =>
+  [persona?.nombre, persona?.apellidos].filter(Boolean).join(' ');
+
+/**
+ * «de Marta», pero «del abuelo».
+ *
+ * Aquí hay gente dada de alta con el artículo dentro del nombre —«la abuela»,
+ * «el abuelo»—, que es como se la llama en casa y por tanto como debe figurar.
+ * Con «el» delante, la preposición se contrae, y «Cumpleaños de el abuelo» es
+ * de las cosas que hacen que una pantalla parezca escrita por una máquina.
+ *
+ * Solo el artículo suelto, no cualquier palabra que empiece por esas dos
+ * letras: «de Elena» se queda como está.
+ */
+export const deQuien = (nombre) => {
+  const texto = String(nombre || '');
+  return /^el\s/i.test(texto) ? `del ${texto.slice(3)}` : `de ${texto}`;
+};
+
+/**
  * El género, que solo existe para afinar cómo se nombra a cada uno.
  *
  * No es un dato del que la aplicación saque nada más: sirve para elegir entre
