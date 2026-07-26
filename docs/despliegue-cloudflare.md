@@ -127,12 +127,14 @@ solo intervienen cuando alguien elimina su cuenta y que se registran en el paso
 ellos.
 
 La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
-la base de datos desde *Ajustes → Contar el día con IA*, dentro de la propia
-aplicación y solo para administradores. Es lo que enciende el segundo botón de
-compartir —el del destello—, tanto en un día como en la semana, el mes o lo que
-viene: el que lo cuenta en dos frases antes de enviarlo. Sin clave, ese botón
-sencillamente no aparece y todo lo demás funciona igual. Se registra allí y
-no aquí porque es lo único de esta instalación que se cambia con cierta
+la base de datos desde *Ajustes → Inteligencia artificial*, dentro de la propia
+aplicación y solo para administradores. Es lo que enciende las dos cosas que la
+agenda le pide a un modelo: el segundo botón de compartir —el del destello—, que
+cuenta en dos frases un día, la semana, el mes o lo que viene antes de enviarlo,
+y la propuesta de regalo al apuntar una idea para alguien. Sin clave, ninguno de
+los dos botones aparece y todo lo demás funciona igual. El encargo de cada una
+—lo que se le pide al modelo— se reescribe en ese mismo apartado. Se registra
+allí y no aquí porque es lo único de esta instalación que se cambia con cierta
 frecuencia —al rotarla, al cambiar de modelo— y hacerlo con `wrangler` obligaría
 a volver a desplegar cada vez.
 
@@ -934,7 +936,7 @@ error visible: es arruinar una sorpresa.
 | CallMeBot | 0 €, servicio gratuito de un tercero y sin garantía |
 | Dominio | 10–15 € al año. `galoopa.store` ya está pagado; el subdominio no cuesta nada aparte |
 | Apple Developer Program | 99 € al año, solo si quiere la app iOS |
-| API de Anthropic | Se paga por uso y solo si configura la clave. Contar un día son unos cientos de palabras: con Haiku, céntimos al mes en un hogar |
+| API de Anthropic | Se paga por uso y solo si configura la clave. Contar un día o proponer un regalo son unos cientos de palabras: con Haiku, céntimos al mes en un hogar |
 
 ---
 
@@ -959,9 +961,10 @@ error visible: es arruinar una sorpresa.
 | La app revierte la actualización sola | No se llamó a `notifyAppReady()` | Lo hace `iniciarNativo()` al arrancar; compruebe que `app.js` lo sigue llamando |
 | El despachador dejó de ejecutarse | GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por defecto. Reactívelo desde Actions y active el workflow `mantenimiento` |
 | Una ruta nueva de la API contesta 404 | El Worker no se ha desplegado. Lance `desplegar-api` desde Actions, o `npm run desplegar` desde `api/`. La web y el OTA se publican solos; el Worker solo desde que existe ese workflow |
-| El botón de contar el día no aparece | No hay clave de Anthropic guardada, o quien mira no es administrador. Póngala en Ajustes → Contar el día con IA |
+| El botón de contar el día no aparece | No hay clave de Anthropic guardada. Póngala en Ajustes → Inteligencia artificial, que solo ven los administradores |
+| El botón de proponer un regalo no aparece | Lo mismo, o la idea todavía no tiene ninguna persona nombrada: con una etiqueta sola no se propone nada |
 | Contar el día siempre acaba compartiendo la lista tal cual | Algo falla en la llamada al modelo. El botón *Probar* de ese mismo apartado enseña la traza de cada intento: código HTTP, tipo de error y el mensaje de la API |
-| «demasiadas redacciones seguidas» | El freno por persona y minuto. Es deliberado: sin él, la clave de pago del hogar queda abierta a un bucle en la consola del navegador |
+| «demasiadas redacciones seguidas» o «demasiadas propuestas seguidas» | El freno por persona y minuto, compartido por las dos. Es deliberado: sin él, la clave de pago del hogar queda abierta a un bucle en la consola del navegador |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
 
 Trazas en vivo del Worker:

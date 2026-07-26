@@ -4,7 +4,7 @@
  * La arquitectura es la opción D de `specs/ux.md`: la semana abre la
  * aplicación, la coordinación de regalos vive en su propia pestaña —se visita
  * con intención, no de paso— y la ficha de persona de la opción C hace de
- * pantalla de detalle dentro de Familia.
+ * pantalla de detalle dentro de Gente.
  *
  * El botón de crear pertenece a la pantalla y no a la aplicación: su acción
  * depende de dónde esté quien lo pulsa. Un botón genérico obligaría a elegir el
@@ -42,7 +42,7 @@ import {
 } from './native.js';
 import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
-import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
+import { abrirFormularioIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
@@ -52,8 +52,10 @@ const PESTANAS = {
   // único de esa pantalla que cambia. Por eso su título es una función: cambia
   // al pasar de semana, y con las demás pestañas no cambia nunca.
   semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
-  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirCapturaDeIdea(ctx) },
-  familia: { titulo: 'Familia', pintar: pintarFamilia, fab: (ctx) => abrirCapturaDeIdea(ctx) },
+  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirFormularioIdea(ctx) },
+  // La pestaña se llama Gente en la barra; la clave conserva el nombre del
+  // módulo que la pinta, que es de donde sale.
+  familia: { titulo: 'Gente', pintar: pintarFamilia, fab: (ctx) => abrirFormularioIdea(ctx) },
   // En las pantallas sin acción de creación el botón no aparece.
   buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
 };
@@ -599,6 +601,9 @@ function formularioDeRedaccion(ajustes) {
   const instruccion = el('textarea', { rows: '5', spellcheck: 'false' });
   instruccion.value = ajustes.instruccion;
 
+  const regalo = el('textarea', { rows: '5', spellcheck: 'false' });
+  regalo.value = ajustes.regalo;
+
   const traza = el('pre', { class: 'traza', hidden: true });
   const contar = (texto, clase = 'traza') => {
     traza.className = clase;
@@ -631,6 +636,7 @@ function formularioDeRedaccion(ajustes) {
         clave: clave.value.trim() || undefined,
         modelo: modelo.value,
         instruccion: instruccion.value.trim(),
+        regalo: regalo.value.trim(),
       });
       clave.value = '';
       clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
@@ -653,7 +659,7 @@ function formularioDeRedaccion(ajustes) {
   return [
     el('p', {
       class: 'pista',
-      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Hoy solo lo usa una cosa: contar un día o una semana antes de compartirlos.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son dos, contar los días antes de compartirlos y proponer un regalo.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
@@ -662,7 +668,15 @@ function formularioDeRedaccion(ajustes) {
 
     el('h4', { class: 'subtitulo-ajuste', texto: 'Contar los días para compartirlos' }),
     campo('Instrucción', instruccion, 'Lo que se le pide al modelo. Los eventos se los da la agenda aparte; aquí va solo el encargo.'),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Proponer un regalo' }),
+    campo('Instrucción', regalo, 'Se pide una tanda de cinco, y la agenda espera una por línea: si reescribes esto, conserva esa forma. Lo que se sabe de la persona —su edad, lo que ha pedido, lo que ya tiene apuntado y lo que recibió— se lo da aparte. Vacío, vuelve el encargo de origen.'),
+
     el('div', { class: 'acciones' }, [guardar, probar]),
+    el('p', {
+      class: 'pista',
+      texto: 'Guardar los guarda los dos. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+    }),
     traza,
   ];
 }

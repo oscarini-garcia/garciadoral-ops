@@ -27,6 +27,10 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Presupuesto.** El panel está retirado de la pestaña de Regalos mientras se
+  decide qué forma tiene. Lo que sostiene sigue en pie y sin tocar: la escritura
+  de `presupuesto` en el Worker, el envío del importe a los administradores en la
+  instantánea, `gastoDe` en `modelo.js` y las reglas de la tabla en el CSS.
 - **Si se deriva algo nuevo en el dispositivo**, hay que resolverlo también en
   `api/src/redaccion.js` (`visiblesDe`). Los cumpleaños no son filas de `evento`
   —se componen en `pwa/publico/js/semana.js` con un identificador
@@ -35,9 +39,9 @@ pendiente. El hook lo inyecta al final del mapa.
   reconoce vuelve en `omitidos` y sale al probar desde Ajustes. Un evento de
   tipo «viaje» o uno importado de un calendario externo no entran en esto: son
   filas de `evento` y llegan en la instantánea como los demás.
-- Lo pendiente de construir está en el apartado 7 del
-  `README`: los calendarios externos, la copia periódica de salvaguarda y la
-  parte configurable del recordatorio previo.
+- Lo demás pendiente de construir está en el apartado 7 del `README`: los
+  calendarios externos, la copia periódica de salvaguarda y la parte configurable
+  del recordatorio previo.
 
 ## Codificación de archivos generados
 

@@ -46,10 +46,10 @@ tener que recorrer la aplicación entera cada vez.
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
-- **redaccion.js** — Redacción del mensaje de un día con la API de Anthropic.
-  MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO · leerConfiguracion
-  configuracionPublica · guardarConfiguracion · cadenaDeModelos · modelosDisponibles
-  componerMaterial · componerMaterialDePeriodo · …y 2 más
+- **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día y proponer un regalo.
+  MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
+  INSTRUCCION_REGALO_POR_DEFECTO · leerConfiguracion · configuracionPublica
+  guardarConfiguracion · cadenaDeModelos · modelosDisponibles · componerMaterial · …y 5 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -89,7 +89,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 5 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 6 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
   cerrarHoja · hayHojaAbierta · …y 8 más
@@ -98,11 +98,11 @@ tener que recorrer la aplicación entera cada vez.
 
 - **buscar.js** — Búsqueda global sobre Ideas y Ocasiones, que es el alcance de la primera versión (spec…
   reiniciarBusqueda · pintarBuscar
-- **familia.js** — Familia: el registro de personas y la ficha de cada una.
+- **familia.js** — Gente: el registro de personas y la ficha de cada una.
   pintarFamilia · abrirFicha
-- **regalos.js** — Regalos: el banco de ideas y las campañas.
+- **regalos.js** — Regalos: las ideas y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirDetalleIdea
-  abrirDetalleRegalo · abrirSelectorDeRegalo · abrirCapturaDeIdea
+  abrirDetalleRegalo · abrirSelectorDeRegalo · abrirFormularioIdea
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
   bloqueDeComentarios · abrirFormularioEvento · anclaActual
@@ -130,6 +130,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
+- `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
@@ -196,7 +197,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**151** en total.
+**165** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -206,7 +207,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
-- `api/test/redaccion.test.js` — 30
+- `api/test/redaccion.test.js` — 44
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 
