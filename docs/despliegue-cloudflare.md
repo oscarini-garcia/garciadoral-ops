@@ -181,8 +181,18 @@ El workflow pasa las pruebas del Worker antes de subir nada y comprueba
 `/api/salud` después. Se puede lanzar a mano desde la pestaña **Actions**, y
 allí tiene una casilla —*Aplicar también las migraciones de esquema*— para las
 versiones que traen tablas nuevas: es la manera de migrar sin una terminal
-delante. Aplica todas las migraciones menos la de catálogos, que va con
-`INSERT OR REPLACE` y pisaría lo que se haya cambiado desde la aplicación.
+delante.
+
+Esa casilla se puede marcar sin pensarlo, porque solo aplica lo que se puede
+repetir sin consecuencias. Quedan fuera dos clases de fichero:
+
+- **Los catálogos** (`0002`), que van con `INSERT OR REPLACE` y pisarían lo que
+  se haya cambiado desde la aplicación.
+- **Las migraciones de un solo uso**, las que llevan `.unavez.sql` en el
+  nombre. Son las que hacen `ALTER TABLE` —que falla si la columna ya está— o
+  reparten datos que ya existen. Para esas hay un campo al lado de la casilla:
+  se escribe el nombre del fichero, se lanza una vez, y se deja vacío en
+  adelante. Si el nombre no existe, el workflow para antes de tocar nada.
 
 Sin el secreto, el workflow falla en el paso de desplegar y no toca nada: el
 despliegue sigue siendo el de siempre, `npm run desplegar`.
