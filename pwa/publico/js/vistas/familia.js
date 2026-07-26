@@ -717,11 +717,13 @@ function campoDeFecha(valorInicial) {
   const control = el('input', { type: 'date', value: valorInicial || '' });
   const texto = entrada({
     inputmode: 'numeric', placeholder: 'dd/mm/aaaa', 'aria-label': 'Fecha de nacimiento escrita',
+    maxlength: '10', autocomplete: 'off',
     value: aTextoDeFecha(valorInicial),
   });
 
   control.addEventListener('input', () => { texto.value = aTextoDeFecha(control.value); });
   texto.addEventListener('input', () => {
+    aplicarMascara(texto);
     const iso = deTextoDeFecha(texto.value);
     if (iso !== null) control.value = iso;
   });
@@ -738,6 +740,46 @@ function campoDeFecha(valorInicial) {
       }),
     ]),
   };
+}
+
+/**
+ * Las barras las pone la casilla, no quien escribe.
+ *
+ * Se teclea `01121974` y se lee `01/12/1974`. Una fecha se dice de corrido —«uno
+ * doce setenta y cuatro»— y obligar a intercalar dos barras rompe ese tirón
+ * justo en el campo que existe para escribir deprisa; en un teclado numérico,
+ * además, la barra ni siquiera está a la vista.
+ *
+ * Solo separa lo que ya se ha escrito: `011` da `01/1` y nunca `01/1/`. Así el
+ * borrado no tiene nada especial que hacer —al quitar el último dígito la barra
+ * que lo precedía desaparece sola— y no hace falta interceptar la tecla.
+ */
+const conBarras = (digitos) => {
+  const d = digitos.slice(0, 8);
+  return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join('/');
+};
+
+/**
+ * Reescribe la casilla con la máscara, dejando el cursor donde estaba.
+ *
+ * El sitio se cuenta en dígitos y no en caracteres: si se contara en caracteres,
+ * cada barra que aparece al escribir empujaría el cursor un puesto atrás y las
+ * cifras acabarían saliendo desordenadas al corregir en medio.
+ */
+function aplicarMascara(casilla) {
+  const antes = casilla.value;
+  const cursor = casilla.selectionStart ?? antes.length;
+  const digitosAntesDelCursor = antes.slice(0, cursor).replace(/\D/g, '').length;
+
+  const despues = conBarras(antes.replace(/\D/g, ''));
+  if (despues === antes) return;
+  casilla.value = despues;
+
+  let sitio = 0;
+  for (let vistos = 0; sitio < despues.length && vistos < digitosAntesDelCursor; sitio += 1) {
+    if (/\d/.test(despues[sitio])) vistos += 1;
+  }
+  casilla.setSelectionRange(sitio, sitio);
 }
 
 const aTextoDeFecha = (iso) => {

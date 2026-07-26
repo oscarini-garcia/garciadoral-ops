@@ -333,7 +333,11 @@ Que «lóver» se traduzca a «mamá» o «papá» supone que esa pareja es madr
 
 En orden de cercanía y no alfabético: de una lista corta se elige mirando, no leyéndola entera. Encima de todas, **Sin decir**, porque el dato no es obligatorio; y al final, **Otro…**, que abre un campo libre para lo que no entre en ninguna lista —«el marido de mi prima»— y se guarda tal cual. Lo que ya estuviera escrito de antes, o quedara fuera de lista al mover a alguien de círculo, no se pierde: reaparece en *Otro* con su texto puesto.
 
-**La fecha de nacimiento, con las dos maneras de ponerla.** El selector del sistema es cómodo para lo cercano y penoso para lo lejano: poner 1947 exige recorrer setenta y nueve pantallas de calendario, y las fechas que se meten aquí son sobre todo de gente mayor. Al lado va una casilla en `dd/mm/aaaa`, que es como se dice una fecha en voz alta y se escribe de un tirón. Las dos escriben sobre el mismo valor y se copian la una a la otra; la de texto solo se cree lo que sea una fecha entera y válida —el 31 de febrero no cuela—, no protesta mientras se escribe, y al salir del campo se corrige sola a lo que haya guardado.
+**La fecha de nacimiento, con las dos maneras de ponerla.** El selector del sistema es cómodo para lo cercano y penoso para lo lejano: poner 1947 exige recorrer setenta y nueve pantallas de calendario, y las fechas que se meten aquí son sobre todo de gente mayor. Al lado va una casilla en `dd/mm/aaaa`, que es como se dice una fecha en voz alta y se escribe de un tirón.
+
+**Las barras las pone la casilla, no quien escribe.** Se teclea `01121974` y se lee `01/12/1974`. Obligar a intercalar dos barras rompe ese tirón justo en el campo que existe para escribir deprisa, y en un teclado numérico la barra ni siquiera está a la vista. La máscara solo separa lo que ya se ha escrito —`011` da `01/1` y nunca `01/1/`—, de modo que el borrado no necesita nada especial: al quitar el último dígito, la barra que lo precedía desaparece sola. El cursor se recoloca contando dígitos y no caracteres; contándolos en caracteres, cada barra que aparece lo empujaría un puesto atrás y las cifras saldrían desordenadas al corregir en medio.
+
+Las dos escriben sobre el mismo valor y se copian la una a la otra. La casilla enmascara siempre, pero solo se cree lo que sea una fecha entera y válida —el 31 de febrero no cuela—; no protesta mientras se escribe, y al salir del campo se corrige sola a lo que haya guardado.
 
 ### 7.2 La ficha
 
