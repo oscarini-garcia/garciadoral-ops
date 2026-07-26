@@ -189,8 +189,40 @@ function horaDe(evento) {
  * silencio. Sin emojis: el adorno es cosa de la lista que se comparte tal cual,
  * y aquí solo estorbaría al modelo.
  */
+/**
+ * Lo que el observador puede ver, por identificador.
+ *
+ * No basta con `instantanea.eventos`: los cumpleaños no son filas de `evento`.
+ * Se derivan de la fecha de nacimiento de cada persona, en el dispositivo, con
+ * un identificador compuesto —`derivado:cumpleanos:<persona>`— que aquí no
+ * existe. Sin resolverlos, se caían en silencio y el modelo contaba una semana
+ * sin el cumpleaños que la ocupaba.
+ *
+ * Lo que se copia de esa regla es solo el nombre —«Cumpleaños de X»—, no las
+ * fechas: de cuándo cae cada uno sigue decidiéndolo el dispositivo, que es
+ * quien expande las repeticiones. Y sale del registro de la persona, no de lo
+ * que mande el cliente, de modo que por aquí sigue sin poder colarse texto: si
+ * esa persona no está en la instantánea de quien pide, su cumpleaños tampoco.
+ */
+function visiblesDe(instantanea) {
+  const porId = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+
+  for (const persona of instantanea.personas || []) {
+    if (!persona.fecha_nacimiento) continue;
+    if (persona.activa === 0 || persona.activa === false) continue;
+    porId.set(`derivado:cumpleanos:${persona.id}`, {
+      id: `derivado:cumpleanos:${persona.id}`,
+      titulo: `Cumpleaños de ${persona.nombre}`,
+      inicio: persona.fecha_nacimiento,
+      jornada_completa: true,
+    });
+  }
+
+  return porId;
+}
+
 export function componerMaterial(instantanea, fecha, ids = []) {
-  const visibles = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+  const visibles = visiblesDe(instantanea);
   const lineas = [];
 
   for (const id of ids.slice(0, MAXIMO_EVENTOS)) {
@@ -220,7 +252,7 @@ function lineaDe(evento) {
  * filtrada de quien pide, y el encabezado se compone aquí a partir del tramo.
  */
 export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = [] }) {
-  const visibles = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+  const visibles = visiblesDe(instantanea);
   const lineas = [];
   let cuenta = 0;
 

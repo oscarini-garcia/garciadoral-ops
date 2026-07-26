@@ -85,6 +85,59 @@ test('un día sin nada da un material vacío, y entonces no se llama a nadie', a
   assert.equal(buscar.llamadas.length, 0);
 });
 
+// ------------------------------------------------------------ Cumpleaños --
+
+// Los cumpleaños no son filas de `evento`: el dispositivo los deriva de la
+// fecha de nacimiento y los manda con un identificador compuesto. Antes se
+// caían aquí en silencio, y el modelo contaba una semana sin el cumpleaños que
+// la ocupaba.
+const CON_PERSONAS = {
+  eventos: INSTANTANEA.eventos,
+  personas: [
+    { id: 'p-mariona', nombre: 'Mariona', fecha_nacimiento: '1982-04-14', activa: 1 },
+    { id: 'p-sin-fecha', nombre: 'Quien sea', fecha_nacimiento: null, activa: 1 },
+    { id: 'p-baja', nombre: 'Quien se fue', fecha_nacimiento: '1975-04-14', activa: 0 },
+  ],
+};
+
+test('el cumpleaños derivado llega al modelo, con el nombre del registro', () => {
+  const material = componerMaterial(CON_PERSONAS, '2026-04-14', ['e1', 'derivado:cumpleanos:p-mariona']);
+
+  assert.deepEqual(material.lineas, [
+    '09:00 · Dentista · Calle Mayor 3',
+    'todo el día · Cumpleaños de Mariona',
+  ]);
+});
+
+test('también dentro de un tramo', () => {
+  const material = componerMaterialDePeriodo(CON_PERSONAS, {
+    desde: '2026-04-13',
+    hasta: '2026-04-19',
+    dias: [{ fecha: '2026-04-14', eventos: ['derivado:cumpleanos:p-mariona', 'e1'] }],
+  });
+
+  assert.deepEqual(material.lineas, [
+    'martes 14 de Abril:',
+    '  todo el día · Cumpleaños de Mariona',
+    '  09:00 · Dentista · Calle Mayor 3',
+  ]);
+});
+
+test('el de quien ya no está en la familia no se deriva', () => {
+  const material = componerMaterial(CON_PERSONAS, '2026-04-14', ['derivado:cumpleanos:p-baja']);
+  assert.deepEqual(material.lineas, []);
+});
+
+test('sin fecha de nacimiento no hay cumpleaños que contar', () => {
+  const material = componerMaterial(CON_PERSONAS, '2026-04-14', ['derivado:cumpleanos:p-sin-fecha']);
+  assert.deepEqual(material.lineas, []);
+});
+
+test('un cumpleaños inventado de alguien que no se ve tampoco pasa', () => {
+  const material = componerMaterial(CON_PERSONAS, '2026-04-14', ['derivado:cumpleanos:p-de-otra-familia']);
+  assert.deepEqual(material.lineas, []);
+});
+
 // ------------------------------------------------------ El material del tramo --
 
 const INSTANTANEA_LARGA = {
