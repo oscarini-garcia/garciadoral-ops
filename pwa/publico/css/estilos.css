@@ -469,6 +469,9 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }
 .etiqueta[data-tono="tinta"] { background: var(--tinta-suave); color: var(--tinta); }
+/* Lo que falta por repartir y lo que se quedó sin comprar: no es un error, pero
+   es lo único de la lista que pide que alguien haga algo. */
+.etiqueta[data-tono="aviso"] { background: var(--paper-3); color: var(--aviso); }
 
 .sello {
   background: var(--sello-bg);

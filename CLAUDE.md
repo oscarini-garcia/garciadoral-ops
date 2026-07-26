@@ -32,9 +32,12 @@ pendiente. El hook lo inyecta al final del mapa.
   cambio lo nuevo no llega a quien ya tenga la aplicación abierta: no falla
   nada, simplemente se sigue viendo lo de antes. Desde fuera parece que el
   cambio no se hizo. `pruebas.yml` lo comprueba ahora en cada PR.
-- **No queda ninguna migración por aplicar.** Las dos `.unavez` —los círculos
-  (`0005`) y el género (`0006`)— ya están puestas, y no se vuelven a pedir
-  porque no se pueden repetir: el `ALTER TABLE` falla si la columna ya está. La
+- **Queda una migración por aplicar: `0007_estado_regalo.sql`**, que convierte a
+  «comprado» lo que estuviera «envuelto». Es corriente y no `.unavez` —se puede
+  repetir sin consecuencias—, así que basta con marcar la casilla de las
+  migraciones al desplegar la API. Las dos `.unavez` —los círculos (`0005`) y el
+  género (`0006`)— ya están puestas, y no se vuelven a pedir porque no se pueden
+  repetir: el `ALTER TABLE` falla si la columna ya está. La
   pantalla de Gente está decidida y construida: tres círculos
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con
   conmutador y sin avatares, el parentesco relativo a quien mira y el género
@@ -48,6 +51,17 @@ pendiente. El hook lo inyecta al final del mapa.
   no hay clave de Anthropic puesta. Queda abierto **si los cumpleaños deben
   arrancar desplegados** —hoy van plegados, con el próximo escrito en el rótulo— y
   qué hacer con las fechas señaladas cerradas cuando se acumulen una por año.
+- **La pestaña de Regalos tiene tres secciones**: Ideas, Regalos y Ocasiones, en
+  el orden del ciclo. La de en medio es nueva y está en `specs/ux.md` §6.2: lo
+  que hay cogido para alguien, por estado —Por comprar y Listos—, con los filtros
+  de «los que llevo yo» y «sin nadie», y lo que ya pasó de fecha en un apartado
+  plegado al final. **Nada se archiva solo al pasar la fecha**: lo que archiva es
+  dar la ocasión por cerrada a mano, que es un verbo nuevo del detalle de la
+  ocasión y que además cierra las ideas que salieron de allí. Los estados del
+  regalo son ahora tres —se retiró «envuelto»—. El análisis del ciclo y las
+  opciones que se descartaron están en `specs/propuesta-ciclo-del-regalo.html`;
+  queda abierto **cómo partir los dos grupos cuando un diciembre acumule treinta
+  regalos**, que es cuando los rótulos dejarán de bastar.
 - **Presupuesto.** El panel está retirado de la pestaña de Regalos mientras se
   decide qué forma tiene. Lo que sostiene sigue en pie y sin tocar: la escritura
   de `presupuesto` en el Worker, el envío del importe a los administradores en la

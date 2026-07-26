@@ -1,11 +1,15 @@
 /**
- * Regalos: las ideas y las ocasiones.
+ * Regalos: las ideas, los regalos y las ocasiones.
  *
- * Se unifican en una sola sección porque son el mismo objeto en dos momentos de
- * su vida: primero se apunta una idea y después se lleva a la ocasión en la que
- * se regala. Las dos secciones se llaman como las dos entidades del modelo
- * porque es lo que se viene a hacer aquí: o apuntar algo suelto, o mirar qué
- * falta para una fecha concreta (specs/ux.md §6).
+ * Se unifican en una sola sección porque son el mismo ciclo contado por partes:
+ * primero se apunta una **idea**, después se lleva a un cumpleaños o a una fecha
+ * señalada y allí se convierte en un **regalo**, que espera a que alguien lo
+ * compre y termina cuando se entrega o cuando su ocasión se da por cerrada.
+ *
+ * Las tres secciones se llaman como las tres cosas que se vienen a hacer aquí:
+ * apuntar algo suelto, mirar qué falta por comprar, o preparar una fecha
+ * concreta. Por dentro son dos entidades y no tres —un regalo cuelga de una
+ * ocasión—, pero quien mira no tiene por qué saberlo (specs/ux.md §6).
  */
 
 import {
@@ -16,8 +20,8 @@ import {
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
 import {
-  ESTADOS_REGALO, deQuien, estaActivo, formatearImporte, nombreCompleto, normalizar,
-  nuevoId, redaccionDisponible,
+  ESTADOS_REGALO, deQuien, estaActivo, estadoDeRegalo, formatearImporte, nombreCompleto,
+  normalizar, nuevoId, redaccionDisponible, textoDeEstado,
 } from '../modelo.js';
 import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, formatearFechaLarga, hoy, iso,
@@ -33,24 +37,29 @@ const TOPE_SIN_BUSCADOR = 12;
 
 let seccion = 'ideas';
 let filtroPersona = null;
+let filtroRegalos = 'todos';
 
 /**
- * Qué apartado de Ocasiones está plegado. Se conserva entre repintados porque la
- * pantalla se rehace en cada sincronización: sin esto, plegar los cumpleaños
- * duraría hasta que llegase la siguiente instantánea.
+ * Qué apartado está plegado. Se conserva entre repintados porque la pantalla se
+ * rehace en cada sincronización: sin esto, plegar los cumpleaños duraría hasta
+ * que llegase la siguiente instantánea.
  */
-let plegado = { senaladas: false, cumples: false };
+let plegado = { senaladas: false, cumples: false, pasados: true };
 
 export function reiniciarRegalos() {
   seccion = 'ideas';
   filtroPersona = null;
-  plegado = { senaladas: false, cumples: false };
+  filtroRegalos = 'todos';
+  plegado = { senaladas: false, cumples: false, pasados: true };
 }
+
+/** Las tres secciones, en el orden del ciclo: se apunta, se compra, se celebra. */
+const SECCIONES = [['ideas', 'Ideas'], ['regalos', 'Regalos'], ['ocasiones', 'Ocasiones']];
 
 export function pintarRegalos(pantalla, subcabecera, ctx) {
   vaciar(subcabecera).append(
     el('div', { class: 'seg', role: 'group', 'aria-label': 'Sección de regalos' }, [
-      ...[['ideas', 'Ideas'], ['ocasiones', 'Ocasiones']].map(([clave, texto]) =>
+      ...SECCIONES.map(([clave, texto]) =>
         el('button', {
           type: 'button',
           'aria-pressed': seccion === clave ? 'true' : 'false',
@@ -67,6 +76,8 @@ export function pintarRegalos(pantalla, subcabecera, ctx) {
     // existir como sitio al que llegar con el dedo.
     pantalla.classList.add('pantalla-ideas');
     pantalla.append(vistaIdeas(ctx));
+  } else if (seccion === 'regalos') {
+    pantalla.append(vistaRegalos(ctx));
   } else {
     pantalla.append(vistaOcasiones(ctx));
   }
@@ -184,6 +195,156 @@ function tarjetaDeIdea(idea, ctx) {
   ]);
 }
 
+// --------------------------------------------------------------- Regalos --
+
+/**
+ * Los tres cortes de la lista. Es el mismo conmutador de siempre, con la
+ * particularidad de que «sin nadie» no es una persona: es el hueco, y es lo que
+ * hay que repartir antes de que llegue la fecha.
+ */
+const FILTROS_REGALO = [
+  { clave: 'todos', texto: 'Todos', vale: () => true },
+  { clave: 'mios', texto: 'Los que llevo yo', vale: (regalo, yo) => regalo.responsable_id === yo },
+  { clave: 'nadie', texto: 'Sin nadie', vale: (regalo) => !regalo.responsable_id },
+];
+
+/**
+ * La segunda mitad de la vida de una idea: lo que ya está cogido para alguien.
+ *
+ * Se ordena por estado y no por ocasión porque la pregunta que se trae aquí es
+ * «¿qué me falta por comprar?», y esa se contesta de una vez para todas las
+ * fechas. Por ocasión ya está la pantalla de al lado.
+ *
+ * Lo que se va quedando atrás **no desaparece solo**. Pasada la fecha, los
+ * regalos bajan a un apartado plegado al final, con lo que se quedó sin comprar
+ * señalado; se archivan de verdad —y pasan al histórico de quien los recibió—
+ * cuando alguien da la ocasión por cerrada. Archivar es esconder, y esconder
+ * solo lo que se ha terminado a medias sería esconder justamente lo que hay que
+ * mirar (specs/ux.md §6.2).
+ */
+function vistaRegalos(ctx) {
+  const contenedor = el('div', {});
+  const filtro = FILTROS_REGALO.find((f) => f.clave === filtroRegalos) || FILTROS_REGALO[0];
+
+  contenedor.append(el('div', { class: 'grupo' }, [
+    el('div', { class: 'opciones' }, FILTROS_REGALO.map((cual) => el('button', {
+      class: 'opcion', type: 'button',
+      'aria-pressed': cual.clave === filtro.clave ? 'true' : 'false',
+      onclick: () => { filtroRegalos = cual.clave; ctx.refrescar(); },
+    }, [cual.texto]))),
+  ]));
+
+  const todos = ctx.vista.regalosEnMarcha()
+    .sort((a, b) => String(a.ocasion.fecha).localeCompare(String(b.ocasion.fecha)));
+  const enJuego = todos.filter(({ regalo }) => filtro.vale(regalo, ctx.vista.yo.id));
+
+  const dia = iso(hoy());
+  const pasados = enJuego.filter(({ ocasion }) => String(ocasion.fecha) < dia);
+  const porDelante = enJuego.filter(({ ocasion }) => String(ocasion.fecha) >= dia);
+  const porComprar = porDelante.filter(({ regalo }) => estadoDeRegalo(regalo) === 'pendiente');
+  const listos = porDelante.filter(({ regalo }) => estadoDeRegalo(regalo) !== 'pendiente');
+
+  const grupo = (rotulo, cuales) => (cuales.length
+    ? el('div', { class: 'grupo' }, [
+      el('p', { class: 'grupo-titulo', texto: `${rotulo} · ${cuales.length}` }),
+      ...cuales.map((par) => filaDeRegalo(par, ctx)),
+    ])
+    : null);
+
+  // Sin el filtrado, un grupo vacío entraría como el texto «null»: `append` no
+  // descarta lo que no es un nodo, al revés que los hijos de `el`.
+  contenedor.append(...[grupo('Por comprar', porComprar), grupo('Listos', listos)].filter(Boolean));
+
+  if (!porDelante.length) {
+    contenedor.append(el('p', {
+      class: 'vacio',
+      texto: !todos.length
+        ? 'Todavía no hay ningún regalo en marcha. Un regalo nace de una idea: se apunta en Ideas y se lleva a un cumpleaños o a una fecha señalada.'
+        : !enJuego.length ? 'Ninguno con ese filtro. Los demás siguen ahí, en «Todos».'
+          : 'Nada por delante. Lo único que queda es de una fecha que ya pasó.',
+    }));
+  }
+
+  if (pasados.length) {
+    const bloque = acordeon('Ya pasaron', (cuerpo) => {
+      cuerpo.append(el('p', {
+        class: 'pista',
+        texto: 'Su fecha se fue y su ocasión sigue abierta. Se van de aquí al darla por cerrada, que es lo que los manda al histórico de quien los recibió.',
+      }));
+      for (const par of pasados) cuerpo.append(filaDeRegalo(par, ctx, { pasada: true }));
+    }, { abierta: !plegado.pasados, nota: String(pasados.length) });
+
+    bloque.addEventListener('toggle', () => { plegado.pasados = !bloque.open; });
+    contenedor.append(bloque);
+  }
+
+  return contenedor;
+}
+
+/**
+ * Una línea de la lista: qué es, quién lo lleva y para cuándo.
+ *
+ * La pastilla de la derecha dice **quién lo lleva**, que es lo que hay que
+ * repartir y lo que ordena los tres filtros de arriba. Con dos excepciones, que
+ * son los dos casos en los que el estado dice algo que el rótulo del grupo no
+ * dice ya: lo que se quedó sin comprar cuando la fecha pasó, y lo entregado,
+ * que dentro de «Listos» es el único que se distingue de los demás.
+ */
+function filaDeRegalo({ regalo, ocasion }, ctx, { pasada = false } = {}) {
+  const idea = regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null;
+  const estado = estadoDeRegalo(regalo);
+  const quien = regalo.responsable_id === ctx.vista.yo.id ? 'lo llevas tú'
+    : regalo.responsable_id ? `lo lleva ${ctx.vista.nombre(regalo.responsable_id)}`
+      : 'sin nadie';
+
+  // «sin comprar» y no «se quedó sin comprar»: dentro de «Ya pasaron» el tiempo
+  // verbal lo pone el rótulo, y la pastilla larga parte el título en dos líneas.
+  const marca = pasada && estado === 'pendiente' ? { texto: 'sin comprar', tono: 'aviso' }
+    : estado === 'entregado' ? { texto: 'entregado', tono: 'regalo' }
+      : { texto: quien, tono: regalo.responsable_id ? null : 'aviso' };
+
+  const para = [regalo.destinatario_principal_id, ...(regalo.codestinatarios || [])]
+    .filter(Boolean).map((id) => ctx.vista.nombre(id));
+
+  return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleRegalo(regalo.id, ctx) }, [
+    el('div', { class: 'tarjeta-fila' }, [
+      el('h3', { texto: idea?.titulo || 'Regalo' }),
+      el('span', { class: 'etiqueta empujar', 'data-tono': marca.tono, texto: marca.texto }),
+    ]),
+    el('p', {
+      texto: [
+        para.length ? `para ${para.join(' y ')}` : 'sin destinatario',
+        ocasion.nombre,
+        cuandoLaOcasion(ocasion.fecha),
+        // Lo comprado dice cuánto costó; lo que falta por comprar, no: ahí el
+        // importe todavía no existe y el hueco no cuenta nada.
+        estado !== 'pendiente' && typeof regalo.coste_real === 'number' ? formatearImporte(regalo.coste_real) : null,
+        // Cuando la pastilla la ocupa el estado, quién lo lleva baja aquí: sigue
+        // haciendo falta para saber a quién preguntarle.
+        marca.texto !== quien && regalo.responsable_id ? quien : null,
+      ].filter(Boolean).join(' · '),
+    }),
+  ]);
+}
+
+/**
+ * Cuánto falta, contado como se cuenta hablando. Es la regla del cumpleaños: de
+ * cerca en días, de lejos por la fecha, que es lo único que significa algo a
+ * cuatro meses vista. Y hacia atrás igual, porque lo que ya pasó también se
+ * sitúa mejor por días mientras sean pocos.
+ */
+function cuandoLaOcasion(fecha) {
+  const cuando = parsearMomento(fecha);
+  if (!cuando) return '';
+  const dias = Math.round((cuando - hoy()) / 86400000);
+  if (dias === 0) return 'hoy';
+  if (dias === 1) return 'mañana';
+  if (dias === -1) return 'ayer';
+  if (dias > 1 && dias <= 60) return `en ${dias} días`;
+  if (dias < -1 && dias >= -60) return `hace ${-dias} días`;
+  return fechaCorta(fecha);
+}
+
 // ------------------------------------------------------------- Ocasiones --
 
 /**
@@ -217,7 +378,7 @@ function vistaOcasiones(ctx) {
 const mismoDiaYMes = (una, otra) => String(una).slice(5, 10) === String(otra).slice(5, 10);
 
 /**
- * ¿Esta ocasión es el cumpleaños de alguien?
+ * ¿Esta ocasión es el cumpleaños de alguien? Y en tal caso, de quién.
  *
  * No hay columna que lo diga, y no hace falta inventarla: una ocasión que cae el
  * mismo día del año que nació alguno de sus participantes es su cumpleaños. Se
@@ -225,12 +386,13 @@ const mismoDiaYMes = (una, otra) => String(una).slice(5, 10) === String(otra).sl
  * desactualizado —así se reconoce también «Cumpleaños de Marta 2025», que se
  * creó antes de que esta pantalla existiera—.
  */
-function esDeCumple(ocasion, ctx) {
-  return (ocasion.participantes || []).some((id) => {
-    const persona = ctx.vista.persona(id);
-    return persona?.fecha_nacimiento && mismoDiaYMes(persona.fecha_nacimiento, ocasion.fecha);
-  });
+function deQuienEsElCumple(ocasion, ctx) {
+  return (ocasion.participantes || [])
+    .map((id) => ctx.vista.persona(id))
+    .find((persona) => persona?.fecha_nacimiento && mismoDiaYMes(persona.fecha_nacimiento, ocasion.fecha)) || null;
 }
+
+const esDeCumple = (ocasion, ctx) => Boolean(deQuienEsElCumple(ocasion, ctx));
 
 /** La ocasión del cumpleaños que viene, si es que alguien ya abrió una. Se ata
  *  por la fecha exacta: la del año pasado no sirve para el de este año. */
@@ -498,6 +660,12 @@ export function abrirOcasion(ocasionId, ctx) {
         class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
         onclick: () => abrirFormularioOcasion(ctx, { duplicarDe: ocasion.id }),
       }, ['Duplicar para otro año']),
+      // Cerrar es lo que archiva de verdad: mientras la ocasión siga abierta,
+      // sus regalos se quedan a la vista aunque la fecha se haya ido.
+      ocasion.estado === 'abierta' ? el('button', {
+        class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+        onclick: () => confirmarCierreDeOcasion(ocasion, ctx),
+      }, ['Darla por cerrada']) : null,
     ]));
   }, [
     // El verbo que se usa va arriba, junto al título, igual que en un evento y en
@@ -714,7 +882,7 @@ function tarjetaDeRegalo(regalo, ctx) {
   return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleRegalo(regalo.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: idea?.titulo || 'Regalo' }),
-      el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: regalo.estado }),
+      el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: textoDeEstado(regalo).toLowerCase() }),
     ]),
     el('p', {
       texto: [
@@ -792,6 +960,16 @@ export function abrirDetalleIdea(ideaId, ctx) {
   ]);
 }
 
+/**
+ * Un regalo por dentro: cómo va, quién lo lleva, lo que costó y las dos puertas
+ * por las que se sale.
+ *
+ * Las puertas importan porque un regalo no se entiende solo: se entiende por la
+ * fecha a la que va y por la persona que lo va a recibir. Desde la lista de
+ * regalos no hay otra manera de llegar a ninguna de las dos, y hacer el camino
+ * por la pestaña de al lado —buscar la ocasión, abrirla, encontrar la línea— es
+ * exactamente lo que esta pantalla vino a evitar.
+ */
 export function abrirDetalleRegalo(regaloId, ctx) {
   const regalo = ctx.vista.regalo(regaloId);
   if (!regalo) return;
@@ -800,7 +978,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
   abrirHoja(idea?.titulo || 'Regalo', (cuerpo) => {
     cuerpo.append(el('p', { class: 'pista', texto: `Para ${ctx.vista.nombre(regalo.destinatario_principal_id)}` }));
 
-    const estado = seleccion(ESTADOS_REGALO, regalo.estado);
+    const estado = seleccion(ESTADOS_REGALO, estadoDeRegalo(regalo));
     estado.addEventListener('change', async () => {
       await guardar('regalo', regalo.id, { estado: estado.value });
       ctx.refrescar();
@@ -826,6 +1004,27 @@ export function abrirDetalleRegalo(regaloId, ctx) {
       ctx.refrescar();
     });
     cuerpo.append(campo('Lo que costó', coste, 'Opcional. Es lo que permite saber después en qué se fue una ocasión.'));
+
+    // Adónde va y a quién: los dos enlaces que cierran el círculo. El de la
+    // ocasión lleva al cumpleaños cuando la ocasión es un cumpleaños, porque esa
+    // es la hoja donde de verdad se prepara —con los años, la felicitación y el
+    // resto de los regalos— y no la genérica.
+    const ocasion = ctx.vista.ocasion(regalo.ocasion_id);
+    const destinatario = ctx.vista.persona(regalo.destinatario_principal_id);
+    const cumpleanero = ocasion ? deQuienEsElCumple(ocasion, ctx) : null;
+
+    if (ocasion) {
+      cuerpo.append(el('button', {
+        class: 'enlace-discreto', type: 'button',
+        onclick: () => (cumpleanero ? abrirCumple(cumpleanero.id, ctx) : abrirOcasion(ocasion.id, ctx)),
+      }, [`Ver ${ocasion.nombre} · ${cuandoLaOcasion(ocasion.fecha)}`]));
+    }
+    if (destinatario) {
+      cuerpo.append(el('button', {
+        class: 'enlace-discreto', type: 'button',
+        onclick: () => abrirFicha(destinatario.id, ctx),
+      }, [`Ver la ficha de ${destinatario.nombre}`]));
+    }
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
@@ -1147,6 +1346,59 @@ function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   }, [borrarOcasion]);
+}
+
+/**
+ * Dar una ocasión por cerrada, que es lo que la archiva.
+ *
+ * Nada se archiva solo al pasar la fecha: una Navidad que se celebra el día 26,
+ * o un cumpleaños que se junta el sábado siguiente, seguirían haciendo falta el
+ * día después. Lo que hace la fecha es bajar sus regalos a «Ya pasaron», y lo
+ * que los saca de ahí es esto (specs/ux.md §6.2).
+ *
+ * Se pregunta porque no tiene vuelta: cerrar manda los regalos al histórico de
+ * cada uno y da por cerradas las ideas que salieron de aquí, exactamente igual
+ * que ocurre ya cuando el último regalo se marca como entregado. Una idea
+ * cerrada es terminal por diseño; para volver a usarla se duplica
+ * (specs/modelo-datos.md §5.2).
+ */
+function confirmarCierreDeOcasion(ocasion, ctx) {
+  const regalos = ctx.vista.regalosDe(ocasion.id);
+  const sinComprar = regalos.filter((r) => estadoDeRegalo(r) === 'pendiente').length;
+
+  abrirHoja(`Cerrar ${ocasion.nombre}`, (cuerpo) => {
+    cuerpo.append(el('p', {
+      texto: regalos.length
+        ? `${regalos.length === 1 ? 'Su regalo pasa al histórico de quien lo recibió' : `Sus ${regalos.length} regalos pasan al histórico de quien los recibió`}, y la ocasión deja de salir en la lista.`
+        : 'La ocasión deja de salir en la lista. No tiene ningún regalo apuntado.',
+    }));
+    if (sinComprar) {
+      cuerpo.append(el('p', {
+        class: 'pista', 'data-tono': 'aviso',
+        texto: sinComprar === 1
+          ? 'Queda uno sin comprar. Se archiva igual, y quedará constancia de que se quedó así.'
+          : `Quedan ${sinComprar} sin comprar. Se archivan igual, y quedará constancia de que se quedaron así.`,
+      }));
+    }
+    cuerpo.append(el('p', {
+      class: 'pista',
+      texto: 'Las ideas que salieron de aquí se dan por cerradas. Para volver a usarlas se duplican, igual que cuando un regalo se entrega.',
+    }));
+
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+        onclick: async () => {
+          await guardar('ocasion', ocasion.id, { estado: 'cerrada' });
+          toque('media');
+          cerrarHoja();
+          avisar('Ocasión cerrada');
+          ctx.refrescar();
+        },
+      }, ['Cerrarla']),
+    ]));
+  });
 }
 
 /**
