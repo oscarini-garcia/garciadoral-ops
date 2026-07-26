@@ -51,8 +51,17 @@ pendiente. El hook lo inyecta al final del mapa.
   no hay clave de Anthropic puesta. Queda abierto **si los cumpleaños deben
   arrancar desplegados** —hoy van plegados, con el próximo escrito en el rótulo— y
   qué hacer con las fechas señaladas cerradas cuando se acumulen una por año.
-- **La pestaña de Regalos tiene tres secciones**: Ideas, Regalos y Ocasiones, en
-  el orden del ciclo. La de en medio es nueva y está en `specs/ux.md` §6.2: lo
+- **La pestaña de Regalos tiene cuatro apartados**: Deseos, Ideas, Regalos y
+  Ocasiones. Los tres últimos van en el orden del ciclo; **Deseos va el primero**
+  porque no es un paso de ese ciclo —es lo único que habla de uno mismo— y está
+  en `specs/ux.md` §6.3. Allí no se pregunta para quién ni se dice nunca cómo va
+  un deseo: la pastilla de «en curso» sobre lo que uno pide sería el aviso de que
+  alguien te ha comprado eso. Y lo que alguien ha pedido encabeza ahora el
+  selector de regalos, que antes solo ofrecía el banco de ideas y dejaba los
+  deseos alcanzables únicamente desde la ficha de esa persona. Queda abierto **si
+  «Deseos» debería ser también la pestaña con la que se abre**; hoy se abre en
+  Ideas.
+- **La sección de Regalos** está en `specs/ux.md` §6.2: lo
   que hay cogido para alguien, por estado —Por comprar y Listos—, con los filtros
   de «los que llevo yo» y «sin nadie», y lo que ya pasó de fecha en un apartado
   plegado al final. **Nada se archiva solo al pasar la fecha**: lo que archiva es
@@ -62,6 +71,13 @@ pendiente. El hook lo inyecta al final del mapa.
   opciones que se descartaron están en `specs/propuesta-ciclo-del-regalo.html`;
   queda abierto **cómo partir los dos grupos cuando un diciembre acumule treinta
   regalos**, que es cuando los rótulos dejarán de bastar.
+- **Lo siguiente del flujo de las ideas está analizado y sin construir**, en
+  `specs/propuesta-idea-de-punta-a-punta.html`: el ciclo lineal —mientras una
+  idea es regalo no es idea, y vuelve a la lista si se tira atrás el regalo—, la
+  ficha con el precio dentro, «seleccionada» en lugar de «en curso», borrar como
+  verbo de la cabecera y «Duplicar» fuera. La propuesta deja apuntado que hoy hay
+  un punto sin retorno escondido: entregar el regalo cierra la idea para siempre,
+  y retirarlo después no la devuelve.
 - **Presupuesto.** El panel está retirado de la pestaña de Regalos mientras se
   decide qué forma tiene. Lo que sostiene sigue en pie y sin tocar: la escritura
   de `presupuesto` en el Worker, el envío del importe a los administradores en la

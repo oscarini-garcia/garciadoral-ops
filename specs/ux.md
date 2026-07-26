@@ -171,7 +171,7 @@ En marzo, el bloque de Navidad no aparece y su espacio lo ocupan el próximo cum
 
 ### 6.1 La pantalla de ocasiones, como se construyó
 
-Lo que sigue no es una opción sino la decisión tomada. La pestaña de Regalos se quedó con las secciones de esta opción —Ideas y Ocasiones, y más tarde Regalos entre las dos (§6.2)—, y esto es lo que hay dentro de la última.
+Lo que sigue no es una opción sino la decisión tomada. La pestaña de Regalos se quedó con las secciones de esta opción —Ideas y Ocasiones, y más tarde Regalos entre las dos (§6.2) y Deseos delante de todas (§6.3)—, y esto es lo que hay dentro de la de Ocasiones.
 
 **Hay dos tipos de ocasión, y por eso hay dos apartados.** Una **fecha señalada** —Navidad, Reyes, un aniversario— es una ronda: mucha gente, muchos regalos y una coordinación que dura semanas. Un **cumpleaños** es lo contrario: una persona, una fecha que vuelve sola cada año y, casi siempre, un mensaje que mandar. Mezclados en una sola lista había que leerla entera para encontrar cualquiera de las dos cosas.
 
@@ -180,7 +180,7 @@ El nombre del primer apartado es el que se usa en casa para esas fechas. Mientra
 ```
 ┌──────────────────────────────┐
 │ Regalos            ⟳    ⚙   │
-│ ┌ Ideas ┬ Regalos ┬ Ocasiones ┐│
+│ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
 ├──────────────────────────────┤
 │ Fechas señaladas  1 en marcha ⌃│
 │ ┌──────────────────────────┐ │
@@ -228,7 +228,7 @@ Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una i
 ```
 ┌──────────────────────────────┐
 │ Regalos            ⟳    ⚙   │
-│ ┌ Ideas ┬ Regalos ┬ Ocasiones ┐│
+│ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
 ├──────────────────────────────┤
 │ (Todos) ( Los que llevo yo ) (Sin nadie)│
 │ POR COMPRAR · 2              │
@@ -263,6 +263,36 @@ Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una i
 **Desde un regalo se sale por dos puertas: su ocasión y su destinatario.** Un regalo no se entiende solo —se entiende por la fecha a la que va y por la persona que lo va a recibir—, y desde esta lista no había otra manera de llegar a ninguna de las dos. Cuando la ocasión es un cumpleaños, el enlace lleva a la hoja del cumpleaños y no a la genérica: es allí donde de verdad se prepara, con los años, la felicitación y el resto de los regalos.
 
 **Cuándo dejará de servir.** El día que un diciembre acumule treinta regalos, los dos grupos pedirán partirse por ocasión dentro de cada estado. Los filtros de arriba aguantan ese volumen; los rótulos, seguramente no.
+
+### 6.3 La pantalla de deseos, como se construyó
+
+Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo suyo y de prestado. No es lo mismo que lo demás: **el banco de ideas es lo que la casa le regala a alguien, y esto es lo único de la pestaña que habla de uno mismo.** Pasa a ser un apartado propio, el primero de los cuatro.
+
+```
+┌──────────────────────────────┐
+│ Regalos            ⟳    ⚙   │
+│ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
+├──────────────────────────────┤
+│ 2 COSAS PEDIDAS              │
+│ ┌──────────────────────────┐ │
+│ │ Auriculares              │ │
+│ │ 180 € · Tecnología       │ │
+│ └──────────────────────────┘ │
+│ Esto lo ve tu familia en tu  │
+│ ficha, y les sale al         │
+│ prepararte un regalo.        │
+└──────────────────────────────┘
+```
+
+**Va el primero aunque no sea el primer paso de nada.** Los otros tres cuentan un ciclo —se apunta, se compra, se celebra— y meter en medio el único que habla de uno mismo lo partiría por la mitad. La pestaña se abre igualmente en Ideas, que es lo que se viene a hacer casi siempre.
+
+**El rótulo es «Deseos» y no «Mis deseos» por una medida, no por gusto.** Con la hoja de estilos de verdad, en un teléfono de 390 puntos hay 362 útiles y el conmutador de cuatro ocupa 334; con el rótulo entero son 359, que cabe por tres puntos —un tipo de letra un punto mayor en los ajustes del sistema y se sale—. En la propia aplicación de uno, «Deseos» no puede ser los de nadie más.
+
+**Aquí no se pregunta para quién.** El botón flotante y el doble toque en el hueco abren la hoja con el destinatario ya puesto, y el formulario se queda en tres cosas: qué, descripción y la clasificación de siempre. Se llama «Pedir algo», porque es lo que se viene a hacer. Apuntarse algo deja así de ser un efecto secundario de nombrarse a sí mismo en el campo de «para quién», que es como se conseguía antes.
+
+**Y aquí no se dice nunca cómo va.** Un deseo que alguien ya ha cogido para regalártelo sigue apareciendo en esta lista igual que los demás, sin marca ninguna: la pastilla que en el banco de ideas avisa de que algo está en marcha sería, en tu propia lista, el aviso de que alguien te ha comprado eso. El pie de la pantalla lo dice con todas las letras —«si alguien te lo acaba regalando no te enterarás por aquí»—, que es preferible a que se deduzca.
+
+**Lo que alguien ha pedido sale al prepararle un regalo.** Es el otro medio cambio, y estaba cojo desde el principio: los deseos no están en el banco de ideas —un deseo es de quien lo escribe—, así que el selector de regalos no los ofrecía y solo se podían coger entrando en la ficha de esa persona, justo cuando lo que se estaba haciendo era prepararle el cumpleaños. Ahora encabezan la lista del selector, en su propio grupo —«Lo que pide Marta»—, porque una cosa que te han pedido gana a cualquier idea. En esas líneas no se escribe de quién es la idea: lo dice el rótulo, y en su lugar va el precio, que es lo que ayuda a decidir.
 
 ---
 

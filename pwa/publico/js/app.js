@@ -42,7 +42,7 @@ import {
 } from './native.js';
 import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
-import { abrirFormularioIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
+import { nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
@@ -52,7 +52,7 @@ const PESTANAS = {
   // único de esa pantalla que cambia. Por eso su título es una función: cambia
   // al pasar de semana, y con las demás pestañas no cambia nunca.
   semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
-  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirFormularioIdea(ctx) },
+  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => nuevoDesdeRegalos(ctx) },
   // La pestaña se llama Gente en la barra; la clave conserva el nombre del
   // módulo que la pinta, que es de donde sale. Y va sin botón flotante: la
   // pantalla lleva un «+» dentro de cada círculo, y uno encima que hiciera otra
