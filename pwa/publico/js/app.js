@@ -671,6 +671,14 @@ function resumenDeLaPrueba(resultado) {
     return `· ${partes.join(' · ')}`;
   });
 
+  // Lo que el servidor no ha sabido resolver va primero, porque no es un fallo
+  // del modelo y no se descubre leyendo el texto: es un evento que el
+  // dispositivo compone y que aquí no se reconoce, y el mensaje sale corto sin
+  // que nadie lo note.
+  if (resultado.omitidos?.length) {
+    renglones.unshift(`⚠ sin resolver: ${resultado.omitidos.join(', ')}`, '');
+  }
+
   if (resultado.texto) {
     return [`Ha contestado ${resultado.modelo}:`, '', resultado.texto, '', ...renglones].join('\n');
   }

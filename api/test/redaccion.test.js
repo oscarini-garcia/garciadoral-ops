@@ -138,6 +138,31 @@ test('un cumpleaños inventado de alguien que no se ve tampoco pasa', () => {
   assert.deepEqual(material.lineas, []);
 });
 
+// Lo que costó encontrar el fallo de los cumpleaños fue el silencio, no el
+// descarte. Lo que no se reconoce se devuelve, para que la próxima familia de
+// eventos derivados se anuncie en lugar de acortar el mensaje sin más.
+test('lo que no se sabe resolver se devuelve en lugar de caerse callando', () => {
+  const material = componerMaterial(CON_PERSONAS, '2026-04-14', ['e1', 'derivado:loquesea:p-mariona', 'ev-fantasma']);
+
+  assert.deepEqual(material.lineas, ['09:00 · Dentista · Calle Mayor 3']);
+  assert.deepEqual(material.omitidos, ['derivado:loquesea:p-mariona', 'ev-fantasma']);
+});
+
+test('y también en un tramo', () => {
+  const material = componerMaterialDePeriodo(CON_PERSONAS, {
+    desde: '2026-04-13',
+    hasta: '2026-04-19',
+    dias: [{ fecha: '2026-04-14', eventos: ['e1', 'derivado:viajes:v-1'] }],
+  });
+
+  assert.deepEqual(material.omitidos, ['derivado:viajes:v-1']);
+});
+
+test('cuando todo se resuelve, no se omite nada', () => {
+  const material = componerMaterial(CON_PERSONAS, '2026-04-14', ['e1', 'derivado:cumpleanos:p-mariona']);
+  assert.deepEqual(material.omitidos, []);
+});
+
 // ------------------------------------------------------ El material del tramo --
 
 const INSTANTANEA_LARGA = {

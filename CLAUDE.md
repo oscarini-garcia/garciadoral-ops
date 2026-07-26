@@ -27,7 +27,15 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- Nada abierto ahora mismo. Lo pendiente de construir está en el apartado 7 del
+- **Si se deriva algo nuevo en el dispositivo**, hay que resolverlo también en
+  `api/src/redaccion.js` (`visiblesDe`). Los cumpleaños no son filas de `evento`
+  —se componen en `pwa/publico/js/semana.js` con un identificador
+  `derivado:<qué>:<de quién>`— y el Worker los descartaba al redactar, de modo
+  que el mensaje salía sin ellos y nadie se enteraba. Ya no calla: lo que no
+  reconoce vuelve en `omitidos` y sale al probar desde Ajustes. Un evento de
+  tipo «viaje» o uno importado de un calendario externo no entran en esto: son
+  filas de `evento` y llegan en la instantánea como los demás.
+- Lo pendiente de construir está en el apartado 7 del
   `README`: los calendarios externos, la copia periódica de salvaguarda y la
   parte configurable del recordatorio previo.
 
