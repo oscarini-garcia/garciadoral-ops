@@ -230,20 +230,21 @@ Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una i
 │ Regalos            ⟳    ⚙   │
 │ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
 ├──────────────────────────────┤
-│ (Todos) ( Los que llevo yo ) (Sin nadie)│
+│ QUIÉN SE ENCARGA             │
+│ (Todos) ( Yo ) ( Nadie )     │
 │ POR COMPRAR · 2              │
 │ ┌──────────────────────────┐ │
-│ │ Botas de montar  lo llevas tú│
+│ │ Botas de montar te encargas tú│
 │ │ para Marta · Cumpleaños de │
 │ │ Marta 2026 · en 6 días   │ │
 │ └──────────────────────────┘ │
 │ ┌──────────────────────────┐ │
-│ │ Hamaca de playa  sin nadie│ │
+│ │ Hamaca de playa sin encargado│
 │ │ para la abuela · … · en 4 días│
 │ └──────────────────────────┘ │
 │ LISTOS · 1                   │
 │ ┌──────────────────────────┐ │
-│ │ Curso de cerámica  lo lleva Ana│
+│ │ Curso de cerámica se encarga Ana│
 │ │ para Rosa · Navidad 2026 · 38 €│
 │ └──────────────────────────┘ │
 │ Ya pasaron              1  ⌄ │
@@ -252,9 +253,11 @@ Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una i
 
 **Se ordena por estado y no por ocasión.** La pregunta que se trae aquí es «¿qué me falta por comprar?», y esa se contesta de una vez para todas las fechas; por ocasión ya está la pantalla de al lado. Son dos grupos, *Por comprar* y *Listos*, y cada uno dice cuántos lleva en el rótulo.
 
-**La pastilla de la derecha dice quién lo lleva**, que es lo que hay que repartir. *Sin nadie* va marcado en color de aviso: no es un error, pero es lo único de la lista que pide que alguien haga algo. Con dos excepciones, que son los dos casos en los que el estado dice algo que el rótulo del grupo no dice ya: lo entregado, que dentro de *Listos* es lo único que se distingue del resto, y lo que se quedó sin comprar cuando la fecha ya pasó.
+**La pastilla de la derecha dice quién se encarga**, que es lo que hay que repartir. *Sin encargado* va marcado en color de aviso: no es un error, pero es lo único de la lista que pide que alguien haga algo. Con dos excepciones, que son los dos casos en los que el estado dice algo que el rótulo del grupo no dice ya: lo entregado, que dentro de *Listos* es lo único que se distingue del resto, y lo que se quedó sin comprar cuando la fecha ya pasó.
 
-**Los tres filtros de arriba son los tres cortes que se hacen de verdad**: todos, los que llevo yo y los que no lleva nadie. En un hogar de cuatro, la mitad de los regalos son de otros y en la lista solo estorban; y *sin nadie* convierte la pantalla en la lista de lo que hay que repartir antes de que llegue la fecha.
+**Los tres filtros de arriba son los tres cortes que se hacen de verdad**: todos, de los que me encargo yo, y los que no lleva nadie. En un hogar de cuatro, la mitad de los regalos son de otros y en la lista solo estorban; y *Nadie* convierte la pantalla en la lista de lo que hay que repartir antes de que llegue la fecha.
+
+Van bajo un rótulo —«Quién se encarga»— igual que las personas en Ideas van bajo «Para quién», y por eso las pastillas pueden ser de una palabra: el rótulo hace el trabajo de explicar y *Todos · Yo · Nadie* se lee como una escala. Decían «Los que llevo yo» y «Sin nadie», que hablaban de llevar —que suena a llevarlo en la mano el día de la fiesta— y no decían sin qué; lo que hay que nombrar es otra cosa: que alguien se ha hecho cargo de ese regalo, o que todavía no. La misma palabra va en la pastilla de cada línea, en el campo del detalle —«Quién se encarga», con «Nadie todavía» como opción vacía— y en el resumen de una ocasión. Las cuatro maneras que se estudiaron, con las anchuras medidas, están en `specs/prototipo-quien-se-encarga.html`.
 
 **Pasada la fecha, nada desaparece solo.** Los regalos de una ocasión cuya fecha ya se fue bajan a un apartado plegado al final —*Ya pasaron*—, con lo que quedó sin comprar señalado. Archivar es esconder, y esconder solo lo que se ha terminado a medias sería esconder justamente lo que hay que mirar: una Navidad que se celebra el 26, o un cumpleaños que se junta el sábado siguiente, siguen haciendo falta el día después. Lo que los archiva de verdad es **dar la ocasión por cerrada**, que es un verbo que se ejerce a mano desde la ocasión y que manda sus regalos al histórico de quien los recibió.
 
