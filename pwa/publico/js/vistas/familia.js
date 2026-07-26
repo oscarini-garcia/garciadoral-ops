@@ -161,7 +161,7 @@ function resultadosDeBusqueda(ctx) {
           ]),
         ]),
         el('tbody', {}, encontradas.map((persona) => {
-          const quien = comoSeLlama(persona, ctx);
+          const quien = deQuienEs(persona, ctx);
           return el('tr', {
             tabindex: '0', role: 'button',
             onclick: () => abrirFicha(persona.id, ctx),
@@ -173,12 +173,7 @@ function resultadosDeBusqueda(ctx) {
             },
           }, [
             el('td', { texto: [persona.nombre, persona.apellidos].filter(Boolean).join(' ') }),
-            // El círculo entre paréntesis detrás del parentesco: «tía (Familia
-            // Extendida)», que es la pregunta que trae a alguien a buscar.
-            el('td', {
-              texto: [quien, `(${CIRCULOS[persona.circulo] || CIRCULOS.extendida})`]
-                .filter(Boolean).join(' '),
-            }),
+            el('td', { texto: quien }),
             el('td', {}, [celdaDeCumple(persona)]),
           ]);
         })),
@@ -281,6 +276,18 @@ function generoDe(persona) {
 
 const enGenero = (persona, femenino, masculino) =>
   (generoDe(persona) === 'm' ? masculino : femenino);
+
+/**
+ * De quién es esta persona, en una palabra, para escribirlo bajo su nombre.
+ *
+ * El círculo no entra: a la rejilla y a la ficha se llega desde él, y en la
+ * tabla de resultados ocupaba media columna para repetir lo que el parentesco ya
+ * dice mejor —«tía» sitúa a alguien más deprisa que «Familia Extendida»—. Lo que
+ * hay es el parentesco; y cuando no hay ninguno escrito, «amiga» o «amigo»,
+ * que es lo que queda por decir de alguien de quien no se ha dicho nada.
+ */
+const deQuienEs = (persona, ctx) =>
+  comoSeLlama(persona, ctx) || enGenero(persona, 'amiga', 'amigo');
 
 /**
  * Qué es esta persona **para quien está mirando**.
@@ -529,7 +536,7 @@ export function abrirFicha(personaId, ctx) {
             // ponía «mamá» no ponga «madre» al abrirse—. Y cuando no hay
             // parentesco escrito, el círculo vuelve como último recurso, que es
             // lo que deja «Amigos» bajo el nombre de un amigo sin más dato.
-            esMia ? null : (comoSeLlama(persona, ctx) || CIRCULOS[persona.circulo] || CIRCULOS.extendida),
+            esMia ? null : deQuienEs(persona, ctx),
             persona.tiene_cuenta ? persona.rol : 'sin cuenta',
           ].filter(Boolean).join(' · '),
         }),
@@ -651,7 +658,7 @@ export function abrirFicha(personaId, ctx) {
 function textoDeLaPersona(persona, ctx) {
   const quien = persona.id === ctx.vista.yo?.id
     ? null
-    : (comoSeLlama(persona, ctx) || CIRCULOS[persona.circulo] || CIRCULOS.extendida);
+    : deQuienEs(persona, ctx);
 
   const lineas = [
     [persona.nombre, persona.apellidos].filter(Boolean).join(' '),

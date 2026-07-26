@@ -337,7 +337,7 @@ En orden de cercanía y no alfabético: de una lista corta se elige mirando, no 
 
 ### 7.2 La ficha
 
-**El círculo no se dice.** A la ficha se llega desde la rejilla de su círculo, así que repetirlo era enseñar lo que la pantalla anterior acababa de decir. En su lugar va el parentesco —el mismo relativo a quien mira: donde la rejilla ponía «mamá», la ficha no puede poner «madre»—. Cuando no hay parentesco escrito, el círculo vuelve como último recurso, que es lo que deja «Amigos» bajo el nombre de un amigo sin más dato.
+**El círculo no se dice en ninguna parte**, ni en la ficha ni en la tabla de resultados. A las dos se llega desde él, y en la tabla ocupaba media columna para repetir lo que el parentesco dice mejor: «tía» sitúa a alguien más deprisa que «Familia Extendida». Lo que va es el parentesco, el mismo relativo a quien mira —donde la rejilla ponía «mamá», la ficha no puede poner «madre»—; y cuando no hay ninguno escrito, **«amiga»** o **«amigo»** según el género, que es lo que queda por decir de alguien de quien no se ha dicho nada.
 
 **El cumpleaños con la edad detrás**: «Cumple el 1 de agosto, y hará 16». Es lo que se pregunta justo después de la fecha.
 
@@ -363,11 +363,11 @@ Lo que devuelve **no es una rejilla sino una tabla**. Una celda de rejilla da pa
 
 | Quién | De qué | Cumple |
 |---|---|---|
-| Rosa Ejemplo | tía (Familia Extendida) | 21 ago (54) |
-| el abuelo | abuelo (Familia Extendida) | 5 mar (80) |
-| Javi Ejemplo | tío (Familia Extendida) | sin fecha |
+| Rosa Ejemplo | tía | 21 ago (54) |
+| el abuelo | abuelo | 5 mar (80) |
+| Javi Ejemplo | tío | sin fecha |
 
-El nombre va entero, con apellidos, que es lo que distingue a dos Marías. El círculo va entre paréntesis detrás del parentesco, porque «de quién es esta persona» es la pregunta que trae a alguien a buscar. Y el orden es el mismo de las rejillas: por el aniversario que viene, y los sin fecha al final.
+El nombre va entero, con apellidos, que es lo que distingue a dos Marías. Y el orden es el mismo de las rejillas: por el aniversario que viene, y los sin fecha al final.
 
 **El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
 
