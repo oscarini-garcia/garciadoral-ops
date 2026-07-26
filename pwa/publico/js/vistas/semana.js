@@ -771,7 +771,9 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     asistentes: existente
       ? ctx.vista.participantes(existente).filter((p) => !ctx.vista.protagonistas(existente).includes(p))
       : [],
-    reservado: Boolean(existente?.categoria_id),
+    // La categoría no se edita desde aquí —el formulario ya no la ofrece—, pero
+    // se arrastra: si el evento venía reservado, guardarlo desde esta pantalla
+    // no puede destaparlo sin que nadie lo haya pedido.
     categoria_id: existente?.categoria_id || null,
     lleva_regalos: existente?.lleva_regalos ?? null,
   };
@@ -834,25 +836,6 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
       campo('Notas', notas),
     );
 
-    // La reserva se expresa como acción, no como categoría.
-    const reservaPista = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: !borrador.reservado });
-    reservaPista.textContent = 'El evento desaparece por completo de la agenda de quien no sea administrador: sin hueco, sin marcador y sin llegar a su dispositivo.';
-    const privadas = ctx.vista.categorias().filter((c) => c.regla !== 'publica');
-    if (privadas.length) {
-      avanzado.append(campo('Reserva', el('div', { class: 'opciones' }, [
-        el('button', {
-          class: 'opcion', type: 'button',
-          'aria-pressed': borrador.reservado ? 'true' : 'false',
-          onclick: (evento) => {
-            borrador.reservado = !borrador.reservado;
-            borrador.categoria_id = borrador.reservado ? privadas[0].id : null;
-            evento.currentTarget.setAttribute('aria-pressed', borrador.reservado ? 'true' : 'false');
-            reservaPista.hidden = !borrador.reservado;
-          },
-        }, ['Ocultarlo a alguien']),
-      ]), null), reservaPista);
-    }
-
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', type: 'button',
@@ -868,7 +851,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
             ubicacion: lugar.value.trim(),
             notas: notas.value.trim(),
             repeticion: repite.value,
-            categoria_id: borrador.reservado ? borrador.categoria_id : null,
+            categoria_id: borrador.categoria_id,
             origen: 'manual',
             autor_id: ctx.vista.yo.id,
             activo: 1,
