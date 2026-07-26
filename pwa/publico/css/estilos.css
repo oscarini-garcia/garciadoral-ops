@@ -283,6 +283,12 @@ button { background: none; border: 0; cursor: pointer; }
   width: 100%; max-width: var(--ancho); margin: 0 auto;
   padding: 14px 20px calc(96px + env(safe-area-inset-bottom));
 }
+/* En Regalos, debajo del conmutador arranca casi siempre otra fila de mandos
+   —las pastillas de para quién, o las de quién lo lleva—, y dos filas de cosas
+   tocables pegadas se leen como una sola. Le damos aire a la de abajo. En la
+   agenda no hace falta: allí lo que sigue es la rejilla, que ya trae su línea. */
+.pantalla-regalos { padding-top: 26px; }
+
 /* La agenda estira su cuerpo hasta el final de la pantalla: el deslizamiento
    que pasa de semana se escucha ahí, y por debajo del domingo es donde el
    pulgar encuentra sitio libre. Las ideas lo estiran por lo mismo. */

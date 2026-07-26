@@ -83,6 +83,9 @@ export function pintarRegalos(pantalla, subcabecera, ctx) {
   );
 
   vaciar(pantalla);
+  // Aire entre el conmutador y lo primero de la pantalla, que aquí casi siempre
+  // es otra fila de pastillas.
+  pantalla.classList.add('pantalla-regalos');
   if (seccion === 'ideas' || seccion === 'deseos') {
     // El cuerpo se estira hasta el final de la pantalla aunque haya tres ideas:
     // el hueco de debajo es donde se apunta la siguiente, y para eso tiene que

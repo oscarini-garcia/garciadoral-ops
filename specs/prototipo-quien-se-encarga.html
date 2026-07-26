@@ -1,0 +1,296 @@
+<meta charset="utf-8">
+<title>Quién se encarga de un regalo: cómo llamarlo</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css. Las anchuras que se citan
+     están medidas con esa hoja de verdad, no calculadas a ojo. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --radio: 12px;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 28px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .opcion-cabeza { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .par { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 330px 1fr; } }
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .medida { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); }
+
+  /* La pantalla, con los valores de la aplicación. */
+  .tel {
+    width: 330px; max-width: 100%; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sombra);
+    padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .opciones { display: flex; flex-wrap: wrap; gap: 6px; }
+  .opcion-p {
+    min-height: 36px; padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft); font-size: 15px;
+  }
+  .opcion-p[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .tarjeta h3 { font-size: 17px; font-weight: 600; }
+  .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
+  .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
+  .etiqueta {
+    margin-left: auto; font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 999px; background: var(--paper-3); color: var(--ink-soft); white-space: nowrap;
+  }
+  .etiqueta.aviso { color: var(--aviso); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .tabla { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .tabla th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .tabla td { padding: 8px 12px 8px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .tabla td:first-child { color: var(--ink); }
+  .desplazable { overflow-x: auto; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>Quién se encarga de un regalo: cómo llamarlo</h1>
+    <p>
+      Los dos filtros dicen hoy «Los que llevo yo» y «Sin nadie». El primero
+      habla de llevar, que suena a llevarlo en la mano el día de la fiesta; el
+      segundo no dice sin qué. Lo que hay que nombrar es otra cosa: <strong>que
+      alguien se ha hecho cargo de ese regalo, o que todavía no</strong>.
+    </p>
+    <p>
+      La palabra no viaja sola. Va también en la pastilla de cada línea, en el
+      campo del detalle y en el resumen de una ocasión, así que las opciones
+      llevan las cuatro cosas. Las anchuras están medidas con la hoja de estilos
+      de verdad.
+    </p>
+  </header>
+
+  <section class="opcion" style="border-top:0; padding-top:0">
+    <div class="opcion-cabeza"><span class="letra">A</span><h3>«Me encargo yo» y «Sin encargado»</h3></div>
+    <div class="par">
+      <div class="tel">
+        <div class="opciones">
+          <button class="opcion-p" aria-pressed="true">Todos</button>
+          <button class="opcion-p">Me encargo yo</button>
+          <button class="opcion-p">Sin encargado</button>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es la palabra que describe lo que pasa: alguien se encarga. Y las dos pastillas son la misma raíz, así que se leen como pareja.</span></div>
+        <div class="si"><span>+</span><span>El campo del detalle pasa a llamarse «Quién se encarga», que es la pregunta literal.</span></div>
+        <div class="medida"><span></span><span>332 px de los 350 útiles: entra en una línea en un teléfono normal. En uno estrecho de 320 pasa a dos, que no rompe nada pero ocupa el doble.</span></div>
+        <div class="no"><span>−</span><span>«Me encargo yo» dicho por el filtro y «se encarga Ana» dicho por la pastilla obligan a leer dos formas del mismo verbo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><span class="letra">B</span><h3>«Yo» y «Nadie», con el rótulo delante</h3></div>
+    <div class="par">
+      <div class="tel">
+        <p class="grupo-titulo">Quién se encarga</p>
+        <div class="opciones">
+          <button class="opcion-p" aria-pressed="true">Todos</button>
+          <button class="opcion-p">Yo</button>
+          <button class="opcion-p">Nadie</button>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El rótulo dice de qué van las tres, y entonces las pastillas pueden ser de una palabra. Es exactamente lo que hace la pantalla de Ideas con «Para quién».</span></div>
+        <div class="si"><span>+</span><span>Tres palabras cortas se recorren de un vistazo, y «Todos · Yo · Nadie» se lee como una escala.</span></div>
+        <div class="medida"><span></span><span>192 px de 350. Es la única que entra en una línea también en un teléfono de 320.</span></div>
+        <div class="no"><span>−</span><span>Añade una línea de rótulo, así que el ahorro de anchura se paga en alto.</span></div>
+        <div class="no"><span>−</span><span>«Nadie» a secas, si alguien se salta el rótulo, puede leerse como «sin destinatario».</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><span class="letra">C</span><h3>«A mi cargo» y «Sin asignar»</h3></div>
+    <div class="par">
+      <div class="tel">
+        <div class="opciones">
+          <button class="opcion-p" aria-pressed="true">Todos</button>
+          <button class="opcion-p">A mi cargo</button>
+          <button class="opcion-p">Sin asignar</button>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso">sin asignar</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta">a cargo de Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Corta y sin verbo que conjugar: «a mi cargo», «a cargo de Ana», «sin asignar».</span></div>
+        <div class="medida"><span></span><span>282 px de 350.</span></div>
+        <div class="no"><span>−</span><span>«Sin asignar» es lenguaje de sistema, no de casa. Nadie dice que un regalo está sin asignar.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><span class="letra">D</span><h3>«Míos» y «Sin encargado»</h3></div>
+    <div class="par">
+      <div class="tel">
+        <div class="opciones">
+          <button class="opcion-p" aria-pressed="true">Todos</button>
+          <button class="opcion-p">Míos</button>
+          <button class="opcion-p">Sin encargado</button>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>La más corta sin rótulo: 265 px, y entra en una línea también a 320.</span></div>
+        <div class="no"><span>−</span><span>«Míos» dice posesión y no responsabilidad. En una pantalla de regalos, «mío» puede entenderse como «para mí», que es justo lo contrario.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><h3>Lo que cambia con cada una</h3></div>
+    <div class="desplazable">
+      <table class="tabla">
+        <thead>
+          <tr><th>Dónde</th><th>Hoy</th><th>Con A</th><th>Con B</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Los filtros</td>
+            <td>Todos · Los que llevo yo · Sin nadie</td>
+            <td>Todos · Me encargo yo · Sin encargado</td>
+            <td>Quién se encarga:<br>Todos · Yo · Nadie</td>
+          </tr>
+          <tr>
+            <td>La pastilla de cada línea</td>
+            <td>lo llevas tú · lo lleva Ana · sin nadie</td>
+            <td colspan="2">te encargas tú · se encarga Ana · sin encargado</td>
+          </tr>
+          <tr>
+            <td>El campo del detalle</td>
+            <td>Quién lo lleva · «Sin responsable»</td>
+            <td colspan="2">Quién se encarga · «Nadie todavía»</td>
+          </tr>
+          <tr>
+            <td>El resumen de una ocasión</td>
+            <td>3 regalos · 1 por comprar · tú tienes 1</td>
+            <td colspan="2">3 regalos · 1 por comprar · te encargas de 1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>Ninguna de las pastillas parte el título en dos líneas</strong>,
+        que era el riesgo: las tres formas se han medido sobre la tarjeta de
+        verdad y el nombre del regalo sigue cabiendo en un renglón.
+      </p>
+      <p>
+        <strong>Yo haría la B.</strong> El rótulo hace el trabajo de explicar y
+        deja que las pastillas sean de una palabra, que es como ya funciona la
+        pantalla de Ideas —«Para quién: Todos · Marta · la abuela»—; las dos
+        pantallas pasan a leerse igual. Y es la única que entra en una línea en
+        cualquier teléfono. Si prefieres que cada pastilla se explique sola sin
+        rótulo, la <strong>A</strong> es la buena.
+      </p>
+    </div>
+  </section>
+
+</div>
