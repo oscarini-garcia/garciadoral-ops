@@ -1033,41 +1033,42 @@ export function abrirDetalleIdea(ideaId, ctx) {
     }));
     if (idea.enlace) cuerpo.append(el('a', { href: idea.enlace, target: '_blank', rel: 'noopener', class: 'enlace-discreto' }, ['Abrir el enlace']));
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      idea.estado === 'descartada'
-        ? el('button', {
-            class: 'boton crecer', type: 'button',
-            onclick: async () => { await guardar('idea', idea.id, { estado: 'activa' }); cerrarHoja(); ctx.refrescar(); },
-          }, ['Reactivar'])
-        : esDeseoPropio(idea, ctx) ? null : el('button', {
-            class: 'boton crecer', type: 'button',
-            onclick: () => abrirPromocion(idea, ctx),
-          }, ['Llevar a una ocasión']),
-      el('button', {
-        class: 'boton', 'data-tono': 'discreto', type: 'button',
-        onclick: async () => {
-          // Cerrada es terminal; para reutilizarla se duplica, generando una
-          // idea nueva en estado activa (spec funcional §5.2).
-          await guardar('idea', nuevoId(), {
-            ...idea, id: undefined, estado: 'activa', autor_id: ctx.vista.yo.id, activa: 1,
-          });
-          cerrarHoja(); avisar('Idea duplicada'); ctx.refrescar();
-        },
-      }, ['Duplicar']),
-      idea.estado === 'descartada' ? null : el('button', {
-        class: 'boton', 'data-tono': 'peligro', type: 'button',
-        onclick: async () => { await guardar('idea', idea.id, { estado: 'descartada' }); cerrarHoja(); avisar('Idea descartada'); ctx.refrescar(); },
-      }, ['Descartar']),
-    ]));
+    // Un solo botón en el cuerpo, y solo cuando hay algo que hacer con esto: la
+    // hoja de un deseo propio se queda sin ninguno, porque un deseo no se lleva
+    // a ninguna parte —el regalo que saliera de ahí lo ocultaría el servidor a
+    // su propio autor—.
+    const verbo = idea.estado === 'descartada'
+      ? el('button', {
+          class: 'boton crecer', type: 'button',
+          onclick: async () => { await guardar('idea', idea.id, { estado: 'activa' }); cerrarHoja(); ctx.refrescar(); },
+        }, ['Reactivar'])
+      : esDeseoPropio(idea, ctx) ? null : el('button', {
+          class: 'boton crecer', type: 'button',
+          onclick: () => abrirPromocion(idea, ctx),
+        }, ['Llevar a una ocasión']);
+    if (verbo) cuerpo.append(el('div', { class: 'acciones' }, [verbo]));
 
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
-    // Descartar sí, porque no borra nada —la idea se reactiva— y es lo que se
-    // decide mirándola.
   }, [
-    // El verbo que se usa va arriba, junto al título, igual que en un evento.
+    // Los dos verbos que se usan van arriba, junto al título, igual que en un
+    // evento. Editar primero, que es lo que uno viene a hacer.
     botonIcono('editar', {
       etiqueta: 'Editar',
       onclick: () => abrirFormularioIdea(ctx, { id: idea.id }),
+    }),
+    // Descartar es la salida, y no lleva papelera porque no destruye nada:
+    // aparta, y se reactiva desde la misma hoja. En tono discreto por lo mismo.
+    // Sobre lo ya descartado no aparece: ahí el verbo es el otro.
+    idea.estado === 'descartada' ? null : botonIcono('descartar', {
+      etiqueta: esDeseoPropio(idea, ctx) ? 'Descartar el deseo' : 'Descartar la idea',
+      tono: 'discreto',
+      onclick: async () => {
+        await guardar('idea', idea.id, { estado: 'descartada' });
+        toque('media');
+        cerrarHoja();
+        avisar(esDeseoPropio(idea, ctx) ? 'Deseo descartado' : 'Idea descartada');
+        ctx.refrescar();
+      },
     }),
   ]);
 }
@@ -1497,7 +1498,7 @@ function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
  * Se pregunta porque no tiene vuelta: cerrar manda los regalos al histórico de
  * cada uno y da por cerradas las ideas que salieron de aquí, exactamente igual
  * que ocurre ya cuando el último regalo se marca como entregado. Una idea
- * cerrada es terminal por diseño; para volver a usarla se duplica
+ * cerrada es terminal por diseño y sale del banco para siempre
  * (specs/modelo-datos.md §5.2).
  */
 function confirmarCierreDeOcasion(ocasion, ctx) {
@@ -1520,7 +1521,7 @@ function confirmarCierreDeOcasion(ocasion, ctx) {
     }
     cuerpo.append(el('p', {
       class: 'pista',
-      texto: 'Las ideas que salieron de aquí se dan por cerradas. Para volver a usarlas se duplican, igual que cuando un regalo se entrega.',
+      texto: 'Las ideas que salieron de aquí se dan por cerradas y salen del banco, igual que cuando un regalo se entrega.',
     }));
 
     cuerpo.append(el('div', { class: 'acciones' }, [
