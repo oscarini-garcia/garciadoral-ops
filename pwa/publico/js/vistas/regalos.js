@@ -9,12 +9,12 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, opciones, avisar,
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar,
   acordeon, botonIcono, carruselDePropuestas, cerrarDeslizada, conVerbosAlDeslizar,
   dobleToque, icono,
 } from '../ui.js';
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
-import { recordarDestinatarios, ultimosDestinatarios } from '../almacen.js';
+import { campoDeGente, recordarElegidos } from '../gente.js';
 import {
   ESTADOS_REGALO, deQuien, estaActivo, formatearImporte, nombreCompleto, normalizar,
   nuevoId, redaccionDisponible,
@@ -23,12 +23,13 @@ import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, formatearFechaLarga, hoy, iso,
   parsearMomento, proximoAniversario,
 } from '../semana.js';
-import { abrirFicha } from './familia.js';
+import { abrirFicha, abrirFormularioPersona } from './familia.js';
+import { bloqueDeComentarios } from '../comentarios.js';
 import { copiar, toque } from '../native.js';
 
-/** Cuántos «últimos» se enseñan al abrir el buscador de gente. Con cuatro, la
- *  lista entra en una línea y no empuja el formulario. */
-const CUANTOS_ULTIMOS = 4;
+/** A partir de cuántas ideas el selector de regalos ofrece un buscador. Por
+ *  debajo, el campo ocupa para no ahorrar nada: la lista entera cabe. */
+const TOPE_SIN_BUSCADOR = 12;
 
 let seccion = 'ideas';
 let filtroPersona = null;
@@ -76,8 +77,19 @@ export const seccionActual = () => seccion;
 // ----------------------------------------------------------------- Ideas --
 
 function vistaIdeas(ctx) {
-  const personas = ctx.vista.personas();
   const contenedor = el('div', { class: 'cuerpo-ideas' });
+
+  // Solo quien tiene alguna idea apuntada. Filtrar por alguien que no tiene
+  // ninguna únicamente puede dar una lista vacía, y con treinta personas la
+  // parrilla de nombres ocupaba más que las propias ideas.
+  //
+  // Con una excepción: quien esté filtrado sigue estando aunque se quede sin
+  // ideas. Si no, su pastilla desaparecería con el filtro puesto y la lista se
+  // quedaría vacía sin nada en pantalla que dijera por qué ni cómo deshacerlo.
+  const conIdeas = new Set(
+    ctx.vista.banco().flatMap((idea) => (idea.orientaciones || []).map((o) => o.persona_id)),
+  );
+  const personas = ctx.vista.personas().filter((p) => conIdeas.has(p.id) || p.id === filtroPersona);
 
   contenedor.append(el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Para quién' }),
@@ -108,6 +120,27 @@ function vistaIdeas(ctx) {
   for (const idea of ideas) grupo.append(tarjetaDeIdea(idea, ctx));
 
   contenedor.append(grupo);
+
+  /**
+   * Lo que uno se apunta para sí mismo, al final y en su propio grupo.
+   *
+   * Una idea cuyo único destinatario es quien la escribe se guarda como deseo
+   * —si no, la ocultación la haría desaparecer en el acto—, y los deseos no
+   * están en el banco: el banco es lo que se le regala a otros. El resultado
+   * era que apuntarse algo desde aquí parecía no guardarlo. Sigue sin
+   * mezclarse con lo demás, pero se ve donde se escribió.
+   */
+  const mios = ctx.vista.deseosDe(ctx.vista.yo.id);
+  if (mios.length && (!filtroPersona || filtroPersona === ctx.vista.yo.id)) {
+    contenedor.append(el('div', { class: 'grupo' }, [
+      el('p', { class: 'grupo-titulo', texto: 'Lo que pides tú' }),
+      ...mios.map((idea) => tarjetaDeIdea(idea, ctx)),
+      el('p', {
+        class: 'pista',
+        texto: 'Esto lo ve tu familia en tu ficha. Si alguien te lo acaba regalando no te enterarás por aquí: eso se coordina sin ti.',
+      }),
+    ]));
+  }
 
   // La misma regla que en la agenda: doblar el toque sobre lo que está en
   // blanco crea ahí. Si hay un filtro de persona puesto, la idea nace ya para
@@ -143,7 +176,9 @@ function tarjetaDeIdea(idea, ctx) {
         destinos.length ? `Para ${destinos.join(', ')}` : 'Sin destinatario',
         precio,
         ctx.vista.categoria(idea.categoria_id)?.nombre,
-        `de ${ctx.vista.nombre(idea.autor_id)}`,
+        // En un deseo propio, «de Óscar · para Óscar» no dice nada dos veces.
+        idea.autor_id === ctx.vista.yo.id && idea.tipo === 'deseo'
+          ? null : `de ${ctx.vista.nombre(idea.autor_id)}`,
       ].filter(Boolean).join(' · '),
     }),
   ]);
@@ -199,6 +234,28 @@ function esDeCumple(ocasion, ctx) {
 
 /** La ocasión del cumpleaños que viene, si es que alguien ya abrió una. Se ata
  *  por la fecha exacta: la del año pasado no sirve para el de este año. */
+/**
+ * La persona de un cumpleaños derivado, si el evento es uno.
+ *
+ * Los cumpleaños no son filas de `evento`: se componen en el dispositivo con un
+ * identificador `derivado:cumpleanos:<persona>` (specs/modelo-datos.md §7.4).
+ * Saber distinguirlos importa aquí porque una ocasión **no puede apuntar a
+ * ellos**: `ocasion.evento_id` tiene clave foránea contra `evento`, y el
+ * servidor rechaza la fila entera —y con ella el regalo que colgaba de la
+ * ocasión— sin que en el teléfono se note más que la desaparición.
+ */
+export function personaDelCumple(evento, ctx) {
+  const marca = /^derivado:cumpleanos:(.+)$/.exec(evento?.id || '');
+  return marca ? ctx.vista.persona(marca[1]) : null;
+}
+
+/** La ocasión de un evento, sea una fila de `evento` o un cumpleaños derivado.
+ *  Al derivado lo ata la fecha y el participante, no el identificador. */
+export function ocasionDeEvento(evento, ctx) {
+  const persona = personaDelCumple(evento, ctx);
+  return persona ? ocasionDelCumple(persona, ctx) : ctx.vista.ocasionDeEvento(evento.id);
+}
+
 function ocasionDelCumple(persona, ctx) {
   const dia = iso(proximoAniversario(persona));
   return (ctx.vista.datos.ocasiones || []).find(
@@ -470,30 +527,47 @@ export function abrirOcasion(ocasionId, ctx) {
  * Sobre el cumpleaños propio no hay ni felicitación —felicitarse uno mismo no es
  * nada— ni regalos: en su sitio va el sello de siempre.
  *
+ * **Es también la hoja que abre la agenda.** Antes el detalle de un evento
+ * derivado era otra pantalla, más pobre: sin los años, sin felicitación y con un
+ * «Quién va» que nombraba a una sola persona, la del propio cumpleaños. Dos
+ * hojas para lo mismo solo servían para irse separando.
+ *
+ * `dia` es el aniversario que se está mirando. La agenda pasa el de la aparición
+ * —abrir el de 2027 desde el mes tiene que decir los años de 2027—; desde
+ * Regalos no se pasa ninguno y vale el próximo. `comentariosDe` es el objeto al
+ * que se le cuelga el hilo, que la agenda ya tenía y aquí no había, y `acciones`
+ * son los verbos que quiera añadir quien abre: la agenda pone ahí el suyo de
+ * compartir, que vive en su módulo.
+ *
  * El cumpleaños no es una fila de nada: sale de la fecha de nacimiento de la
- * ficha, igual que en la agenda. Por eso no se edita ni se borra desde aquí, y
- * por eso su tarjeta no lleva verbos detrás (specs/ux.md §6.1).
+ * ficha. Por eso editarlo abre el formulario de la persona y no un evento, y por
+ * eso su tarjeta no lleva verbos detrás (specs/ux.md §6.1).
  */
-export function abrirCumple(personaId, ctx) {
+export function abrirCumple(personaId, ctx, { dia = null, comentariosDe = null, acciones = [] } = {}) {
   const persona = ctx.vista.persona(personaId);
   if (!persona?.fecha_nacimiento) return;
 
   const esMio = personaId === ctx.vista.yo.id;
-  const dia = proximoAniversario(persona);
-  const anios = aniosQueCumple(persona);
+  const proximo = proximoAniversario(persona);
+  const cual = dia || proximo;
+  const esElProximo = !dia || iso(dia) === iso(proximo);
+  const anios = aniosDeEseCumple(persona, cual);
   const falta = cuandoCumple(persona);
 
   abrirHoja(`Cumpleaños ${deQuien(nombreCompleto(persona))}`, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
       el('span', { style: 'font-size:26px', texto: '🎂' }),
       el('div', {}, [
-        el('p', { texto: formatearFechaLarga(dia) }),
+        el('p', { texto: formatearFechaLarga(cual) }),
         el('p', {
           class: 'pista',
-          // La fecha entera está en el renglón de encima, así que aquí solo se
-          // añade lo que falta: los años, y los días cuando se cuentan en días.
-          texto: [anios ? `cumple ${anios} años` : null, falta.enDias ? falta.texto : null]
-            .filter(Boolean).join(' · '),
+          texto: [
+            anios ? `cumple ${anios} años` : null,
+            // «en 4 días» solo vale del que viene. Del de otro año, el año.
+            // Y solo cuando se cuenta en días: la fecha entera está en el
+            // renglón de encima, y repetirla aquí es leer dos veces lo mismo.
+            esElProximo ? (falta.enDias ? falta.texto : null) : String(cual.getFullYear()),
+          ].filter(Boolean).join(' · '),
         }),
       ]),
     ]));
@@ -508,16 +582,35 @@ export function abrirCumple(personaId, ctx) {
       cuerpo.append(bloqueDeRegalosDelCumple(persona, ctx));
     }
 
+    if (comentariosDe) cuerpo.append(bloqueDeComentarios('evento', comentariosDe, ctx));
+
     cuerpo.append(el('button', {
       class: 'enlace-discreto', type: 'button',
       onclick: () => abrirFicha(personaId, ctx),
     }, [`Ver la ficha de ${persona.nombre}`]));
+  }, [
+    // Editar un cumpleaños es editar la fecha de nacimiento de quien lo cumple:
+    // el verbo lleva derecho al formulario de la persona, y al guardar se vuelve
+    // aquí. Se ha ido a corregir un dato, no a visitar a nadie.
+    botonIcono('editar', {
+      etiqueta: `Editar la ficha de ${persona.nombre}`,
+      onclick: () => abrirFormularioPersona(ctx, {
+        id: personaId,
+        alGuardar: () => abrirCumple(personaId, ctx, { dia, comentariosDe, acciones }),
+      }),
+    }),
+    ...acciones,
+  ]);
+}
 
-    cuerpo.append(el('p', {
-      class: 'pista',
-      texto: 'El cumpleaños sale de su ficha: si la fecha no es esa, se corrige allí y cambia en toda la agenda.',
-    }));
-  });
+/** Los años que cumple en **ese** aniversario. `aniosQueCumple` responde por el
+ *  próximo, que es lo que quieren la rejilla de Gente y la lista de Ocasiones;
+ *  la agenda, en cambio, pregunta por el año que tiene delante. */
+function aniosDeEseCumple(persona, dia) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  if (!nacimiento || !dia) return null;
+  const anios = dia.getFullYear() - nacimiento.getFullYear();
+  return anios > 0 && anios < 130 ? anios : null;
 }
 
 /**
@@ -635,6 +728,10 @@ function tarjetaDeRegalo(regalo, ctx) {
 
 // --------------------------------------------------------------- Detalles --
 
+/** Un deseo que escribió quien lo mira. No se lleva a ninguna ocasión: el
+ *  regalo que saliera de ahí lo ocultaría el servidor a su propio autor. */
+const esDeseoPropio = (idea, ctx) => idea.tipo === 'deseo' && idea.autor_id === ctx.vista.yo.id;
+
 export function abrirDetalleIdea(ideaId, ctx) {
   const idea = ctx.vista.idea(ideaId);
   if (!idea) return;
@@ -662,7 +759,7 @@ export function abrirDetalleIdea(ideaId, ctx) {
             class: 'boton crecer', type: 'button',
             onclick: async () => { await guardar('idea', idea.id, { estado: 'activa' }); cerrarHoja(); ctx.refrescar(); },
           }, ['Reactivar'])
-        : el('button', {
+        : esDeseoPropio(idea, ctx) ? null : el('button', {
             class: 'boton crecer', type: 'button',
             onclick: () => abrirPromocion(idea, ctx),
           }, ['Llevar a una ocasión']),
@@ -751,16 +848,20 @@ function abrirPromocion(idea, ctx) {
       return;
     }
     const ocasion = seleccion(abiertas.map((o) => ({ valor: o.id, texto: `${o.nombre} · ${o.fecha}` })), abiertas[0].id);
-    const persona = seleccion(
-      ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })),
-      destinos[0] || ctx.vista.personas()[0]?.id,
-    );
-    cuerpo.append(campo('Ocasión', ocasion), campo('Para quién', persona));
+    let para = destinos[0] || null;
+    cuerpo.append(campo('Ocasión', ocasion), campoDeGente(ctx, {
+      etiqueta: 'Para quién',
+      elegidos: para ? [para] : [],
+      alCambiar: (ids) => { para = ids[0] || null; },
+      unica: true,
+    }));
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
-          await crearRegalo(ctx, { ocasionId: ocasion.value, destinatario: persona.value, idea });
+          if (!para) { avisar('Elige para quién'); return; }
+          await crearRegalo(ctx, { ocasionId: ocasion.value, destinatario: para, idea });
+          await asegurarParticipante(ctx, ocasion.value, para);
           cerrarHoja(); avisar('Añadido a la ocasión'); ctx.refrescar();
         },
       }, ['Añadir']),
@@ -787,55 +888,144 @@ export function abrirSelectorDeRegalo(
   const candidatos = evento
     ? ctx.vista.participantes(evento).concat(ctx.vista.protagonistas(evento))
     : (ocasion?.participantes || [destinatario].filter(Boolean));
-  const relevantes = new Set(candidatos.filter((id) => id !== ctx.vista.yo.id));
+  // Quien mira no se propone a sí mismo: un regalo para uno mismo no se
+  // coordina desde aquí.
+  const relevantes = [...new Set(candidatos.filter((id) => id !== ctx.vista.yo.id))];
 
+  let para = destinatario || relevantes[0] || null;
   const apuntadas = ctx.vista.banco();
-  const propuestas = apuntadas.filter((idea) => (idea.orientaciones || []).some((o) => relevantes.has(o.persona_id)));
-  const resto = apuntadas.filter((idea) => !propuestas.includes(idea));
+  const marcadas = new Set();
+  let verOtras = false;
+  let filtro = '';
 
-  abrirHoja('Asociar un regalo', (cuerpo) => {
-    const personas = ctx.vista.personas().filter((p) => p.id !== ctx.vista.yo.id);
-    const para = seleccion(
-      personas.map((p) => ({ valor: p.id, texto: p.nombre })),
-      destinatario || [...relevantes][0] || personas[0]?.id,
-    );
-    cuerpo.append(campo('Para quién', para));
+  const deQuien = (idea) => (idea.orientaciones || []).map((o) => o.persona_id).filter(Boolean);
+  const encaja = (idea) => !filtro || normalizar(idea.titulo).includes(normalizar(filtro));
 
-    const elegir = async (idea) => {
+  const titulo = para ? `Regalos para ${ctx.vista.nombre(para)}` : 'Asociar un regalo';
+
+  abrirHoja(titulo, (cuerpo) => {
+    // Preguntar para quién solo tiene sentido si de verdad hay a quién elegir.
+    // Viniendo de un cumpleaños la respuesta ya está dada, y el título la dice.
+    if (relevantes.length > 1 || !para) {
+      cuerpo.append(campoDeGente(ctx, {
+        etiqueta: 'Para quién',
+        elegidos: para ? [para] : [],
+        alCambiar: (ids) => { para = ids[0] || null; },
+        unica: true,
+        excluir: [ctx.vista.yo.id],
+      }));
+    }
+
+    // El buscador solo cuando hay de qué buscar: con seis ideas es un campo que
+    // ocupa para no ahorrar nada.
+    if (apuntadas.length >= TOPE_SIN_BUSCADOR) {
+      const busca = entrada({ type: 'search', placeholder: 'Buscar entre las ideas', 'aria-label': 'Buscar entre las ideas' });
+      busca.addEventListener('input', () => { filtro = busca.value; pintar(); });
+      cuerpo.append(el('div', { class: 'campo' }, [busca]));
+    }
+
+    const lista = el('div', { class: 'grupo' });
+    const conmutador = el('label', { class: 'conmutador' });
+    const pie = el('button', { class: 'boton crecer', type: 'button', disabled: true });
+    cuerpo.append(lista, conmutador, el('div', { class: 'acciones' }, [pie]));
+
+    const marca = (idea) => {
+      const puesta = marcadas.has(idea.id);
+      const fila = el('button', {
+        class: 'tarjeta eleccion-idea', type: 'button',
+        'aria-pressed': puesta ? 'true' : 'false',
+        onclick: () => {
+          toque();
+          if (puesta) marcadas.delete(idea.id); else marcadas.add(idea.id);
+          pintar();
+        },
+      }, [
+        el('span', { class: 'casilla', 'aria-hidden': 'true' }, [puesta ? icono('visto') : null]),
+        el('span', { class: 'eleccion-texto' }, [
+          el('span', { class: 'eleccion-nombre', texto: idea.titulo }),
+          el('span', { class: 'eleccion-pista', texto: `de ${ctx.vista.nombre(idea.autor_id)}` }),
+        ]),
+      ]);
+      return fila;
+    };
+
+    const grupo = (rotulo, ideas) => (ideas.length
+      ? [el('p', { class: 'grupo-titulo', texto: rotulo }), ...ideas.map(marca)]
+      : []);
+
+    function pintar() {
+      const suyas = apuntadas.filter((i) => para && deQuien(i).includes(para)).filter(encaja);
+      // «Sin destinatario» es la idea que no nombra a nadie: la apuntada solo con
+      // una etiqueta —«adolescente», «viajera»— o sin nada. Sirve para cualquiera,
+      // y por eso acompaña siempre a las de la persona.
+      const sueltas = apuntadas.filter((i) => !deQuien(i).length).filter(encaja);
+      const otras = apuntadas.filter((i) => !suyas.includes(i) && !sueltas.includes(i)).filter(encaja);
+
+      vaciar(lista).append(
+        ...grupo(para ? `Apuntadas para ${ctx.vista.nombre(para)}` : 'Apuntadas', suyas),
+        ...grupo('Sin destinatario', sueltas),
+        ...(verOtras ? grupo('De otras personas', otras) : []),
+      );
+      if (!suyas.length && !sueltas.length && !(verOtras && otras.length)) {
+        lista.append(el('p', { class: 'vacio', texto: filtro ? 'Ninguna idea con ese texto.' : 'Ninguna idea apuntada todavía.' }));
+      }
+
+      vaciar(conmutador).append(
+        el('input', {
+          type: 'checkbox', checked: verOtras,
+          onchange: (ev) => { verOtras = ev.currentTarget.checked; pintar(); },
+        }),
+        el('span', { texto: `Ver también las de otras personas${otras.length ? ` (${otras.length})` : ''}` }),
+      );
+      conmutador.hidden = !otras.length && !verOtras;
+
+      pie.disabled = !marcadas.size;
+      pie.textContent = marcadas.size
+        ? `Añadir ${marcadas.size} ${marcadas.size === 1 ? 'regalo' : 'regalos'}`
+        : 'Elige alguna idea';
+    }
+
+    const asociar = async (ideas) => {
+      if (!para) { avisar('Elige para quién'); return; }
       let destino = ocasion;
       if (!destino && asegurar) destino = await asegurar();
       if (!destino && evento) destino = await asegurarOcasionDe(evento, ctx);
       if (!destino) { avisar('No hay ocasión donde ponerlo'); return; }
-      await crearRegalo(ctx, { ocasionId: destino.id, destinatario: para.value, idea });
-      cerrarHoja(); avisar('Regalo asociado'); ctx.refrescar();
+
+      for (const idea of ideas) await crearRegalo(ctx, { ocasionId: destino.id, destinatario: para, idea });
+      // Una sola vez y al final: dentro del bucle, la segunda vuelta leería una
+      // ocasión que todavía no refleja la primera y lo apuntaría dos veces.
+      await asegurarParticipante(ctx, destino.id, para);
+
+      cerrarHoja();
+      avisar(ideas.length === 1 ? 'Regalo asociado' : `${ideas.length} regalos asociados`);
+      ctx.refrescar();
     };
 
-    const listar = (titulo, lista) => {
-      if (!lista.length) return;
-      cuerpo.append(el('div', { class: 'grupo' }, [
-        el('p', { class: 'grupo-titulo', texto: titulo }),
-        ...lista.map((idea) => el('button', { class: 'tarjeta', type: 'button', onclick: () => elegir(idea) }, [
-          el('h3', { texto: idea.titulo }),
-          el('p', { texto: `de ${ctx.vista.nombre(idea.autor_id)}` }),
-        ])),
-      ]));
-    };
+    pie.onclick = () => asociar(apuntadas.filter((i) => marcadas.has(i.id)));
 
-    listar('Para quien participa', propuestas);
-    listar('El resto de las ideas', resto);
+    cuerpo.append(el('button', {
+      class: 'enlace-discreto', type: 'button',
+      onclick: () => asociar([null]),
+    }, ['Un regalo suelto, sin idea previa']));
 
-    cuerpo.append(el('div', { class: 'grupo' }, [
-      el('button', {
-        class: 'boton', 'data-tono': 'discreto', type: 'button',
-        onclick: () => elegir(null),
-      }, ['Crear un regalo suelto, sin idea previa']),
-    ]));
+    pintar();
   });
 }
 
-/** Cuando se asocia un regalo desde un evento que todavía no tiene ocasión
- *  vinculada, esta se crea de forma automática (spec funcional §6.4). */
+/**
+ * Cuando se asocia un regalo desde un evento que todavía no tiene ocasión
+ * vinculada, esta se crea de forma automática (spec funcional §6.4).
+ *
+ * Un cumpleaños sale por la puerta de al lado: su ocasión no lleva `evento_id`
+ * —no hay fila a la que apuntar— y se reconoce por la fecha y el participante.
+ * Escribirlo era perder el regalo: el servidor rechazaba la ocasión por clave
+ * foránea, con ella el regalo, y en el teléfono solo se veía desaparecer.
+ */
 async function asegurarOcasionDe(evento, ctx) {
+  const cumpleanero = personaDelCumple(evento, ctx);
+  if (cumpleanero) return asegurarOcasionDelCumple(cumpleanero, ctx);
+
   const existente = ctx.vista.ocasionDeEvento(evento.id);
   if (existente) return existente;
 
@@ -854,6 +1044,7 @@ async function asegurarOcasionDe(evento, ctx) {
 }
 
 async function crearRegalo(ctx, { ocasionId, destinatario, idea }) {
+  recordarElegidos('regalo', [destinatario]);
   await guardar('regalo', nuevoId(), {
     ocasion_id: ocasionId,
     idea_id: idea?.id || null,
@@ -864,13 +1055,17 @@ async function crearRegalo(ctx, { ocasionId, destinatario, idea }) {
     autor_id: ctx.vista.yo.id,
     activo: 1,
   });
+}
 
+/** Quien recibe algo pasa a participar en la ocasión. Se llama una sola vez por
+ *  tanda: dentro de un bucle, la segunda vuelta leería una ocasión que todavía
+ *  no refleja la primera y lo apuntaría dos veces. */
+async function asegurarParticipante(ctx, ocasionId, destinatario) {
   const ocasion = ctx.vista.ocasion(ocasionId);
-  if (ocasion && !(ocasion.participantes || []).includes(destinatario)) {
-    await guardar('ocasion', ocasionId, {
-      participantes: [...(ocasion.participantes || []), destinatario],
-    });
-  }
+  if (!ocasion || (ocasion.participantes || []).includes(destinatario)) return;
+  await guardar('ocasion', ocasionId, {
+    participantes: [...(ocasion.participantes || []), destinatario],
+  });
 }
 
 // ------------------------------------------------- Crear, editar y borrar --
@@ -905,11 +1100,12 @@ function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
     });
     const fecha = el('input', { type: 'date', value: existente ? existente.fecha : iso(hoy()) });
     cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha));
-    cuerpo.append(campo(
-      'Para quién',
-      opciones(ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre })), participantes, (v) => { participantes = v; }),
-      origen ? 'Se traen las personas del año pasado. Los importes y los regalos no: repetirlos induce a no revisarlos.' : null,
-    ));
+    cuerpo.append(campoDeGente(ctx, {
+      etiqueta: 'Para quién',
+      pista: origen ? 'Se traen las personas del año pasado. Los importes y los regalos no: repetirlos induce a no revisarlos.' : null,
+      elegidos: participantes,
+      alCambiar: (ids) => { participantes = ids; },
+    }));
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', type: 'button',
@@ -919,6 +1115,7 @@ function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
           if (!existente) Object.assign(campos, { estado: 'abierta', autor_id: ctx.vista.yo.id, activa: 1 });
 
           await guardar('ocasion', existente ? existente.id : nuevoId(), campos);
+          recordarElegidos('regalo', participantes);
           toque('media');
           cerrarHoja();
           avisar(existente ? 'Ocasión actualizada' : 'Ocasión creada');
@@ -993,6 +1190,13 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   // que una idea ya tuviera se conservan al guardarla.
   const etiquetas = existente ? orientaciones.map((o) => o.etiqueta_id).filter(Boolean) : [];
 
+  /** Lo que se apunta para uno mismo y para nadie más es un deseo, no una idea
+   *  para regalar: si se guardara como idea, la ocultación se la quitaría de
+   *  delante a su propio autor en el acto. */
+  const soloParaMi = () => destinatarios.length === 1
+    && destinatarios[0] === ctx.vista.yo.id
+    && !etiquetas.length;
+
   const borrarIdea = existente ? botonIcono('borrar', {
     etiqueta: 'Borrar la idea', tono: 'peligro',
     onclick: async () => {
@@ -1052,7 +1256,20 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     const descripcion = el('textarea', {});
     descripcion.value = existente?.descripcion || '';
 
-    cuerpo.append(campoDeGente());
+    cuerpo.append(campoDeGente(ctx, {
+      etiqueta: 'Para quién',
+      pista: 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.',
+      elegidos: destinatarios,
+      alCambiar: (ids) => { destinatarios = ids; ajustarPedir(); avisoDeDeseo(); },
+    }));
+
+    // Marcarse a uno mismo cambia lo que se está apuntando, y conviene decirlo
+    // antes de guardar: lo que se escribe deja de ser una idea para regalar y
+    // pasa a ser lo que uno pide, que vive en otro sitio.
+    const pistaDeseo = el('p', { class: 'pista', 'data-tono': 'aviso', hidden: true });
+    pistaDeseo.textContent = 'Solo estás tú: esto se guarda como algo que pides, y aparece en tu ficha y en «Lo que pides tú», no entre las ideas para regalar.';
+    cuerpo.append(pistaDeseo);
+    function avisoDeDeseo() { pistaDeseo.hidden = !soloParaMi(); }
     cuerpo.append(campo('Descripción', descripcion));
 
     // Al editar se abre desplegado y sin enlace: quien corrige viene a por un
@@ -1083,149 +1300,6 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       campo('Dónde se compra', establecimiento),
       campo('Enlace', enlace),
     );
-
-    // ---------------------------------------------------------- Para quién --
-
-    /**
-     * Para quién: los cuatro de casa, y el resto a un toque.
-     *
-     * En reposo se ven solo los de casa —que son con diferencia a quienes más
-     * se les apunta— más lo que ya se haya elegido de fuera, que no puede
-     * esconderse nunca: una idea guardada sin ver para quién es sería un
-     * silencio peligroso en la única pantalla donde se decide quién no la ve.
-     *
-     * El «+» abre un buscador con una sola lista debajo, que en reposo son «los
-     * últimos» de este teléfono y al escribir pasa a ser el resultado. No hay
-     * dos listas a la vez, y el hueco es el mismo antes y después.
-     *
-     * Va dentro de la hoja y no en otra encima porque la aplicación tiene una
-     * sola: abrir la segunda cerraría el formulario a medio escribir.
-     */
-    function campoDeGente() {
-      const fila = el('div', { class: 'opciones' });
-      const busca = entrada({
-        type: 'search', 'aria-label': 'Buscar a una persona',
-        placeholder: 'Buscar por nombre o parentesco',
-      });
-      const rotuloLista = el('p', { class: 'buscagente-rotulo' });
-      const lista = el('div', { class: 'opciones' });
-      const panel = el('div', { class: 'buscagente', hidden: true }, [busca, rotuloLista, lista]);
-
-      let abierto = false;
-
-      const deCasa = ctx.vista.personasDe('familia');
-      const enLaFila = () => new Set([...deCasa.map((p) => p.id), ...destinatarios]);
-
-      const pastilla = (persona, alElegir = null) => {
-        const marcada = destinatarios.includes(persona.id);
-        return el('button', {
-          class: 'opcion', type: 'button',
-          'aria-pressed': marcada ? 'true' : 'false',
-          onclick: () => {
-            destinatarios = marcada
-              ? destinatarios.filter((id) => id !== persona.id)
-              : [...destinatarios, persona.id];
-            if (alElegir) alElegir();
-            ajustarPedir();
-            pintar();
-          },
-        }, [persona.nombre, marcada ? el('span', { class: 'opcion-quitar', texto: '×' }) : null]);
-      };
-
-      function pintarFila() {
-        vaciar(fila);
-        for (const persona of deCasa) fila.append(pastilla(persona));
-        for (const id of destinatarios) {
-          const persona = ctx.vista.persona(id);
-          if (persona && !deCasa.some((p) => p.id === id)) fila.append(pastilla(persona));
-        }
-        fila.append(el('button', {
-          class: 'opcion opcion-mas', type: 'button',
-          'aria-expanded': abierto ? 'true' : 'false',
-          'aria-label': abierto ? 'Cerrar la búsqueda' : 'Buscar a otra persona',
-          onclick: () => {
-            abierto = !abierto;
-            busca.value = '';
-            pintar();
-            if (abierto && !('ontouchstart' in window)) busca.focus();
-          },
-        }, [abierto ? '×' : '+']));
-      }
-
-      /**
-       * Con quién se abre el buscador: los últimos a quienes se les apuntó algo
-       * en este teléfono.
-       *
-       * Y cuando no llegan a cuatro —el primer día, un móvil recién estrenado—,
-       * se completa con aquellos a quienes más se les apunta en el hogar y, si
-       * aún faltan, con el resto de la gente. Abrir y encontrar el hueco vacío
-       * sería la peor bienvenida, y en un hogar recién dado de alta sería
-       * además la única.
-       */
-      function conQuienAbrir(candidatos) {
-        const porId = new Map(candidatos.map((p) => [p.id, p]));
-        const recientes = ultimosDestinatarios().filter((id) => porId.has(id) && id !== ctx.vista.yo.id);
-        const orden = [...recientes, ...ctx.vista.masRegaladas(), ...candidatos.map((p) => p.id)];
-
-        const elegidos = [];
-        for (const id of orden) {
-          if (id === ctx.vista.yo.id || !porId.has(id)) continue;
-          if (elegidos.some((p) => p.id === id)) continue;
-          elegidos.push(porId.get(id));
-          if (elegidos.length === CUANTOS_ULTIMOS) break;
-        }
-        return { gente: elegidos, hayRecientes: recientes.length > 0 };
-      }
-
-      function pintarLista() {
-        vaciar(lista);
-        const aguja = normalizar(busca.value).trim();
-        // Quien ya está en la fila no se repite aquí: se toca arriba.
-        const puestos = enLaFila();
-        const candidatos = ctx.vista.personas().filter((p) => !puestos.has(p.id));
-
-        if (!aguja) {
-          const { gente, hayRecientes } = conQuienAbrir(candidatos);
-          // El rótulo dice la verdad: «los últimos» solo cuando de verdad lo son.
-          rotuloLista.textContent = hayRecientes ? 'Los últimos'
-            : gente.length ? 'De tu gente' : 'Escribe un nombre o un parentesco';
-          for (const persona of gente) lista.append(pastilla(persona));
-          return;
-        }
-
-        const hallados = candidatos.filter(
-          (p) => normalizar(p.nombre).includes(aguja) || normalizar(p.parentesco).includes(aguja),
-        );
-        rotuloLista.textContent = hallados.length ? 'Resultados' : 'Nadie con ese nombre';
-        // Elegir buscando cierra: se venía a por una persona concreta.
-        for (const persona of hallados) {
-          lista.append(pastilla(persona, () => { abierto = false; busca.value = ''; }));
-        }
-      }
-
-      function pintar() {
-        pintarFila();
-        panel.hidden = !abierto;
-        if (abierto) pintarLista();
-      }
-
-      busca.addEventListener('input', pintarLista);
-      // Enter dentro del buscador no guarda la idea: aquí se está eligiendo.
-      busca.addEventListener('keydown', (evento) => {
-        if (evento.key === 'Enter') evento.preventDefault();
-      });
-
-      pintar();
-      return el('div', { class: 'campo' }, [
-        el('label', { texto: 'Para quién' }),
-        fila,
-        panel,
-        el('p', {
-          class: 'pista',
-          texto: 'Nombrar a una persona con cuenta oculta la idea para ella, de forma automática y permanente.',
-        }),
-      ]);
-    }
 
     // ---------------------------------------------------------- La propuesta --
 
@@ -1296,11 +1370,10 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       };
 
       if (!existente) {
-        const soloYo = destinatarios.length === 1 && destinatarios[0] === ctx.vista.yo.id && !etiquetas.length;
         Object.assign(campos, {
           // Una idea cuyo destinatario es su propio autor se trata como deseo: de
           // otro modo la ocultación la haría desaparecer al crearla.
-          tipo: soloYo ? 'deseo' : 'sugerencia',
+          tipo: soloParaMi() ? 'deseo' : 'sugerencia',
           estado: 'activa',
           autor_id: ctx.vista.yo.id,
           activa: 1,
@@ -1311,10 +1384,15 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       // ya está en curso no vuelve a activa por corregirle el precio, y quien la
       // apuntó sigue siendo quien la apuntó.
       await guardar('idea', existente ? existente.id : nuevoId(), campos);
-      recordarDestinatarios(destinatarios);
+      recordarElegidos('regalo', destinatarios);
+      // Lo que se acaba de apuntar tiene que verse. Con un filtro puesto para
+      // otra persona no saldría en la lista, y guardar algo que no aparece por
+      // ningún lado no se lee como un filtro: se lee como que no se ha guardado.
+      if (filtroPersona && !destinatarios.includes(filtroPersona)) filtroPersona = null;
       toque('media');
       cerrarHoja();
-      avisar(existente ? 'Idea actualizada' : 'Idea apuntada');
+      avisar(existente ? 'Idea actualizada'
+        : soloParaMi() ? 'Apuntado en lo que pides' : 'Idea apuntada');
       ctx.refrescar();
     };
 

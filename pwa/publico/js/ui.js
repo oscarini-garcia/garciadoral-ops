@@ -71,6 +71,7 @@ const ICONOS = {
   destello: '<path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z"'
     + ' fill="currentColor" stroke-width="1"/>',
   cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
+  visto: '<path d="m5 12.5 4.5 4.5L19 7"/>',
 };
 
 export function icono(nombre) {
@@ -522,34 +523,3 @@ export function seleccion(opciones, valor, atributos = {}) {
   return nodo;
 }
 
-/** Grupo de botones de selección múltiple o única, por reconocimiento y no por
- *  memoria: se muestran las opciones en lugar de pedir que se escriban. */
-export function opciones(lista, seleccionadas, alCambiar, { unica = false } = {}) {
-  const elegidas = new Set(seleccionadas);
-  const contenedor = el('div', { class: 'opciones' });
-
-  for (const opcion of lista) {
-    const boton = el('button', {
-      type: 'button',
-      class: 'opcion',
-      'aria-pressed': elegidas.has(opcion.valor) ? 'true' : 'false',
-      onclick: () => {
-        if (unica) {
-          elegidas.clear();
-          for (const otro of contenedor.children) otro.setAttribute('aria-pressed', 'false');
-          elegidas.add(opcion.valor);
-          boton.setAttribute('aria-pressed', 'true');
-        } else if (elegidas.has(opcion.valor)) {
-          elegidas.delete(opcion.valor);
-          boton.setAttribute('aria-pressed', 'false');
-        } else {
-          elegidas.add(opcion.valor);
-          boton.setAttribute('aria-pressed', 'true');
-        }
-        alCambiar([...elegidas]);
-      },
-    }, [opcion.texto]);
-    contenedor.append(boton);
-  }
-  return contenedor;
-}

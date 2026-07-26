@@ -8,8 +8,9 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar,
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar, botonIcono,
 } from '../ui.js';
+import { compartir, toque } from '../native.js';
 import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
 import {
   CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte,
@@ -161,7 +162,7 @@ function resultadosDeBusqueda(ctx) {
           ]),
         ]),
         el('tbody', {}, encontradas.map((persona) => {
-          const quien = comoSeLlama(persona, ctx);
+          const quien = deQuienEs(persona, ctx);
           return el('tr', {
             tabindex: '0', role: 'button',
             onclick: () => abrirFicha(persona.id, ctx),
@@ -173,12 +174,7 @@ function resultadosDeBusqueda(ctx) {
             },
           }, [
             el('td', { texto: nombreCompleto(persona) }),
-            // El círculo entre paréntesis detrás del parentesco: «tía (Familia
-            // Extendida)», que es la pregunta que trae a alguien a buscar.
-            el('td', {
-              texto: [quien, `(${CIRCULOS[persona.circulo] || CIRCULOS.extendida})`]
-                .filter(Boolean).join(' '),
-            }),
+            el('td', { texto: quien }),
             el('td', {}, [celdaDeCumple(persona)]),
           ]);
         })),
@@ -281,6 +277,18 @@ function generoDe(persona) {
 
 const enGenero = (persona, femenino, masculino) =>
   (generoDe(persona) === 'm' ? masculino : femenino);
+
+/**
+ * De quién es esta persona, en una palabra, para escribirlo bajo su nombre.
+ *
+ * El círculo no entra: a la rejilla y a la ficha se llega desde él, y en la
+ * tabla de resultados ocupaba media columna para repetir lo que el parentesco ya
+ * dice mejor —«tía» sitúa a alguien más deprisa que «Familia Extendida»—. Lo que
+ * hay es el parentesco; y cuando no hay ninguno escrito, «amiga» o «amigo»,
+ * que es lo que queda por decir de alguien de quien no se ha dicho nada.
+ */
+const deQuienEs = (persona, ctx) =>
+  comoSeLlama(persona, ctx) || enGenero(persona, 'amiga', 'amigo');
 
 /**
  * Qué es esta persona **para quien está mirando**.
@@ -500,6 +508,15 @@ function proximoCumple(persona) {
   return `${proximo.getDate()} ${MESES_LARGOS[proximo.getMonth()].slice(0, 3)}`;
 }
 
+/** «Cumple el 1 de agosto, y hará 16». La edad detrás, que es lo que se
+ *  pregunta justo después de la fecha. */
+function textoDeCumpleanos(persona) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  const cuando = `Cumple el ${nacimiento.getDate()} de ${MESES_LARGOS[nacimiento.getMonth()].toLowerCase()}`;
+  const anios = aniosQueCumple(persona);
+  return anios ? `${cuando}, y hará ${anios}` : cuando;
+}
+
 // ------------------------------------------------------------------ Ficha --
 
 export function abrirFicha(personaId, ctx) {
@@ -513,15 +530,19 @@ export function abrirFicha(personaId, ctx) {
       el('div', {}, [
         el('p', {
           texto: [
-            CIRCULOS[persona.circulo] || CIRCULOS.extendida,
-            // El mismo «para quién» que en la rejilla: si allí pone «mamá», al
-            // abrir la ficha no puede poner «madre».
-            esMia ? null : comoSeLlama(persona, ctx),
+            // El círculo no se dice: en la rejilla ya se venía de él, y aquí
+            // solo repetía lo que la pantalla anterior acababa de enseñar. Lo
+            // que hace falta es de quién es esta persona, que es el parentesco
+            // —el mismo «para quién» que en la rejilla, para que lo que allí
+            // ponía «mamá» no ponga «madre» al abrirse—. Y cuando no hay
+            // parentesco escrito, el círculo vuelve como último recurso, que es
+            // lo que deja «Amigos» bajo el nombre de un amigo sin más dato.
+            esMia ? null : deQuienEs(persona, ctx),
             persona.tiene_cuenta ? persona.rol : 'sin cuenta',
           ].filter(Boolean).join(' · '),
         }),
         persona.fecha_nacimiento
-          ? el('p', { class: 'pista', texto: `Cumple el ${parsearMomento(persona.fecha_nacimiento).getDate()} de ${MESES_LARGOS[parsearMomento(persona.fecha_nacimiento).getMonth()]}` })
+          ? el('p', { class: 'pista', texto: textoDeCumpleanos(persona) })
           : null,
       ]),
     ]));
@@ -599,15 +620,59 @@ export function abrirFicha(personaId, ctx) {
       ]));
     }
 
-    if (ctx.vista.esAdministrador()) {
-      cuerpo.append(el('div', { class: 'acciones' }, [
-        el('button', {
-          class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+    // Editar no vive al pie: va arriba, junto al título, igual que en el
+    // detalle de un evento (specs/ux.md §7.1).
+  }, [
+    ctx.vista.esAdministrador()
+      ? botonIcono('editar', {
+          etiqueta: 'Editar la ficha',
           onclick: () => abrirFormularioPersona(ctx, { id: personaId }),
-        }, ['Editar la ficha']),
-      ]));
-    }
-  });
+        })
+      : null,
+    botonIcono('compartir', {
+      etiqueta: `Compartir los datos de ${persona.nombre}`,
+      tono: 'discreto',
+      onclick: async () => {
+        toque();
+        const enviado = await compartir({
+          titulo: persona.nombre,
+          texto: textoDeLaPersona(persona, ctx),
+        });
+        if (!enviado) avisar('No he podido compartirlo');
+      },
+    }),
+  ]);
+}
+
+/**
+ * Lo que sale al compartir una persona.
+ *
+ * Va la cara pública y nada más: cómo se llama, de quién es, cuándo cumple y lo
+ * que conviene recordar de ella —las tallas, las alergias—, que es justo lo que
+ * se le manda a quien pregunta qué comprarle. **Ni una palabra de la dimensión
+ * de regalos**: ni deseos, ni ideas apuntadas, ni histórico. Es la misma regla
+ * que en el evento, y aquí importa más, porque este texto sale del hogar.
+ *
+ * Sin redacción por IA: los datos de una persona son cuatro líneas de hechos y
+ * contarlos «en dos frases» solo podría estropearlos.
+ */
+function textoDeLaPersona(persona, ctx) {
+  const quien = persona.id === ctx.vista.yo?.id
+    ? null
+    : deQuienEs(persona, ctx);
+
+  const lineas = [
+    [persona.nombre, persona.apellidos].filter(Boolean).join(' '),
+    quien,
+    persona.fecha_nacimiento ? textoDeCumpleanos(persona) : null,
+  ].filter(Boolean);
+
+  const atributos = ctx.vista.atributosDe(persona.id);
+  if (atributos.length) {
+    lineas.push('', ...atributos.map((a) => `${a.clave}: ${a.valor}`));
+  }
+
+  return lineas.join('\n');
 }
 
 function abrirFormularioAtributo(personaId, ctx) {
@@ -653,11 +718,13 @@ function campoDeFecha(valorInicial) {
   const control = el('input', { type: 'date', value: valorInicial || '' });
   const texto = entrada({
     inputmode: 'numeric', placeholder: 'dd/mm/aaaa', 'aria-label': 'Fecha de nacimiento escrita',
+    maxlength: '10', autocomplete: 'off',
     value: aTextoDeFecha(valorInicial),
   });
 
   control.addEventListener('input', () => { texto.value = aTextoDeFecha(control.value); });
   texto.addEventListener('input', () => {
+    aplicarMascara(texto);
     const iso = deTextoDeFecha(texto.value);
     if (iso !== null) control.value = iso;
   });
@@ -674,6 +741,46 @@ function campoDeFecha(valorInicial) {
       }),
     ]),
   };
+}
+
+/**
+ * Las barras las pone la casilla, no quien escribe.
+ *
+ * Se teclea `01121974` y se lee `01/12/1974`. Una fecha se dice de corrido —«uno
+ * doce setenta y cuatro»— y obligar a intercalar dos barras rompe ese tirón
+ * justo en el campo que existe para escribir deprisa; en un teclado numérico,
+ * además, la barra ni siquiera está a la vista.
+ *
+ * Solo separa lo que ya se ha escrito: `011` da `01/1` y nunca `01/1/`. Así el
+ * borrado no tiene nada especial que hacer —al quitar el último dígito la barra
+ * que lo precedía desaparece sola— y no hace falta interceptar la tecla.
+ */
+const conBarras = (digitos) => {
+  const d = digitos.slice(0, 8);
+  return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join('/');
+};
+
+/**
+ * Reescribe la casilla con la máscara, dejando el cursor donde estaba.
+ *
+ * El sitio se cuenta en dígitos y no en caracteres: si se contara en caracteres,
+ * cada barra que aparece al escribir empujaría el cursor un puesto atrás y las
+ * cifras acabarían saliendo desordenadas al corregir en medio.
+ */
+function aplicarMascara(casilla) {
+  const antes = casilla.value;
+  const cursor = casilla.selectionStart ?? antes.length;
+  const digitosAntesDelCursor = antes.slice(0, cursor).replace(/\D/g, '').length;
+
+  const despues = conBarras(antes.replace(/\D/g, ''));
+  if (despues === antes) return;
+  casilla.value = despues;
+
+  let sitio = 0;
+  for (let vistos = 0; sitio < despues.length && vistos < digitosAntesDelCursor; sitio += 1) {
+    if (/\d/.test(despues[sitio])) vistos += 1;
+  }
+  casilla.setSelectionRange(sitio, sitio);
 }
 
 const aTextoDeFecha = (iso) => {
@@ -699,7 +806,14 @@ function deTextoDeFecha(texto) {
  * del registro es manual a propósito: una importación desde los contactos del
  * teléfono arrastraría duplicados y datos irrelevantes (spec funcional §2).
  */
-function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) {
+/**
+ * El formulario de una persona.
+ *
+ * `alGuardar` existe para quien llega aquí de paso: el cumpleaños de la agenda
+ * manda a corregir una fecha de nacimiento y quiere recuperar su hoja al
+ * terminar, en vez de dejar a quien la corrigió mirando la ficha.
+ */
+export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', alGuardar = null } = {}) {
   const persona = id ? ctx.vista.persona(id) : null;
   const deCasa = ctx.vista.personasDe('familia');
 
@@ -811,6 +925,7 @@ function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida' } = {}) 
             activa: 1,
           });
           cerrarHoja(); avisar('Ficha guardada'); ctx.refrescar();
+          alGuardar?.();
         },
       }, ['Guardar']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),

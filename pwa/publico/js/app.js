@@ -374,6 +374,7 @@ function prepararInterfaz() {
   document.getElementById('botonAjustes').onclick = abrirAjustes;
 
   let ultimaInstantanea = null;
+  let ultimosRechazos = null;
 
   suscribir((datos, situacion) => {
     if (situacion.estado === 'sesion-caducada') {
@@ -382,6 +383,16 @@ function prepararInterfaz() {
       return;
     }
     pintarIndicador(situacion);
+
+    // Lo que el servidor no ha aplicado se dice, y una sola vez por lote: se vio
+    // guardado —la interfaz es optimista— y desaparece con esta instantánea. En
+    // silencio no parece un error, parece que la aplicación pierde cosas.
+    if (situacion.rechazados?.length && situacion.rechazados !== ultimosRechazos) {
+      ultimosRechazos = situacion.rechazados;
+      const cuantos = situacion.rechazados.length;
+      avisar(cuantos === 1 ? 'Un cambio no se ha podido guardar' : `${cuantos} cambios no se han podido guardar`);
+    }
+
     if (!datos) return;
     refrescar();
 

@@ -30,7 +30,7 @@ const PLURAL = {
 
 let configuracion = { base: '', token: '', demostracion: false };
 let instantaneaActual = null;
-let estadoActual = { estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null };
+let estadoActual = { estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null, rechazados: [] };
 const suscriptores = new Set();
 let sincronizando = false;
 
@@ -46,8 +46,16 @@ function anunciar() {
   for (const escuchador of suscriptores) escuchador(instantaneaActual, estadoActual);
 }
 
-function fijarEstado(estado, ultima = estadoActual.ultima) {
-  estadoActual = { estado, ultima };
+/**
+ * `rechazados` son los cambios que el servidor no ha aplicado.
+ *
+ * Viajan con el estado porque hay que **decirlo**: la interfaz es optimista, así
+ * que lo rechazado se vio guardado un momento y desaparece con la instantánea
+ * siguiente. Sin aviso, eso no se lee como un error sino como que la aplicación
+ * pierde cosas.
+ */
+function fijarEstado(estado, ultima = estadoActual.ultima, rechazados = []) {
+  estadoActual = { estado, ultima, rechazados };
   anunciar();
 }
 
@@ -98,7 +106,7 @@ export function detener() {
 
   configuracion = { base: '', token: '', demostracion: false };
   instantaneaActual = null;
-  estadoActual = { estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null };
+  estadoActual = { estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null, rechazados: [] };
   suscriptores.clear();
 }
 
@@ -315,6 +323,7 @@ export async function sincronizar() {
   try {
     const cola = await leerCola();
     let nueva;
+    let noAplicados = [];
 
     if (cola.length) {
       const respuesta = await peticion('/api/cambios', {
@@ -324,9 +333,9 @@ export async function sincronizar() {
       await vaciarCola(cola[cola.length - 1].orden);
       nueva = respuesta.instantanea;
 
-      const rechazados = (respuesta.resultados || []).filter((r) => !r.aplicado);
-      if (rechazados.length) {
-        console.warn('Cambios no aplicados por el servidor:', rechazados);
+      noAplicados = (respuesta.resultados || []).filter((r) => !r.aplicado);
+      if (noAplicados.length) {
+        console.warn('Cambios no aplicados por el servidor:', noAplicados);
       }
     } else {
       nueva = await peticion('/api/sync');
@@ -334,7 +343,7 @@ export async function sincronizar() {
 
     instantaneaActual = nueva;
     await guardarInstantanea(nueva);
-    fijarEstado('al-dia', new Date().toISOString());
+    fijarEstado('al-dia', new Date().toISOString(), noAplicados);
   } catch (error) {
     if (error.sesionCaducada) {
       fijarEstado('sesion-caducada');

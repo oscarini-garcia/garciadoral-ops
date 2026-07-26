@@ -27,13 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Al tocar un módulo o el CSS, sube `VERSION` en `pwa/publico/sw.js`.** El
+  service worker los sirve de la caché antes que de la red, así que sin ese
+  cambio lo nuevo no llega a quien ya tenga la aplicación abierta: no falla
+  nada, simplemente se sigue viendo lo de antes. Desde fuera parece que el
+  cambio no se hizo. `pruebas.yml` lo comprueba ahora en cada PR.
 - **No queda ninguna migración por aplicar.** Las dos `.unavez` —los círculos
   (`0005`) y el género (`0006`)— ya están puestas, y no se vuelven a pedir
   porque no se pueden repetir: el `ALTER TABLE` falla si la columna ya está. La
   pantalla de Gente está decidida y construida: tres círculos
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con
   conmutador y sin avatares, el parentesco relativo a quien mira y el género
-  para afinarlo. Está en `specs/ux.md` §7.1 y §7.2; el porqué de la elección se
+  para afinarlo. Está en `specs/ux.md` §7.1 a §7.3; el porqué de la elección se
   conserva en `specs/propuesta-familia-circulos.html`.
 - **La pestaña de Ocasiones ya está construida** en dos apartados plegables:
   Fechas señaladas —Navidad y compañía, con sus verbos detrás de la pastilla— y
