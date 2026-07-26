@@ -49,10 +49,33 @@ export function reiniciarAgenda() {
  * teléfono es un día más de semana a la vista.
  */
 export function tituloDeAgenda() {
-  if (modo === 'semana') return formatearRango(lunesDe(ancla));
+  if (modo === 'semana') {
+    const lunes = lunesDe(ancla);
+    return mesesDe(lunes, sumarDias(lunes, 6));
+  }
   if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
   const desde = hoy();
   return `desde ${MESES_LARGOS[desde.getMonth()]} de ${desde.getFullYear()}`;
+}
+
+/**
+ * El mes y el año de un tramo, sin los días.
+ *
+ * En la semana el rótulo decía «20 – 26 de Julio de 2026», y los dos números
+ * sobraban: están escritos, grandes, en la columna de la izquierda. Lo único
+ * que el rótulo tiene que añadir es en qué mes y en qué año caen esos días.
+ * Quitarlos deja además sitio para escribirlo del tamaño de las demás pestañas.
+ *
+ * Los dos meses solo se nombran cuando la semana los cruza, y el año dos veces
+ * solo cuando cruza el año —una vez al año, y esa se parte en dos líneas—.
+ */
+function mesesDe(desde, hasta) {
+  const mes = (fecha) => MESES_LARGOS[fecha.getMonth()];
+  if (desde.getFullYear() !== hasta.getFullYear()) {
+    return `${mes(desde)} de ${desde.getFullYear()} – ${mes(hasta)} de ${hasta.getFullYear()}`;
+  }
+  if (desde.getMonth() !== hasta.getMonth()) return `${mes(desde)} – ${mes(hasta)} de ${hasta.getFullYear()}`;
+  return `${mes(hasta)} de ${hasta.getFullYear()}`;
 }
 
 export function pintarAgenda(pantalla, subcabecera, ctx) {
