@@ -41,24 +41,48 @@ export const TAMANO_FAMILIA = 4;
  * mirando, no leyéndola entera.
  */
 export const PARENTESCOS = {
-  familia: ['madre', 'padre', 'hija', 'hijo'],
+  // «Lóver» se traduce a «mamá» o «papá» para quien mira desde abajo, según el
+  // género. Cuando esa pareja no es madre ni padre de las crías están
+  // «madrastra» y «padrastro», que se leen tal cual y no se traducen.
+  familia: ['madre', 'padre', 'hija', 'hijo', 'lóver', 'madrastra', 'padrastro'],
   extendida: [
-    'abuela', 'abuelo',
+    // De dentro hacia fuera, y dentro de cada escalón la sangre antes que lo
+    // que llega por matrimonio.
+    'lóver',
     'hermana', 'hermano',
-    'tía', 'tío',
-    'prima', 'primo',
-    'sobrina', 'sobrino',
+    'abuela', 'abuelo',
+    'bisabuela', 'bisabuelo',
     'nieta', 'nieto',
+    'tía', 'tío',
+    'tía abuela', 'tío abuelo',
+    'tía segunda', 'tío segundo',
+    'prima', 'primo',
+    'prima segunda', 'primo segundo',
+    'sobrina', 'sobrino',
+    'sobrina segunda', 'sobrino segundo',
     'suegra', 'suegro',
     'cuñada', 'cuñado',
     'nuera', 'yerno',
+    'madrastra', 'padrastro',
+    'hermanastra', 'hermanastro',
     'madrina', 'padrino',
+    'ahijada', 'ahijado',
   ],
   amigos: ['amiga', 'amigo', 'vecina', 'vecino', 'compañera', 'compañero'],
 };
 
 /** El valor que abre el campo libre, para lo que no entre en ninguna lista. */
 export const PARENTESCO_OTRO = '__otro';
+
+/**
+ * El género, que solo existe para afinar cómo se nombra a cada uno.
+ *
+ * No es un dato del que la aplicación saque nada más: sirve para elegir entre
+ * «mamá» y «papá», entre «hermana» y «hermano», cuando lo que hay escrito en el
+ * parentesco no lo dice —«lóver», o cualquier cosa puesta a mano en «Otro»—.
+ * Por eso puede quedarse sin poner, y entonces se deduce de la propia palabra.
+ */
+export const GENEROS = { f: 'Femenino', m: 'Masculino' };
 
 /**
  * Emoji con el que arranca un título, si es que arranca con uno.

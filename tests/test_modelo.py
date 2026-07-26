@@ -198,6 +198,17 @@ class Integridad(unittest.TestCase):
         )
         self.assertEqual(len(agenda.personas), 5)
 
+    def test_el_genero_pertenece_al_conjunto_cerrado(self):
+        self._falla(
+            "género inválido",
+            personas=[{"id": "p1", "nombre": "Alguien", "genero": "otro"}],
+        )
+
+    def test_el_genero_puede_no_estar(self):
+        """Solo sirve para nombrar bien, así que no obligarlo no rompe nada."""
+        agenda = agenda_minima()
+        self.assertIsNone(agenda.personas["p-abuela"].genero)
+
     def test_sin_circulo_escrito_se_cae_en_la_familia_extendida(self):
         """Igual que el valor por defecto de la columna: equivocarse hacia fuera."""
         agenda = agenda_minima()

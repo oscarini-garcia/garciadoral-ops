@@ -35,7 +35,10 @@
 | identificador_apple | Nulo si no tiene cuenta |
 | rol | administrador, miembro, o nulo si no tiene cuenta |
 | circulo | familia, extendida o amigos. Es lo que ordena la pantalla de personas |
+| genero | f o m, o nulo. Solo para nombrar bien; véase abajo |
 | activa | La independencia de una hija no altera este campo |
+
+**Género.** Existe solo para afinar cómo se nombra a cada uno: elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando la palabra del parentesco no lleva el género dentro —«lóver»—. La aplicación no saca nada más de él, y por eso admite nulo: sin dato, la palabra se deduce del propio parentesco.
 
 **Círculo.** El vínculo, que es cosa distinta de tener cuenta: la abuela no tiene y es de la familia; un amigo podría tenerla sin serlo. Toma tres valores cerrados y cada persona pertenece a uno solo. Al migrar, quien tenía cuenta pasa a `familia` y el resto a `extendida`, que es también el valor por defecto: equivocarse hacia fuera se corrige desde una ficha, mientras que equivocarse hacia dentro rompe la regla de los cuatro en cuanto entra la quinta persona.
 
