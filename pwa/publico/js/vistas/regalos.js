@@ -722,6 +722,15 @@ export function abrirCumple(personaId, ctx, { dia = null, comentariosDe = null, 
   const anios = aniosDeEseCumple(persona, cual);
   const falta = cuandoCumple(persona);
 
+  // Volver a abrirse tal cual está: lo pide quitar un regalo, que cambia lo que
+  // esta hoja enseña y no puede esperar a la próxima vez que se abra.
+  const reabrir = () => abrirCumple(personaId, ctx, { dia, comentariosDe, acciones });
+
+  // La hoja se rehace entera, así que la tarjeta que tuviera los verbos a la
+  // vista ya no existe: se olvida aquí para no dejar apuntado un nodo que se ha
+  // ido. Es la misma limpieza que hace la lista de ocasiones al repintarse.
+  cerrarDeslizada();
+
   abrirHoja(`Cumpleaños ${deQuien(nombreCompleto(persona))}`, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
       el('span', { style: 'font-size:26px', texto: '🎂' }),
@@ -747,16 +756,19 @@ export function abrirCumple(personaId, ctx, { dia = null, comentariosDe = null, 
       ]));
     } else {
       cuerpo.append(bloqueDeFelicitacion(persona, ctx));
-      cuerpo.append(bloqueDeRegalosDelCumple(persona, ctx));
+      cuerpo.append(bloqueDeRegalosDelCumple(persona, ctx, reabrir));
     }
 
     if (comentariosDe) cuerpo.append(bloqueDeComentarios('evento', comentariosDe, ctx));
-
-    cuerpo.append(el('button', {
-      class: 'enlace-discreto', type: 'button',
-      onclick: () => abrirFicha(personaId, ctx),
-    }, [`Ver la ficha de ${persona.nombre}`]));
   }, [
+    // Quién es va delante de qué se le cambia: primero se mira y luego se
+    // corrige, que es el orden en que se usan. Antes esto era un enlace al pie
+    // de la hoja, debajo de los comentarios, donde había que bajar a buscarlo.
+    botonIcono('informacion', {
+      etiqueta: `Ver la ficha de ${persona.nombre}`,
+      tono: 'discreto',
+      onclick: () => abrirFicha(personaId, ctx),
+    }),
     // Editar un cumpleaños es editar la fecha de nacimiento de quien lo cumple:
     // el verbo lleva derecho al formulario de la persona, y al guardar se vuelve
     // aquí. Se ha ido a corregir un dato, no a visitar a nadie.
@@ -836,14 +848,19 @@ async function copiarFelicitacion(felicitacion) {
  * fecha y el participante, que es justamente lo que `ocasionDelCumple` lee de
  * vuelta.
  */
-function bloqueDeRegalosDelCumple(persona, ctx) {
+function bloqueDeRegalosDelCumple(persona, ctx, reabrir) {
   const ocasion = ocasionDelCumple(persona, ctx);
   const regalos = ocasion ? ctx.vista.regalosDe(ocasion.id) : [];
   const ideas = ctx.vista.ideasPara(persona.id);
 
+  // Quitar uno tiene que rehacer **esta hoja**, no solo la pantalla de detrás:
+  // `ctx.refrescar()` repinta la pestaña, pero la hoja se construyó una vez y se
+  // quedaría enseñando el regalo que acaba de irse.
+  const alQuitar = () => { ctx.refrescar(); reabrir(); };
+
   return el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Regalos' }),
-    ...regalos.map((regalo) => tarjetaDeRegalo(regalo, ctx)),
+    ...regalos.map((regalo) => tarjetaDeRegalo(regalo, ctx, { alQuitar })),
     regalos.length ? null : el('p', {
       class: 'pista',
       texto: ideas.length
@@ -877,9 +894,18 @@ async function asegurarOcasionDelCumple(persona, ctx) {
   return ctx.vista.ocasion(id) || { id, participantes: [persona.id] };
 }
 
-function tarjetaDeRegalo(regalo, ctx) {
+/**
+ * Un regalo apuntado en una ocasión.
+ *
+ * Con `alQuitar`, deslizarla a la izquierda descubre el verbo de quitarlo, que
+ * es el mismo «Quitar de la ocasión» que ya tiene su detalle: el gesto solo se
+ * salta un paso, igual que en la pastilla de una ocasión. Y quitar aquí es
+ * desenlazar, no borrar: se retira el regalo, y la idea se queda en el banco
+ * libre para otra ocasión.
+ */
+function tarjetaDeRegalo(regalo, ctx, { alQuitar = null } = {}) {
   const idea = regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null;
-  return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleRegalo(regalo.id, ctx) }, [
+  const tarjeta = el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleRegalo(regalo.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: idea?.titulo || 'Regalo' }),
       el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: textoDeEstado(regalo).toLowerCase() }),
@@ -890,6 +916,21 @@ function tarjetaDeRegalo(regalo, ctx) {
         typeof regalo.coste_real === 'number' ? formatearImporte(regalo.coste_real) : null,
         regalo.compartido ? 'compartido' : null,
       ].filter(Boolean).join(' · '),
+    }),
+  ]);
+
+  if (!alQuitar) return tarjeta;
+
+  return conVerbosAlDeslizar(tarjeta, [
+    botonIcono('borrar', {
+      etiqueta: `Quitar ${idea?.titulo || 'el regalo'} de la ocasión`,
+      tono: 'peligro',
+      onclick: async () => {
+        await retirar('regalo', regalo.id);
+        toque('media');
+        avisar(idea ? 'Quitado. La idea sigue en el banco.' : 'Regalo quitado');
+        alQuitar();
+      },
     }),
   ]);
 }
@@ -969,11 +1010,18 @@ export function abrirDetalleIdea(ideaId, ctx) {
  * regalos no hay otra manera de llegar a ninguna de las dos, y hacer el camino
  * por la pestaña de al lado —buscar la ocasión, abrirla, encontrar la línea— es
  * exactamente lo que esta pantalla vino a evitar.
+ *
+ * La ficha va arriba, con los verbos, y la ocasión dentro del cuerpo: la primera
+ * es siempre el mismo gesto —mirar quién es— y la segunda lleva escrito el
+ * nombre de la fecha y cuánto falta, que no cabe en un icono.
  */
 export function abrirDetalleRegalo(regaloId, ctx) {
   const regalo = ctx.vista.regalo(regaloId);
   if (!regalo) return;
   const idea = regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null;
+  const ocasion = ctx.vista.ocasion(regalo.ocasion_id);
+  const destinatario = ctx.vista.persona(regalo.destinatario_principal_id);
+  const cumpleanero = ocasion ? deQuienEsElCumple(ocasion, ctx) : null;
 
   abrirHoja(idea?.titulo || 'Regalo', (cuerpo) => {
     cuerpo.append(el('p', { class: 'pista', texto: `Para ${ctx.vista.nombre(regalo.destinatario_principal_id)}` }));
@@ -1005,25 +1053,15 @@ export function abrirDetalleRegalo(regaloId, ctx) {
     });
     cuerpo.append(campo('Lo que costó', coste, 'Opcional. Es lo que permite saber después en qué se fue una ocasión.'));
 
-    // Adónde va y a quién: los dos enlaces que cierran el círculo. El de la
-    // ocasión lleva al cumpleaños cuando la ocasión es un cumpleaños, porque esa
-    // es la hoja donde de verdad se prepara —con los años, la felicitación y el
-    // resto de los regalos— y no la genérica.
-    const ocasion = ctx.vista.ocasion(regalo.ocasion_id);
-    const destinatario = ctx.vista.persona(regalo.destinatario_principal_id);
-    const cumpleanero = ocasion ? deQuienEsElCumple(ocasion, ctx) : null;
-
+    // Adónde va: el enlace lleva al cumpleaños cuando la ocasión es uno, porque
+    // esa es la hoja donde de verdad se prepara —con los años, la felicitación y
+    // el resto de los regalos— y no la genérica. Va con su fecha escrita, que es
+    // media respuesta a por qué se ha entrado aquí.
     if (ocasion) {
       cuerpo.append(el('button', {
         class: 'enlace-discreto', type: 'button',
         onclick: () => (cumpleanero ? abrirCumple(cumpleanero.id, ctx) : abrirOcasion(ocasion.id, ctx)),
       }, [`Ver ${ocasion.nombre} · ${cuandoLaOcasion(ocasion.fecha)}`]));
-    }
-    if (destinatario) {
-      cuerpo.append(el('button', {
-        class: 'enlace-discreto', type: 'button',
-        onclick: () => abrirFicha(destinatario.id, ctx),
-      }, [`Ver la ficha de ${destinatario.nombre}`]));
     }
 
     cuerpo.append(el('div', { class: 'acciones' }, [
@@ -1032,7 +1070,15 @@ export function abrirDetalleRegalo(regaloId, ctx) {
         onclick: async () => { await retirar('regalo', regalo.id); cerrarHoja(); avisar('Regalo retirado'); ctx.refrescar(); },
       }, ['Quitar de la ocasión']),
     ]));
-  });
+  }, [
+    // A quién va, arriba y con los demás verbos, como en el cumpleaños: la ficha
+    // se consulta a menudo y no se busca al pie de la hoja.
+    destinatario ? botonIcono('informacion', {
+      etiqueta: `Ver la ficha de ${destinatario.nombre}`,
+      tono: 'discreto',
+      onclick: () => abrirFicha(destinatario.id, ctx),
+    }) : null,
+  ]);
 }
 
 // -------------------------------------------------------------- Promoción --

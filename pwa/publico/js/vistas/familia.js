@@ -124,22 +124,73 @@ function circulosPorSeparado(cuerpo, ctx) {
           onclick: () => { pestana = clave; componer(vaciar(cuerpo), ctx); },
         }, [`${CIRCULOS[clave]} · ${ctx.vista.personasDe(clave).length}`]),
       )),
-    rejilla(ctx.vista.personasDe(pestana), ctx, { anadirA: pestana }),
+    // Los dos círculos abiertos van en lista y no en rejilla. La rejilla es
+    // para la familia, que son cuatro y se reconocen por el hueco que ocupan;
+    // aquí la gente crece y con ella los nombres largos, los parentescos que no
+    // caben en una celda y las dos Marías que solo distingue el apellido.
+    tablaDePersonas(ctx.vista.personasDe(pestana), ctx),
+    filaDeAnadir(pestana, ctx),
   ]);
 
   return [familia, abiertos];
 }
 
 /**
- * Buscar no devuelve una rejilla sino una tabla.
+ * La lista de personas, en tres columnas que se leen hacia abajo de un vistazo:
+ * el nombre entero con sus apellidos, de quién es y cuándo cumple.
  *
- * Una celda de rejilla da para un nombre corto y poco más, y el resultado de
- * una búsqueda es justo donde hace falta lo contrario: el nombre entero con sus
- * apellidos —que es lo que distingue a dos Marías—, de quién es y cuándo
- * cumple, en tres columnas que se leen de un vistazo hacia abajo.
+ * Es la misma en los dos sitios donde hay que recorrer gente —el resultado de
+ * una búsqueda y los círculos abiertos—, y a propósito: son la misma pregunta
+ * hecha de dos maneras, y contestarla con dos formas distintas obligaría a
+ * aprenderlas por separado.
  */
+function tablaDePersonas(personas, ctx) {
+  if (!personas.length) return el('p', { class: 'vacio', texto: 'Aquí no hay nadie todavía.' });
+
+  return el('div', { class: 'tabla-personas' }, [
+    el('table', {}, [
+      el('thead', {}, [
+        el('tr', {}, [
+          el('th', { scope: 'col', texto: 'Quién' }),
+          el('th', { scope: 'col', texto: 'De qué' }),
+          el('th', { scope: 'col', texto: 'Cumple' }),
+        ]),
+      ]),
+      el('tbody', {}, ordenar(personas).map((persona) =>
+        el('tr', {
+          tabindex: '0', role: 'button',
+          onclick: () => abrirFicha(persona.id, ctx),
+          onkeydown: (evento) => {
+            if (evento.key === 'Enter' || evento.key === ' ') {
+              evento.preventDefault();
+              abrirFicha(persona.id, ctx);
+            }
+          },
+        }, [
+          el('td', { texto: nombreCompleto(persona) }),
+          el('td', { texto: deQuienEs(persona, ctx) }),
+          el('td', {}, [celdaDeCumple(persona)]),
+        ])),
+      ),
+    ]),
+  ]);
+}
+
+/** El «+» de un círculo, ahora al pie de su lista y no como celda de rejilla.
+ *  Sigue sabiendo a cuál añade, que es lo que importaba. */
+function filaDeAnadir(circulo, ctx) {
+  if (!ctx.vista.esAdministrador()) return null;
+  return el('button', {
+    class: 'anadir-persona', type: 'button',
+    onclick: () => abrirFormularioPersona(ctx, { circulo }),
+  }, [
+    el('span', { class: 'anadir-signo', 'aria-hidden': 'true', texto: '+' }),
+    el('span', { texto: `Añadir a ${CIRCULOS[circulo]}` }),
+  ]);
+}
+
 function resultadosDeBusqueda(ctx) {
-  const encontradas = ordenar(ctx.vista.personas().filter((p) => encaja(p, consulta)));
+  const encontradas = ctx.vista.personas().filter((p) => encaja(p, consulta));
 
   if (!encontradas.length) {
     return el('div', { class: 'grupo' }, [
@@ -152,34 +203,7 @@ function resultadosDeBusqueda(ctx) {
       class: 'grupo-titulo',
       texto: encontradas.length === 1 ? '1 persona' : `${encontradas.length} personas`,
     }),
-    el('div', { class: 'tabla-personas' }, [
-      el('table', {}, [
-        el('thead', {}, [
-          el('tr', {}, [
-            el('th', { scope: 'col', texto: 'Quién' }),
-            el('th', { scope: 'col', texto: 'De qué' }),
-            el('th', { scope: 'col', texto: 'Cumple' }),
-          ]),
-        ]),
-        el('tbody', {}, encontradas.map((persona) => {
-          const quien = deQuienEs(persona, ctx);
-          return el('tr', {
-            tabindex: '0', role: 'button',
-            onclick: () => abrirFicha(persona.id, ctx),
-            onkeydown: (evento) => {
-              if (evento.key === 'Enter' || evento.key === ' ') {
-                evento.preventDefault();
-                abrirFicha(persona.id, ctx);
-              }
-            },
-          }, [
-            el('td', { texto: nombreCompleto(persona) }),
-            el('td', { texto: quien }),
-            el('td', {}, [celdaDeCumple(persona)]),
-          ]);
-        })),
-      ]),
-    ]),
+    tablaDePersonas(encontradas, ctx),
   ]);
 }
 
@@ -199,34 +223,26 @@ function celdaDeCumple(persona) {
 }
 
 /**
- * Personas sin avatar: el nombre va justo debajo y las iniciales sobre un color
- * inventado no decían nada que no dijera él. Lo que queda es lo que se consulta
- * de verdad —de quién es, y cuándo cumple—, y cabe más en menos alto.
+ * La rejilla, que ya solo dibuja a los de casa.
+ *
+ * Son cuatro y se reconocen por el hueco que ocupan, así que aquí la forma
+ * ahorra leer. Sin «+»: Familia es un conjunto cerrado, y el que había dentro
+ * sobraba en cuanto los otros dos círculos pasaron a lista.
+ *
+ * Sin avatares tampoco: el nombre va justo debajo y las iniciales sobre un
+ * color inventado no decían nada que no dijera él.
  */
-function rejilla(personas, ctx, { columnas = 0, anadirA = null } = {}) {
-  const celdas = ordenar(personas).map((persona) =>
+function rejilla(personas, ctx, { columnas = 0 } = {}) {
+  return el('div', {
+    class: 'personas',
+    style: columnas ? `grid-template-columns: repeat(${columnas}, 1fr)` : null,
+  }, ordenar(personas).map((persona) =>
     el('button', { class: 'persona', type: 'button', onclick: () => abrirFicha(persona.id, ctx) }, [
       el('span', { class: 'persona-nombre', texto: persona.nombre }),
       el('span', { class: 'persona-quien', texto: comoSeLlama(persona, ctx) }),
       notaDeCumple(persona),
     ]),
-  );
-
-  if (anadirA && ctx.vista.esAdministrador()) {
-    celdas.push(el('button', {
-      class: 'persona persona-mas', type: 'button',
-      'aria-label': `Añadir a ${CIRCULOS[anadirA]}`,
-      onclick: () => abrirFormularioPersona(ctx, { circulo: anadirA }),
-    }, [
-      el('span', { class: 'persona-mas-signo', 'aria-hidden': 'true', texto: '+' }),
-      el('span', { class: 'persona-quien', texto: 'Añadir' }),
-    ]));
-  }
-
-  return el('div', {
-    class: 'personas',
-    style: columnas ? `grid-template-columns: repeat(${columnas}, 1fr)` : null,
-  }, celdas);
+  ));
 }
 
 /** Lo que cumple antes, primero; y al final quien no tiene fecha, junto. */
@@ -662,7 +678,7 @@ function textoDeLaPersona(persona, ctx) {
     : deQuienEs(persona, ctx);
 
   const lineas = [
-    [persona.nombre, persona.apellidos].filter(Boolean).join(' '),
+    nombreCompleto(persona),
     quien,
     persona.fecha_nacimiento ? textoDeCumpleanos(persona) : null,
   ].filter(Boolean);
@@ -722,19 +738,50 @@ function campoDeFecha(valorInicial) {
     value: aTextoDeFecha(valorInicial),
   });
 
+  /**
+   * La salida del teclado numérico.
+   *
+   * El de iPhone no trae tecla de retorno —son diez cifras y poco más—, así que
+   * de este campo no se sale escribiendo: hay que tocar fuera, y encima el
+   * teclado tapa media hoja. Este botón es la salida, y solo está mientras el
+   * campo tiene el foco: fuera de ahí no serviría para nada.
+   *
+   * Va con `pointerdown` y no con `click`. Tocarlo quita el foco antes de que
+   * llegue el `click`, con lo que el botón se escondería y el toque acabaría
+   * sobre lo que hubiera debajo; frenando el `pointerdown` el foco no se mueve y
+   * el cierre lo hace este código, cuando quiere.
+   */
+  const listo = el('button', {
+    class: 'fecha-listo', type: 'button', hidden: true,
+    onpointerdown: (evento) => { evento.preventDefault(); texto.blur(); },
+  }, ['Listo']);
+
   control.addEventListener('input', () => { texto.value = aTextoDeFecha(control.value); });
+  texto.addEventListener('focus', () => { listo.hidden = false; });
   texto.addEventListener('input', () => {
     aplicarMascara(texto);
     const iso = deTextoDeFecha(texto.value);
-    if (iso !== null) control.value = iso;
+    if (iso === null) return;
+    control.value = iso;
+    // Con la fecha entera y buena no queda nada que teclear: el teclado se
+    // retira solo y no hay que ir a buscar por dónde salir. Si los ocho dígitos
+    // no forman una fecha —un 31 de febrero—, se queda abierto a propósito: que
+    // siga ahí es el aviso de que algo no cuadra.
+    if (texto.value.length === 10) texto.blur();
   });
-  texto.addEventListener('blur', () => { texto.value = aTextoDeFecha(control.value); });
+  texto.addEventListener('blur', () => {
+    listo.hidden = true;
+    texto.value = aTextoDeFecha(control.value);
+  });
 
   return {
     control,
     campo: el('div', { class: 'campo' }, [
       el('label', { texto: 'Fecha de nacimiento' }),
-      el('div', { class: 'fecha-doble' }, [control, texto]),
+      el('div', { class: 'fecha-doble' }, [
+        control,
+        el('div', { class: 'fecha-escrita' }, [texto, listo]),
+      ]),
       el('p', {
         class: 'pista',
         texto: 'De aquí sale su cumpleaños en la agenda, todos los años y sin tocar nada. Se puede elegir en el calendario o escribirla.',
