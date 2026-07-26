@@ -73,6 +73,8 @@ tener que recorrer la aplicación entera cada vez.
   guardarDocumento · leerDocumento · guardarInstantanea · leerInstantanea · encolarCambio
   leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 3 más
 - **app.js** — Arranque y navegación.
+- **comentarios.js** — El hilo de comentarios de cualquier cosa.
+  bloqueDeComentarios
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **gente.js** — El campo con el que se elige gente, en todas las pantallas que lo piden.
@@ -102,14 +104,14 @@ tener que recorrer la aplicación entera cada vez.
 - **buscar.js** — Búsqueda global sobre Ideas y Ocasiones, que es el alcance de la primera versión (spec…
   reiniciarBusqueda · pintarBuscar
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
-  reiniciarFamilia · pintarFamilia · abrirFicha
+  reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **regalos.js** — Regalos: las ideas y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · personaDelCumple · ocasionDeEvento
   abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo · abrirSelectorDeRegalo
   …y 1 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
-  bloqueDeComentarios · abrirFormularioEvento · anclaActual
+  abrirFormularioEvento · anclaActual
 
 ### `herramientas/` · Utilidades de desarrollo
 
