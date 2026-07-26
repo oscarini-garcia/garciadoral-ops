@@ -71,6 +71,11 @@ const ICONOS = {
   destello: '<path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z"'
     + ' fill="currentColor" stroke-width="1"/>',
   cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
+  // Descartar no es cerrar ni borrar, y por eso no es un aspa ni una papelera:
+  // un aspa en la cabecera de una hoja se lee como «cierra esto», que es
+  // justamente lo que no hace. El círculo con la raya dice «quítalo de la
+  // lista», que es lo que pasa, y deja claro que no se destruye nada.
+  descartar: '<circle cx="12" cy="12" r="8.5"/><path d="M8 12h8"/>',
   visto: '<path d="m5 12.5 4.5 4.5L19 7"/>',
   informacion: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/>'
     + '<path d="M12 7.6v.1" stroke-width="2.4"/>',

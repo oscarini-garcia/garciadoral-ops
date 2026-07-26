@@ -19,7 +19,9 @@ import {
 import {
   MESES_LARGOS, aniosQueCumple, diasHastaElCumple, parsearMomento, proximoAniversario,
 } from '../semana.js';
-import { abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea } from './regalos.js';
+import {
+  abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea, marcaDeSeleccionada,
+} from './regalos.js';
 
 /** Cuál de los dos círculos abiertos se está mirando. Se conserva entre
  *  repintados para que guardar una ficha no devuelva a nadie a la otra. */
@@ -611,8 +613,15 @@ export function abrirFicha(personaId, ctx) {
         ideas.length
           ? el('div', { class: 'lista' }, ideas.map((idea) =>
               el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleIdea(idea.id, ctx) }, [
-                el('h3', { texto: idea.titulo }),
-                el('p', { texto: `de ${ctx.vista.nombre(idea.autor_id)}${idea.estado === 'en_curso' ? ' · en curso' : ''}` }),
+                // El mismo visto que en la lista de ideas, y por el mismo
+                // motivo: decir que ya está cogida sin gastar una palabra.
+                // Antes iba pegado al autor —«de Ana · en curso»—, que es el
+                // sitio donde menos se lee.
+                el('div', { class: 'tarjeta-fila' }, [
+                  el('h3', { texto: idea.titulo }),
+                  marcaDeSeleccionada(idea, ctx),
+                ]),
+                el('p', { texto: `de ${ctx.vista.nombre(idea.autor_id)}` }),
               ])))
           : el('p', { class: 'pista', texto: 'Ninguna todavía.' }),
         el('button', {

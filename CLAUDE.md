@@ -71,7 +71,14 @@ pendiente. El hook lo inyecta al final del mapa.
   opciones que se descartaron están en `specs/propuesta-ciclo-del-regalo.html`;
   queda abierto **cómo partir los dos grupos cuando un diciembre acumule treinta
   regalos**, que es cuando los rótulos dejarán de bastar.
-- **Lo siguiente del flujo de las ideas está analizado y sin construir**, en
+- **El banco de ideas va en dos apartados plegables** —Seleccionadas primero y
+  Libres después— y la marca de una idea ya cogida es un visto suelto, sin caja y
+  sin palabra: la pastilla de «en curso» se retiró. Los verbos de una idea son
+  editar y descartar, arriba junto al título; «Duplicar» ya no existe, así que
+  reutilizar una idea del año pasado es volver a escribirla. Está en
+  `specs/ux.md` §6.4, y las cuatro maneras de marcarla que se estudiaron, en
+  `specs/prototipo-marca-seleccionada.html`.
+- **Lo que queda del flujo de las ideas está analizado y sin construir**, en
   `specs/propuesta-idea-de-punta-a-punta.html`: el ciclo lineal —mientras una
   idea es regalo no es idea, y vuelve a la lista si se tira atrás el regalo—, la
   ficha con el precio dentro, «seleccionada» en lugar de «en curso», borrar como

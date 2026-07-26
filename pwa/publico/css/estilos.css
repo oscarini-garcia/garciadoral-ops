@@ -469,6 +469,12 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }
 .etiqueta[data-tono="tinta"] { background: var(--tinta-suave); color: var(--tinta); }
+
+/* Una idea ya seleccionada para un regalo: un visto y nada más. Sin caja, para
+   que no se lea como una casilla que se pueda desmarcar —no se desmarca: eso se
+   hace quitando el regalo— y sin palabra, que a la derecha de un título largo
+   lo partía en dos líneas. */
+.marca-seleccionada { display: grid; place-items: center; color: var(--tinta); flex: none; }
 /* Lo que falta por repartir y lo que se quedó sin comprar: no es un error, pero
    es lo único de la lista que pide que alguien haga algo. */
 .etiqueta[data-tono="aviso"] { background: var(--paper-3); color: var(--aviso); }

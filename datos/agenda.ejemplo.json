@@ -266,6 +266,18 @@
           "persona_id": "p-abuela"
         }
       ]
+    },
+    {
+      "id": "id-rutas",
+      "titulo": "Guía de rutas por Asturias",
+      "autor_id": "p-ana",
+      "categoria_id": "libros_musica",
+      "precio_max": 25,
+      "orientaciones": [
+        {
+          "persona_id": "p-rosa"
+        }
+      ]
     }
   ],
   "ocasiones": [

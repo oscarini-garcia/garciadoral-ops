@@ -44,13 +44,13 @@ let filtroRegalos = 'todos';
  * rehace en cada sincronización: sin esto, plegar los cumpleaños duraría hasta
  * que llegase la siguiente instantánea.
  */
-let plegado = { senaladas: false, cumples: false, pasados: true };
+let plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, libres: false };
 
 export function reiniciarRegalos() {
   seccion = 'ideas';
   filtroPersona = null;
   filtroRegalos = 'todos';
-  plegado = { senaladas: false, cumples: false, pasados: true };
+  plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, libres: false };
 }
 
 /**
@@ -146,16 +146,44 @@ function vistaIdeas(ctx) {
     ideas = ideas.filter((idea) => (idea.orientaciones || []).some((o) => o.persona_id === filtroPersona));
   }
 
-  const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: `${ideas.length} ${ideas.length === 1 ? 'idea' : 'ideas'}` }),
-  ]);
+  /**
+   * Dos apartados, y las seleccionadas primero.
+   *
+   * Una idea seleccionada es la que ya se ha llevado a una ocasión: sigue en el
+   * banco a propósito —retirarla de la vista invitaría a que otra persona la
+   * registrase por su cuenta— pero mezclada con las libres obligaba a mirar la
+   * marca de cada una para saber con cuáles se puede contar todavía.
+   *
+   * Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones:
+   * plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en
+   * el que se abre la pantalla. Y lo que se pliegue se queda plegado mientras
+   * dure la sesión, porque la pantalla se rehace en cada sincronización.
+   */
+  const seleccionadas = ideas.filter((idea) => idea.estado === 'en_curso');
+  const libres = ideas.filter((idea) => idea.estado !== 'en_curso');
+
+  const apartado = (titulo, cuales, clave) => {
+    if (!cuales.length) return null;
+    const bloque = acordeon(titulo, (cuerpo) => {
+      for (const idea of cuales) cuerpo.append(tarjetaDeIdea(idea, ctx));
+    }, { abierta: !plegado[clave], nota: String(cuales.length) });
+    bloque.addEventListener('toggle', () => { plegado[clave] = !bloque.open; });
+    return bloque;
+  };
+
+  contenedor.append(...[
+    apartado('Seleccionadas', seleccionadas, 'seleccionadas'),
+    apartado('Libres', libres, 'libres'),
+  ].filter(Boolean));
 
   if (!ideas.length) {
-    grupo.append(el('p', { class: 'vacio', texto: 'Nada por aquí todavía. Dos toques en el hueco apuntan una idea en diez segundos.' }));
+    contenedor.append(el('p', {
+      class: 'vacio',
+      texto: filtroPersona
+        ? 'Ninguna idea para esa persona todavía. Dos toques en el hueco apuntan una.'
+        : 'Nada por aquí todavía. Dos toques en el hueco apuntan una idea en diez segundos.',
+    }));
   }
-  for (const idea of ideas) grupo.append(tarjetaDeIdea(idea, ctx));
-
-  contenedor.append(grupo);
 
   // Lo que uno se apunta para sí mismo ya no está aquí: tiene su propio
   // apartado, el primero de la fila. Aquí solo hay lo que se le regala a otros.
@@ -219,6 +247,21 @@ function vistaDeseos(ctx) {
 
 // ----------------------------------------------------------------- Común --
 
+/**
+ * El visto de una idea ya seleccionada, o nada.
+ *
+ * Lo pintan la lista de ideas y la ficha de cada persona, y tiene que ser el
+ * mismo dibujo en las dos. Va con `role` y etiqueta porque es la única manera
+ * de saber que esa idea está cogida: un icono mudo no lo cuenta.
+ */
+export function marcaDeSeleccionada(idea, ctx) {
+  if (idea.estado !== 'en_curso' || esDeseoPropio(idea, ctx)) return null;
+  return el('span', {
+    class: 'marca-seleccionada empujar', role: 'img',
+    'aria-label': 'Seleccionada para un regalo', title: 'Seleccionada para un regalo',
+  }, [icono('visto')]);
+}
+
 /** El precio de una idea, que puede venir como horquilla o como cifra suelta.
  *  Lo escriben la tarjeta del banco y la línea del selector, y tiene que salir
  *  igual en las dos. */
@@ -238,14 +281,14 @@ function tarjetaDeIdea(idea, ctx) {
   return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleIdea(idea.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: idea.titulo }),
-      // El estado «en curso» mantiene la idea a la vista, señalada con su
-      // ocasión: retirarla invitaría a que otra persona la registrase de nuevo.
+      // Una idea ya seleccionada para un regalo se queda a la vista —retirarla
+      // invitaría a que otra persona la registrase de nuevo— con un visto y sin
+      // ninguna palabra: el apartado en el que está ya lo dice, y una pastilla
+      // de once caracteres partía en dos líneas los títulos largos.
       //
-      // Sobre lo que uno pide para sí mismo, ese sello no se pinta jamás: ahí
-      // no diría «alguien está con esto», diría «alguien te ha comprado esto».
-      idea.estado === 'en_curso' && !esDeseoPropio(idea, ctx)
-        ? el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: 'en curso' })
-        : null,
+      // Sobre lo que uno pide para sí mismo no se pinta jamás: ahí no diría
+      // «alguien está con esto», diría «alguien te ha comprado esto».
+      marcaDeSeleccionada(idea, ctx),
     ]),
     el('p', {
       // En lo que uno pide para sí mismo no van ni el destinatario ni el autor:
@@ -1033,41 +1076,42 @@ export function abrirDetalleIdea(ideaId, ctx) {
     }));
     if (idea.enlace) cuerpo.append(el('a', { href: idea.enlace, target: '_blank', rel: 'noopener', class: 'enlace-discreto' }, ['Abrir el enlace']));
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      idea.estado === 'descartada'
-        ? el('button', {
-            class: 'boton crecer', type: 'button',
-            onclick: async () => { await guardar('idea', idea.id, { estado: 'activa' }); cerrarHoja(); ctx.refrescar(); },
-          }, ['Reactivar'])
-        : esDeseoPropio(idea, ctx) ? null : el('button', {
-            class: 'boton crecer', type: 'button',
-            onclick: () => abrirPromocion(idea, ctx),
-          }, ['Llevar a una ocasión']),
-      el('button', {
-        class: 'boton', 'data-tono': 'discreto', type: 'button',
-        onclick: async () => {
-          // Cerrada es terminal; para reutilizarla se duplica, generando una
-          // idea nueva en estado activa (spec funcional §5.2).
-          await guardar('idea', nuevoId(), {
-            ...idea, id: undefined, estado: 'activa', autor_id: ctx.vista.yo.id, activa: 1,
-          });
-          cerrarHoja(); avisar('Idea duplicada'); ctx.refrescar();
-        },
-      }, ['Duplicar']),
-      idea.estado === 'descartada' ? null : el('button', {
-        class: 'boton', 'data-tono': 'peligro', type: 'button',
-        onclick: async () => { await guardar('idea', idea.id, { estado: 'descartada' }); cerrarHoja(); avisar('Idea descartada'); ctx.refrescar(); },
-      }, ['Descartar']),
-    ]));
+    // Un solo botón en el cuerpo, y solo cuando hay algo que hacer con esto: la
+    // hoja de un deseo propio se queda sin ninguno, porque un deseo no se lleva
+    // a ninguna parte —el regalo que saliera de ahí lo ocultaría el servidor a
+    // su propio autor—.
+    const verbo = idea.estado === 'descartada'
+      ? el('button', {
+          class: 'boton crecer', type: 'button',
+          onclick: async () => { await guardar('idea', idea.id, { estado: 'activa' }); cerrarHoja(); ctx.refrescar(); },
+        }, ['Reactivar'])
+      : esDeseoPropio(idea, ctx) ? null : el('button', {
+          class: 'boton crecer', type: 'button',
+          onclick: () => abrirPromocion(idea, ctx),
+        }, ['Llevar a una ocasión']);
+    if (verbo) cuerpo.append(el('div', { class: 'acciones' }, [verbo]));
 
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
-    // Descartar sí, porque no borra nada —la idea se reactiva— y es lo que se
-    // decide mirándola.
   }, [
-    // El verbo que se usa va arriba, junto al título, igual que en un evento.
+    // Los dos verbos que se usan van arriba, junto al título, igual que en un
+    // evento. Editar primero, que es lo que uno viene a hacer.
     botonIcono('editar', {
       etiqueta: 'Editar',
       onclick: () => abrirFormularioIdea(ctx, { id: idea.id }),
+    }),
+    // Descartar es la salida, y no lleva papelera porque no destruye nada:
+    // aparta, y se reactiva desde la misma hoja. En tono discreto por lo mismo.
+    // Sobre lo ya descartado no aparece: ahí el verbo es el otro.
+    idea.estado === 'descartada' ? null : botonIcono('descartar', {
+      etiqueta: esDeseoPropio(idea, ctx) ? 'Descartar el deseo' : 'Descartar la idea',
+      tono: 'discreto',
+      onclick: async () => {
+        await guardar('idea', idea.id, { estado: 'descartada' });
+        toque('media');
+        cerrarHoja();
+        avisar(esDeseoPropio(idea, ctx) ? 'Deseo descartado' : 'Idea descartada');
+        ctx.refrescar();
+      },
     }),
   ]);
 }
@@ -1497,7 +1541,7 @@ function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
  * Se pregunta porque no tiene vuelta: cerrar manda los regalos al histórico de
  * cada uno y da por cerradas las ideas que salieron de aquí, exactamente igual
  * que ocurre ya cuando el último regalo se marca como entregado. Una idea
- * cerrada es terminal por diseño; para volver a usarla se duplica
+ * cerrada es terminal por diseño y sale del banco para siempre
  * (specs/modelo-datos.md §5.2).
  */
 function confirmarCierreDeOcasion(ocasion, ctx) {
@@ -1520,7 +1564,7 @@ function confirmarCierreDeOcasion(ocasion, ctx) {
     }
     cuerpo.append(el('p', {
       class: 'pista',
-      texto: 'Las ideas que salieron de aquí se dan por cerradas. Para volver a usarlas se duplican, igual que cuando un regalo se entrega.',
+      texto: 'Las ideas que salieron de aquí se dan por cerradas y salen del banco, igual que cuando un regalo se entrega.',
     }));
 
     cuerpo.append(el('div', { class: 'acciones' }, [
