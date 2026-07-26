@@ -215,7 +215,7 @@ Debajo, un enlace a su ficha, que es donde está todo lo demás.
 
 **Los verbos de una fecha señalada están detrás de su pastilla.** Se desliza a la izquierda y aparecen editar y borrar. Es el atajo, no el camino: tocarla la abre, y dentro está el mismo *editar* arriba junto al título, como en un evento y como en una idea. El desplazamiento vertical manda —si el dedo baja, es la página la que se mueve—, solo una fila puede estar abierta a la vez y, con ella abierta, el primer toque sobre la pastilla la recoge en lugar de abrir el detalle. Con el teclado no hay gesto que hacer: los dos botones existen en el árbol y la fila se abre sola al enfocarlos.
 
-**Borrar pregunta, y pregunta diciendo qué se lleva por delante.** Los regalos cuelgan de la ocasión, y una Navidad con ocho apuntados no puede desaparecer de un dedo distraído. Se retiran con ella: dejarlos vivos apuntando a una ocasión que ya no está los volvería invisibles pero no inexistentes, y sus ideas se quedarían «en curso» para siempre, señaladas con una ocasión que nadie puede abrir. Las ideas se quedan en el banco, libres para otra ocasión.
+**Borrar pregunta, y pregunta diciendo qué se lleva por delante.** Los regalos cuelgan de la ocasión, y una Navidad con ocho apuntados no puede desaparecer de un dedo distraído. Se retiran con ella: dejarlos vivos apuntando a una ocasión que ya no está los volvería invisibles pero no inexistentes, y sus ideas se quedarían «en curso» para siempre, señaladas con una ocasión que nadie puede abrir. Las ideas se quedan en el banco, disponibles para otra ocasión.
 
 **Cuándo dejará de servir.** El día que las fechas señaladas cerradas se acumulen —una Navidad al año— el apartado pedirá archivarlas o agruparlas por año. Nada de lo de aquí lo impide.
 
@@ -296,7 +296,7 @@ Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo
 
 ### 6.4 El banco de ideas, como se construyó
 
-**Dos apartados, y las seleccionadas primero.** Una idea seleccionada es la que ya se ha llevado a una ocasión. Sigue en el banco a propósito —retirarla de la vista invitaría a que otra persona la registrase por su cuenta—, pero mezclada con las demás obligaba a mirar la marca de cada una para saber con cuáles se puede contar todavía. Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones: plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en el que se abre la pantalla. Un apartado vacío no se dibuja.
+**Dos apartados —Seleccionadas y Disponibles—, y las seleccionadas primero.** Una idea seleccionada es la que ya se ha llevado a una ocasión. Sigue en el banco a propósito —retirarla de la vista invitaría a que otra persona la registrase por su cuenta—, pero mezclada con las demás obligaba a mirar la marca de cada una para saber con cuáles se puede contar todavía. Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones: plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en el que se abre la pantalla. Un apartado vacío no se dibuja.
 
 ```
 ┌──────────────────────────────┐
@@ -307,7 +307,7 @@ Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo
 │ │ Botas de montar        ✓ │ │
 │ │ Para Marta · 80–120 €    │ │
 │ └──────────────────────────┘ │
-│ Libres               1    ⌃  │
+│ Disponibles          1    ⌃  │
 │ ┌──────────────────────────┐ │
 │ │ Guía de rutas            │ │
 │ │ Para Rosa · 25 €         │ │

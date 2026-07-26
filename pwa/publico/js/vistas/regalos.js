@@ -44,13 +44,13 @@ let filtroRegalos = 'todos';
  * rehace en cada sincronización: sin esto, plegar los cumpleaños duraría hasta
  * que llegase la siguiente instantánea.
  */
-let plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, libres: false };
+let plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, disponibles: false };
 
 export function reiniciarRegalos() {
   seccion = 'ideas';
   filtroPersona = null;
   filtroRegalos = 'todos';
-  plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, libres: false };
+  plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, disponibles: false };
 }
 
 /**
@@ -151,8 +151,8 @@ function vistaIdeas(ctx) {
    *
    * Una idea seleccionada es la que ya se ha llevado a una ocasión: sigue en el
    * banco a propósito —retirarla de la vista invitaría a que otra persona la
-   * registrase por su cuenta— pero mezclada con las libres obligaba a mirar la
-   * marca de cada una para saber con cuáles se puede contar todavía.
+   * registrase por su cuenta— pero mezclada con las disponibles obligaba a mirar
+   * la marca de cada una para saber con cuáles se puede contar todavía.
    *
    * Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones:
    * plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en
@@ -160,7 +160,7 @@ function vistaIdeas(ctx) {
    * dure la sesión, porque la pantalla se rehace en cada sincronización.
    */
   const seleccionadas = ideas.filter((idea) => idea.estado === 'en_curso');
-  const libres = ideas.filter((idea) => idea.estado !== 'en_curso');
+  const disponibles = ideas.filter((idea) => idea.estado !== 'en_curso');
 
   const apartado = (titulo, cuales, clave) => {
     if (!cuales.length) return null;
@@ -173,7 +173,7 @@ function vistaIdeas(ctx) {
 
   contenedor.append(...[
     apartado('Seleccionadas', seleccionadas, 'seleccionadas'),
-    apartado('Libres', libres, 'libres'),
+    apartado('Disponibles', disponibles, 'disponibles'),
   ].filter(Boolean));
 
   if (!ideas.length) {
@@ -1598,7 +1598,7 @@ function confirmarBorradoDeOcasion(ocasion, ctx) {
   abrirHoja(`Borrar ${ocasion.nombre}`, (cuerpo) => {
     cuerpo.append(el('p', {
       texto: regalos.length
-        ? `Se retira la ocasión y con ella ${regalos.length === 1 ? 'el regalo que tiene apuntado' : `los ${regalos.length} regalos que tiene apuntados`}. Las ideas se quedan en el banco, libres para otra ocasión.`
+        ? `Se retira la ocasión y con ella ${regalos.length === 1 ? 'el regalo que tiene apuntado' : `los ${regalos.length} regalos que tiene apuntados`}. Las ideas se quedan en el banco, disponibles para otra ocasión.`
         : 'Se retira la ocasión. No tiene ningún regalo apuntado.',
     }));
 
