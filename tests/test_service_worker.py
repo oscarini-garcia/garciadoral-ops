@@ -24,6 +24,19 @@ def armazon() -> list[str]:
     return re.findall(r"'([^']+)'", bloque.group(1))
 
 
+def _la_sirve_pages(ruta: str) -> bool:
+    """¿Responde Pages algo en esa ruta?
+
+    Casi siempre es el fichero tal cual. La excepción son las páginas sueltas
+    —privacidad, soporte—, que se cachean **sin** `.html` porque es como las
+    sirve Cloudflare Pages: con la extensión responde un 308 hacia la dirección
+    corta, y una respuesta redirigida guardada en caché hace fallar la
+    navegación que la use.
+    """
+    fichero = RAIZ / "pwa" / "publico" / ruta.lstrip("/")
+    return fichero.exists() or fichero.with_suffix(".html").exists()
+
+
 class Armazon(unittest.TestCase):
     def test_todo_lo_que_se_cachea_existe(self):
         """`cache.addAll` es todo o nada.
@@ -33,10 +46,7 @@ class Armazon(unittest.TestCase):
         quien ya tuviera la aplicación abierta se queda con el armazón anterior
         para siempre, sin que nada lo diga.
         """
-        faltan = [
-            ruta for ruta in armazon()
-            if ruta != "/" and not (RAIZ / "pwa" / "publico" / ruta.lstrip("/")).exists()
-        ]
+        faltan = [ruta for ruta in armazon() if ruta != "/" and not _la_sirve_pages(ruta)]
         self.assertEqual(faltan, [], f"sw.js cachea rutas que no existen: {faltan}")
 
     def test_los_modulos_de_la_aplicacion_estan_en_el_armazon(self):

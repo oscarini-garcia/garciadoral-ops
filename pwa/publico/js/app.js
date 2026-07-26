@@ -269,7 +269,7 @@ function pintarFormulario(marco, token, situacion) {
 function confirmarRetirada(token) {
   abrirHoja('Retirar mi solicitud', (cuerpo) => {
     cuerpo.append(el('p', {
-      texto: 'Se borra todo lo que hemos guardado de ti: tu nombre, tu correo y el vínculo con tu Apple ID. No queda constancia de que lo hayas pedido.',
+      texto: 'Se borra todo lo que hemos guardado de ti: tu nombre, tu correo y el vínculo con tu Apple ID. No queda constancia de que lo hayas pedido. Se avisa además a Apple para que deje de reconocer esta aplicación entre las tuyas.',
     }));
     cuerpo.append(el('p', {
       class: 'pista',
@@ -279,9 +279,17 @@ function confirmarRetirada(token) {
       el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
       el('button', {
         class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
-        onclick: async () => {
+        onclick: async (evento) => {
+          const boton = evento.currentTarget;
+          boton.disabled = true;
+          boton.textContent = 'Retirando…';
           try {
-            await retirarSolicitud(configuracion, token);
+            // Vuelve a pasar por Apple para traer un código de autorización, que
+            // es con lo que el Worker le pide a Apple que revoque el vínculo. Si
+            // no se consigue —hoja cancelada, cáscara antigua—, la retirada
+            // sigue: nadie puede quedarse sin poder retirarse.
+            const codigo = await codigoDeAutorizacion(configuracion);
+            await retirarSolicitud(configuracion, token, codigo);
           } catch {
             /* si ya no estaba, el resultado para quien mira es el mismo */
           }
@@ -742,9 +750,9 @@ function bloqueLegal() {
   }, [texto]);
 
   return el('p', { class: 'pista' }, [
-    enlace('/privacidad.html', 'Privacidad'),
+    enlace('/privacidad', 'Privacidad'),
     ' · ',
-    enlace('/soporte.html', 'Ayuda y contacto'),
+    enlace('/soporte', 'Ayuda y contacto'),
   ]);
 }
 

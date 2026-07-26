@@ -147,8 +147,13 @@ export const pedirEntrar = (configuracion, token, nombre) =>
 export const consultarSolicitud = (configuracion, token) =>
   enLaPuerta(configuracion, token, 'GET');
 
-export const retirarSolicitud = (configuracion, token) =>
-  enLaPuerta(configuracion, token, 'DELETE');
+/**
+ * Retirar la solicitud. Lleva el código de autorización, como la baja de una
+ * cuenta: es lo único con lo que el Worker puede pedirle a Apple que revoque el
+ * vínculo, y quien deja una solicitud ya pasó por Sign in with Apple.
+ */
+export const retirarSolicitud = (configuracion, token, codigo) =>
+  enLaPuerta(configuracion, token, 'DELETE', { codigo_apple: codigo ?? null });
 
 // ------------------------------------------------------ Baja de la cuenta --
 

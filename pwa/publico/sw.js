@@ -14,13 +14,18 @@
 // Los módulos y los estilos se sirven de la caché antes que de la red, así que
 // un cambio en ellos no llega a quien ya tiene la aplicación abierta hasta que
 // esta constante cambia: es lo que reinstala el armazón y borra el anterior.
-const VERSION = 'agenda-v21';
+const VERSION = 'agenda-v23';
 
 const ARMAZON = [
   '/',
   '/index.html',
-  '/privacidad.html',
-  '/soporte.html',
+  // Sin `.html`, que es como las sirve Pages. Con la extensión responde un 308
+  // hacia la dirección corta, y una respuesta redirigida guardada en caché hace
+  // fallar la navegación que la use: el service worker no puede devolverla para
+  // una navegación. Solo se notaría sin conexión, que es justo cuando esto
+  // importa.
+  '/privacidad',
+  '/soporte',
   '/manifest.webmanifest',
   '/css/estilos.css',
   '/js/app.js',
