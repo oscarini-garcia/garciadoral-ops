@@ -1,0 +1,358 @@
+<meta charset="utf-8">
+<title>La etiqueta de un regalo: ocho formas</title>
+
+<style>
+  /* Los valores son los de pwa/publico/css/estilos.css, copiados uno a uno: la
+     tarjeta, la etiqueta y los tonos se ven aquí como en el teléfono. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --radio: 12px;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  h1, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 28px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p { color: var(--ink-soft); max-width: 64ch; }
+
+  .caso { display: grid; gap: 18px; grid-template-columns: 1fr; border-top: 1px solid var(--line); padding-top: 20px; align-items: start; }
+  @media (min-width: 820px) { .caso { grid-template-columns: 380px 1fr; } }
+  .caso-cabeza { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .letra {
+    font-family: var(--serif); font-size: 14px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 25px; height: 25px; display: grid; place-items: center; flex: none;
+  }
+  .juicio { display: flex; flex-direction: column; gap: 7px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: start; color: var(--ink-soft); font-size: 15px; }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* --- La tarjeta, con los valores de la aplicación ------------------------ */
+  .lista { display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .tarjeta h3 { font-size: 17px; font-weight: 600; letter-spacing: -.005em; font-family: var(--sans); }
+  .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
+  .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
+  .empujar { margin-left: auto; }
+
+  .etiqueta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--paper-3); color: var(--ink-soft); white-space: nowrap;
+  }
+  .etiqueta.aviso { color: var(--aviso); }
+  .etiqueta.regalo { background: var(--regalo-suave); color: var(--regalo); }
+  .etiqueta.tinta { background: var(--tinta-suave); color: var(--tinta); }
+
+  .r6 { border-radius: 6px; }
+  .r4 { border-radius: 4px; letter-spacing: 0; }
+  .r2 { border-radius: 2px; }
+  .suelta {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+    color: var(--aviso); white-space: nowrap;
+  }
+  .suelta.gris { color: var(--ink-soft); }
+  .borde { background: transparent; border: 1px solid currentColor; border-radius: 6px; }
+  .barrita { border-left: 3px solid currentColor; padding-left: 8px; }
+  .conpunto::before {
+    content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor; margin-right: 6px; vertical-align: 1px;
+  }
+  .resalte { color: var(--aviso); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 66ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>La etiqueta de un regalo: ocho formas</h1>
+    <p>
+      La de ahora es una cápsula: <code>border-radius: 999px</code>, redonda del
+      todo. Y desentona porque <strong>en esta aplicación lo redondo del todo son
+      los mandos</strong> —las pastillas de filtro, el botón de «Hoy», el botón
+      flotante—, mientras que lo que se lee y no se toca tiene esquinas cortas:
+      las tarjetas 12, los botones 10, la casilla 6. Una etiqueta que solo
+      informa vestida de botón invita a tocarla y no hace nada.
+    </p>
+    <p>
+      Ocho maneras, todas sobre la tarjeta de verdad. Debajo, lo que arrastra la
+      decisión: esta misma etiqueta la usan otras tres pantallas.
+    </p>
+  </header>
+
+  <section class="caso" style="border-top:0; padding-top:0">
+    <div>
+      <div class="caso-cabeza"><h3>Lo que hay hoy</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="no"><span>−</span><span>Cápsula entera: la forma de los mandos, en algo que no se toca.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">A</span><h3>Esquina de 6</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso r6 empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta r6 empujar">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>El mismo 6 de la casilla del selector de regalos, así que no estrena ningún valor: la aplicación ya tiene esa esquina.</span></div>
+      <div class="si"><span>+</span><span>Sigue siendo una etiqueta reconocible, solo que deja de parecer un botón.</span></div>
+      <div class="no"><span>−</span><span>Es el cambio más tímido: si lo que molesta es la caja y no el redondeo, no arregla nada.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">B</span><h3>Esquina de 4 y sin espaciar las letras</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso r4 empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta r4 empujar">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Más seca y más corta: quitar el espaciado le devuelve unos puntos de anchura, que en un título largo se agradecen.</span></div>
+      <div class="no"><span>−</span><span>El espaciado es lo que hace que la mono se lea como marca y no como texto pequeño. Sin él, se parece más a un dato.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">C</span><h3>Sin caja: solo el texto</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="suelta empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="suelta gris empujar">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Es la decisión que ya tomaste en Ideas: allí la marca de «seleccionada» es un visto suelto, sin caja. Las dos listas pasarían a marcar igual.</span></div>
+      <div class="si"><span>+</span><span>Ninguna forma que discutir, y la línea queda más limpia que con cualquier caja.</span></div>
+      <div class="no"><span>−</span><span>Sin fondo, el color hace todo el trabajo. «Se encarga Ana» en gris pesa poco y puede confundirse con la línea de detalle.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">D</span><h3>Borde fino, sin fondo</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso borde empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta borde empujar" style="color:var(--ink-soft)">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Marca el sitio sin meter otra mancha de color dentro de una tarjeta que ya tiene fondo propio.</span></div>
+      <div class="no"><span>−</span><span>Un rectángulo con borde dentro de otro rectángulo con borde: cajas dentro de cajas, y encima a dos milímetros del canto de la tarjeta.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">E</span><h3>Una barrita de color delante</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="suelta barrita empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="suelta gris barrita empujar">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>La barrita ya existe en la agenda, delante de cada evento: es una forma que la aplicación conoce.</span></div>
+      <div class="si"><span>+</span><span>Da peso sin caja, así que el color se lee de lejos y el texto no queda flotando.</span></div>
+      <div class="no"><span>−</span><span>En la agenda la barrita va al principio de la línea y aquí iría al final, en medio de la fila. Es la misma pieza en un sitio raro.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">F</span><h3>Que baje a la segunda línea</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3></div>
+          <p><span class="resalte">sin encargado</span> · para la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3></div>
+          <p>se encarga Ana · para Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>No hay etiqueta que diseñar: el dato se cuenta con el resto, en la letra del resto.</span></div>
+      <div class="si"><span>+</span><span>El título recupera la línea entera, que es lo que se lee primero.</span></div>
+      <div class="no"><span>−</span><span>Se pierde el vistazo: para saber qué falta por repartir hay que leer cada segunda línea en vez de recorrer una columna.</span></div>
+      <div class="no"><span>−</span><span>Esa línea ya lleva tres datos; con este, cuatro, y en un teléfono estrecho se parte.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">G</span><h3>Un punto de color y el texto</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="suelta conpunto empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="suelta gris conpunto empujar">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>El punto es la única forma redonda que no se confunde con un botón, y es la que ya usa la aplicación para el estado de la sincronización.</span></div>
+      <div class="si"><span>+</span><span>Da el color de un vistazo sin encerrar el texto.</span></div>
+      <div class="no"><span>−</span><span>Un punto de color suele significar «hay algo nuevo»; aquí no significa eso.</span></div>
+    </div>
+  </section>
+
+  <section class="caso">
+    <div>
+      <div class="caso-cabeza"><span class="letra">H</span><h3>Sello: esquina de 2</h3></div>
+      <div class="lista">
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3><span class="etiqueta aviso r2 empujar">sin encargado</span></div>
+          <p>para la abuela · Cumpleaños de la abuela · en 4 días</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Botas de montar</h3><span class="etiqueta r2 empujar">se encarga Ana</span></div>
+          <p>para Marta · Cumpleaños de Marta · en 6 días</p>
+        </div>
+      </div>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Lo más lejos posible de la cápsula: se lee como un sello estampado, y con la mono le pega.</span></div>
+      <div class="no"><span>−</span><span>Dos puntos de radio es casi un ángulo recto, y en una pantalla donde todo lo demás está redondeado canta por el otro lado.</span></div>
+    </div>
+  </section>
+
+  <section class="caso" style="grid-template-columns:1fr">
+    <div class="nota pega">
+      <p>
+        <strong>Ojo con lo que arrastra:</strong> esta misma etiqueta la usan
+        otras tres pantallas —la fecha de una fecha señalada («25 Dic»), el
+        «en 4 días» de un cumpleaños y el estado de un regalo dentro de su
+        ocasión—. Cambiar la forma en la hoja de estilos las cambia todas, que es
+        seguramente lo que quieres: una aplicación con dos formas de etiqueta
+        sería peor que con una que no gusta.
+      </p>
+      <p>
+        Lo digo porque <strong>C, E, F y G no son un cambio de forma sino de
+        pieza</strong>: si se eligen, hay que decidir qué pasa con esas tres. La
+        fecha «25 Dic» sin caja se pierde; el «en 4 días» de un cumpleaños vive
+        de resaltar.
+      </p>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>Yo haría la A.</strong> Es la que arregla exactamente lo que
+        molesta —deja de ser una cápsula— sin cambiar de pieza ni obligar a
+        rediseñar las otras tres pantallas, y el 6 no es un número inventado: es
+        el de la casilla que ya existe. Si al verla sigue pareciéndote una
+        pastilla de botón, la <strong>H</strong> es el mismo cambio llevado hasta
+        el final.
+      </p>
+      <p>
+        Si lo que te sobra es la caja entera y no su forma, entonces es la
+        <strong>C</strong>: sin caja, como el visto de Ideas, y las dos listas
+        marcarían igual. Pero hay que resolver antes las otras tres etiquetas.
+      </p>
+    </div>
+  </section>
+
+</div>
