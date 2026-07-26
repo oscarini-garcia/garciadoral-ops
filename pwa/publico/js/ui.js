@@ -50,6 +50,39 @@ export function avatar(persona, clase = 'avatar') {
   ]);
 }
 
+// ------------------------------------------------------------------- Iconos --
+
+/**
+ * Los pocos iconos que la aplicación dibuja en línea. Se escriben como trazo
+ * sobre una rejilla de 24, igual que los de `index.html`, y heredan el color.
+ *
+ * El de compartir es el del sistema —la caja con la flecha hacia arriba—: en un
+ * teléfono se reconoce sin leer nada, que es justo lo que una palabra dentro de
+ * un botón no consigue.
+ */
+const ICONOS = {
+  editar: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  compartir: '<path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/>',
+};
+
+export function icono(nombre) {
+  return el('span', {
+    class: 'icono-svg',
+    'aria-hidden': 'true',
+    html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
+      + ` stroke-linecap="round" stroke-linejoin="round">${ICONOS[nombre] || ''}</svg>`,
+  });
+}
+
+/** Botón de solo icono. La etiqueta no se dibuja, pero existe para quien no ve. */
+export function botonIcono(nombre, { etiqueta, tono = null, onclick }) {
+  return el('button', {
+    class: 'icono-accion', type: 'button',
+    'data-tono': tono, 'aria-label': etiqueta, title: etiqueta,
+    onclick,
+  }, [icono(nombre)]);
+}
+
 // --------------------------------------------------------------------- Hoja --
 
 const hoja = () => document.getElementById('hoja');
@@ -59,12 +92,24 @@ let cerrarActual = null;
 /**
  * Presentación modal para las tareas puntuales, según la convención de la
  * plataforma (specs/ux.md §1). Devuelve el nodo de contenido.
+ *
+ * `acciones` son botones de icono que se colocan a la altura del título, que es
+ * donde se buscan: un pie de hoja no se ve hasta que se baja del todo.
  */
-export function abrirHoja(titulo, construir) {
+export function abrirHoja(titulo, construir, acciones = []) {
   cerrarHoja();
   const contenedor = vaciar(hoja());
   contenedor.append(el('div', { class: 'hoja-asa' }));
-  if (titulo) contenedor.append(el('h2', { texto: titulo }));
+
+  const utiles = [].concat(acciones).filter(Boolean);
+  if (titulo && utiles.length) {
+    contenedor.append(el('div', { class: 'hoja-cabecera' }, [
+      el('h2', { texto: titulo }),
+      el('div', { class: 'hoja-acciones' }, utiles),
+    ]));
+  } else if (titulo) {
+    contenedor.append(el('h2', { texto: titulo }));
+  }
 
   const cuerpo = el('div', { class: 'hoja-seccion' });
   contenedor.append(cuerpo);

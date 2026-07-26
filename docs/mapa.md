@@ -87,8 +87,8 @@ tener que recorrer la aplicación entera cada vez.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
   listarSolicitudes · resolverSolicitud · sincronizar
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
-  el · vaciar · colorDePersona · iniciales · avatar · abrirHoja · cerrarHoja · hayHojaAbierta
-  deslizarHorizontal · dobleToque · …y 5 más
+  el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
+  cerrarHoja · hayHojaAbierta · …y 7 más
 
 ### `pwa/publico/js/vistas/` · Las cuatro secciones de la aplicación
 
@@ -150,9 +150,10 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
 - **`specs/modelo-datos.md`**
   `api/src/filtrado.js` §7.3 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
   `pwa/publico/js/semana.js` §7.4 · `pwa/publico/js/sincronizacion.js` §1
-  `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/modelo.py` §4
-  `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
-  `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
+  `pwa/publico/js/vistas/semana.js` §4.2 · `scripts/agenda/__init__.py` §2, §4, §6
+  `scripts/agenda/modelo.py` §4 · `scripts/agenda/semana.py` §2.4, §7.4
+  `scripts/agenda/visibilidad.py` · `tests/test_modelo.py` §4
+  `tests/test_visibilidad.py` §6
 - **`specs/plan-semanal.md`**
   `api/src/index.js` §9 · `api/src/visibilidad.js` §5
   `scripts/agenda/__init__.py` §3, §4, §6 · `scripts/agenda/fuente.py` §12.1
