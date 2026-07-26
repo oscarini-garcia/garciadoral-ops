@@ -75,8 +75,8 @@ tener que recorrer la aplicación entera cada vez.
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
 - **modelo.js** — Consultas sobre la instantánea local.
-  EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO · estaActivo
-  redaccionDisponible · nuevoId · ahora · crearVista · …y 3 más
+  EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO · GENEROS
+  estaActivo · redaccionDisponible · nuevoId · ahora · …y 4 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -199,12 +199,12 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**169** en total.
+**171** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
 - `tests/test_mensaje.py` — 12
-- `tests/test_modelo.py` — 22
+- `tests/test_modelo.py` — 24
 - `tests/test_plan_semanal.py` — 11
 - `tests/test_semana.py` — 13
 - `tests/test_visibilidad.py` — 13

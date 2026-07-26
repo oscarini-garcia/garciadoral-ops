@@ -9,7 +9,8 @@
       "parentesco": "madre",
       "tiene_cuenta": true,
       "rol": "administrador",
-      "circulo": "familia"
+      "circulo": "familia",
+      "genero": "f"
     },
     {
       "id": "p-oscar",
@@ -19,7 +20,8 @@
       "parentesco": "padre",
       "tiene_cuenta": true,
       "rol": "administrador",
-      "circulo": "familia"
+      "circulo": "familia",
+      "genero": "m"
     },
     {
       "id": "p-marta",
@@ -29,7 +31,8 @@
       "parentesco": "hija",
       "tiene_cuenta": true,
       "rol": "miembro",
-      "circulo": "familia"
+      "circulo": "familia",
+      "genero": "f"
     },
     {
       "id": "p-lucia",
@@ -39,7 +42,8 @@
       "parentesco": "hija",
       "tiene_cuenta": true,
       "rol": "miembro",
-      "circulo": "familia"
+      "circulo": "familia",
+      "genero": "f"
     },
     {
       "id": "p-abuela",
@@ -47,7 +51,8 @@
       "fecha_nacimiento": "1949-07-30",
       "parentesco": "abuela",
       "tiene_cuenta": false,
-      "circulo": "extendida"
+      "circulo": "extendida",
+      "genero": "f"
     },
     {
       "id": "p-abuelo",
@@ -55,7 +60,8 @@
       "fecha_nacimiento": "1947-03-05",
       "parentesco": "abuelo",
       "tiene_cuenta": false,
-      "circulo": "extendida"
+      "circulo": "extendida",
+      "genero": "m"
     },
     {
       "id": "p-rosa",
@@ -64,7 +70,8 @@
       "fecha_nacimiento": "1972-08-21",
       "parentesco": "tía",
       "tiene_cuenta": false,
-      "circulo": "extendida"
+      "circulo": "extendida",
+      "genero": "f"
     },
     {
       "id": "p-javi",
@@ -72,7 +79,8 @@
       "apellidos": "Ejemplo",
       "parentesco": "tío",
       "tiene_cuenta": false,
-      "circulo": "extendida"
+      "circulo": "extendida",
+      "genero": "m"
     },
     {
       "id": "p-nacho",
@@ -81,7 +89,8 @@
       "fecha_nacimiento": "1979-08-09",
       "parentesco": "amigo",
       "tiene_cuenta": false,
-      "circulo": "amigos"
+      "circulo": "amigos",
+      "genero": "m"
     },
     {
       "id": "p-bea",
@@ -89,7 +98,8 @@
       "apellidos": "Ejemplo",
       "parentesco": "amiga",
       "tiene_cuenta": false,
-      "circulo": "amigos"
+      "circulo": "amigos",
+      "genero": "f"
     },
     {
       "id": "p-diego",
@@ -98,7 +108,8 @@
       "fecha_nacimiento": "1980-04-27",
       "parentesco": "amigo",
       "tiene_cuenta": false,
-      "circulo": "amigos"
+      "circulo": "amigos",
+      "genero": "m"
     }
   ],
   "atributos_persona": [

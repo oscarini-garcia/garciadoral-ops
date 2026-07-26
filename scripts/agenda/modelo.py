@@ -26,6 +26,9 @@ from typing import Any, Iterator
 REGLAS_VISIBILIDAD = ("publica", "restringida", "privada")
 ROLES = ("administrador", "miembro")
 CIRCULOS = ("familia", "extendida", "amigos")
+#: Solo existe para nombrar bien: elegir entre «mamá» y «papá» cuando el
+#: parentesco escrito no lo dice. Admite ausencia.
+GENEROS = ("f", "m")
 #: Cuántos caben en el círculo «familia». Es el hogar, no un grupo que crece.
 TAMANO_FAMILIA = 4
 TIPOS_IDEA = ("sugerencia", "deseo")
@@ -63,6 +66,8 @@ class Persona:
     #: Vínculo, que es lo que ordena la pantalla de personas. Tener cuenta es
     #: otra cosa y va por su lado: la abuela no tiene y es de la familia.
     circulo: str = "extendida"
+    #: Solo para nombrar bien; puede no estar (specs/ux.md §7.1).
+    genero: str | None = None
     activa: bool = True
 
     @property
@@ -393,6 +398,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             identificador_apple=bruto.get("identificador_apple"),
             rol=bruto.get("rol"),
             circulo=bruto.get("circulo", "extendida"),
+            genero=bruto.get("genero"),
             activa=bool(bruto.get("activa", True)),
         )
 
@@ -574,6 +580,8 @@ def validar(agenda: Agenda) -> list[str]:
             problemas.append(f"persona {persona.id}: sin cuenta pero con rol asignado")
         if persona.circulo not in CIRCULOS:
             problemas.append(f"persona {persona.id}: círculo inválido «{persona.circulo}»")
+        if persona.genero is not None and persona.genero not in GENEROS:
+            problemas.append(f"persona {persona.id}: género inválido «{persona.genero}»")
 
     # «Familia» es el hogar y son cuatro. La pantalla lo sostiene no ofreciendo
     # por dónde añadir; esto es la red debajo, para lo que entre por la API o
