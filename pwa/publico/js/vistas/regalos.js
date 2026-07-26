@@ -76,10 +76,14 @@ function vistaIdeas(ctx) {
   // Solo quien tiene alguna idea apuntada. Filtrar por alguien que no tiene
   // ninguna únicamente puede dar una lista vacía, y con treinta personas la
   // parrilla de nombres ocupaba más que las propias ideas.
+  //
+  // Con una excepción: quien esté filtrado sigue estando aunque se quede sin
+  // ideas. Si no, su pastilla desaparecería con el filtro puesto y la lista se
+  // quedaría vacía sin nada en pantalla que dijera por qué ni cómo deshacerlo.
   const conIdeas = new Set(
     ctx.vista.banco().flatMap((idea) => (idea.orientaciones || []).map((o) => o.persona_id)),
   );
-  const personas = ctx.vista.personas().filter((p) => conIdeas.has(p.id));
+  const personas = ctx.vista.personas().filter((p) => conIdeas.has(p.id) || p.id === filtroPersona);
 
   contenedor.append(el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Para quién' }),
@@ -1236,6 +1240,10 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       // apuntó sigue siendo quien la apuntó.
       await guardar('idea', existente ? existente.id : nuevoId(), campos);
       recordarElegidos('regalo', destinatarios);
+      // Lo que se acaba de apuntar tiene que verse. Con un filtro puesto para
+      // otra persona no saldría en la lista, y guardar algo que no aparece por
+      // ningún lado no se lee como un filtro: se lee como que no se ha guardado.
+      if (filtroPersona && !destinatarios.includes(filtroPersona)) filtroPersona = null;
       toque('media');
       cerrarHoja();
       avisar(existente ? 'Idea actualizada'
