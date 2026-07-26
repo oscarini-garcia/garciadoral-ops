@@ -169,6 +169,51 @@ class Integridad(unittest.TestCase):
             ],
         )
 
+    def test_el_circulo_pertenece_al_conjunto_cerrado(self):
+        self._falla(
+            "círculo inválido",
+            personas=[{"id": "p1", "nombre": "Alguien", "circulo": "vecinos"}],
+        )
+
+    def test_en_familia_no_caben_mas_de_cuatro(self):
+        """La pantalla lo sostiene no ofreciendo el «+»; esto es la red debajo."""
+        self._falla(
+            "caben 4",
+            personas=[
+                {"id": f"p{n}", "nombre": f"Persona {n}", "circulo": "familia"}
+                for n in range(5)
+            ],
+        )
+
+    def test_quien_esta_de_baja_no_ocupa_sitio_en_familia(self):
+        """Dar de baja a alguien tiene que dejar libre su hueco, no bloquearlo."""
+        agenda = agenda_minima(
+            personas=[
+                *(
+                    {"id": f"p{n}", "nombre": f"Persona {n}", "circulo": "familia"}
+                    for n in range(4)
+                ),
+                {"id": "p-antes", "nombre": "Quien estuvo", "circulo": "familia", "activa": False},
+            ],
+        )
+        self.assertEqual(len(agenda.personas), 5)
+
+    def test_el_genero_pertenece_al_conjunto_cerrado(self):
+        self._falla(
+            "género inválido",
+            personas=[{"id": "p1", "nombre": "Alguien", "genero": "otro"}],
+        )
+
+    def test_el_genero_puede_no_estar(self):
+        """Solo sirve para nombrar bien, así que no obligarlo no rompe nada."""
+        agenda = agenda_minima()
+        self.assertIsNone(agenda.personas["p-abuela"].genero)
+
+    def test_sin_circulo_escrito_se_cae_en_la_familia_extendida(self):
+        """Igual que el valor por defecto de la columna: equivocarse hacia fuera."""
+        agenda = agenda_minima()
+        self.assertEqual(agenda.personas["p-abuela"].circulo, "extendida")
+
     def test_una_persona_sin_cuenta_no_accede_a_categorias_restringidas(self):
         self._falla(
             "no tiene cuenta",

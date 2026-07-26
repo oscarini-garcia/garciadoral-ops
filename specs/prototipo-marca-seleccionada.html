@@ -1,0 +1,291 @@
+<meta charset="utf-8">
+<title>La marca de una idea ya seleccionada</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css, para que lo de aquí se
+     vea como se va a ver en el teléfono. La Newsreader no puede cargarse desde
+     fuera, así que queda Georgia, que es su propio repuesto. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --hueco:      #F0EBE0;
+    --hueco-linea:#DCD6C9;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --radio: 12px;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --hueco: #0A0F11; --hueco-linea: #2A363C;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --hueco: #0A0F11; --hueco-linea: #2A363C;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 28px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .opcion-cabeza { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .par { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 330px 1fr; } }
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* ---- La lista de ideas, con los valores de la aplicación de verdad ---- */
+  .lista {
+    width: 330px; max-width: 100%; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sombra);
+    padding: 14px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px; text-align: left;
+  }
+  .tarjeta h3 { font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+  .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
+  .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
+  .empujar { margin-left: auto; }
+  .etiqueta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--paper-3); color: var(--ink-soft);
+  }
+  .etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }
+  .etiqueta[data-tono="tinta"] { background: var(--tinta-suave); color: var(--tinta); }
+
+  /* La casilla del selector de regalos, tal cual está hoy en la aplicación. */
+  .casilla {
+    width: 21px; height: 21px; border-radius: 6px; flex: none;
+    display: grid; place-items: center;
+    border: 1.6px solid var(--hueco-linea); background: var(--hueco); color: var(--paper);
+  }
+  .casilla.marcada { background: var(--tinta); border-color: var(--tinta); }
+  .casilla svg { width: 13px; height: 13px; }
+  .visto-suelto { color: var(--tinta); display: grid; place-items: center; }
+  .visto-suelto svg { width: 19px; height: 19px; }
+  .apagada h3, .apagada p { color: var(--ink-faint); }
+  .banda { border-left: 3px solid var(--tinta); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="visto" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m5 12.5 4.5 4.5L19 7"/>
+  </symbol>
+</svg>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>La marca de una idea ya seleccionada</h1>
+    <p>
+      Hoy es una pastilla granate que dice «en curso», con el color de los
+      regalos y una palabra que no gusta. Cuatro maneras de decir lo mismo sin
+      ella, dibujadas con los valores de la hoja de estilos de verdad: lo que se
+      ve aquí es lo que se va a ver en el teléfono.
+    </p>
+    <p>
+      La palabra elegida es <strong>seleccionada</strong>; lo que se decide aquí
+      es si hace falta escribirla.
+    </p>
+  </header>
+
+  <section class="opcion" style="border-top:0; padding-top:0">
+    <div class="opcion-cabeza"><span class="letra">A</span><h3>La casilla marcada, delante del título</h3></div>
+    <div class="par">
+      <div class="lista">
+        <p class="grupo-titulo">3 ideas</p>
+        <div class="tarjeta">
+          <div class="tarjeta-fila">
+            <span class="casilla marcada"><svg><use href="#visto"/></svg></span>
+            <h3>Botas de montar</h3>
+          </div>
+          <p>Para Marta · 80–120 € · Deporte · de Ana</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3></div>
+          <p>Para la abuela · 40–70 € · de Óscar</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Curso de cerámica</h3></div>
+          <p>Sin destinatario · de Óscar</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span><strong>Es literalmente la misma casilla que se toca al elegir una idea para un regalo.</strong> Quien la ha marcado allí la reconoce aquí sin que nadie se lo explique: eso ya está cogido.</span></div>
+        <div class="si"><span>+</span><span>Sin palabras. La marca no compite con el título ni empuja nada de sitio.</span></div>
+        <div class="si"><span>+</span><span>Las que no están marcadas no llevan hueco: la lista sigue empezando en el título.</span></div>
+        <div class="no"><span>−</span><span>Una casilla invita a tocarla para desmarcarla, y aquí no se desmarca —eso se hace quitando el regalo—. Tocarla abre la idea, que es lo mismo que hace el resto de la tarjeta, así que no hay hueco muerto, pero la expectativa está ahí.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><span class="letra">B</span><h3>El visto suelto, donde estaba la pastilla</h3></div>
+    <div class="par">
+      <div class="lista">
+        <p class="grupo-titulo">3 ideas</p>
+        <div class="tarjeta">
+          <div class="tarjeta-fila">
+            <h3>Botas de montar</h3>
+            <span class="visto-suelto empujar"><svg><use href="#visto"/></svg></span>
+          </div>
+          <p>Para Marta · 80–120 € · Deporte · de Ana</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3></div>
+          <p>Para la abuela · 40–70 € · de Óscar</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Lo más callado de los cuatro: un visto verde a la derecha y nada más.</span></div>
+        <div class="si"><span>+</span><span>No parece tocable, así que no promete nada que no cumpla.</span></div>
+        <div class="no"><span>−</span><span>Un visto suelto puede leerse como «hecho» o «comprobado» en lugar de «cogida». Sin la caja pierde el parecido con el selector, que es lo que lo hacía evidente.</span></div>
+        <div class="no"><span>−</span><span>A la derecha del todo, en un título largo queda lejos del nombre al que se refiere.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><span class="letra">C</span><h3>La casilla, y la tarjeta apagada</h3></div>
+    <div class="par">
+      <div class="lista">
+        <p class="grupo-titulo">3 ideas</p>
+        <div class="tarjeta apagada">
+          <div class="tarjeta-fila">
+            <span class="casilla marcada"><svg><use href="#visto"/></svg></span>
+            <h3>Botas de montar</h3>
+          </div>
+          <p>Para Marta · 80–120 € · Deporte · de Ana</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3></div>
+          <p>Para la abuela · 40–70 € · de Óscar</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Curso de cerámica</h3></div>
+          <p>Sin destinatario · de Óscar</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se lee de un vistazo, y sin mirar la marca: lo apagado no está disponible. Es lo que hace falta cuando la lista tiene veinte.</span></div>
+        <div class="si"><span>+</span><span>Ordena la lista sin partirla en secciones.</span></div>
+        <div class="no"><span>−</span><span>Apagar el texto lo hace más difícil de leer justo en lo que sí conviene reconocer para no volver a apuntarlo.</span></div>
+        <div class="no"><span>−</span><span>En el tema oscuro el gris apagado se acerca al fondo más de lo que parece aquí.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><span class="letra">D</span><h3>La pastilla de siempre, verde y con la palabra</h3></div>
+    <div class="par">
+      <div class="lista">
+        <p class="grupo-titulo">3 ideas</p>
+        <div class="tarjeta">
+          <div class="tarjeta-fila">
+            <h3>Botas de montar</h3>
+            <span class="etiqueta empujar" data-tono="tinta">
+              <svg style="width:11px;height:11px"><use href="#visto"/></svg> seleccionada
+            </span>
+          </div>
+          <p>Para Marta · 80–120 € · Deporte · de Ana</p>
+        </div>
+        <div class="tarjeta">
+          <div class="tarjeta-fila"><h3>Hamaca de playa</h3></div>
+          <p>Para la abuela · 40–70 € · de Óscar</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>No hay nada que adivinar: lo dice con la palabra elegida, y en verde en lugar del granate de los regalos.</span></div>
+        <div class="si"><span>+</span><span>Es el cambio más pequeño: la pastilla ya existe, solo cambia el tono y el texto.</span></div>
+        <div class="no"><span>−</span><span>Once caracteres a la derecha del título son los que parten en dos líneas los títulos largos. Ya nos pasó con «se quedó sin comprar» en la pantalla de Regalos.</span></div>
+        <div class="no"><span>−</span><span>Es la que menos se parece a lo que pediste.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="nota">
+      <p>
+        <strong>Yo haría la A.</strong> Es la que pides, es la que menos ocupa y
+        es la única que se apoya en algo que ya existe: la casilla del selector
+        de regalos. Que la marca de «esto ya está cogido» sea el mismo dibujo con
+        el que se coge es lo que hace que no haya que explicarla.
+      </p>
+      <p>
+        Si al usarla molesta que parezca tocable, <strong>B</strong> es el mismo
+        visto sin la caja y se cambia en una línea. Y si algún día la lista se
+        llena, <strong>C</strong> se suma a la A sin quitar nada.
+      </p>
+      <p>
+        Donde se ponga, se pone también en <strong>la ficha de cada persona</strong>:
+        allí las ideas para regalarle llevan hoy un «· en curso» pegado al autor,
+        que es la misma palabra en el peor sitio posible.
+      </p>
+    </div>
+  </section>
+
+</div>

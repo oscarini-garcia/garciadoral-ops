@@ -15,14 +15,21 @@
 export async function derivarEstados(db) {
   // 1. Idea promovida a una ocasión -> en curso; entregada -> cerrada.
   //    Cerrada es terminal: para reutilizar la idea se emplea el duplicado.
+  //
+  //    Cierra igual la ocasión archivada, y no solo el regalo entregado. Son las
+  //    dos maneras de terminar que tiene un regalo —se entrega, o su ocasión se
+  //    da por cerrada cuando la fecha ya pasó—, y contar solo una dejaba en el
+  //    banco ideas «en curso» para siempre, señaladas con una ocasión archivada
+  //    que nadie iba a reabrir y que por tanto ya nunca las liberaría.
   await db
     .prepare(
       `UPDATE idea
           SET estado = 'cerrada', actualizado_en = datetime('now')
         WHERE estado IN ('activa', 'en_curso')
           AND EXISTS (SELECT 1 FROM regalo r
+                        JOIN ocasion o ON o.id = r.ocasion_id
                        WHERE r.idea_id = idea.id AND r.activo = 1
-                         AND r.estado = 'entregado')`,
+                         AND (r.estado = 'entregado' OR o.estado = 'cerrada'))`,
     )
     .run();
 

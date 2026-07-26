@@ -169,6 +169,170 @@ En marzo, el bloque de Navidad no aparece y su espacio lo ocupan el próximo cum
 
 ---
 
+### 6.1 La pantalla de ocasiones, como se construyó
+
+Lo que sigue no es una opción sino la decisión tomada. La pestaña de Regalos se quedó con las secciones de esta opción —Ideas y Ocasiones, y más tarde Regalos entre las dos (§6.2) y Deseos delante de todas (§6.3)—, y esto es lo que hay dentro de la de Ocasiones.
+
+**Hay dos tipos de ocasión, y por eso hay dos apartados.** Una **fecha señalada** —Navidad, Reyes, un aniversario— es una ronda: mucha gente, muchos regalos y una coordinación que dura semanas. Un **cumpleaños** es lo contrario: una persona, una fecha que vuelve sola cada año y, casi siempre, un mensaje que mandar. Mezclados en una sola lista había que leerla entera para encontrar cualquiera de las dos cosas.
+
+El nombre del primer apartado es el que se usa en casa para esas fechas. Mientras se diseñaba se llamó *campañas*, que describe bien el trabajo pero que nadie usa: a la Navidad no se la llama campaña.
+
+```
+┌──────────────────────────────┐
+│ Regalos            ⟳    ⚙   │
+│ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
+├──────────────────────────────┤
+│ Fechas señaladas  1 en marcha ⌃│
+│ ┌──────────────────────────┐ │
+│ │ Navidad 2026      25 Dic │ │
+│ │ 3 personas · sin regalos │ │
+│ └──────────────────────────┘ │
+│ [ Nueva fecha señalada ]     │
+│                              │
+│ Cumpleaños  el próximo, la abuela en 4 días ⌄│
+└──────────────────────────────┘
+```
+
+**Los dos se pliegan, y los dos arrancan abiertos.** Lo que se viene a mirar está en los dos, y plegar sirve para quitar de en medio lo que hoy estorbe, no para tener que abrir algo cada vez que se entra. El rótulo de los cumpleaños dice de todos modos quién es el próximo y cuánto falta, que es lo que hace que plegarlos no cueste nada. Lo que se pliegue se queda plegado mientras dure la sesión, porque la pantalla se rehace en cada sincronización y si no, plegar algo duraría unos segundos.
+
+**Cada cumpleaños dice tres cosas y ninguna dos veces.** El nombre va entero, con apellidos, que es lo que distingue a dos Marías en una lista que las lleva a todas. A la derecha, cuánto falta: en días si es pronto, y por la fecha —«el 12 de Mayo»— cuando queda medio año, que es lo único que significa algo a esa distancia. **Con los de casa la cuenta atrás no se apaga nunca**: sus cumpleaños se llevan así todo el año, y «en 213 días» dice algo que su fecha no dice. Debajo, los años que cumple y qué hay pensado; y la fecha entera **solo cuando arriba van los días**, porque si la pastilla ya dice el día, escribirlo otra vez dos renglones más abajo es leer dos veces lo mismo.
+
+**Los cumpleaños no son filas de nada.** Salen de la fecha de nacimiento de cada ficha, igual que en la agenda, y se ordenan por el aniversario que viene: primero el que está más cerca. No se editan ni se borran desde aquí —se corrigen en la ficha, que es el dato de origen— y por eso su pastilla no lleva verbos detrás. A quien no tiene fecha no se le inventa una: no sale en la lista, pero al pie se dice cuántos son, porque un cumpleaños del que la agenda no va a avisar nunca es algo que conviene saber.
+
+**Qué ocasión es el cumpleaños de quién no se guarda: se deduce.** Una ocasión que cae el mismo día del año que nació uno de sus participantes es su cumpleaños, y por eso no aparece entre las fechas señaladas. Así se reconocen también las que se crearon antes de que esta pantalla existiera, y el dato no puede quedarse desactualizado. La ocasión de un cumpleaños no se crea hasta que hace falta —al asociarle el primer regalo—, y lo que la ata a él son la fecha y el participante: un cumpleaños no tiene fila en `evento` a la que apuntar con `evento_id`.
+
+**Al abrir un cumpleaños pasan tres cosas**, en el orden en que hacen falta:
+
+1. **Cuándo es y cuántos cumple.** Los años que cumple, no los cumplidos: el día mismo son los mismos, y a partir del día siguiente se habla ya del próximo.
+2. **La felicitación.** Es lo que de verdad se hace un cumpleaños. La escribe un modelo con lo que la agenda sabe de esa persona, se pasan cinco como se pasan las propuestas de regalo, se piden otras cinco si ninguna vale y se **copia al portapapeles** en lugar de guardarse: no es un dato de la agenda, es un mensaje que se manda una vez por WhatsApp. Es el único texto de la aplicación con emojis, porque en un WhatsApp de cumpleaños son la mitad del tono.
+3. **Qué se le regala**, con los regalos de su ocasión si alguien ya la abrió y, si no hay ninguno, cuántas ideas hay apuntadas para esa persona.
+
+Debajo, un enlace a su ficha, que es donde está todo lo demás.
+
+**Lo que se le cuenta al modelo para felicitar es menos que para un regalo, y no por ahorrar.** La felicitación se le manda a quien cumple, así que solo puede llevar lo que esa persona ya sabe de sí misma: su nombre, qué es en la familia, los años que cumple y lo que hay apuntado sobre ella. Las ideas, los regalos y lo que recibió otros años se quedan fuera; un modelo al que se le da un regalo pendiente acaba mencionándolo.
+
+**Sobre el cumpleaños propio no hay nada que mirar.** Ni felicitación —felicitarse uno mismo no es nada— ni regalos: en su sitio va el sello de siempre. El recuento tampoco aparece en la pastilla, ni siquiera en cero, porque si solo saliera cuando existe, su ausencia contaría lo mismo que su presencia.
+
+**Los verbos de una fecha señalada están detrás de su pastilla.** Se desliza a la izquierda y aparecen editar y borrar. Es el atajo, no el camino: tocarla la abre, y dentro está el mismo *editar* arriba junto al título, como en un evento y como en una idea. El desplazamiento vertical manda —si el dedo baja, es la página la que se mueve—, solo una fila puede estar abierta a la vez y, con ella abierta, el primer toque sobre la pastilla la recoge en lugar de abrir el detalle. Con el teclado no hay gesto que hacer: los dos botones existen en el árbol y la fila se abre sola al enfocarlos.
+
+**Borrar pregunta, y pregunta diciendo qué se lleva por delante.** Los regalos cuelgan de la ocasión, y una Navidad con ocho apuntados no puede desaparecer de un dedo distraído. Se retiran con ella: dejarlos vivos apuntando a una ocasión que ya no está los volvería invisibles pero no inexistentes, y sus ideas se quedarían «en curso» para siempre, señaladas con una ocasión que nadie puede abrir. Las ideas se quedan en el banco, disponibles para otra ocasión.
+
+**Cuándo dejará de servir.** El día que las fechas señaladas cerradas se acumulen —una Navidad al año— el apartado pedirá archivarlas o agruparlas por año. Nada de lo de aquí lo impide.
+
+### 6.2 La pantalla de regalos, como se construyó
+
+Entre Ideas y Ocasiones hay una tercera sección, y existe porque el ciclo se contaba a trozos. Una **idea** se apunta suelta; en un cumpleaños o en una fecha señalada se convierte en un **regalo** para alguien; el regalo espera mientras se compra; y termina cuando se entrega o cuando su ocasión se da por cerrada. De ese ciclo, la aplicación enseñaba el principio —el banco de ideas— y el contenedor —la ocasión—, pero no la parte de en medio, que es donde está el trabajo: qué falta por comprar y quién lo lleva. Para responder a eso había que abrir las ocasiones una por una y sumar de cabeza.
+
+Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una idea con estados sería justo lo que se cuenta— y no conviene: una idea sirve para varias personas y varios años, un regalo es de una persona y de una fecha; el regalo tiene responsable, coste y ocasión, que en una idea están vacíos siempre; y sobre todo se ocultan de manera distinta, que es la pieza central del modelo. Lo que se funde es el relato, no las filas.
+
+```
+┌──────────────────────────────┐
+│ Regalos            ⟳    ⚙   │
+│ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
+├──────────────────────────────┤
+│ (Todos) ( Los que llevo yo ) (Sin nadie)│
+│ POR COMPRAR · 2              │
+│ ┌──────────────────────────┐ │
+│ │ Botas de montar  lo llevas tú│
+│ │ para Marta · Cumpleaños de │
+│ │ Marta 2026 · en 6 días   │ │
+│ └──────────────────────────┘ │
+│ ┌──────────────────────────┐ │
+│ │ Hamaca de playa  sin nadie│ │
+│ │ para la abuela · … · en 4 días│
+│ └──────────────────────────┘ │
+│ LISTOS · 1                   │
+│ ┌──────────────────────────┐ │
+│ │ Curso de cerámica  lo lleva Ana│
+│ │ para Rosa · Navidad 2026 · 38 €│
+│ └──────────────────────────┘ │
+│ Ya pasaron              1  ⌄ │
+└──────────────────────────────┘
+```
+
+**Se ordena por estado y no por ocasión.** La pregunta que se trae aquí es «¿qué me falta por comprar?», y esa se contesta de una vez para todas las fechas; por ocasión ya está la pantalla de al lado. Son dos grupos, *Por comprar* y *Listos*, y cada uno dice cuántos lleva en el rótulo.
+
+**La pastilla de la derecha dice quién lo lleva**, que es lo que hay que repartir. *Sin nadie* va marcado en color de aviso: no es un error, pero es lo único de la lista que pide que alguien haga algo. Con dos excepciones, que son los dos casos en los que el estado dice algo que el rótulo del grupo no dice ya: lo entregado, que dentro de *Listos* es lo único que se distingue del resto, y lo que se quedó sin comprar cuando la fecha ya pasó.
+
+**Los tres filtros de arriba son los tres cortes que se hacen de verdad**: todos, los que llevo yo y los que no lleva nadie. En un hogar de cuatro, la mitad de los regalos son de otros y en la lista solo estorban; y *sin nadie* convierte la pantalla en la lista de lo que hay que repartir antes de que llegue la fecha.
+
+**Pasada la fecha, nada desaparece solo.** Los regalos de una ocasión cuya fecha ya se fue bajan a un apartado plegado al final —*Ya pasaron*—, con lo que quedó sin comprar señalado. Archivar es esconder, y esconder solo lo que se ha terminado a medias sería esconder justamente lo que hay que mirar: una Navidad que se celebra el 26, o un cumpleaños que se junta el sábado siguiente, siguen haciendo falta el día después. Lo que los archiva de verdad es **dar la ocasión por cerrada**, que es un verbo que se ejerce a mano desde la ocasión y que manda sus regalos al histórico de quien los recibió.
+
+**Cerrar se pregunta**, porque no tiene vuelta: da por cerradas también las ideas que salieron de allí, exactamente igual que ocurre ya cuando el último regalo se marca como entregado. Una idea cerrada es terminal por diseño; para volver a usarla se duplica.
+
+**Desde un regalo se sale por dos puertas: su ocasión y su destinatario.** Un regalo no se entiende solo —se entiende por la fecha a la que va y por la persona que lo va a recibir—, y desde esta lista no había otra manera de llegar a ninguna de las dos. Cuando la ocasión es un cumpleaños, el enlace lleva a la hoja del cumpleaños y no a la genérica: es allí donde de verdad se prepara, con los años, la felicitación y el resto de los regalos.
+
+**Cuándo dejará de servir.** El día que un diciembre acumule treinta regalos, los dos grupos pedirán partirse por ocasión dentro de cada estado. Los filtros de arriba aguantan ese volumen; los rótulos, seguramente no.
+
+### 6.3 La pantalla de deseos, como se construyó
+
+Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo suyo y de prestado. No es lo mismo que lo demás: **el banco de ideas es lo que la casa le regala a alguien, y esto es lo único de la pestaña que habla de uno mismo.** Pasa a ser un apartado propio, el primero de los cuatro.
+
+```
+┌──────────────────────────────┐
+│ Regalos            ⟳    ⚙   │
+│ ┌ Deseos ┬ Ideas ┬ Regalos ┬ Ocasiones ┐│
+├──────────────────────────────┤
+│ 2 COSAS PEDIDAS              │
+│ ┌──────────────────────────┐ │
+│ │ Auriculares              │ │
+│ │ 180 € · Tecnología       │ │
+│ └──────────────────────────┘ │
+│ Esto lo ve tu familia en tu  │
+│ ficha, y les sale al         │
+│ prepararte un regalo.        │
+└──────────────────────────────┘
+```
+
+**Va el primero aunque no sea el primer paso de nada.** Los otros tres cuentan un ciclo —se apunta, se compra, se celebra— y meter en medio el único que habla de uno mismo lo partiría por la mitad. La pestaña se abre igualmente en Ideas, que es lo que se viene a hacer casi siempre.
+
+**El rótulo es «Deseos» y no «Mis deseos» por una medida, no por gusto.** Con la hoja de estilos de verdad, en un teléfono de 390 puntos hay 362 útiles y el conmutador de cuatro ocupa 334; con el rótulo entero son 359, que cabe por tres puntos —un tipo de letra un punto mayor en los ajustes del sistema y se sale—. En la propia aplicación de uno, «Deseos» no puede ser los de nadie más.
+
+**Aquí no se pregunta para quién.** El botón flotante y el doble toque en el hueco abren la hoja con el destinatario ya puesto, y el formulario se queda en tres cosas: qué, descripción y la clasificación de siempre. Se llama «Pedir algo», porque es lo que se viene a hacer. Apuntarse algo deja así de ser un efecto secundario de nombrarse a sí mismo en el campo de «para quién», que es como se conseguía antes.
+
+**Y aquí no se dice nunca cómo va.** Un deseo que alguien ya ha cogido para regalártelo sigue apareciendo en esta lista igual que los demás, sin marca ninguna: la pastilla que en el banco de ideas avisa de que algo está en marcha sería, en tu propia lista, el aviso de que alguien te ha comprado eso. El pie de la pantalla lo dice con todas las letras —«si alguien te lo acaba regalando no te enterarás por aquí»—, que es preferible a que se deduzca.
+
+**Lo que alguien ha pedido sale al prepararle un regalo.** Es el otro medio cambio, y estaba cojo desde el principio: los deseos no están en el banco de ideas —un deseo es de quien lo escribe—, así que el selector de regalos no los ofrecía y solo se podían coger entrando en la ficha de esa persona, justo cuando lo que se estaba haciendo era prepararle el cumpleaños. Ahora encabezan la lista del selector, en su propio grupo —«Lo que pide Marta»—, porque una cosa que te han pedido gana a cualquier idea. En esas líneas no se escribe de quién es la idea: lo dice el rótulo, y en su lugar va el precio, que es lo que ayuda a decidir.
+
+### 6.4 El banco de ideas, como se construyó
+
+**Dos apartados —Seleccionadas y Disponibles—, y las seleccionadas primero.** Una idea seleccionada es la que ya se ha llevado a una ocasión. Sigue en el banco a propósito —retirarla de la vista invitaría a que otra persona la registrase por su cuenta—, pero mezclada con las demás obligaba a mirar la marca de cada una para saber con cuáles se puede contar todavía. Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones: plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en el que se abre la pantalla. Un apartado vacío no se dibuja.
+
+```
+┌──────────────────────────────┐
+│ PARA QUIÉN                   │
+│ (Todo) ( Marta ) ( la abuela )│
+│ Seleccionadas        3    ⌃  │
+│ ┌──────────────────────────┐ │
+│ │ Botas de montar        ✓ │ │
+│ │ Para Marta · 80–120 €    │ │
+│ └──────────────────────────┘ │
+│ Disponibles          1    ⌃  │
+│ ┌──────────────────────────┐ │
+│ │ Guía de rutas            │ │
+│ │ Para Rosa · 25 €         │ │
+│ └──────────────────────────┘ │
+└──────────────────────────────┘
+```
+
+**La marca es un visto y nada más.** Antes era una pastilla granate que decía «en curso»: el color de los regalos para algo que no lo es todavía, y once caracteres a la derecha que partían en dos líneas los títulos largos —el mismo problema que ya apareció en la pantalla de Regalos—. Va sin caja a propósito: una casilla invita a tocarla para desmarcarla, y aquí no se desmarca; una idea se libera quitando el regalo que cuelga de ella. Lleva etiqueta accesible, porque un icono mudo no cuenta nada a quien no lo ve.
+
+El mismo visto va en **la ficha de cada persona**, donde antes el estado iba pegado al autor —«de Ana · en curso»—, que es el sitio donde menos se lee.
+
+**Sobre lo que uno pide para sí mismo no se pinta nunca.** En la lista de deseos de uno, ese visto no diría «alguien está con esto»: diría «alguien te ha comprado esto» (§6.3).
+
+**Los verbos de una idea están arriba, junto al título: editar y descartar.** El cuerpo de la hoja se queda con uno solo —«Llevar a una ocasión», o «Reactivar» si estaba descartada—, y la hoja de un deseo propio se queda sin ninguno, porque un deseo no se lleva a ninguna parte: el regalo que saliera de ahí se lo ocultaría el servidor a su propio autor.
+
+**Descartar no lleva papelera ni aspa.** No destruye —aparta, y se reactiva desde la misma hoja—, así que la papelera mentiría; y un aspa en la cabecera de una hoja se lee como «cierra esto», que es lo contrario de lo que hace, con el agravante de que estas hojas no tienen ningún otro botón de cerrar. Lleva un círculo con una raya, que dice «quítalo de la lista».
+
+**Borrar una idea se pregunta**, y se pregunta diciendo qué se lleva por delante. Retirar no es descartar —lo descartado vuelve con un toque desde su propia hoja, y esto no vuelve— y hay un daño que no se ve venir: un regalo guarda de qué idea salió y toma de ella su título, así que con la idea retirada la línea del regalo pasa a llamarse «Regalo» y nada más, en la lista, en la ocasión y en el histórico de quien lo recibió. La pregunta lo dice, cuenta cuántos regalos hay en esa situación y recuerda que descartar es reversible. Cancelar devuelve al formulario del que se venía.
+
+Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es que no se ven —el servidor los oculta a su destinatario—, así que decir «no hay ninguno» sería mentir con cara de dato, y decir cuántos hay sería contar justo lo que no se puede contar.
+
+**«Duplicar» se retiró.** Dejaba dos apuntes iguales, que casi siempre es un error y no una intención, y su único caso real —reutilizar una idea cerrada— solo se alcanzaba desde Buscar. Reutilizar una idea del año pasado es ahora volver a escribirla, que son los diez segundos que esta aplicación se pone como límite para apuntar algo.
+
+---
+
 ## 7. Opción C — Las personas
 
 El eje organizador es la persona. La pantalla principal es la familia, y cada persona reúne todo lo que le concierne.
@@ -214,6 +378,131 @@ flowchart TD
 **Debilidades.** Los eventos con varios participantes encajan mal en una estructura centrada en el individuo. La coordinación de una campaña con muchos destinatarios resulta laboriosa. Y la agenda, que es el uso más frecuente, queda relegada.
 
 **A quién conviene.** A una familia cuyo interés principal sea el archivo de personas más que la coordinación. Como arquitectura principal es arriesgada; como pantalla dentro de otra opción, es valiosa.
+
+### 7.1 La pantalla de personas, como se construyó
+
+Lo que sigue no es una opción sino la decisión tomada: de las cuatro maneras que se pusieron sobre la mesa en `propuesta-familia-circulos.html` se eligió la de las pestañas.
+
+La pantalla se llama **Gente** en la barra, y *Familia* es uno de los tres círculos que hay dentro. Conviene que no coincidan: la pestaña reúne a todo el mundo, y sólo cuatro son de casa.
+
+**Tres círculos, y no dos grupos por si tienen cuenta.** Hasta aquí la pantalla se partía por `tiene_cuenta`, que es un dato técnico —quién ha entrado con Apple— usado como si fuera un vínculo. No lo es: la abuela no tiene cuenta y es de la familia, y un amigo podría tenerla sin serlo. Lo que ordena la pantalla pasa a ser el vínculo, escrito aparte en `persona.circulo`:
+
+- **Familia**, los cuatro de casa. Conjunto cerrado.
+- **Familia Extendida** y **Amigos**, abiertos.
+
+Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto círculo obligaría a decidir en cada alta a cuál va cada quien, que es justo la pregunta que esta pantalla evita.
+
+**La forma.** Los cuatro de casa, arriba y siempre, en una fila de cuatro columnas. Debajo, un conmutador entre los otros dos círculos y una sola lista que cambia de contenido. Así la pantalla no crece cuando crecen los amigos, y queda dicho sin escribirlo que el hogar no es un grupo más.
+
+**Rejilla arriba, lista abajo, y no por capricho.** La rejilla es para la familia: son cuatro y se reconocen por el hueco que ocupan, de modo que la forma ahorra leer. En Extendida y en Amigos la gente crece, y con ella los nombres largos, los parentescos que no caben en una celda y las dos Marías que solo distingue el apellido; ahí hace falta lo contrario, que es la lista de §7.3. Es **la misma** que devuelve el buscador, a propósito: son la misma pregunta hecha de dos maneras, y contestarla con dos formas distintas obligaría a aprenderlas por separado.
+
+```
+┌──────────────────────────────┐
+│ Gente              ⟳    ⚙   │
+│ ⌕ Buscar una persona         │
+├──────────────────────────────┤
+│ FAMILIA          (lo ve Marta)│
+│ ┌─────┐┌─────┐┌─────┐┌─────┐ │
+│ │Marta││Óscar││Lucía││ Ana │ │
+│ │ yo  ││papá ││herma││mamá │ │
+│ │en 6d││3 nov││19feb││12may│ │
+│ └─────┘└─────┘└─────┘└─────┘ │
+│                              │
+│ ┌ Familia Extendida·4 ┬ Amigos·3 ┐ │
+│ ┌───────┐┌───────┐┌───────┐  │
+│ │abuela ││ Rosa  ││abuelo │  │
+│ │en 4 d ││en 26 d││ 5 mar │  │
+│ └───────┘└───────┘└───────┘  │
+│ ┌───────┐┌ ─ ─ ─ ┐           │
+│ │ Javi  ││   +   │           │
+│ │sinfech││ Añadir│           │
+│ └───────┘└ ─ ─ ─ ┘           │
+└──────────────────────────────┘
+```
+
+**Sin avatares.** Las iniciales sobre un color inventado no decían nada que no dijera el nombre, que va justo debajo. En su lugar va lo que de verdad se consulta —de quién es y cuándo cumple—, que además cabe en menos alto. El avatar se conserva en la cabecera de la ficha, donde identifica de quién es la hoja abierta y no compite con nada.
+
+**El parentesco, dentro de casa, se dice respecto a quien mira.** El campo lo escribió quien dio de alta a esa persona, y es el papel que ocupa en el hogar: «madre», «padre», «hija». Puesto tal cual bajo el nombre no dice nada de nadie —Marta leía «madre» junto a Ana, que no es la madre de nadie en abstracto sino la suya—, así que en el círculo de casa se traduce a lo que esa persona es para quien tiene el teléfono en la mano:
+
+| Mira | Ve a los mayores | Ve a los pequeños | Se ve a sí mismo |
+|---|---|---|---|
+| una hija | mamá, papá | hermana, hermano | yo |
+| la madre o el padre | pareja | hija, hijo | yo |
+
+Se infiere del dato, no se pregunta: nadie escribe dos veces lo mismo. Fuera de ese círculo no hay nada que inferir —la tía es la tía mire quien mire— y se deja lo escrito; tampoco se infiere cuando quien mira no es de casa, porque para alguien de fuera «madre» y «padre» sí describen el hogar. Lo que no encaje en esas formas se deja tal cual: menos útil, pero nunca falso. La ficha usa la misma traducción, para que no diga «madre» lo que en la rejilla ponía «mamá».
+
+De todo esto, la única inferencia que va más allá del dato es **«pareja»**: nadie ha escrito que los dos adultos lo sean, se deduce de que comparten hogar y generación. Es una línea de código y se quita sola si algún día deja de ser cierto.
+
+**El género, que solo existe para nombrar bien.** La ficha lleva un campo de género —femenino, masculino, o sin decir— del que la aplicación no saca nada más: sirve para elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando la palabra del parentesco no lo lleva dentro. El caso que lo hizo falta es **«lóver»**, que dice la relación y calla el género: sin el campo no habría manera de saber qué tiene que leer una hija. Cuando está en blanco se deduce de la propia palabra, que en castellano casi siempre lo dice; y si tampoco, se cae del lado femenino sin más razón que tener que elegir uno.
+
+Que «lóver» se traduzca a «mamá» o «papá» supone que esa pareja es madre o padre de las crías. Cuando no lo sea, están **«madrastra»** y **«padrastro»** en la misma lista, que se leen tal cual y no se traducen.
+
+**Los años que hará, entre paréntesis.** Junto a la fecha o a los días que faltan va la edad que cumple —`en 6 d (16)`, `3 nov (48)`—, que es la cifra que se está buscando cuando uno mira esa línea, porque es la que decide el regalo. Los que hará, no los que tiene.
+
+**El parentesco se elige de una lista, distinta en cada círculo.** Era un campo libre, y un campo libre aquí se llena de variantes de lo mismo —«mamá», «madre», «Mama»— que después no hay quien lea. Dentro de casa importa el doble, porque de ese texto sale la traducción de arriba. Como el parentesco depende del círculo, el círculo se pregunta antes en el formulario, y la lista se rehace al cambiarlo conservando lo elegido si sigue estando.
+
+| Círculo | Se ofrece |
+|---|---|
+| Familia | madre, padre, hija, hijo |
+| Familia Extendida | abuela y abuelo, hermana y hermano, tía y tío, prima y primo, sobrina y sobrino, nieta y nieto, suegra y suegro, cuñada y cuñado, nuera y yerno, madrina y padrino |
+| Amigos | amiga y amigo, vecina y vecino, compañera y compañero |
+
+En orden de cercanía y no alfabético: de una lista corta se elige mirando, no leyéndola entera. Encima de todas, **Sin decir**, porque el dato no es obligatorio; y al final, **Otro…**, que abre un campo libre para lo que no entre en ninguna lista —«el marido de mi prima»— y se guarda tal cual. Lo que ya estuviera escrito de antes, o quedara fuera de lista al mover a alguien de círculo, no se pierde: reaparece en *Otro* con su texto puesto.
+
+**La fecha de nacimiento, con las dos maneras de ponerla.** El selector del sistema es cómodo para lo cercano y penoso para lo lejano: poner 1947 exige recorrer setenta y nueve pantallas de calendario, y las fechas que se meten aquí son sobre todo de gente mayor. Al lado va una casilla en `dd/mm/aaaa`, que es como se dice una fecha en voz alta y se escribe de un tirón.
+
+**Las barras las pone la casilla, no quien escribe.** Se teclea `01121974` y se lee `01/12/1974`. Obligar a intercalar dos barras rompe ese tirón justo en el campo que existe para escribir deprisa, y en un teclado numérico la barra ni siquiera está a la vista. La máscara solo separa lo que ya se ha escrito —`011` da `01/1` y nunca `01/1/`—, de modo que el borrado no necesita nada especial: al quitar el último dígito, la barra que lo precedía desaparece sola. El cursor se recoloca contando dígitos y no caracteres; contándolos en caracteres, cada barra que aparece lo empujaría un puesto atrás y las cifras saldrían desordenadas al corregir en medio.
+
+Las dos escriben sobre el mismo valor y se copian la una a la otra. La casilla enmascara siempre, pero solo se cree lo que sea una fecha entera y válida —el 31 de febrero no cuela—; no protesta mientras se escribe, y al salir del campo se corrige sola a lo que haya guardado.
+
+**Y una salida, porque el teclado numérico de iPhone no tiene retorno.** De esta casilla no se sale escribiendo: hay que tocar fuera, y el teclado tapa media hoja. Así que hay dos maneras de salir, y ninguna pide buscarla:
+
+- **Sola**, en cuanto los ocho dígitos forman una fecha buena. No queda nada que teclear, así que el teclado se retira.
+- **Con «Listo»**, un botón dentro de la casilla que solo está mientras el campo tiene el foco —fuera de ahí no serviría para nada—. Es la salida cuando la fecha aún está a medias.
+
+Si los ocho dígitos **no** forman una fecha, el teclado se queda abierto a propósito: que siga ahí es el aviso de que algo no cuadra, y «Listo» sigue estando para salir igualmente.
+
+### 7.2 La ficha
+
+**El círculo no se dice en ninguna parte**, ni en la ficha ni en la tabla de resultados. A las dos se llega desde él, y en la tabla ocupaba media columna para repetir lo que el parentesco dice mejor: «tía» sitúa a alguien más deprisa que «Familia Extendida». Lo que va es el parentesco, el mismo relativo a quien mira —donde la rejilla ponía «mamá», la ficha no puede poner «madre»—; y cuando no hay ninguno escrito, **«amiga»** o **«amigo»** según el género, que es lo que queda por decir de alguien de quien no se ha dicho nada.
+
+**El cumpleaños con la edad detrás**: «Cumple el 1 de agosto, y hará 16». Es lo que se pregunta justo después de la fecha.
+
+**Editar y compartir van arriba, junto al título**, como en el detalle de un evento, y no en un botón al pie. Editar solo lo ven los administradores.
+
+Compartir exporta **la cara pública y nada más**: cómo se llama, de quién es, cuándo cumple y lo que conviene recordar de ella —las tallas, las alergias—, que es justo lo que se le manda a quien pregunta qué comprarle.
+
+```
+Marta Ejemplo
+hija
+Cumple el 1 de agosto, y hará 16
+
+talla de calzado: 39
+```
+
+Ni una palabra de la dimensión de regalos: ni deseos, ni ideas apuntadas, ni histórico. Es la misma regla que rige el compartir de un evento, y aquí importa más, porque este texto sale del hogar. Tampoco se ofrece la redacción por IA: los datos de una persona son cuatro líneas de hechos, y contarlos «en dos frases» solo podría estropearlos.
+
+### 7.3 Buscar
+
+El buscador vive en la subcabecera, sobre los tres círculos, y lleva **un aspa que lo vacía y devuelve la pantalla a como estaba**, con la pestaña que hubiera abierta. `type="search"` trae una del navegador, pero en la cáscara de iOS no aparece, que es justo donde se usa esto.
+
+Lo que devuelve **no es una rejilla sino una tabla** — la misma que dibujan los dos círculos abiertos. Tres columnas que se leen hacia abajo de un vistazo:
+
+| Quién | De qué | Cumple |
+|---|---|---|
+| Rosa Ejemplo | tía | 21 ago (54) |
+| el abuelo | abuelo | 5 mar (80) |
+| Javi Ejemplo | tío | sin fecha |
+
+El nombre va entero, con apellidos, que es lo que distingue a dos Marías. Y el orden es el mismo de las rejillas: por el aniversario que viene, y los sin fecha al final.
+
+**El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
+
+**El «+» va al pie de la lista de su círculo**, con el borde discontinuo y el nombre del círculo escrito. Puesto ahí no tiene que preguntar a cuál se añade, que es lo que importaba. Familia no lo ofrece: quien intente crecerla se encuentra con que no hay por dónde, que es la manera más barata de sostener que son cuatro. El botón flotante desaparece de esta pantalla, porque un segundo «+» encima que hiciera otra cosa dejaría dos signos iguales con dos significados.
+
+**El buscador está encima de todo, no dentro de una pestaña.** Es el defecto conocido del conmutador —tener que acertar la pestaña antes de buscar—, y se resuelve así: mientras hay algo escrito la pantalla deja de estar dividida y enseña un único resultado sobre los tres círculos, con el círculo de cada persona escrito bajo su nombre. Al borrar la búsqueda vuelve la pestaña que estaba. Busca por nombre, apellidos y parentesco, e ignora las tildes: «abuel» tiene que dar con los dos abuelos aunque ninguno se llame así.
+
+**Cuándo dejará de servir.** El día que *Amigos* pase de unas doce personas, su rejilla pedirá su propio buscador o un orden distinto. Nada de lo de aquí lo impide.
 
 ---
 
@@ -303,7 +592,7 @@ Las tres son necesarias porque responden a preguntas distintas: qué hay estos d
 
 ### 10.1 El formulario de evento
 
-La creación tiene dos niveles. La hoja rápida pide título y día, y con eso guarda. El formulario completo se abre desde ella o al editar un evento existente, y agrupa los campos en seis bloques: cuándo, quién, dónde, qué es, reserva y más.
+La creación tiene dos niveles. La hoja rápida pide título y día, y con eso guarda. El formulario completo se abre desde ella o al editar un evento existente, y agrupa los campos en cinco bloques: cuándo, quién, dónde, qué es y más.
 
 Tres decisiones merecen mención.
 
@@ -311,7 +600,9 @@ Tres decisiones merecen mención.
 
 **«De quién es» y «quién va» son campos distintos.** El primero determina a quién se le ocultan los regalos del evento y qué ideas se proponen al asociarlos; el segundo es informativo. La diferencia se explica bajo los campos, en lenguaje llano, porque no es evidente y sus consecuencias son importantes.
 
-**La reserva se expresa como acción, no como categoría.** El control dice «ocultarlo a alguien» en lugar de «asignar categoría restringida», y al activarse explica qué implica: el evento desaparece por completo de la agenda de esas personas, sin dejar hueco ni llegar a su dispositivo.
+**La reserva se ha retirado del formulario.** Existió un control que decía «ocultarlo a alguien» y expresaba la reserva como acción en lugar de como categoría. Se ha quitado porque prometía lo que no daba: no había ese alguien. Lo único que hacía era asignar la categoría `coordinacion`, de regla `privada`, cuyo efecto es «lo ven los administradores y nadie más» —o sea, todo o nada frente a las hijas—, y ese caso ya lo cubre la ocultación por destinatario, que es la que sostiene el modelo. Elegir de verdad a quién se le oculta pediría la regla `restringida` con permisos por persona, que está en el modelo y sin uso (`especificacion.md` §3.1); si algún día se construye, es ahí donde vuelve el control.
+
+Lo que se retira es el mando, no la regla. La categoría reservada sigue filtrándose en el servidor, sigue sin contar en el desbordamiento y sigue sin salir en el plan semanal, y el detalle de un evento que la lleve sigue avisando de que está reservado. El formulario tampoco la borra: arrastra la categoría que el evento ya tuviera, porque guardar desde una pantalla que ya no habla de reserva no puede destapar lo que estaba tapado.
 
 ### 10.2 Densidad: varios eventos en un mismo día
 

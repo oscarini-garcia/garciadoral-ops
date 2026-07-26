@@ -182,7 +182,7 @@ El diseño se sostiene sobre un principio: **solo dos transiciones son manuales*
 
 El estado En curso mantiene la idea visible en el banco, señalada con su ocasión. Retirarla de la vista invitaría a que otra persona la registrase de nuevo por su cuenta.
 
-Cerrada es terminal. Para reutilizar la misma idea con otro destinatario se emplea una acción de duplicado, que genera una idea nueva en estado Activa. Descartada revierte a Activa en cualquier momento.
+Cerrada es terminal. La interfaz ya no ofrece duplicar una idea cerrada —era un verbo que nadie usaba y que dejaba dos apuntes iguales, que casi siempre es un error y no una intención—, de modo que reutilizarla con otro destinatario es volver a escribirla. Descartada revierte a Activa en cualquier momento, y descartar es ahora un verbo de la cabecera de la idea y no un botón entre lo que se mira.
 
 ### 5.3 Comentarios
 

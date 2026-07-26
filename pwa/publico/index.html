@@ -29,8 +29,8 @@
     <p class="eyebrow">Agenda Familiar</p>
     <h1>La semana, los regalos<br>y la gente.</h1>
     <p class="acceso-texto">
-      Entra con tu identificador de Apple. Un administrador del hogar tiene que
-      haberlo vinculado antes a tu ficha.
+      Entra con tu identificador de Apple. Si es la primera vez, alguien del
+      hogar tendrá que aprobarte antes de que puedas ver la agenda.
     </p>
     <div id="botonApple" class="apple-boton" role="button" tabindex="0">
       <svg viewBox="0 0 16 16" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M11.18 8.53c.02-1.6 1.31-2.37 1.37-2.41-.75-1.1-1.91-1.25-2.32-1.26-.99-.1-1.93.58-2.43.58-.5 0-1.27-.57-2.09-.55-1.07.02-2.06.62-2.61 1.58-1.11 1.93-.28 4.79.8 6.36.53.77 1.16 1.63 1.99 1.6.8-.03 1.1-.52 2.06-.52.96 0 1.24.52 2.08.5.86-.01 1.4-.78 1.93-1.55.61-.89.86-1.75.87-1.79-.02-.01-1.67-.64-1.65-2.54zM9.6 3.8c.44-.53.74-1.27.66-2.01-.64.03-1.41.42-1.86.95-.4.47-.76 1.22-.66 1.94.71.06 1.43-.36 1.86-.88z"/></svg>
@@ -43,14 +43,25 @@
   </div>
 </section>
 
+<!-- Sala de espera: quien ha entrado con Apple y todavía no es del hogar. El
+     contenido lo pinta app.js, porque cambia según en qué haya quedado la
+     solicitud. -->
+<section id="espera" class="acceso" hidden>
+  <div id="esperaMarco" class="acceso-marco"></div>
+</section>
+
 <!-- Aplicación -->
 <div id="aplicacion" class="aplicacion" hidden>
   <header class="cabecera">
     <div class="cabecera-fila">
-      <h1 id="tituloPantalla" class="titulo-pantalla">Semana</h1>
-      <button id="indicadorSync" class="sync" type="button" title="Estado de la sincronización">
-        <i></i><span id="syncTexto">al día</span>
-      </button>
+      <!-- Lo rellena cada pestaña al pintarse; la agenda lo deja vacío, y
+           entonces se oculta. -->
+      <h1 id="tituloPantalla" class="titulo-pantalla"></h1>
+      <!-- Solo el punto. El estado se lee en su color, y la palabra que había
+           aquí decía «al día» el 99 % del tiempo: ocupaba sitio para no contar
+           nada. Su texto sigue estando, en la etiqueta accesible y en el panel
+           que abre al tocarlo. -->
+      <button id="indicadorSync" class="sync" type="button"><i></i></button>
       <button id="botonAjustes" class="icono-cabecera" type="button" aria-label="Ajustes" title="Ajustes">
         <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none"
              stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -69,10 +80,34 @@
   </button>
 
   <nav class="tabbar" aria-label="Secciones">
-    <button data-pestana="semana"  class="tab" aria-current="page"><span class="tab-icono">▤</span>Semana</button>
-    <button data-pestana="regalos" class="tab"><span class="tab-icono">◈</span>Regalos</button>
-    <button data-pestana="familia" class="tab"><span class="tab-icono">◍</span>Familia</button>
-    <button data-pestana="buscar"  class="tab"><span class="tab-icono">⌕</span>Buscar</button>
+    <!-- Dibujados y no escritos: antes eran caracteres de la tabla Unicode
+         —▤ ◈ ◍ ⌕— y cada sistema los pintaba con su propia fuente, de modo que
+         cambiaban de grosor, de tamaño y de alineación entre iOS, Android y el
+         navegador. Van sobre la misma rejilla de 24 y con el mismo trazo que
+         los iconos de dentro de la aplicación (ICONOS en js/ui.js). -->
+    <button data-pestana="semana"  class="tab" aria-current="page">
+      <svg class="tab-icono" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/>
+      </svg>Agenda</button>
+    <button data-pestana="regalos" class="tab">
+      <svg class="tab-icono" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/>
+        <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/>
+        <path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8"/><path d="M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/>
+      </svg>Regalos</button>
+    <button data-pestana="familia" class="tab">
+      <svg class="tab-icono" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.6"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.4a4 4 0 0 1 0 7.2"/>
+      </svg>Gente</button>
+    <button data-pestana="buscar"  class="tab">
+      <svg class="tab-icono" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
+      </svg>Buscar</button>
   </nav>
 </div>
 

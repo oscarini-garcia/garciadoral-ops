@@ -1,0 +1,748 @@
+<meta charset="utf-8">
+<title>Para quién: la fila corta, y lo que sale al abrirla</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
+     incluida la escala de papel elevado que usa la hoja desde que es el plano
+     de arriba. La Newsreader no puede cargarse desde fuera, así que queda
+     Georgia, que es su propio repuesto en la cadena de la aplicación. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --paper-alto: #FFFDFA;
+    --paper-alto-2:#F6F2EA;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --paper-alto: #1E282D;
+      --paper-alto-2:#253238;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --aviso:      #E0A253;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --paper-alto-2: #253238;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 28px 20px 72px;
+  }
+  .hoja-doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .decidido { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .decidido div {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .decidido .rotulo { color: var(--tinta); }
+  .decidido p { color: var(--ink-soft); font-size: 14.5px; }
+
+  .parte {
+    border-top: 2px solid var(--ink); padding-top: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .parte p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 720px) { .par { grid-template-columns: 330px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* --------------------------------------------- El campo, suelto y entero -- */
+
+  .recorte {
+    width: 330px; max-width: 100%;
+    background: var(--paper-alto); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--sombra); padding: 13px 14px;
+    display: flex; flex-direction: column; gap: 11px;
+    font-size: 14px;
+  }
+  .tel {
+    width: 330px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden; font-size: 14px;
+  }
+  .tel-estado {
+    display: flex; align-items: center; justify-content: flex-end; gap: 7px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-faint);
+    padding: 9px 14px 0;
+  }
+  .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); }
+  .tel-fondo { padding: 10px 14px 0; opacity: .3; display: flex; flex-direction: column; gap: 7px; }
+  .tel-fondo .barra { height: 9px; border-radius: 999px; background: var(--paper-3); }
+  .tel-fondo .barra.corta { width: 45%; }
+  .tel-hoja {
+    background: var(--paper-alto); border-top: 1px solid var(--line);
+    padding: 9px 14px 16px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .asa { width: 34px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 3px; }
+  .tel-hoja h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 17px; }
+
+  .campo { display: flex; flex-direction: column; gap: 5px; }
+  .campo > .rot { font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
+  .control {
+    border: 1px solid var(--line); border-radius: 9px; background: var(--paper-alto-2);
+    padding: 9px 10px; font-size: 13.5px; min-height: 36px; color: var(--ink-faint);
+  }
+  .control.area { min-height: 44px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px;
+    font-size: 12.5px; color: var(--ink-soft); background: var(--paper-alto);
+    cursor: pointer; font-family: inherit; line-height: 1.4;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .chip[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper-alto); }
+  .chip .quitar { opacity: .75; }
+  .chip svg { width: 13px; height: 13px; flex: none; }
+
+  /* Las cuatro maneras de decir «hay más gente». */
+  .llamador { border-style: dashed; color: var(--tinta); border-color: var(--tinta); }
+  .llamador.redondo { width: 36px; padding: 6px 0; justify-content: center; }
+
+  .buscador {
+    display: flex; flex-direction: column; gap: 8px;
+    border: 1px solid var(--tinta); border-radius: 11px; background: var(--tinta-suave);
+    padding: 10px;
+  }
+  .buscador input {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--paper-alto);
+    padding: 9px 10px; font: inherit; font-size: 13.5px; color: var(--ink);
+  }
+  .buscador input:focus-visible { outline: 2px solid var(--tinta); outline-offset: 1px; }
+  .grupo-rot {
+    width: 100%; font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .resultados { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; min-height: 32px; }
+  .vacio-busca { font-size: 12px; color: var(--ink-soft); }
+  .lineas { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+  .linea-persona {
+    display: flex; align-items: baseline; gap: 8px; width: 100%;
+    background: none; border: 0; padding: 8px 6px; border-radius: 8px;
+    font: inherit; font-size: 13.5px; color: var(--ink); text-align: left; cursor: pointer;
+  }
+  .linea-persona:hover, .linea-persona:focus-visible { background: var(--paper-alto); }
+  .linea-persona small { color: var(--ink-faint); font-size: 11px; margin-left: auto; }
+  .linea-persona[aria-pressed="true"] { color: var(--tinta); font-weight: 600; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+  .lista-seca strong { color: var(--ink); }
+</style>
+
+<div class="hoja-doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta · segunda vuelta</p>
+    <h1>La fila corta, y lo que sale al abrirla</h1>
+    <p>
+      La fila se queda en los cuatro de casa y un botón. Nada de habituales a la vista: los
+      últimos aparecen <em>dentro</em>, al abrir, junto al buscador. Aquí van cuatro maneras
+      de dibujar ese botón y cuatro de montar lo que se abre. Las maquetas funcionan: abre,
+      escribe «abu» o «tía», elige a alguien.
+    </p>
+    <div class="decidido">
+      <div>
+        <p class="rotulo">Decidido</p>
+        <p>En reposo, solo Ana, Óscar, Marta y Lucía. La fila no crece con el hogar.</p>
+      </div>
+      <div>
+        <p class="rotulo">Decidido</p>
+        <p>Al abrir salen los últimos a quienes les apuntaste algo <em>y</em> el buscador.</p>
+      </div>
+      <div>
+        <p class="rotulo">Se mantiene</p>
+        <p>Quien esté seleccionado se queda siempre en la fila, aunque no sea de casa.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="parte">
+    <p class="rotulo">Primera decisión</p>
+    <h2>El botón que dice que hay más gente</h2>
+    <p>
+      Va al final de los cuatro de casa. Tiene que verse que abre algo sin gritar más que los
+      nombres, y tiene que poder tocarse con el pulgar.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>Un «+» redondo</h2></div>
+      <p>Una pastilla más, del ancho de un dedo, con el signo y el borde discontinuo.</p>
+    </div>
+    <div class="par">
+      <div class="recorte">
+        <div class="campo">
+          <span class="rot">Para quién</span>
+          <div class="chips">
+            <span class="chip">Ana</span><span class="chip">Óscar</span>
+            <span class="chip">Marta</span><span class="chip">Lucía</span>
+            <span class="chip llamador redondo">+</span>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Ocupa lo mínimo: la fila entra en una línea incluso en un teléfono estrecho.</span></div>
+        <div class="si"><span>+</span><span>El signo de sumar ya significa «añadir» en el resto de la aplicación.</span></div>
+        <div class="no"><span>−</span><span>No dice a qué se añade. Junto a cuatro nombres puede leerse como «añadir una persona a la familia», que es otra pantalla.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Una pastilla que lo dice: «Otra persona»</h2></div>
+      <p>Con el signo delante y dos palabras detrás. No hay nada que adivinar.</p>
+    </div>
+    <div class="par">
+      <div class="recorte">
+        <div class="campo">
+          <span class="rot">Para quién</span>
+          <div class="chips">
+            <span class="chip">Ana</span><span class="chip">Óscar</span>
+            <span class="chip">Marta</span><span class="chip">Lucía</span>
+            <span class="chip llamador">+ Otra persona</span>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se entiende a la primera y sin haberlo usado nunca.</span></div>
+        <div class="si"><span>+</span><span>Deja claro que lo que hay delante son los de casa y no todo el mundo.</span></div>
+        <div class="no"><span>−</span><span>Se lleva media línea: con los cuatro nombres, la fila pasa a dos líneas casi siempre.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>Una lupa</h2></div>
+      <p>El icono de buscar, el mismo de la pestaña de Buscar, en una pastilla redonda.</p>
+    </div>
+    <div class="par">
+      <div class="recorte">
+        <div class="campo">
+          <span class="rot">Para quién</span>
+          <div class="chips">
+            <span class="chip">Ana</span><span class="chip">Óscar</span>
+            <span class="chip">Marta</span><span class="chip">Lucía</span>
+            <span class="chip llamador redondo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Dice exactamente lo que pasa al tocarlo: se busca.</span></div>
+        <div class="si"><span>+</span><span>Tan corta como el «+», y sin confundirse con añadir a alguien al hogar.</span></div>
+        <div class="no"><span>−</span><span>Promete solo búsqueda, y lo primero que sale son los últimos, sin escribir nada.</span></div>
+        <div class="no"><span>−</span><span>Repite el icono de una pestaña con otro significado.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>El «+» con los puntos suspensivos</h2></div>
+      <p>Una pastilla con «…» —«y más gente»—, que es como se dice que una lista sigue.</p>
+    </div>
+    <div class="par">
+      <div class="recorte">
+        <div class="campo">
+          <span class="rot">Para quién</span>
+          <div class="chips">
+            <span class="chip">Ana</span><span class="chip">Óscar</span>
+            <span class="chip">Marta</span><span class="chip">Lucía</span>
+            <span class="chip llamador">y 7 más</span>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Dice cuánta gente hay detrás, que es la pregunta de quien nunca lo ha abierto.</span></div>
+        <div class="si"><span>+</span><span>Es la misma fórmula que la agenda usa en un día lleno: «y 2 más».</span></div>
+        <div class="no"><span>−</span><span>Se lee como un recuento y no como un botón: parece que informa, no que abre.</span></div>
+        <div class="no"><span>−</span><span>El número cambia al dar de alta a alguien, y un rótulo que baila cuesta de reconocer.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Segunda decisión</p>
+    <h2>Lo que sale al abrirlo</h2>
+    <p>
+      Los últimos y el buscador, en el mismo sitio. Lo que cambia es cómo se reparten. En las
+      cuatro maquetas se puede abrir, escribir y elegir.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h2>Una sola lista que cambia de nombre</h2></div>
+      <p>
+        El campo arriba y debajo una lista: mientras no se escribe se titula «Los últimos»;
+        en cuanto se escribe pasa a ser el resultado. Nunca hay dos listas a la vez.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja" data-picker data-modo="una-lista">
+          <div class="asa"></div>
+          <h4>Apuntar una idea</h4>
+          <div class="campo"><span class="rot">Qué</span><div class="control">&nbsp;</div></div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips" data-fila></div>
+            <div data-panel hidden></div>
+          </div>
+          <div class="campo"><span class="rot">Descripción</span><div class="control area">&nbsp;</div></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Un solo sitio donde mirar. Los últimos no son un bloque aparte: son el estado de reposo de la búsqueda.</span></div>
+        <div class="si"><span>+</span><span>No crece al escribir: el hueco es el mismo antes y después.</span></div>
+        <div class="si"><span>+</span><span>En pastillas, tres o cuatro últimos caben en una línea.</span></div>
+        <div class="no"><span>−</span><span>Los últimos desaparecen al escribir la primera letra, y volver a ellos exige borrar.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">F</span><h2>Los últimos arriba, el buscador debajo</h2></div>
+      <p>
+        Primero las pastillas de los últimos, y debajo el campo. Se toca lo de arriba o se
+        escribe abajo, y las dos cosas están a la vez.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja" data-picker data-modo="ultimos-arriba">
+          <div class="asa"></div>
+          <h4>Apuntar una idea</h4>
+          <div class="campo"><span class="rot">Qué</span><div class="control">&nbsp;</div></div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips" data-fila></div>
+            <div data-panel hidden></div>
+          </div>
+          <div class="campo"><span class="rot">Descripción</span><div class="control area">&nbsp;</div></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Los últimos siguen ahí mientras se escribe: se puede cambiar de idea sin borrar.</span></div>
+        <div class="si"><span>+</span><span>Lo más probable —uno de los últimos— es lo primero que se ve y lo más arriba.</span></div>
+        <div class="no"><span>−</span><span>Dos zonas que hacen lo mismo, una encima de otra.</span></div>
+        <div class="no"><span>−</span><span>Es el panel más alto de los cuatro: últimos, campo y resultados pueden convivir.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">G</span><h2>En renglones, con el parentesco a la derecha</h2></div>
+      <p>
+        Lo mismo que E pero en lista de renglones en vez de pastillas: un nombre por línea y,
+        alineado a la derecha, quién es —«tía», «amigo de Marta»—.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja" data-picker data-modo="renglones">
+          <div class="asa"></div>
+          <h4>Apuntar una idea</h4>
+          <div class="campo"><span class="rot">Qué</span><div class="control">&nbsp;</div></div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips" data-fila></div>
+            <div data-panel hidden></div>
+          </div>
+          <div class="campo"><span class="rot">Descripción</span><div class="control area">&nbsp;</div></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Con dos «Rosa» en la familia, el parentesco es lo único que las distingue.</span></div>
+        <div class="si"><span>+</span><span>Un renglón entero es más fácil de acertar que una pastilla estrecha.</span></div>
+        <div class="no"><span>−</span><span>Cada persona ocupa una línea: cuatro últimos son cuatro renglones donde antes cabían en uno.</span></div>
+        <div class="no"><span>−</span><span>Rompe con las pastillas que usa el resto del formulario.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">H</span><h2>El buscador ocupa el sitio de la fila</h2></div>
+      <p>
+        Al abrir, los cuatro de casa se van y en su lugar queda el campo con los últimos
+        debajo. Al elegir —o al cerrar— vuelve la fila con lo elegido dentro.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span class="punto"></span> al día ⚙</div>
+        <div class="tel-fondo"><div class="barra"></div><div class="barra corta"></div></div>
+        <div class="tel-hoja" data-picker data-modo="sustituye">
+          <div class="asa"></div>
+          <h4>Apuntar una idea</h4>
+          <div class="campo"><span class="rot">Qué</span><div class="control">&nbsp;</div></div>
+          <div class="campo">
+            <span class="rot">Para quién</span>
+            <div class="chips" data-fila></div>
+            <div data-panel hidden></div>
+          </div>
+          <div class="campo"><span class="rot">Descripción</span><div class="control area">&nbsp;</div></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El formulario no crece ni un píxel al abrir: lo que entra ocupa lo que sale.</span></div>
+        <div class="si"><span>+</span><span>Mientras se busca no compite nada más por la atención.</span></div>
+        <div class="no"><span>−</span><span>Esconde a los cuatro de casa justo cuando alguien puede querer marcar a dos personas de golpe.</span></div>
+        <div class="no"><span>−</span><span>Lo elegido no se ve hasta cerrar, y eso es lo que la nota de abajo dice que no debe pasar.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Qué son «los últimos», y cuántos</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>Los últimos a quienes tú apuntaste algo, en este teléfono.</strong> Se guarda
+        una lista corta de identificadores junto al resto de lo local, y se ordena por
+        reciente. Es lo que pediste y es lo que mejor acierta: si esta semana andas con el
+        regalo de un sobrino, lo tienes delante toda la semana.
+      </p>
+      <p>
+        <strong>La primera vez no hay últimos</strong>, y un hueco vacío al abrir es una mala
+        bienvenida. Se rellena con quienes más ideas vivas tienen en el hogar —se deduce de
+        la instantánea, sin guardar nada—, y esos van cediendo el sitio a los tuyos según
+        vas apuntando.
+      </p>
+      <p>
+        <strong>Cuatro.</strong> En pastillas caben en una línea y en renglones no llenan el
+        panel. Quien apunta no sale entre ellos: una idea para uno mismo es un deseo, y se
+        elige a mano.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que va dentro de cualquiera de ellas</h2>
+    </div>
+    <div class="nota pega">
+      <p>
+        <strong>La aplicación tiene una sola hoja.</strong> Abrir esto en otra hoja encima
+        cerraría el formulario, así que vive dentro. Es la misma razón por la que la tanda de
+        propuestas de la IA es una tarjeta y no una ventana.
+      </p>
+      <p>
+        <strong>Lo elegido no se esconde nunca.</strong> Al marcar a alguien de fuera de casa,
+        su pastilla se queda en la fila con su aspa para quitarla. Si no, se podría guardar
+        una idea sin ver para quién es.
+      </p>
+      <p>
+        <strong>Se busca por nombre y por parentesco</strong>, sin acentos ni mayúsculas:
+        «abu» encuentra a la abuela y al abuelo, «tía» encuentra a Rosa.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que yo haría</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>B y E.</strong> «+ Otra persona» se entiende sin haberlo usado y, de paso,
+        dice que los cuatro de delante son los de casa y no todo el mundo; la media línea
+        que cuesta se paga una vez y se ahorra en cada duda. Y dentro, una sola lista que
+        empieza siendo «los últimos» y se convierte en el resultado al escribir: no hay dos
+        sitios que hagan lo mismo ni un panel que crezca según lo que teclees.
+      </p>
+      <p>
+        Si la fila de dos líneas te molesta, la pareja es <strong>A y E</strong>: el «+» a
+        secas, que es lo más corto que se puede poner ahí.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que hace falta que decidas</h2>
+    </div>
+    <ol class="lista-seca">
+      <li><strong>Una de A, B, C o D</strong> para el botón. Si no dices nada, va B.</li>
+      <li><strong>Una de E, F, G o H</strong> para lo que se abre. Si no dices nada, va E.</li>
+      <li>
+        Si prefieres que los últimos salgan <strong>del hogar</strong> y no de tu teléfono
+        —los mismos para todos, sin memoria local—, dilo: es la mitad de trabajo.
+      </li>
+    </ol>
+  </section>
+
+</div>
+
+<script>
+  // La gente de la demostración, con su círculo y su parentesco, que es por lo
+  // que también se busca.
+  const GENTE = [
+    { nombre: 'Ana', circulo: 'familia', parentesco: 'madre' },
+    { nombre: 'Óscar', circulo: 'familia', parentesco: 'padre' },
+    { nombre: 'Marta', circulo: 'familia', parentesco: 'hija' },
+    { nombre: 'Lucía', circulo: 'familia', parentesco: 'hija' },
+    { nombre: 'la abuela', circulo: 'extendida', parentesco: 'abuela' },
+    { nombre: 'el abuelo', circulo: 'extendida', parentesco: 'abuelo' },
+    { nombre: 'Rosa', circulo: 'extendida', parentesco: 'tía' },
+    { nombre: 'Javi', circulo: 'extendida', parentesco: 'tío' },
+    { nombre: 'Nacho', circulo: 'amigos', parentesco: 'amigo' },
+    { nombre: 'Bea', circulo: 'amigos', parentesco: 'amiga' },
+    { nombre: 'Diego', circulo: 'amigos', parentesco: 'amigo' },
+  ];
+  const ULTIMOS = ['la abuela', 'Rosa', 'Nacho', 'el abuelo'];
+  const DE_CASA = GENTE.filter((p) => p.circulo === 'familia');
+  const FUERA = GENTE.filter((p) => p.circulo !== 'familia');
+
+  const sinTildes = (texto) => texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  for (const marco of document.querySelectorAll('[data-picker]')) {
+    const modo = marco.dataset.modo;
+    const fila = marco.querySelector('[data-fila]');
+    const panel = marco.querySelector('[data-panel]');
+    const elegidos = new Set();
+    let abierto = false;
+    let consulta = '';
+
+    const pastilla = (persona, alElegir) => {
+      const marcada = elegidos.has(persona.nombre);
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'chip';
+      boton.setAttribute('aria-pressed', marcada ? 'true' : 'false');
+      boton.append(document.createTextNode(persona.nombre));
+      if (marcada) {
+        const aspa = document.createElement('span');
+        aspa.className = 'quitar';
+        aspa.textContent = '×';
+        boton.append(aspa);
+      }
+      boton.addEventListener('click', () => {
+        if (elegidos.has(persona.nombre)) elegidos.delete(persona.nombre);
+        else elegidos.add(persona.nombre);
+        if (alElegir) alElegir();
+        pintar();
+      });
+      return boton;
+    };
+
+    const renglon = (persona) => {
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'linea-persona';
+      boton.setAttribute('aria-pressed', elegidos.has(persona.nombre) ? 'true' : 'false');
+      const nombre = document.createElement('span');
+      nombre.textContent = persona.nombre;
+      const quien = document.createElement('small');
+      quien.textContent = persona.parentesco;
+      boton.append(nombre, quien);
+      boton.addEventListener('click', () => {
+        if (elegidos.has(persona.nombre)) elegidos.delete(persona.nombre);
+        else elegidos.add(persona.nombre);
+        pintar();
+      });
+      return boton;
+    };
+
+    const pintarFila = () => {
+      fila.replaceChildren();
+      // En H, mientras se busca la fila desaparece entera.
+      if (modo === 'sustituye' && abierto) return;
+
+      for (const persona of DE_CASA) fila.append(pastilla(persona));
+      // Lo elegido de fuera de casa se queda a la vista, siempre.
+      for (const persona of FUERA) {
+        if (elegidos.has(persona.nombre)) fila.append(pastilla(persona));
+      }
+
+      const llamador = document.createElement('button');
+      llamador.type = 'button';
+      llamador.className = 'chip llamador';
+      llamador.textContent = abierto ? 'Cerrar' : '+ Otra persona';
+      llamador.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+      llamador.addEventListener('click', () => { abierto = !abierto; consulta = ''; pintar(); });
+      fila.append(llamador);
+    };
+
+    const coincide = (persona) => {
+      const aguja = sinTildes(consulta).trim();
+      if (!aguja) return true;
+      return sinTildes(persona.nombre).includes(aguja) || sinTildes(persona.parentesco).includes(aguja);
+    };
+
+    const pintarPanel = () => {
+      panel.hidden = !abierto;
+      if (!abierto) return;
+      panel.replaceChildren();
+
+      const caja = document.createElement('div');
+      caja.className = 'buscador';
+      panel.append(caja);
+
+      const campo = document.createElement('input');
+      campo.type = 'search';
+      campo.setAttribute('aria-label', 'Buscar a una persona');
+      campo.placeholder = 'Buscar por nombre o parentesco';
+      campo.value = consulta;
+
+      const rotulo = document.createElement('p');
+      rotulo.className = 'grupo-rot';
+
+      const lista = document.createElement('div');
+      lista.className = modo === 'renglones' ? 'lineas' : 'resultados';
+
+      // F pone los últimos por encima del campo; las demás, debajo.
+      if (modo === 'ultimos-arriba') {
+        const arriba = document.createElement('p');
+        arriba.className = 'grupo-rot';
+        arriba.textContent = 'Los últimos';
+        const suyos = document.createElement('div');
+        suyos.className = 'resultados';
+        for (const nombre of ULTIMOS) {
+          const persona = GENTE.find((p) => p.nombre === nombre);
+          suyos.append(pastilla(persona));
+        }
+        caja.append(arriba, suyos, campo, rotulo, lista);
+      } else {
+        caja.append(campo, rotulo, lista);
+      }
+
+      const pintarLista = () => {
+        lista.replaceChildren();
+        const buscando = Boolean(consulta.trim());
+
+        let gente;
+        if (buscando) {
+          gente = FUERA.filter(coincide);
+          rotulo.textContent = gente.length ? 'Resultados' : '';
+        } else if (modo === 'ultimos-arriba') {
+          gente = [];
+          rotulo.textContent = 'Escribe para buscar a cualquier otra persona';
+        } else {
+          gente = ULTIMOS.map((nombre) => GENTE.find((p) => p.nombre === nombre));
+          rotulo.textContent = 'Los últimos';
+        }
+
+        if (buscando && !gente.length) {
+          const aviso = document.createElement('p');
+          aviso.className = 'vacio-busca';
+          aviso.textContent = 'Nadie con ese nombre.';
+          lista.append(aviso);
+          return;
+        }
+
+        for (const persona of gente) {
+          lista.append(modo === 'renglones' ? renglon(persona) : pastilla(persona, () => {
+            // Al elegir buscando, el panel se cierra: se venía a por alguien.
+            if (buscando) { abierto = false; consulta = ''; }
+          }));
+        }
+      };
+
+      campo.addEventListener('input', () => {
+        consulta = campo.value;
+        pintarLista();
+        campo.focus();
+      });
+
+      pintarLista();
+    };
+
+    const pintar = () => { pintarFila(); pintarPanel(); };
+    pintar();
+  }
+</script>

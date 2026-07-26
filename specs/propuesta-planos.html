@@ -1,0 +1,615 @@
+<meta charset="utf-8">
+<title>El plano de arriba — opciones</title>
+
+<style>
+  /* Los dos temas se dibujan a la vez, uno al lado del otro, porque la pregunta
+     es justamente cómo queda en cada uno. Por eso los colores no van en :root
+     sino en dos clases: cada teléfono lleva el suyo y no depende del tema con el
+     que se esté leyendo esta página. */
+  .tema-claro {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --sombra: 0 1px 2px rgba(28,43,51,.06), 0 8px 24px rgba(28,43,51,.06);
+
+    /* Lo que cada opción propone para el plano de arriba. */
+    --hoja-papel: var(--paper);
+    --hoja-borde: transparent;
+    --velo: rgba(8, 16, 20, .42);
+    --hoja-sombra: var(--sombra);
+  }
+  .tema-oscuro {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+
+    --hoja-papel: var(--paper);
+    --hoja-borde: transparent;
+    --velo: rgba(8, 16, 20, .42);
+    --hoja-sombra: var(--sombra);
+  }
+
+  /* La página sí sigue el tema de quien lee. */
+  :root {
+    color-scheme: light dark;
+    --pag-fondo: #FBF9F5; --pag-tinta: #1C2B33; --pag-suave: #5F7280;
+    --pag-tenue: #93A3AD; --pag-linea: #E2DED4; --pag-verde: #0E6E62; --pag-ambar: #A8641B;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --pag-fondo: #10171A; --pag-tinta: #E7EEF1; --pag-suave: #9CB0BA;
+      --pag-tenue: #6C818C; --pag-linea: #263238; --pag-verde: #55C9B4; --pag-ambar: #E0A253;
+    }
+  }
+  :root[data-theme="light"], :root[data-theme="claro"] {
+    --pag-fondo: #FBF9F5; --pag-tinta: #1C2B33; --pag-suave: #5F7280;
+    --pag-tenue: #93A3AD; --pag-linea: #E2DED4; --pag-verde: #0E6E62; --pag-ambar: #A8641B;
+  }
+  :root[data-theme="dark"], :root[data-theme="oscuro"] {
+    --pag-fondo: #10171A; --pag-tinta: #E7EEF1; --pag-suave: #9CB0BA;
+    --pag-tenue: #6C818C; --pag-linea: #263238; --pag-verde: #55C9B4; --pag-ambar: #E0A253;
+  }
+
+  body {
+    background: var(--pag-fondo); color: var(--pag-tinta);
+    font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 21px; }
+  p { margin: 0; }
+  em { font-style: italic; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--pag-tenue); }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--pag-suave); max-width: 66ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--pag-linea); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--pag-verde);
+    border: 1px solid var(--pag-verde); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--pag-suave); max-width: 66ch; }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--pag-suave); }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--pag-verde); }
+  .juicio .no span:first-child { color: var(--pag-ambar); }
+
+  .pareja { display: flex; flex-wrap: wrap; gap: 18px; }
+  .con-juicio { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 880px) { .con-juicio { grid-template-columns: auto 1fr; } }
+  .pie-tema { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--pag-tenue); margin-top: 7px; text-align: center; }
+
+  /* ------------------------------------------------------------ Teléfono -- */
+
+  .tel {
+    width: 254px; height: 400px; position: relative; overflow: hidden;
+    border-radius: 20px; border: 1px solid var(--pag-linea);
+    background: var(--paper); font-size: 13px;
+  }
+
+  /* El plano de abajo: la pestaña con su cabecera, su semana y su barra. */
+  .base { position: absolute; inset: 0; display: flex; flex-direction: column; transform-origin: 50% 0; }
+  .base-cab { padding: 12px 13px 8px; border-bottom: 1px solid var(--line); background: var(--paper); }
+  .base-cab .t { font-family: var(--serif); font-size: 18px; color: var(--ink); }
+  .base-seg { display: inline-flex; gap: 3px; padding: 3px; margin-top: 8px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 9px; }
+  .base-seg i { font-style: normal; padding: 3px 8px; border-radius: 6px; font-size: 11px; color: var(--ink-soft); }
+  .base-seg i.on { background: var(--paper); color: var(--ink); }
+  .base-dias { flex: 1; padding: 0 13px; }
+  .base-dia { display: grid; grid-template-columns: 26px 1fr; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .base-dia b { font-family: var(--serif); font-weight: 500; font-size: 15px; color: var(--ink); text-align: center; }
+  .base-dia span { color: var(--ink); font-size: 12px; }
+  .base-tab { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--paper); padding: 6px 0 8px; }
+  .base-tab i { font-style: normal; text-align: center; font-size: 9px; color: var(--ink-faint); }
+  .base-tab i.on { color: var(--tinta); }
+
+  .velo { position: absolute; inset: 0; background: var(--velo); }
+
+  .hoja {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--hoja-papel);
+    border: 1px solid var(--hoja-borde);
+    border-radius: 16px 16px 0 0;
+    box-shadow: var(--hoja-sombra);
+    padding: 8px 13px 14px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .asa { width: 32px; height: 4px; border-radius: 999px; background: var(--line); margin: 0 auto 2px; }
+  .hoja h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 16px; color: var(--ink); }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .tarjeta .n { color: var(--ink); font-size: 13px; }
+  .tarjeta .p { color: var(--ink-soft); font-size: 11px; }
+  .boton { text-align: center; border-radius: 9px; padding: 8px 12px; font-size: 13px; background: var(--tinta); color: var(--paper); }
+
+  /* --- A: el plano de arriba tiene su propio papel --- */
+  .a.tema-claro { --hoja-papel: #FFFDFA; --hoja-borde: rgba(28,43,51,.06); }
+  .a.tema-oscuro { --hoja-papel: #1E282D; --hoja-borde: rgba(231,238,241,.07); }
+  .a .tarjeta { background: color-mix(in srgb, var(--hoja-papel) 88%, var(--ink)); }
+
+  /* --- B: velo más denso y sombra de verdad --- */
+  .b.tema-claro { --velo: rgba(8,16,20,.55); --hoja-sombra: 0 -2px 6px rgba(28,43,51,.10), 0 -20px 50px rgba(28,43,51,.22); }
+  .b.tema-oscuro { --velo: rgba(0,0,0,.68); --hoja-sombra: 0 -2px 6px rgba(0,0,0,.5), 0 -20px 50px rgba(0,0,0,.6); }
+
+  /* --- C: tarjeta despegada de los bordes --- */
+  .c .hoja { left: 8px; right: 8px; bottom: 8px; border-radius: 16px; }
+  .c.tema-claro { --hoja-borde: rgba(28,43,51,.08); --hoja-sombra: 0 2px 8px rgba(28,43,51,.12), 0 22px 54px rgba(28,43,51,.26); }
+  .c.tema-oscuro { --hoja-borde: rgba(231,238,241,.10); --hoja-sombra: 0 2px 8px rgba(0,0,0,.5), 0 22px 54px rgba(0,0,0,.65); }
+
+  /* --- D: el plano de abajo se retira --- */
+  .d .base { transform: scale(.93) translateY(8px); border-radius: 14px; overflow: hidden; }
+  .d.tema-claro { --velo: rgba(8,16,20,.5); }
+  .d.tema-oscuro { --velo: rgba(0,0,0,.6); }
+
+  /* --- E: A + B --- */
+  .e.tema-claro {
+    --hoja-papel: #FFFDFA; --hoja-borde: rgba(28,43,51,.06);
+    --velo: rgba(8,16,20,.55); --hoja-sombra: 0 -2px 6px rgba(28,43,51,.10), 0 -20px 50px rgba(28,43,51,.22);
+  }
+  .e.tema-oscuro {
+    --hoja-papel: #1E282D; --hoja-borde: rgba(231,238,241,.07);
+    --velo: rgba(0,0,0,.68); --hoja-sombra: 0 -2px 6px rgba(0,0,0,.5), 0 -20px 50px rgba(0,0,0,.6);
+  }
+  .e .tarjeta { background: color-mix(in srgb, var(--hoja-papel) 88%, var(--ink)); }
+
+  .nota {
+    background: color-mix(in srgb, var(--pag-fondo) 88%, var(--pag-tinta));
+    border: 1px solid var(--pag-linea); border-left: 3px solid var(--pag-verde);
+    border-radius: 12px; padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--pag-suave); max-width: 68ch; }
+  .nota strong { color: var(--pag-tinta); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Que el plano de arriba se note plano de arriba</h1>
+    <p>
+      Las cuatro pestañas son el suelo de la aplicación: siempre están ahí y se pasa de una a
+      otra sin salir de ninguna. Todo lo demás —el día, el evento, el formulario, Ajustes,
+      compartir— llega <em>encima</em>, y de ahí hay que salir antes de seguir.
+    </p>
+    <p>
+      Hoy los dos planos se dibujan con el mismo papel, el mismo borde y la misma sombra suave
+      que usan las tarjetas. El velo de detrás sí existe, pero es un negro fijo del 42 % que en
+      el tema oscuro apenas separa nada. Cinco maneras de que se vean como lo que son, cada
+      una en los dos temas.
+    </p>
+  </header>
+
+  <!-- --------------------------------------------------------- Como está -- -->
+
+  <section class="opcion" style="border-top: 0; padding-top: 0;">
+    <div class="opcion-cabeza">
+      <h2>Como está ahora</h2>
+      <p>El mismo papel arriba y abajo. Mírese sobre todo la columna oscura.</p>
+    </div>
+    <div class="pareja">
+      <div>
+        <div class="tel tema-claro">
+          <div class="base">
+            <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+            <div class="base-dias">
+              <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+              <div class="base-dia"><b>21</b><span>—</span></div>
+              <div class="base-dia"><b>22</b><span>—</span></div>
+            </div>
+            <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+          </div>
+          <div class="velo"></div>
+          <div class="hoja">
+            <div class="asa"></div>
+            <h4>lunes 20 de Julio</h4>
+            <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+            <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+            <div class="boton">Añadir un evento este día</div>
+          </div>
+        </div>
+        <p class="pie-tema">Claro</p>
+      </div>
+      <div>
+        <div class="tel tema-oscuro">
+          <div class="base">
+            <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+            <div class="base-dias">
+              <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+              <div class="base-dia"><b>21</b><span>—</span></div>
+              <div class="base-dia"><b>22</b><span>—</span></div>
+            </div>
+            <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+          </div>
+          <div class="velo"></div>
+          <div class="hoja">
+            <div class="asa"></div>
+            <h4>lunes 20 de Julio</h4>
+            <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+            <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+            <div class="boton">Añadir un evento este día</div>
+          </div>
+        </div>
+        <p class="pie-tema">Oscuro</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- A -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>El plano de arriba tiene su propio papel</h2></div>
+      <p>
+        Un papel para el suelo y otro para lo que se pone encima. En claro, un pliego algo más
+        blanco y menos cálido; en oscuro, <strong>más claro</strong>, que es como funciona la
+        elevación cuando no hay luz: lo que está más cerca recibe más. Las tarjetas de dentro
+        se recalculan sobre ese papel para que la jerarquía no se aplaste.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro a">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro a">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Donde más falta hacía —el oscuro— es donde más se nota.</span></div>
+        <div class="si"><span>+</span><span>Dos fichas de color nuevas y nada más: ni gestos, ni comportamiento, ni alto.</span></div>
+        <div class="si"><span>+</span><span>Vale para todas las hojas por igual, sin decidir cuáles.</span></div>
+        <div class="no"><span>−</span><span>Obliga a repasar lo que va dentro: las tarjetas eran papel de segundo nivel sobre el de primero, y esa resta cambia.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- B -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Velo más denso y sombra de verdad</h2></div>
+      <p>
+        El papel se queda como está; lo que cambia es lo de alrededor. El velo pasa de un negro
+        fijo del 42 % a uno por tema —más denso en oscuro, donde hoy casi no separa— y la hoja
+        deja la sombra suave de las tarjetas por una de elevación, que es la que dice a qué
+        altura está algo.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro b">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro b">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>No toca ni un color de la aplicación: solo el velo y la sombra, que no son de nadie.</span></div>
+        <div class="si"><span>+</span><span>Un velo más denso además ayuda a leer: lo de detrás deja de competir.</span></div>
+        <div class="no"><span>−</span><span>La separación se apoya en la sombra, y una sombra sobre un velo oscuro se ve poco.</span></div>
+        <div class="no"><span>−</span><span>Tapar más lo de detrás quita la referencia de dónde se estaba.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- C -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>La hoja se despega de los bordes</h2></div>
+      <p>
+        Ocho píxeles por los lados y por abajo, y esquinas redondeadas por los cuatro costados.
+        Deja de ser un cajón pegado al marco y pasa a ser una tarjeta puesta encima: la forma
+        sola ya dice que hay dos planos, sin depender del color ni de la luz.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro c">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro c">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>No depende del color ni de la luz: es forma, y se ve en cualquier condición.</span></div>
+        <div class="si"><span>+</span><span>Se ve algo de la pestaña por los cuatro lados, así que no se pierde el sitio del que se viene.</span></div>
+        <div class="no"><span>−</span><span>Con el teclado abierto, dieciséis píxeles menos de ancho en un formulario ya apretado.</span></div>
+        <div class="no"><span>−</span><span>Un cajón pegado al borde invita a arrastrarlo hacia abajo; una tarjeta flotando, menos.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- D -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>El plano de abajo se retira</h2></div>
+      <p>
+        No se toca la hoja: se aparta lo de debajo. La pestaña encoge un siete por ciento y se
+        hunde un poco, como una carta que se echa hacia atrás para dejar sitio a la de encima.
+        Es lo que hace el sistema al presentar una pantalla modal, y se entiende sin haberlo
+        visto nunca.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro d">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro d">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es la que mejor cuenta la historia: no hay dos superficies, hay una detrás de otra.</span></div>
+        <div class="si"><span>+</span><span>Con animación, el gesto de entrar y salir se explica solo.</span></div>
+        <div class="no"><span>−</span><span>Escalar la aplicación entera es lo más caro de la lista, y en un teléfono viejo se nota.</span></div>
+        <div class="no"><span>−</span><span>Toca la cabecera pegajosa y la barra de pestañas, que están fijas: hay que sacarlas del transformado o se descolocan.</span></div>
+        <div class="no"><span>−</span><span>Hay que respetar «reducir movimiento», o marea a quien lo tiene puesto.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- E -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h2>A + B: papel propio, velo por tema y sombra de elevación</h2></div>
+      <p>
+        Las dos baratas juntas. El papel hace el trabajo de día y el velo el de noche, que es
+        justo donde cada una flojea por separado. Ni un gesto cambia, ni un píxel de alto se
+        pierde.
+      </p>
+    </div>
+    <div class="con-juicio">
+      <div class="pareja">
+        <div>
+          <div class="tel tema-claro e">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Claro</p>
+        </div>
+        <div>
+          <div class="tel tema-oscuro e">
+            <div class="base">
+              <div class="base-cab"><div class="t">Julio de 2026</div><div class="base-seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div></div>
+              <div class="base-dias">
+                <div class="base-dia"><b>20</b><span>🎒 Reunión del colegio</span></div>
+                <div class="base-dia"><b>21</b><span>—</span></div>
+                <div class="base-dia"><b>22</b><span>—</span></div>
+              </div>
+              <div class="base-tab"><i class="on">Agenda</i><i>Regalos</i><i>Gente</i><i>Buscar</i></div>
+            </div>
+            <div class="velo"></div>
+            <div class="hoja">
+              <div class="asa"></div>
+              <h4>lunes 20 de Julio</h4>
+              <div class="tarjeta"><span class="n">🎒 Reunión del colegio</span><span class="p">17:00 · Ana</span></div>
+              <div class="tarjeta"><span class="n">🏇 Entreno de hípica</span><span class="p">18:00 · Marta</span></div>
+              <div class="boton">Añadir un evento este día</div>
+            </div>
+          </div>
+          <p class="pie-tema">Oscuro</p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cada una tapa el punto flojo de la otra: el papel de día, el velo de noche.</span></div>
+        <div class="si"><span>+</span><span>Sin tocar gestos, ni alto, ni comportamiento con el teclado.</span></div>
+        <div class="si"><span>+</span><span>Admite después la C o la D sin deshacer nada.</span></div>
+        <div class="no"><span>−</span><span>Sigue siendo un cajón pegado al marco: la forma no cambia, solo el tono.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ Cierre -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza"><h2>Lo que yo haría</h2></div>
+    <div class="nota">
+      <p>
+        <strong>E</strong>. Es lo más barato que arregla de verdad el problema en los dos
+        temas, y no toca nada de cómo se usa la aplicación: ni el arrastre para cerrar, ni el
+        sitio del teclado, ni el rendimiento. Añade dos fichas de color y ajusta dos valores
+        que hoy están puestos a ojo —un velo fijo y la sombra de las tarjetas usada para algo
+        que no es una tarjeta—.
+      </p>
+      <p>
+        <strong>C</strong> es la que más claramente dice «hay dos planos», porque lo dice con
+        la forma y no con el color. La dejaría para después de ver la E funcionando: si con
+        papel y velo ya se entiende, despegar la hoja cuesta ancho justo donde menos sobra.
+      </p>
+      <p>
+        <strong>D</strong> es la que mejor cuenta la historia y la que más puede salir mal:
+        hay que sacar la cabecera y la barra del transformado, respetar «reducir movimiento» y
+        pagarlo en teléfonos viejos. Merece su propia vuelta, no ir de refilón con esto.
+      </p>
+    </div>
+  </section>
+
+</div>

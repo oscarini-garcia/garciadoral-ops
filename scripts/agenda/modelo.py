@@ -25,9 +25,19 @@ from typing import Any, Iterator
 
 REGLAS_VISIBILIDAD = ("publica", "restringida", "privada")
 ROLES = ("administrador", "miembro")
+CIRCULOS = ("familia", "extendida", "amigos")
+#: Solo existe para nombrar bien: elegir entre «mamá» y «papá» cuando el
+#: parentesco escrito no lo dice. Admite ausencia.
+GENEROS = ("f", "m")
+#: Cuántos caben en el círculo «familia». Es el hogar, no un grupo que crece.
+TAMANO_FAMILIA = 4
 TIPOS_IDEA = ("sugerencia", "deseo")
 ESTADOS_IDEA = ("activa", "en_curso", "cerrada", "descartada")
-ESTADOS_REGALO = ("pendiente", "comprado", "envuelto", "entregado")
+#: Tres, desde que se retiró «envuelto»: nadie lo marcaba, y su única
+#: consecuencia era una opción más en un desplegable que pregunta si algo está
+#: comprado o no. Lo que estuviera envuelto se convirtió en comprado
+#: (api/migraciones/0007_estado_regalo.sql).
+ESTADOS_REGALO = ("pendiente", "comprado", "entregado")
 ESTADOS_OCASION = ("abierta", "cerrada")
 ORIGENES_EVENTO = ("manual", "derivado", "importado")
 REPETICIONES = ("ninguna", "semanal", "mensual", "anual")
@@ -57,6 +67,11 @@ class Persona:
     tiene_cuenta: bool = False
     identificador_apple: str | None = None
     rol: str | None = None
+    #: Vínculo, que es lo que ordena la pantalla de personas. Tener cuenta es
+    #: otra cosa y va por su lado: la abuela no tiene y es de la familia.
+    circulo: str = "extendida"
+    #: Solo para nombrar bien; puede no estar (specs/ux.md §7.1).
+    genero: str | None = None
     activa: bool = True
 
     @property
@@ -386,6 +401,8 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             tiene_cuenta=bool(bruto.get("tiene_cuenta", False)),
             identificador_apple=bruto.get("identificador_apple"),
             rol=bruto.get("rol"),
+            circulo=bruto.get("circulo", "extendida"),
+            genero=bruto.get("genero"),
             activa=bool(bruto.get("activa", True)),
         )
 
@@ -565,6 +582,20 @@ def validar(agenda: Agenda) -> list[str]:
             problemas.append(f"persona {persona.id}: rol inválido «{persona.rol}»")
         if not persona.tiene_cuenta and persona.rol is not None:
             problemas.append(f"persona {persona.id}: sin cuenta pero con rol asignado")
+        if persona.circulo not in CIRCULOS:
+            problemas.append(f"persona {persona.id}: círculo inválido «{persona.circulo}»")
+        if persona.genero is not None and persona.genero not in GENEROS:
+            problemas.append(f"persona {persona.id}: género inválido «{persona.genero}»")
+
+    # «Familia» es el hogar y son cuatro. La pantalla lo sostiene no ofreciendo
+    # por dónde añadir; esto es la red debajo, para lo que entre por la API o
+    # por una edición a mano del registro (specs/ux.md §7.1).
+    de_casa = [p for p in agenda.personas.values() if p.circulo == "familia" and p.activa]
+    if len(de_casa) > TAMANO_FAMILIA:
+        nombres = ", ".join(sorted(p.nombre for p in de_casa))
+        problemas.append(
+            f"círculo familia: {len(de_casa)} personas y caben {TAMANO_FAMILIA} ({nombres})"
+        )
 
     for categoria in agenda.categorias.values():
         if categoria.regla not in REGLAS_VISIBILIDAD:

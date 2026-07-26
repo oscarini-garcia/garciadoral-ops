@@ -140,6 +140,16 @@ class PaginasDeLaFicha(unittest.TestCase):
         texto = (RAIZ / "pwa" / "publico" / "privacidad.html").read_text(encoding="utf-8")
         self.assertIn("Eliminar mi cuenta", texto)
 
+    def test_la_privacidad_explica_como_retirar_una_solicitud(self):
+        """La misma directriz aplica antes de tener cuenta.
+
+        Desde que se guarda el correo de quien pide entrar hay datos personales
+        de por medio, aunque esa persona nunca llegue a ser del hogar, y tiene
+        que poder borrarlos desde la propia aplicación.
+        """
+        texto = (RAIZ / "pwa" / "publico" / "privacidad.html").read_text(encoding="utf-8")
+        self.assertIn("Retirar mi solicitud", texto)
+
 
 if __name__ == "__main__":
     unittest.main()

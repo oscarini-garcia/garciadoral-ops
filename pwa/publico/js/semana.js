@@ -11,12 +11,16 @@
  * UTC y desplazaría medio calendario.
  */
 
+import { estaActivo } from './modelo.js';
+
 export const INICIALES_DIA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-export const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+// Los meses van con mayúscula inicial: en la aplicación no aparecen dentro de
+// una frase sino como rótulo —«20 – 26 de Julio de 2026», «Julio de 2026»—, y
+// ahí la mayúscula los separa del resto de la línea de un vistazo.
 export const MESES_LARGOS = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
 export const TECHO_EVENTOS_DIA = 3;
@@ -61,12 +65,26 @@ export function diasDeLaSemana(lunes) {
   return Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
 }
 
+/**
+ * Rango de la semana, con el mes escrito entero y el año.
+ *
+ * El mes va con su nombre completo y no abreviado: «20 – 26 de julio de 2026»
+ * se lee de un vistazo, mientras que «jul» hay que descifrarlo. Y el año
+ * importa, porque sin él el rótulo no dice de cuándo se está hablando en cuanto
+ * uno se aleja unos meses del presente; se escribe una sola vez salvo que la
+ * semana cambie de año, que es el único caso en que hacen falta los dos.
+ */
 export function formatearRango(lunes) {
   const domingo = sumarDias(lunes, 6);
-  if (lunes.getMonth() === domingo.getMonth()) {
-    return `${lunes.getDate()} – ${domingo.getDate()} ${MESES[domingo.getMonth()]}`;
+  const mes = (fecha) => MESES_LARGOS[fecha.getMonth()];
+  if (lunes.getFullYear() !== domingo.getFullYear()) {
+    return `${lunes.getDate()} de ${mes(lunes)} de ${lunes.getFullYear()}`
+      + ` – ${domingo.getDate()} de ${mes(domingo)} de ${domingo.getFullYear()}`;
   }
-  return `${lunes.getDate()} ${MESES[lunes.getMonth()]} – ${domingo.getDate()} ${MESES[domingo.getMonth()]}`;
+  if (lunes.getMonth() === domingo.getMonth()) {
+    return `${lunes.getDate()} – ${domingo.getDate()} de ${mes(domingo)} de ${domingo.getFullYear()}`;
+  }
+  return `${lunes.getDate()} de ${mes(lunes)} – ${domingo.getDate()} de ${mes(domingo)} de ${domingo.getFullYear()}`;
 }
 
 export function formatearHora(momento) {
@@ -89,7 +107,7 @@ export function formatearFechaLarga(fecha) {
 export function eventosDerivados(instantanea) {
   if (!instantanea.tipos_evento?.some((t) => t.id === 'cumpleanos')) return [];
   return (instantanea.personas || [])
-    .filter((p) => p.activa !== false && p.fecha_nacimiento)
+    .filter((p) => estaActivo(p, 'activa') && p.fecha_nacimiento)
     .map((persona) => ({
       id: `derivado:cumpleanos:${persona.id}`,
       titulo: `Cumpleaños de ${persona.nombre}`,
@@ -103,6 +121,46 @@ export function eventosDerivados(instantanea) {
       participantes: [{ persona_id: persona.id, rol: 'protagonista' }],
       activo: true,
     }));
+}
+
+/**
+ * La fecha del próximo aniversario, sea este año o el que viene.
+ *
+ * Vive aquí y no en la pantalla de personas porque lo consultan dos: la rejilla
+ * de Gente, para ordenarla y para decir cuándo cumple cada uno, y la pestaña de
+ * Ocasiones, que compone con esto su lista de cumpleaños.
+ */
+export function proximoAniversario(persona) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  if (!nacimiento) return null;
+  const referencia = hoy();
+  const deEsteAno = new Date(referencia.getFullYear(), nacimiento.getMonth(), nacimiento.getDate());
+  return deEsteAno < referencia
+    ? new Date(referencia.getFullYear() + 1, nacimiento.getMonth(), nacimiento.getDate())
+    : deEsteAno;
+}
+
+/** Quien no tiene fecha va al final de la lista, no al principio. */
+export function diasHastaElCumple(persona) {
+  if (!persona.fecha_nacimiento) return Infinity;
+  return Math.round((proximoAniversario(persona) - hoy()) / 86400000);
+}
+
+/**
+ * Los años que cumple en ese aniversario, que no son los cumplidos: el día
+ * mismo son los mismos, y a partir del día siguiente se habla ya del próximo.
+ *
+ * Es la cifra que se busca al mirar a alguien para decidir un regalo, y por eso
+ * la piden tres sitios: la rejilla de Gente —«3 nov (48)»—, la lista de
+ * cumpleaños de Ocasiones y el Worker al componer la felicitación, que hace esta
+ * misma cuenta con las fechas del registro.
+ */
+export function aniosQueCumple(persona) {
+  const nacimiento = parsearMomento(persona.fecha_nacimiento);
+  const proximo = proximoAniversario(persona);
+  if (!nacimiento || !proximo) return null;
+  const anios = proximo.getFullYear() - nacimiento.getFullYear();
+  return anios > 0 && anios < 130 ? anios : null;
 }
 
 // -------------------------------------------------------------- Recurrencia --
@@ -175,7 +233,7 @@ export function ocurrencias(evento, desde, hasta) {
 }
 
 export function instanciasEn(instantanea, desde, hasta) {
-  const fuentes = [...(instantanea.eventos || []).filter((e) => e.activo !== false), ...eventosDerivados(instantanea)];
+  const fuentes = [...(instantanea.eventos || []).filter((e) => estaActivo(e)), ...eventosDerivados(instantanea)];
   return fuentes.flatMap((evento) => ocurrencias(evento, desde, hasta));
 }
 

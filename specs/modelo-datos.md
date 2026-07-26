@@ -34,9 +34,17 @@
 | tiene_cuenta | Determina si le aplican las reglas de ocultación |
 | identificador_apple | Nulo si no tiene cuenta |
 | rol | administrador, miembro, o nulo si no tiene cuenta |
+| circulo | familia, extendida o amigos. Es lo que ordena la pantalla de personas |
+| genero | f o m, o nulo. Solo para nombrar bien; véase abajo |
 | activa | La independencia de una hija no altera este campo |
 
-**AtributoPersona.** Pares de clave y valor: talla de calzado, alergias, aficiones. Las claves son de creación libre, y la interfaz sugiere las ya utilizadas en el hogar. Se modela como entidad separada y no como campos fijos porque el conjunto de atributos útiles difiere mucho entre una hija y un sobrino, y crece de forma imprevisible.
+**Género.** Existe solo para afinar cómo se nombra a cada uno: elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando la palabra del parentesco no lleva el género dentro —«lóver»—. La aplicación no saca nada más de él, y por eso admite nulo: sin dato, la palabra se deduce del propio parentesco.
+
+**Círculo.** El vínculo, que es cosa distinta de tener cuenta: la abuela no tiene y es de la familia; un amigo podría tenerla sin serlo. Toma tres valores cerrados y cada persona pertenece a uno solo. Al migrar, quien tenía cuenta pasa a `familia` y el resto a `extendida`, que es también el valor por defecto: equivocarse hacia fuera se corrige desde una ficha, mientras que equivocarse hacia dentro rompe la regla de los cuatro en cuanto entra la quinta persona.
+
+**AtributoPersona.** Lo que conviene recordar de alguien: tallas, alergias, aficiones, manías. Se modela como entidad separada y no como campos fijos porque el conjunto de datos útiles difiere mucho entre una hija y un sobrino, y crece de forma imprevisible.
+
+Guarda `clave` y `valor`, pero **la interfaz ya no pide las dos cosas**: se escribe de corrido, en una sola casilla de varias líneas, y el texto va a `valor` con la clave en blanco. Casi nada de lo que se apunta aquí tiene forma de par —«le da vergüenza que le canten el cumpleaños» no es una clave con su valor—, y partirlo en dos obligaba a inventar un rótulo. Los pares escritos antes de este cambio se siguen leyendo con su «clave: valor» delante; el esquema no se toca, que por esto no compensa una migración.
 
 No existe entidad de histórico de regalos. Se deriva por consulta sobre los regalos de las ocasiones cerradas, lo que elimina toda posibilidad de divergencia con el dato de origen.
 
@@ -103,7 +111,7 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 | compartido | Indicador |
 | responsable_id | Persona con cuenta |
 | coste_real | Opcional |
-| estado | pendiente, comprado, envuelto, entregado |
+| estado | pendiente, comprado, entregado |
 | categoria_id | Heredada de la idea salvo modificación |
 
 **CoDestinatarioRegalo.** Personas adicionales implicadas en un regalo compartido. La ocultación alcanza al destinatario principal y a todas ellas.
@@ -172,6 +180,8 @@ Un presupuesto por persona requiere que esa persona figure como participante de 
 
 Una persona sin cuenta no puede figurar como autor de ninguna entidad de contenido, ni como responsable de compra, ni en las listas de acceso a categorías restringidas.
 
+El círculo `familia` admite cuatro personas activas como máximo: es el hogar, no un grupo que crece. La pantalla lo sostiene no ofreciendo por dónde añadir; la regla es la red debajo, para lo que entre por la API o por una edición a mano del registro. Dar de baja a alguien libera su hueco.
+
 Un regalo en estado entregado no admite modificación de destinatario ni de ocasión.
 
 Un comentario solo puede referenciar una idea, un regalo o un evento, y hereda la visibilidad del objeto referenciado.
@@ -187,7 +197,7 @@ stateDiagram-v2
     [*] --> Activa: captura
     Activa --> EnCurso: promoción a una ocasión
     EnCurso --> Activa: retirada de la ocasión
-    EnCurso --> Cerrada: regalo entregado
+    EnCurso --> Cerrada: regalo entregado u ocasión cerrada
     Activa --> Descartada: acción manual
     EnCurso --> Descartada: acción manual
     Descartada --> Activa: reactivación
@@ -196,17 +206,21 @@ stateDiagram-v2
 
 Las transiciones hacia En curso y hacia Cerrada se derivan de lo que ocurre en la ocasión vinculada. Solo el descarte y la reactivación son manuales.
 
+Cierran la idea las dos maneras que tiene un regalo de terminar: que se entregue, o que su ocasión se dé por cerrada. Contar solo la primera dejaba en el banco ideas En curso para siempre, señaladas con una ocasión archivada que ya nunca las iba a liberar.
+
 ### 5.2 Regalo
 
 ```mermaid
 stateDiagram-v2
     [*] --> Pendiente
     Pendiente --> Comprado
-    Comprado --> Envuelto
-    Envuelto --> Entregado
     Comprado --> Entregado
     Entregado --> [*]
 ```
+
+Son tres, y en pantalla se llaman por lo que falta por hacer con ellos: Pendiente es «Por comprar», Comprado es «Listo» y Entregado se llama igual. Hubo un cuarto —Envuelto, entre los dos últimos— y se retiró: nadie lo marcaba, de modo que su único efecto era añadir una opción más a un desplegable que contesta a una pregunta de sí o no. Lo que estuviera envuelto se convirtió en comprado (`api/migraciones/0007_estado_regalo.sql`).
+
+Entregado es el final explícito, y es lo que cierra la idea de la que salió el regalo y lo manda al histórico de quien lo recibió. El otro final es que la ocasión se dé por cerrada, con lo que quedara sin comprar archivado tal cual.
 
 El registro del coste real es opcional en cualquiera de las transiciones.
 
@@ -215,7 +229,7 @@ El registro del coste real es opcional en cualquiera de las transiciones.
 ```mermaid
 stateDiagram-v2
     [*] --> Abierta
-    Abierta --> Cerrada: todos los regalos entregados o descartados
+    Abierta --> Cerrada: todos los regalos entregados, o cierre manual
     Cerrada --> [*]
 ```
 

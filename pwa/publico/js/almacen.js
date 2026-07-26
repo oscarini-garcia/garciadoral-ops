@@ -93,6 +93,9 @@ export function vaciarCola(hastaOrden) {
 }
 
 export function olvidarTodo() {
+  // Los últimos elegidos son de quien tiene la sesión, igual que la
+  // instantánea: cambiar de persona en este dispositivo no puede dejarlos.
+  olvidarUltimos();
   return transaccion(['documentos', 'cola'], 'readwrite', (tx) => {
     tx.objectStore('documentos').clear();
     tx.objectStore('cola').clear();
@@ -117,4 +120,49 @@ export function leerSesion() {
 
 export function borrarSesion() {
   localStorage.removeItem(CLAVE_SESION);
+}
+
+// ------------------------------------------------ Últimos elegidos, por uso --
+
+const PREFIJO_ULTIMOS = 'agenda.ultimos.';
+const CUANTOS_ULTIMOS = 12;
+
+/**
+ * A quiénes se ha elegido últimamente en este teléfono, para cada cosa.
+ *
+ * Se guardan aquí y no en el registro porque son de quien usa el aparato y no
+ * del hogar: si esta semana andas con el regalo de un sobrino, es tu semana y
+ * no la de los demás. Y van separados por uso —los regalos por un lado, los
+ * eventos por otro— porque a quien se le apuntan regalos y quien va a los
+ * planes no son la misma gente, y mezclarlos daría sugerencias peores en los
+ * dos sitios.
+ *
+ * Se conservan más de los que se enseñan, para que quitar a alguien de la lista
+ * no deje un hueco.
+ */
+export function ultimosElegidos(clave) {
+  try {
+    const guardados = JSON.parse(localStorage.getItem(PREFIJO_ULTIMOS + clave) || '[]');
+    return Array.isArray(guardados) ? guardados.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Los recién usados pasan al principio, sin repetirse. */
+export function recordarElegidos(clave, ids = []) {
+  const utiles = ids.filter(Boolean);
+  if (!utiles.length) return;
+  const lista = [...new Set([...utiles, ...ultimosElegidos(clave)])].slice(0, CUANTOS_ULTIMOS);
+  try {
+    localStorage.setItem(PREFIJO_ULTIMOS + clave, JSON.stringify(lista));
+  } catch {
+    /* sin sitio en el almacén local, la lista se queda como estaba */
+  }
+}
+
+function olvidarUltimos() {
+  for (const clave of Object.keys(localStorage)) {
+    if (clave.startsWith(PREFIJO_ULTIMOS)) localStorage.removeItem(clave);
+  }
 }

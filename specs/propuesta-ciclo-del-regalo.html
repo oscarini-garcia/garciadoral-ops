@@ -1,0 +1,664 @@
+<meta charset="utf-8">
+<title>El ciclo de vida de una idea, y la pantalla que falta</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
+     incluida la escala de papel elevado de las hojas. La Newsreader no puede
+     cargarse desde fuera, así que queda Georgia, que es su propio repuesto. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --paper-alto: #FFFDFA;
+    --paper-alto-2:#F6F2EA;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --paper-alto: #1E282D;
+      --paper-alto-2:#253238;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --regalo:     #E48FAE;
+      --regalo-suave:#33202A;
+      --aviso:      #E0A253;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --paper-alto-2: #253238;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .parte p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 340px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* ------------------------------------------------------------- La tabla -- */
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); }
+  .comparativa .ojo { color: var(--aviso); }
+  .desplazable { overflow-x: auto; }
+
+  /* --------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 340px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden; font-size: 14px;
+  }
+  .tel-cabecera { padding: 11px 14px 0; display: flex; align-items: baseline; gap: 10px; }
+  .tel-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 21px; }
+  .tel-cabecera .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); margin-left: auto; }
+  .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; margin: 9px 14px 0; }
+  .seg i { font-style: normal; padding: 5px 10px; border-radius: 7px; font-size: 12.5px; color: var(--ink-soft); cursor: pointer; }
+  .seg i.on { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
+  .tel-cuerpo { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 13px; }
+
+  .grupo-rot { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .fichas { display: flex; flex-direction: column; gap: 7px; margin-top: 5px; }
+  .ficha {
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2);
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
+  }
+  .ficha-fila { display: flex; align-items: baseline; gap: 8px; }
+  .ficha-nombre { font-size: 14.5px; font-weight: 500; }
+  .ficha-pista { font-size: 12px; color: var(--ink-soft); }
+  .ficha-pista b { font-weight: 500; color: var(--ink); }
+  .marca {
+    margin-left: auto; font-size: 10.5px; padding: 2px 8px; border-radius: 999px;
+    background: var(--regalo-suave); color: var(--regalo); white-space: nowrap;
+  }
+  .marca.listo { background: var(--tinta-suave); color: var(--tinta); }
+  .marca.nadie { background: transparent; color: var(--aviso); border: 1px solid currentColor; }
+  .enlaces { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+  .enlace {
+    font-size: 11.5px; color: var(--tinta); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 9px; background: var(--paper);
+  }
+  .vacio { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 14px 0; }
+
+  /* --------------------------------------------------------------- Diagrama -- */
+
+  .ciclo {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+  }
+  .paso {
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+    background: var(--paper); font-size: 13.5px;
+  }
+  .paso.acento { border-color: var(--tinta); color: var(--tinta); }
+  .paso.fin { border-style: dashed; color: var(--ink-faint); }
+  .flecha { color: var(--ink-faint); font-family: var(--mono); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+  .lista-seca strong { color: var(--ink); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>El ciclo de vida de una idea, y la pantalla que falta</h1>
+    <p>
+      Lo que cuentas encaja casi entero con lo que hay, y lo que no encaja son
+      justamente las tres decisiones que quedan por tomar: cuántos estados tiene un
+      regalo, qué pasa cuando la fecha pasa, y si idea y regalo son una cosa o dos.
+      Debajo van esas tres y la pantalla nueva, con cuatro maneras de montarla.
+    </p>
+    <div class="nota">
+      <p>
+        <strong>Decidido: B, F e I</strong>, y ya construido. Tres estados —por
+        comprar, listo y entregado—, con «envuelto» retirado. Pasada la fecha nada
+        se archiva solo: los regalos bajan a un apartado plegado, «Ya pasaron», y lo
+        que los archiva de verdad es dar la ocasión por cerrada a mano. Y la
+        pantalla por estado con los filtros de «los que llevo yo» y «sin nadie».
+      </p>
+      <p>
+        Lo que sigue se conserva tal cual se escribió, con las opciones que no se
+        eligieron: es el porqué de la elección. Cómo quedó está en
+        <code>specs/ux.md</code> §6.2.
+      </p>
+    </div>
+  </header>
+
+  <!-- ------------------------------------------------- Lo que hay hoy -- -->
+
+  <section class="opcion" style="border-top: 0; padding-top: 0;">
+    <div class="opcion-cabeza">
+      <h2>Tu relato, y el modelo de hoy</h2>
+    </div>
+    <div class="desplazable">
+      <table class="comparativa">
+        <thead>
+          <tr><th>Lo que cuentas</th><th>Lo que hay</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Las ideas se crean.</td>
+            <td><code>idea</code> en estado <code>activa</code>. Igual.</td>
+          </tr>
+          <tr>
+            <td>En los cumples o fechas señaladas se convierten en regalos.</td>
+            <td>Se crea un <code>regalo</code> que apunta a la idea y a la ocasión; la idea pasa a <code>en_curso</code> sola. Igual, salvo que la idea <strong>no se consume</strong>: sigue ahí y puede dar otro regalo para otra persona u otro año.</td>
+          </tr>
+          <tr>
+            <td>El regalo está latente mientras se compra o se desecha.</td>
+            <td><code>pendiente</code>. Igual.</td>
+          </tr>
+          <tr>
+            <td>Cuando se ha comprado está listo, y ahí acaba el ciclo.</td>
+            <td class="ojo">Aquí no. Hay <code>comprado</code>, <code>envuelto</code> y <code>entregado</code>, y es <strong>entregado</strong> —no comprado— lo que cierra la idea y la ocasión.</td>
+          </tr>
+          <tr>
+            <td>Cuando pasa la fecha de entrega, se desactiva.</td>
+            <td class="ojo">Hoy la fecha <strong>no hace nada</strong>. La ocasión se cierra solo cuando todos sus regalos están entregados; si nadie toca el último estado, se queda abierta para siempre.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ciclo">
+      <span class="paso">Apuntada</span>
+      <span class="flecha">→</span>
+      <span class="paso acento">En curso</span>
+      <span class="flecha">→</span>
+      <span class="paso fin">Cerrada</span>
+      <span class="flecha" style="margin: 0 10px">· la idea, hoy ·</span>
+      <span class="paso">Pendiente</span>
+      <span class="flecha">→</span>
+      <span class="paso">Comprado</span>
+      <span class="flecha">→</span>
+      <span class="paso">Envuelto</span>
+      <span class="flecha">→</span>
+      <span class="paso fin">Entregado</span>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Primera decisión</p>
+    <h2>Cuántos estados tiene un regalo, y cómo se llaman</h2>
+    <p>
+      «Latente» es la palabra que buscas para el primero. Ninguna de las que se me
+      ocurren es perfecta, pero hay una que dice de más: <strong>apalabrado</strong>
+      —está hablado, no está hecho—. Y hay otra que dice lo único que hay que hacer:
+      <strong>por comprar</strong>.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>Dos estados: por comprar y listo</h2></div>
+      <p>
+        Lo que cuentas, tal cual. <code>envuelto</code> y <code>entregado</code>
+        desaparecen: comprar es lo último que alguien va a marcar de verdad, y lo
+        demás lo cierra la fecha.
+      </p>
+    </div>
+    <div class="par">
+      <div class="ciclo">
+        <span class="paso">Apuntada</span>
+        <span class="flecha">→</span>
+        <span class="paso acento">Por comprar</span>
+        <span class="flecha">→</span>
+        <span class="paso acento">Listo</span>
+        <span class="flecha">→</span>
+        <span class="paso fin">Archivado al pasar la fecha</span>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Dos estados se mantienen solos. Cuatro no: «envuelto» no lo marca nadie y «entregado» se olvida siempre.</span></div>
+        <div class="si"><span>+</span><span>La pregunta que hace la pantalla es una sola y es la útil: ¿esto está comprado o no?</span></div>
+        <div class="no"><span>−</span><span>Se pierde el matiz de «lo tengo pero aún no se lo he dado», que en Navidad son tres semanas.</span></div>
+        <div class="no"><span>−</span><span>Cambia el modelo: hay que migrar los estados que ya existen en la base.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Tres: por comprar, listo y entregado</h2></div>
+      <p>
+        Igual que A, pero «entregado» sobrevive como el punto final que uno marca si
+        quiere. Se va «envuelto», que es el único que nadie mantiene.
+      </p>
+    </div>
+    <div class="par">
+      <div class="ciclo">
+        <span class="paso">Apuntada</span>
+        <span class="flecha">→</span>
+        <span class="paso acento">Por comprar</span>
+        <span class="flecha">→</span>
+        <span class="paso acento">Listo</span>
+        <span class="flecha">→</span>
+        <span class="paso fin">Entregado</span>
+        <span class="flecha">o</span>
+        <span class="paso fin">Archivado por fecha</span>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se conserva el cierre explícito, que es lo que hoy pasa la idea a cerrada y la manda al histórico de la persona.</span></div>
+        <div class="si"><span>+</span><span>Quien no marque nada acaba en el mismo sitio: la fecha archiva igual.</span></div>
+        <div class="si"><span>+</span><span>La migración es de una línea: lo que estuviera «envuelto» pasa a «listo».</span></div>
+        <div class="no"><span>−</span><span>Tres estados para algo que se contesta con sí o no. El tercero solo lo usará quien disfrute marcándolo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>Los cuatro de hoy, agrupados de dos en dos</h2></div>
+      <p>
+        No se toca el modelo: la pantalla nueva junta <code>pendiente</code> en «Por
+        comprar» y <code>comprado</code> más <code>envuelto</code> en «Listos», y
+        <code>entregado</code> se archiva.
+      </p>
+    </div>
+    <div class="par">
+      <div class="ciclo">
+        <span class="paso">Pendiente</span>
+        <span class="flecha">=</span>
+        <span class="paso acento">Por comprar</span>
+        <span class="flecha" style="margin: 0 8px">·</span>
+        <span class="paso">Comprado</span>
+        <span class="paso">Envuelto</span>
+        <span class="flecha">=</span>
+        <span class="paso acento">Listos</span>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cero migración y cero riesgo: solo se cambia lo que se enseña.</span></div>
+        <div class="si"><span>+</span><span>Quien quiera el detalle lo sigue teniendo dentro de la ficha del regalo.</span></div>
+        <div class="no"><span>−</span><span>Deja en el modelo un estado que la interfaz ya no distingue: la próxima vez que alguien lo lea se preguntará para qué está.</span></div>
+        <div class="no"><span>−</span><span>El desplegable del detalle sigue ofreciendo cuatro opciones para una pregunta de dos.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Segunda decisión</p>
+    <h2>Qué pasa cuando la fecha pasa</h2>
+    <p>
+      Hoy, nada: una ocasión con un regalo sin marcar se queda abierta para siempre.
+      Lo que describes —«es como si se desactivara»— hay que decidirlo con cuidado,
+      porque archivar es esconder.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>Al día siguiente, todo al histórico</h2></div>
+      <p>
+        Pasada la fecha de la ocasión, sus regalos se archivan estén como estén, y
+        pasan al «Lo que ya recibió» de cada persona. Lo que se quedó sin comprar se
+        archiva diciéndolo.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>La pantalla de regalos no acumula basura de años pasados sin que nadie tenga que limpiarla.</span></div>
+      <div class="si"><span>+</span><span>«Se quedó sin comprar» es información útil el año siguiente, no un error que ocultar.</span></div>
+      <div class="no"><span>−</span><span>Un cumpleaños que se celebra el fin de semana siguiente desaparece de la lista el día antes de hacer falta.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h2>Una semana de gracia</h2></div>
+      <p>
+        Igual que D, pero el archivado ocurre <strong>siete días después</strong> de
+        la fecha. La celebración que se corre al sábado sigue estando, y lo viejo se
+        va solo igualmente.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Cubre el caso real: la fecha del cumpleaños y el día que se junta la familia no son el mismo.</span></div>
+      <div class="si"><span>+</span><span>Sigue sin pedirle a nadie que limpie nada.</span></div>
+      <div class="no"><span>−</span><span>Siete días es un número inventado, y el primero que no lo entienda tendrá razón.</span></div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">F</span><h2>No archivar: apartar</h2></div>
+      <p>
+        Pasada la fecha, los regalos no desaparecen: bajan a un grupo plegado al
+        final, «Ya pasaron (3)», con lo que quedó sin comprar señalado. Se archivan
+        de verdad solo al cerrar la ocasión a mano.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Nada se esconde solo. Lo que se quedó a medias sigue a la vista hasta que alguien lo mire.</span></div>
+      <div class="si"><span>+</span><span>Es reversible sin tocar el modelo: solo cambia dónde se pinta.</span></div>
+      <div class="no"><span>−</span><span>Al tercer año, ese grupo plegado tiene cuarenta cosas que nadie va a repasar.</span></div>
+    </div>
+  </section>
+
+  <div class="parte">
+    <p class="rotulo">Tercera decisión</p>
+    <h2>La pantalla: Ideas · Regalos · Ocasiones</h2>
+    <p>
+      El botón nuevo va antes de Ocasiones, como pides. Cuatro maneras de ordenar lo
+      que hay dentro. En las cuatro, cada ficha enlaza a la persona y a la ocasión o
+      el evento de donde cuelga.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">G</span><h2>Por estado: por comprar arriba, listos abajo</h2></div>
+      <p>Lo que pediste, en su forma más directa. Dentro de cada grupo, por fecha.</p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Regalos</h4><span class="punto"></span></div>
+        <div class="seg"><i>Ideas</i><i class="on">Regalos</i><i>Ocasiones</i></div>
+        <div class="tel-cuerpo">
+          <div>
+            <p class="grupo-rot">Por comprar · 3</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Botas de montar</span><span class="marca">lo llevas tú</span></div>
+                <p class="ficha-pista">para <b>Marta</b> · Cumpleaños de Marta · en 6 días</p>
+                <div class="enlaces"><span class="enlace">Marta</span><span class="enlace">Cumpleaños de Marta</span></div>
+              </div>
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Hamaca de playa</span><span class="marca nadie">sin nadie</span></div>
+                <p class="ficha-pista">para <b>la abuela</b> · Cumpleaños de la abuela · en 4 días</p>
+                <div class="enlaces"><span class="enlace">la abuela</span><span class="enlace">Cumpleaños de la abuela</span></div>
+              </div>
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Cantimplora térmica</span><span class="marca">lo lleva Ana</span></div>
+                <p class="ficha-pista">para <b>Nacho</b> · Navidad 2026 · en 5 meses</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Listos · 1</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Curso de cerámica</span><span class="marca listo">comprado</span></div>
+                <p class="ficha-pista">para <b>Rosa</b> · Navidad 2026 · 38 €</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Contesta de un vistazo la única pregunta que se le hace a esta pantalla: ¿qué me falta por comprar?</span></div>
+        <div class="si"><span>+</span><span>«Sin nadie» salta a la vista, que es el fallo que esta aplicación existe para evitar.</span></div>
+        <div class="no"><span>−</span><span>Mezcla ocasiones lejanas con inminentes en la misma lista: Navidad convive con el cumpleaños de pasado mañana.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">H</span><h2>Por ocasión, con el estado como marca</h2></div>
+      <p>
+        Agrupados por la fecha a la que pertenecen, de la más próxima a la más
+        lejana, y el estado en la esquina de cada ficha.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Regalos</h4><span class="punto"></span></div>
+        <div class="seg"><i>Ideas</i><i class="on">Regalos</i><i>Ocasiones</i></div>
+        <div class="tel-cuerpo">
+          <div>
+            <p class="grupo-rot">Cumpleaños de la abuela · en 4 días</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Hamaca de playa</span><span class="marca nadie">sin nadie</span></div>
+                <p class="ficha-pista">para <b>la abuela</b></p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Cumpleaños de Marta · en 6 días</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Botas de montar</span><span class="marca">lo llevas tú</span></div>
+                <p class="ficha-pista">para <b>Marta</b></p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Navidad 2026 · en 5 meses</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Curso de cerámica</span><span class="marca listo">comprado</span></div>
+                <p class="ficha-pista">para <b>Rosa</b> · 38 €</p>
+              </div>
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Cantimplora térmica</span><span class="marca">lo lleva Ana</span></div>
+                <p class="ficha-pista">para <b>Nacho</b></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Lo urgente arriba sin tener que leer fechas: el orden ya lo dice.</span></div>
+        <div class="si"><span>+</span><span>El rótulo del grupo <em>es</em> el enlace a la ocasión, así que cada ficha se queda con una línea limpia.</span></div>
+        <div class="no"><span>−</span><span>Lo que falta por comprar queda repartido entre todos los grupos: hay que recorrerlos para saber qué debes.</span></div>
+        <div class="no"><span>−</span><span>Se parece mucho a la pestaña de Ocasiones, que ya agrupa por fecha.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">I</span><h2>Por estado, y un conmutador de «solo los míos»</h2></div>
+      <p>
+        G más una casilla arriba: <em>los que llevo yo</em>. En un hogar de cuatro, la
+        mitad de los regalos son de otros y en la lista solo estorban.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Regalos</h4><span class="punto"></span></div>
+        <div class="seg"><i>Ideas</i><i class="on">Regalos</i><i>Ocasiones</i></div>
+        <div class="tel-cuerpo">
+          <div class="seg" style="margin: 0"><i class="on">Todos</i><i>Los que llevo yo</i><i>Sin nadie</i></div>
+          <div>
+            <p class="grupo-rot">Por comprar · 3</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Botas de montar</span><span class="marca">lo llevas tú</span></div>
+                <p class="ficha-pista">para <b>Marta</b> · Cumpleaños de Marta · en 6 días</p>
+              </div>
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Hamaca de playa</span><span class="marca nadie">sin nadie</span></div>
+                <p class="ficha-pista">para <b>la abuela</b> · Cumpleaños de la abuela · en 4 días</p>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="grupo-rot">Listos · 1</p>
+            <div class="fichas">
+              <div class="ficha">
+                <div class="ficha-fila"><span class="ficha-nombre">Curso de cerámica</span><span class="marca listo">comprado</span></div>
+                <p class="ficha-pista">para <b>Rosa</b> · Navidad 2026 · 38 €</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>«Sin nadie» como filtro propio convierte la pantalla en la lista de lo que hay que repartir.</span></div>
+        <div class="si"><span>+</span><span>Con treinta regalos en diciembre, es la única de las cuatro que sigue siendo legible.</span></div>
+        <div class="no"><span>−</span><span>Dos conmutadores, uno encima de otro, en la misma pantalla.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">J</span><h2>Sin pantalla nueva: los regalos, dentro de Ocasiones</h2></div>
+      <p>
+        La alternativa honesta a todo lo anterior: no hay tercera sección, y cada
+        ocasión de la lista muestra debajo sus regalos con su estado.
+      </p>
+    </div>
+    <div class="juicio">
+      <div class="si"><span>+</span><span>Un sitio menos que mantener, y el regalo se mira donde vive.</span></div>
+      <div class="no"><span>−</span><span>Obliga a abrir ocasión por ocasión para saber qué te falta, que es justo lo que quieres evitar.</span></div>
+      <div class="no"><span>−</span><span>Los regalos de un cumpleaños quedan a dos toques, dentro de un acordeón dentro de otro.</span></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------- Una cosa o dos -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>¿Idea y regalo son el mismo objeto con estados?</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>Se parecen tanto que la pregunta es buena.</strong> De hecho hoy los
+        dos estados de la idea que no son manuales —<code>en_curso</code> y
+        <code>cerrada</code>— se calculan mirando su regalo: es la misma información
+        contada dos veces.
+      </p>
+      <p>
+        <strong>Pero se rompen en tres sitios.</strong> Uno: una idea sirve para
+        varias personas y varios años —la misma cantimplora para dos sobrinos—, y un
+        regalo es de una persona y de una fecha; fundirlos obliga a duplicar la idea
+        cada vez que se reutiliza, y entonces «lo que ya le regalamos» deja de poder
+        deducirse. Dos: un regalo tiene responsable, coste y ocasión, que en una idea
+        están vacíos siempre. Y tres, la de peso: <strong>se ocultan de forma
+        distinta</strong> —una idea se le esconde a quien está nombrado en ella; un
+        regalo, a su destinatario y a los codestinatarios—, y esa función es la pieza
+        central del sistema.
+      </p>
+      <p>
+        <strong>Lo que sí se puede fundir es el relato.</strong> Que la interfaz
+        cuente un solo ciclo —<em>apuntada → cogida para alguien → comprada →
+        archivada</em>— aunque por dentro sigan siendo dos filas. La pantalla que
+        propones es exactamente eso: el mismo objeto visto en su segunda mitad de
+        vida.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que yo haría</h2>
+    </div>
+    <div class="nota">
+      <p>
+        <strong>B, E e I.</strong> Tres estados —por comprar, listo, entregado— porque
+        «entregado» es lo único que hoy cierra la idea y la manda al histórico de la
+        persona, y quitarlo obliga a inventar otro cierre; se va «envuelto», que no lo
+        mantiene nadie. Archivado <strong>una semana después</strong> de la fecha, que
+        cubre la celebración que se corre al sábado. Y la lista por estado con el
+        conmutador de «los que llevo yo» y «sin nadie», que es la que sigue siendo
+        legible en diciembre.
+      </p>
+      <p>
+        Si prefieres lo más pequeño que resuelve lo que pides: <strong>C, F y G</strong>
+        no tocan el modelo en absoluto —solo agrupan lo que ya hay y añaden la
+        pantalla—, y se puede hacer hoy mismo.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h2>Lo que hace falta que decidas</h2>
+    </div>
+    <ol class="lista-seca">
+      <li><strong>A, B o C</strong> para los estados. Si no dices nada, va B.</li>
+      <li><strong>D, E o F</strong> para lo que hace la fecha. Si no dices nada, va E.</li>
+      <li><strong>G, H, I o J</strong> para la pantalla. Si no dices nada, va I.</li>
+      <li>
+        Y la palabra: <strong>«Por comprar»</strong> para el grupo y
+        <strong>«apalabrado»</strong> para el estado de uno que ya tiene dueño. Si
+        prefieres otra —«cogido», «en marcha», «pendiente»—, dilo y va esa.
+      </li>
+    </ol>
+  </section>
+
+</div>

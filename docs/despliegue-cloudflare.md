@@ -87,6 +87,10 @@ Cree el esquema y los catálogos:
 npm run migrar:remoto
 ```
 
+Sobre una base que ya exista, esta misma orden es la que aplica las migraciones
+nuevas: todas se escriben con `CREATE TABLE IF NOT EXISTS`, de modo que
+ejecutarla otra vez no toca nada de lo que ya está.
+
 Comprobación:
 
 ```bash
@@ -122,6 +126,20 @@ solo intervienen cuando alguien elimina su cuenta y que se registran en el paso
 4.5, porque salen de la cuenta de Apple Developer. Todo lo demás funciona sin
 ellos.
 
+La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
+la base de datos desde *Ajustes → Inteligencia artificial*, dentro de la propia
+aplicación y solo para administradores. Es lo que enciende las tres cosas que la
+agenda le pide a un modelo: el segundo botón de compartir —el del destello—, que
+cuenta en dos frases un día, la semana, el mes o lo que viene antes de enviarlo;
+la propuesta de regalo al apuntar una idea para alguien; y la felicitación de
+cumpleaños, que se escribe al abrir un cumpleaños en Regalos → Ocasiones y se
+copia al portapapeles. Sin clave no aparece ninguno de los tres botones y todo lo
+demás funciona igual. El encargo de cada una —lo que se le pide al modelo— se
+reescribe en ese mismo apartado. Se registra
+allí y no aquí porque es lo único de esta instalación que se cambia con cierta
+frecuencia —al rotarla, al cambiar de modelo— y hacerlo con `wrangler` obligaría
+a volver a desplegar cada vez.
+
 El bloque `[vars]` de `api/wrangler.toml` ya viene relleno con los nombres de
 esta instalación; compruébelo antes de desplegar:
 
@@ -146,6 +164,41 @@ curl https://agenda-familiar-api.EJEMPLO.workers.dev/api/salud
 # {"estado":"ok","ahora":"..."}
 ```
 
+### 2.1 Que no haya que volver a desplegar a mano
+
+Esta primera vez se hace desde su máquina, porque hasta aquí no hay repositorio
+configurado. A partir de ahí lo hace el workflow `desplegar-api.yml` en cuanto
+un cambio de `api/` entra en `main`, igual que el bundle OTA. Solo necesita un
+secreto:
+
+1. En Cloudflare, **My Profile → API Tokens → Create Token**, plantilla **Edit
+   Cloudflare Workers**. Añádale además el permiso **Account → D1 → Edit**, que
+   la plantilla no trae y hace falta para las migraciones.
+2. En GitHub, **Settings → Secrets and variables → Actions → New repository
+   secret**, con el nombre `CLOUDFLARE_API_TOKEN`.
+3. Si ese token ve más de una cuenta de Cloudflare, añada también
+   `CLOUDFLARE_ACCOUNT_ID`. Con una sola cuenta no hace falta.
+
+El workflow pasa las pruebas del Worker antes de subir nada y comprueba
+`/api/salud` después. Se puede lanzar a mano desde la pestaña **Actions**, y
+allí tiene una casilla —*Aplicar también las migraciones de esquema*— para las
+versiones que traen tablas nuevas: es la manera de migrar sin una terminal
+delante.
+
+Esa casilla se puede marcar sin pensarlo, porque solo aplica lo que se puede
+repetir sin consecuencias. Quedan fuera dos clases de fichero:
+
+- **Los catálogos** (`0002`), que van con `INSERT OR REPLACE` y pisarían lo que
+  se haya cambiado desde la aplicación.
+- **Las migraciones de un solo uso**, las que llevan `.unavez.sql` en el
+  nombre. Son las que hacen `ALTER TABLE` —que falla si la columna ya está— o
+  reparten datos que ya existen. Para esas hay un campo al lado de la casilla:
+  se escribe el nombre del fichero, se lanza una vez, y se deja vacío en
+  adelante. Si el nombre no existe, el workflow para antes de tocar nada.
+
+Sin el secreto, el workflow falla en el paso de desplegar y no toca nada: el
+despliegue sigue siendo el de siempre, `npm run desplegar`.
+
 ---
 
 ## 3. La primera persona
@@ -159,8 +212,8 @@ wrangler d1 execute agenda-familiar --remote --command "
   VALUES ('p-oscar', 'Óscar', 'García', 1, 'administrador', 1)"
 ```
 
-Deje `identificador_apple` vacío: se rellena en el paso 6, cuando esa persona
-intente entrar por primera vez y la aplicación le diga cuál es.
+Deje `identificador_apple` vacío: se rellena en el paso 6.1, cuando esa persona
+intente entrar por primera vez.
 
 El resto del hogar se da de alta desde la propia aplicación, en Familia →
 *Añadir una persona*. La carga inicial es manual a propósito: importar los
@@ -497,28 +550,68 @@ Y dos cosas que **sí** dependen de esto, que es donde se pierde el tiempo:
 
 ---
 
-## 6. Vincular a las personas con su identificador de Apple
+## 6. Dar acceso a las personas
 
-Cada persona entra una vez y la aplicación le dirá qué hay que vincular.
+Nadie se vincula a mano: cada persona lo pide desde la aplicación y un
+administrador lo aprueba desde la aplicación.
 
-1. La persona abre la web (o la app) y pulsa **Entrar con Apple**.
-2. Como su identificador todavía no está en el registro, aparece un aviso con la
-   cadena que Apple asigna: algo como `000123.a1b2c3…`.
-3. Un administrador abre **Familia → la persona → Editar la ficha** y pega esa
-   cadena en *Identificador de Apple*. Si es la primera persona, y como todavía
-   no puede entrar nadie, hágalo desde la línea de órdenes:
-
-```bash
-wrangler d1 execute agenda-familiar --remote --command "
-  UPDATE persona SET identificador_apple = '000123.a1b2c3…' WHERE id = 'p-oscar'"
-```
-
+1. La persona abre la web (o la app), pulsa **Entrar con Apple** y escribe su
+   nombre en la pantalla que aparece.
+2. En el dispositivo de un administrador, la pantalla de **Familia** muestra
+   *Hay N personas esperando*.
+3. Ahí se ve quién dice ser y con qué correo, y se elige: darle acceso —creando
+   una ficha nueva o **vinculándola a una que ya exista**— o rechazar.
 4. Esa persona vuelve a pulsar **Entrar con Apple** y ya está dentro.
+
+El paso 3 tiene una trampa que conviene no pisar. Si quien pide entrar ya
+figuraba en el registro sin cuenta —la abuela, que cumple años y recibe
+regalos—, hay que elegirla en *Quién es* en lugar de crear una ficha nueva: así
+conserva su fecha de nacimiento y todo lo que otros escribieron con ella.
 
 El identificador que Apple entrega es **distinto para cada aplicación**, pero
 comparte el mismo App ID entre la web y iOS si el Services ID tiene ese App ID
 como *Primary*. Por eso el paso 4.2 importa: si se configura mal, la misma
-persona recibe dos identificadores y hay que vincular los dos.
+persona recibe dos identificadores y aparece dos veces en la bandeja.
+
+### 6.1 La primera vez: vincularse uno mismo
+
+La primera persona administradora no puede aprobarse a sí misma, así que su
+vínculo sí se escribe a mano. Pulse **Entrar con Apple**, envíe la solicitud, y
+lea de la base de datos el identificador que Apple le ha asignado:
+
+```bash
+wrangler d1 execute agenda-familiar --remote --command "
+  SELECT identificador_apple, correo, nombre_declarado FROM solicitud_acceso"
+```
+
+Con esa cadena, vincúlese a la ficha que creó en el paso 3 y borre la solicitud:
+
+```bash
+wrangler d1 execute agenda-familiar --remote --command "
+  UPDATE persona SET identificador_apple = '000123.a1b2c3…' WHERE id = 'p-oscar';
+  DELETE FROM solicitud_acceso WHERE identificador_apple = '000123.a1b2c3…'"
+```
+
+Vuelva a entrar y ya estará dentro. A partir de aquí, todo lo demás se hace
+desde la aplicación.
+
+### 6.2 Si no queda ningún administrador
+
+Darse de baja es un derecho y la aplicación no lo impide, ni siquiera a la última
+persona con permisos de administración (es la directriz 5.1.1(v) de la App
+Store). Pero si eso ocurre, no queda nadie que pueda aprobar solicitudes y estas
+se acumulan sin que nadie pueda tocarlas desde la aplicación.
+
+La salida es la misma que la del apartado 6.1: devolverle el rol a alguien desde
+la línea de órdenes.
+
+```bash
+wrangler d1 execute agenda-familiar --remote --command "
+  UPDATE persona SET rol = 'administrador' WHERE id = 'p-oscar' AND tiene_cuenta = 1"
+```
+
+Si esa persona también había perdido la cuenta, hay que rehacer el vínculo con
+Apple como en 6.1.
 
 ---
 
@@ -696,7 +789,7 @@ concreto que hacen que la revisión se tuerza.
 
 | Requisito | Dónde |
 |---|---|
-| Eliminar la cuenta desde la app (5.1.1(v)) | Ajustes → **Eliminar mi cuenta** |
+| Eliminar la cuenta desde la app (5.1.1(v)) | Ajustes → **Eliminar mi cuenta**, y **Retirar mi solicitud** en la sala de espera, que es la que el revisor sí puede probar |
 | Revocación del token ante Apple | Paso 4.5; sin la clave, la baja funciona pero no avisa |
 | Política de privacidad | `/privacidad`, servida por Pages |
 | Página de soporte | `/soporte` |
@@ -705,13 +798,20 @@ concreto que hacen que la revisión se tuerza.
 Antes de archivar, revise que el correo de contacto de `soporte.html` es el que
 quiere hacer público: esa página la lee cualquiera.
 
+Que la baja esté también en la sala de espera no es simetría: es lo único de la
+5.1.1(v) que quien revisa **puede ejercer**, porque a la cuenta aprobada no va a
+llegar. Un envío que solo ofreciera el borrado tras la aprobación se arriesga a
+un «no pudimos verificar la eliminación de cuenta» sin que nada esté mal.
+
 #### El obstáculo de verdad: el revisor no puede entrar
 
-Aquí el acceso es por invitación. Quien pulsa «Entrar con Apple» con un
-identificador que no está vinculado a ninguna persona recibe `sin_vincular`, y
-eso es exactamente lo que le va a pasar al equipo de revisión. Sin más, es un
-rechazo por la directriz 2.1 con el texto de siempre: «no pudimos acceder a la
-funcionalidad de la aplicación».
+Aquí el alta la aprueba una persona. Quien pulsa «Entrar con Apple» por primera
+vez deja una solicitud y se queda en la sala de espera, y eso es exactamente lo
+que le va a pasar al equipo de revisión. Sin más, es un rechazo por la directriz
+2.1 con el texto de siempre: «no pudimos acceder a la funcionalidad de la
+aplicación». Dígalo en las notas de revisión, además de dejar el botón a la
+vista: la sala de espera ofrece la demostración, pero conviene no depender de
+que el revisor la encuentre.
 
 La salida está construida desde el principio y es el **modo de demostración**:
 datos inventados, sin servidor, con el recorte por titular funcionando a la
@@ -719,20 +819,25 @@ vista. Va dentro del binario porque `npm run sync:ios` ejecuta antes
 `preparar-pwa.py`. Lo único que hay que hacer es decirlo en las notas de
 revisión, y decirlo en inglés, que es lo que lee quien revisa:
 
-> This is a private family organiser. Accounts are not self-service: a household
-> administrator links an Apple ID to a family member before that person can sign
-> in, so there is no demo account we can provide.
+> This is a private family organiser for a single household. Signing in with
+> Apple is open to anyone, but it does not grant access: it places you in a
+> waiting room until a household administrator approves you. We cannot provide
+> an approved account, because approval is what makes someone part of this
+> family's private records.
 >
 > To review the full app without an account, tap **"Ver una demostración con
 > datos de ejemplo"** on the sign-in screen and pick any of the family members.
 > The same week shows different content depending on who is looking — that is
 > the core feature: gift plans stay hidden from their recipient.
 >
-> Account deletion (guideline 5.1.1(v)) lives in **Settings (gear icon, top
-> right) → "Eliminar mi cuenta"**. It requires a signed-in account, so it is not
-> reachable from the demo. It unlinks the Apple ID, deletes devices,
-> notification preferences and permissions, and calls the Sign in with Apple
-> REST API to revoke the token.
+> Account deletion (guideline 5.1.1(v)) is available at both stages, and you can
+> test it end to end without approval:
+>
+> - From the waiting room, **"Retirar mi solicitud"** deletes the pending
+>   request and the email stored with it.
+> - Once approved, **Settings (gear icon, top right) → "Eliminar mi cuenta"**
+>   unlinks the Apple ID, deletes devices, notification preferences and
+>   permissions, and calls the Sign in with Apple REST API to revoke the token.
 >
 > Native capabilities in use: Sign in with Apple (native sheet), haptics, the
 > system share sheet, and local notifications scheduled on-device — reminders
@@ -895,8 +1000,9 @@ binario, para que un informe de fallos se pueda situar.
 1. TestFlight interno primero, en un iPhone real: la hoja nativa de Apple no se
    comporta igual en el simulador.
 2. Recorra desde el teléfono: entrar, sincronizar, un aviso local, compartir un
-   evento y **eliminar la cuenta**. Después vuelva a vincularse con el `UPDATE`
-   del paso 6, que es también el ensayo de la recuperación.
+   evento y **eliminar la cuenta**. Después vuelva a entrar: aparecerá en la
+   bandeja como una solicitud más, que es también el ensayo de la recuperación
+   del paso 6.1.
 3. Rellene la ficha, adjunte las notas de revisión de arriba y envíe.
 4. La primera revisión suele tardar entre uno y tres días.
 
@@ -958,6 +1064,7 @@ error visible: es arruinar una sorpresa.
 | CallMeBot | 0 €, servicio gratuito de un tercero y sin garantía |
 | Dominio | 10–15 € al año. `galoopa.store` ya está pagado; el subdominio no cuesta nada aparte |
 | Apple Developer Program | 99 € al año, solo si quiere la app iOS |
+| API de Anthropic | Se paga por uso y solo si configura la clave. Contar un día o proponer un regalo son unos cientos de palabras: con Haiku, céntimos al mes en un hogar |
 
 ---
 
@@ -971,7 +1078,8 @@ error visible: es arruinar una sorpresa.
 | El dominio propio no sale de «pending» en Pages | El CNAME no ha propagado o apunta a otro proyecto. `dig garciadoral-ops.galoopa.store CNAME` debe devolver su `pages.dev` |
 | `Could not detect a directory containing static files` | El proyecto es un Worker y no uno de Pages, o el *Build output directory* no es `pwa/publico`. Vea el aviso del paso 5.1 |
 | Se rompió la tienda de `galoopa.store` | Nada de este despliegue toca el apex. Revise si al añadir el CNAME se modificó por error el registro `A` que apunta a Shopify |
-| «Este identificador de Apple todavía no está vinculado» | Es el comportamiento correcto la primera vez: copie el identificador a la ficha (paso 6) |
+| Alguien se queda en «Tu solicitud está hecha» | Es el comportamiento correcto la primera vez: apruébela en Familia → *Hay N personas esperando* (paso 6) |
+| Una solicitud llega sin correo, o con uno de `privaterelay.appleid.com` | Esa persona eligió «Ocultar mi correo», o entró antes de que se pidiera el ámbito `email`. El nombre que escribió es entonces el único dato para reconocerla |
 | La aplicación entra pero no ve datos | `ORIGENES_PERMITIDOS` no incluye el dominio de la PWA, o `api` en `config.json` apunta a otro sitio |
 | Todo daba 401 de repente | Cambió `SESION_SECRETO`; hay que volver a entrar |
 | El plan del domingo no sale | Mire la traza en Actions. Lo más común es `AGENDA_URL` sin `/api/registro` al final, o `AGENDA_TOKEN` distinto de `TOKEN_SERVICIO` |
@@ -980,6 +1088,11 @@ error visible: es arruinar una sorpresa.
 | El bundle OTA carga en blanco | `index.html` no quedó en la raíz del zip | Se empaqueta el **contenido** de `publico/`, no la carpeta; el workflow ya lo hace así |
 | La app revierte la actualización sola | No se llamó a `notifyAppReady()` | Lo hace `iniciarNativo()` al arrancar; compruebe que `app.js` lo sigue llamando |
 | El despachador dejó de ejecutarse | GitHub deshabilita los workflows programados tras sesenta días sin commits en la rama por defecto. Reactívelo desde Actions y active el workflow `mantenimiento` |
+| Una ruta nueva de la API contesta 404 | El Worker no se ha desplegado. Lance `desplegar-api` desde Actions, o `npm run desplegar` desde `api/`. La web y el OTA se publican solos; el Worker solo desde que existe ese workflow |
+| El botón de contar el día no aparece | No hay clave de Anthropic guardada. Póngala en Ajustes → Inteligencia artificial, que solo ven los administradores |
+| El botón de proponer un regalo no aparece | Lo mismo, o la idea todavía no tiene ninguna persona nombrada: con una etiqueta sola no se propone nada |
+| Contar el día siempre acaba compartiendo la lista tal cual | Algo falla en la llamada al modelo. El botón *Probar* de ese mismo apartado enseña la traza de cada intento: código HTTP, tipo de error y el mensaje de la API |
+| «demasiadas redacciones seguidas» o «demasiadas propuestas seguidas» | El freno por persona y minuto, compartido por las dos. Es deliberado: sin él, la clave de pago del hogar queda abierta a un bucle en la consola del navegador |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
 
 Trazas en vivo del Worker:
@@ -1013,6 +1126,8 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 1. `wrangler d1 create` y anotar el `database_id`.
 2. `npm run migrar:remoto`.
 3. `wrangler secret put` de los dos secretos y `npm run desplegar`.
+   Después, el secreto `CLOUDFLARE_API_TOKEN` en GitHub (paso 2.1) y ya no hay
+   que volver a desplegar a mano.
 4. Insertar a mano la primera persona administradora.
 5. App ID en Apple.
 6. Proyecto de Pages con salida `pwa/publico` y `config.json` relleno.

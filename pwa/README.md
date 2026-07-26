@@ -92,8 +92,15 @@ persona sin cuenta es un estado de primera clase, el de quien cumple años y
 recibe regalos pero no entra en la aplicación. La baja deshace el vínculo con
 Apple, los dispositivos, los avisos y los permisos, y deja a la persona ahí,
 con lo que la familia escribió sobre ella —que no es dato de la cuenta y no le
-pertenece a solas—. Volver exige que alguien vuelva a vincularla, igual que la
-primera vez.
+pertenece a solas—. Volver exige pasar otra vez por la sala de espera, igual que
+la primera vez.
+
+**Entrar por primera vez no da acceso a nada.** Quien entra con Apple sin estar
+en el registro escribe su nombre y queda en una sala de espera; un administrador
+lo ve en Familia y decide, vinculándolo a una ficha que ya exista o creando una
+nueva. Quien espera puede retirar su solicitud, que la borra entera: desde que
+se guarda el correo de alguien, la directriz 5.1.1(v) de la App Store aplica
+aunque no haya cuenta. Está detallado en `specs/autenticacion.md`.
 
 ---
 

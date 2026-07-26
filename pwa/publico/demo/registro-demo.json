@@ -8,7 +8,9 @@
       "fecha_nacimiento": "1980-05-12",
       "parentesco": "madre",
       "tiene_cuenta": true,
-      "rol": "administrador"
+      "rol": "administrador",
+      "circulo": "familia",
+      "genero": "f"
     },
     {
       "id": "p-oscar",
@@ -17,7 +19,9 @@
       "fecha_nacimiento": "1978-11-03",
       "parentesco": "padre",
       "tiene_cuenta": true,
-      "rol": "administrador"
+      "rol": "administrador",
+      "circulo": "familia",
+      "genero": "m"
     },
     {
       "id": "p-marta",
@@ -26,7 +30,9 @@
       "fecha_nacimiento": "2010-08-01",
       "parentesco": "hija",
       "tiene_cuenta": true,
-      "rol": "miembro"
+      "rol": "miembro",
+      "circulo": "familia",
+      "genero": "f"
     },
     {
       "id": "p-lucia",
@@ -35,21 +41,75 @@
       "fecha_nacimiento": "2013-02-19",
       "parentesco": "hija",
       "tiene_cuenta": true,
-      "rol": "miembro"
+      "rol": "miembro",
+      "circulo": "familia",
+      "genero": "f"
     },
     {
       "id": "p-abuela",
       "nombre": "la abuela",
       "fecha_nacimiento": "1949-07-30",
       "parentesco": "abuela",
-      "tiene_cuenta": false
+      "tiene_cuenta": false,
+      "circulo": "extendida",
+      "genero": "f"
     },
     {
       "id": "p-abuelo",
       "nombre": "el abuelo",
       "fecha_nacimiento": "1947-03-05",
       "parentesco": "abuelo",
-      "tiene_cuenta": false
+      "tiene_cuenta": false,
+      "circulo": "extendida",
+      "genero": "m"
+    },
+    {
+      "id": "p-rosa",
+      "nombre": "Rosa",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1972-08-21",
+      "parentesco": "tía",
+      "tiene_cuenta": false,
+      "circulo": "extendida",
+      "genero": "f"
+    },
+    {
+      "id": "p-javi",
+      "nombre": "Javi",
+      "apellidos": "Ejemplo",
+      "parentesco": "tío",
+      "tiene_cuenta": false,
+      "circulo": "extendida",
+      "genero": "m"
+    },
+    {
+      "id": "p-nacho",
+      "nombre": "Nacho",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1979-08-09",
+      "parentesco": "amigo",
+      "tiene_cuenta": false,
+      "circulo": "amigos",
+      "genero": "m"
+    },
+    {
+      "id": "p-bea",
+      "nombre": "Bea",
+      "apellidos": "Ejemplo",
+      "parentesco": "amiga",
+      "tiene_cuenta": false,
+      "circulo": "amigos",
+      "genero": "f"
+    },
+    {
+      "id": "p-diego",
+      "nombre": "Diego",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1980-04-27",
+      "parentesco": "amigo",
+      "tiene_cuenta": false,
+      "circulo": "amigos",
+      "genero": "m"
     }
   ],
   "atributos_persona": [
@@ -466,8 +526,8 @@
           "etiqueta_id": "e-cocina"
         }
       ],
+      "estado": "en_curso",
       "tipo": "sugerencia",
-      "estado": "activa",
       "activa": true
     },
     {
@@ -481,6 +541,37 @@
           "persona_id": "p-marta"
         }
       ],
+      "estado": "activa",
+      "activa": true
+    },
+    {
+      "id": "id-hamaca",
+      "titulo": "Hamaca de playa",
+      "autor_id": "p-oscar",
+      "categoria_id": "casa_cocina",
+      "precio_min": 40,
+      "precio_max": 70,
+      "estado": "en_curso",
+      "orientaciones": [
+        {
+          "persona_id": "p-abuela"
+        }
+      ],
+      "tipo": "sugerencia",
+      "activa": true
+    },
+    {
+      "id": "id-rutas",
+      "titulo": "Guía de rutas por Asturias",
+      "autor_id": "p-ana",
+      "categoria_id": "libros_musica",
+      "precio_max": 25,
+      "orientaciones": [
+        {
+          "persona_id": "p-rosa"
+        }
+      ],
+      "tipo": "sugerencia",
       "estado": "activa",
       "activa": true
     }
@@ -501,6 +592,29 @@
         }
       ],
       "activa": true
+    },
+    {
+      "id": "oc-cumple-abuela-2026",
+      "nombre": "Cumpleaños de la abuela 2026",
+      "fecha": "2026-07-30",
+      "estado": "abierta",
+      "participantes": [
+        "p-abuela"
+      ],
+      "presupuestos": [],
+      "activa": true
+    },
+    {
+      "id": "oc-reyes-2026",
+      "nombre": "Reyes 2026",
+      "fecha": "2026-01-06",
+      "estado": "abierta",
+      "participantes": [
+        "p-marta",
+        "p-lucia"
+      ],
+      "presupuestos": [],
+      "activa": true
     }
   ],
   "regalos": [
@@ -513,6 +627,29 @@
       "estado": "comprado",
       "coste_real": 96.5,
       "categoria_id": "deporte",
+      "compartido": false,
+      "codestinatarios": [],
+      "activo": true
+    },
+    {
+      "id": "rg-hamaca",
+      "ocasion_id": "oc-cumple-abuela-2026",
+      "idea_id": "id-hamaca",
+      "destinatario_principal_id": "p-abuela",
+      "estado": "pendiente",
+      "categoria_id": "casa_cocina",
+      "compartido": false,
+      "codestinatarios": [],
+      "activo": true
+    },
+    {
+      "id": "rg-ceramica",
+      "ocasion_id": "oc-reyes-2026",
+      "idea_id": "id-ceramica",
+      "destinatario_principal_id": "p-lucia",
+      "responsable_id": "p-oscar",
+      "estado": "pendiente",
+      "categoria_id": "experiencias",
       "compartido": false,
       "codestinatarios": [],
       "activo": true

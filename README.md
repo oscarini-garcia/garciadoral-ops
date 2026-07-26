@@ -34,8 +34,12 @@ otras vías. Es el requisito no funcional de mayor importancia del sistema.
 ```
 api/                  · Worker de Cloudflare y esquema de D1
 pwa/                  · la aplicación: web instalable y cáscara de iOS con OTA
-docs/                 · guía de despliegue
-herramientas/         · generación de iconos y datos de demostración
+docs/
+  despliegue-cloudflare.md · Cloudflare, Apple Developer y GitHub, paso a paso
+  mapa.md             · mapa del repositorio; generado, no se edita a mano
+herramientas/
+  preparar-pwa.py     · iconos y datos de demostración
+  mapa.py             · genera el mapa a partir del código
 .github/workflows/
   despachador.yml     · sondeo diario que despacha la cola
   plan-semanal.yml    · el plan de la semana entrante, los domingos por la tarde
@@ -58,10 +62,20 @@ datos/
 estado/
   plan-semanal.json   · qué semana se envió y a quién
 queue.json            · la cola del despachador
-tests/                · 77 pruebas sobre las reglas de las especificaciones
+tests/                · las reglas de las especificaciones, una prueba por regla
 ```
 
+Para orientarse sin recorrer todo esto, [`docs/mapa.md`](docs/mapa.md) lista los
+módulos con una línea cada uno, las rutas de la API, los workflows con su `cron`,
+las variables de entorno y el recuento de pruebas. Se genera del propio código
+—`python3 herramientas/mapa.py`—, de modo que no envejece, y es lo que el hook
+`SessionStart` inyecta al abrir una sesión de Claude Code.
+
 ### Correspondencia con las especificaciones
+
+Esta tabla es la lectura razonada. La mecánica —qué fichero cita qué apartado,
+extraída de los comentarios del propio código— está en `docs/mapa.md`, y es la
+que delata a un módulo que dejó de citar su especificación.
 
 | Documento | Dónde está implementado |
 |---|---|
@@ -73,6 +87,7 @@ tests/                · 77 pruebas sobre las reglas de las especificaciones
 | `specs/especificacion.md` §3.1 y §4.1 | `datos/catalogos.json`, `api/migraciones/0002_catalogos.sql` |
 | `specs/especificacion.md` §3 (visibilidad) | `api/src/visibilidad.js` y `api/src/filtrado.js` |
 | `specs/especificacion.md` §8 (acceso) | `api/src/apple.js` y `pwa/publico/js/sesion.js` |
+| `specs/autenticacion.md` (sala de espera y aprobación) | `api/src/solicitudes.js` |
 | `specs/especificacion.md` §9 (sin conexión) | `pwa/publico/js/sincronizacion.js` y `pwa/publico/js/almacen.js` |
 | `specs/ux.md` §11 (opción D) | `pwa/publico/js/vistas/` |
 

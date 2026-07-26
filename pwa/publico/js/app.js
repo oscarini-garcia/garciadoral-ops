@@ -4,7 +4,7 @@
  * La arquitectura es la opción D de `specs/ux.md`: la semana abre la
  * aplicación, la coordinación de regalos vive en su propia pestaña —se visita
  * con intención, no de paso— y la ficha de persona de la opción C hace de
- * pantalla de detalle dentro de Familia.
+ * pantalla de detalle dentro de Gente.
  *
  * El botón de crear pertenece a la pantalla y no a la aplicación: su acción
  * depende de dónde esté quien lo pulsa. Un botón genérico obligaría a elegir el
@@ -12,15 +12,23 @@
  * de evitar.
  */
 
-import { el, vaciar, abrirHoja, cerrarHoja, avisar, campo, seleccion } from './ui.js';
+import {
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
+} from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
-import { detener, estado, iniciar, instantanea, sincronizar, suscribir } from './sincronizacion.js';
+import {
+  detener, estado, guardarAjustesDeIa, iniciar, instantanea, leerAjustesDeIa,
+  probarRedaccion, sincronizar, suscribir,
+} from './sincronizacion.js';
 import {
   cargarConfiguracion,
   codigoDeAutorizacion,
+  consultarSolicitud,
   eliminarLaCuenta,
   entrarConApple,
+  pedirEntrar,
+  retirarSolicitud,
 } from './sesion.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
 import {
@@ -32,16 +40,25 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { hoy, instanciasEn, sumarDias } from './semana.js';
-import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
-import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
-import { pintarFamilia } from './vistas/familia.js';
+import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
+import { nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
+import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
-  semana: { titulo: 'Semana', pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
-  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirCapturaDeIdea(ctx) },
-  familia: { titulo: 'Familia', pintar: pintarFamilia, fab: (ctx) => abrirCapturaDeIdea(ctx) },
+  // La agenda no repite su nombre en la cabecera: la vista en la que se está ya
+  // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
+  // único de esa pantalla que cambia. Por eso su título es una función: cambia
+  // al pasar de semana, y con las demás pestañas no cambia nunca.
+  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
+  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => nuevoDesdeRegalos(ctx) },
+  // La pestaña se llama Gente en la barra; la clave conserva el nombre del
+  // módulo que la pinta, que es de donde sale. Y va sin botón flotante: la
+  // pantalla lleva un «+» dentro de cada círculo, y uno encima que hiciera otra
+  // cosa —apuntar una idea— dejaría dos signos iguales con dos significados a
+  // la vez (specs/ux.md §7.1).
+  familia: { titulo: 'Gente', pintar: pintarFamilia, fab: null },
   // En las pantallas sin acción de creación el botón no aparece.
   buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
 };
@@ -61,6 +78,9 @@ async function arrancar() {
   const sesion = leerSesion();
   if (sesion?.demostracion) return arrancarDemostracion(sesion.observador);
   if (sesion?.token) return arrancarAplicacion(sesion);
+  // Quien dejó una solicitud vuelve a su sala de espera sin pasar otra vez por
+  // Apple, y de paso se comprueba sola si ya le han aprobado.
+  if (sesion?.espera) return volverALaEspera(sesion.espera);
   return mostrarAcceso();
 }
 
@@ -82,6 +102,7 @@ function registrarServiceWorker() {
 
 function mostrarAcceso(mensaje = null) {
   document.getElementById('aplicacion').hidden = true;
+  document.getElementById('espera').hidden = true;
   const acceso = document.getElementById('acceso');
   acceso.hidden = false;
 
@@ -92,24 +113,191 @@ function mostrarAcceso(mensaje = null) {
   const boton = document.getElementById('botonApple');
   boton.onclick = async () => {
     try {
-      const { token, persona } = await entrarConApple(configuracion);
+      const respuesta = await entrarConApple(configuracion);
+
+      // Sin cuenta no hay error que mostrar: es el estado normal de quien acaba
+      // de descargarse la aplicación, y lo que toca es la sala de espera.
+      if (respuesta.estado !== 'activa') {
+        acceso.hidden = true;
+        guardarSesion({ espera: respuesta.token_espera });
+        return pintarEspera(respuesta.token_espera, respuesta);
+      }
+
       // Se descarta cualquier instantánea anterior: el almacén local pertenece
       // a un titular concreto y no debe sobrevivir a un cambio de persona.
       await olvidarTodo();
-      guardarSesion({ token, persona });
+      guardarSesion({ token: respuesta.token, persona: respuesta.persona });
       acceso.hidden = true;
-      await arrancarAplicacion({ token, persona });
+      await arrancarAplicacion(respuesta);
     } catch (error) {
-      mostrarAcceso(
-        error.identificador
-          ? `${error.message} El identificador que hay que vincular es ${error.identificador}.`
-          : error.message,
-      );
+      mostrarAcceso(error.message);
     }
   };
   boton.onkeydown = (evento) => { if (evento.key === 'Enter' || evento.key === ' ') boton.click(); };
 
   document.getElementById('botonDemo').onclick = () => elegirObservadorDemo();
+}
+
+// ---------------------------------------------------------- Sala de espera --
+
+/**
+ * Vuelve a la sala de espera al abrir la aplicación, y de paso pregunta.
+ *
+ * Si la aprobación llegó mientras tanto, la API lo dice y aquí solo queda
+ * mandar a esa persona por la puerta de siempre: entrar con Apple otra vez,
+ * ahora ya con cuenta. Si la credencial ha caducado —dura siete días— se vuelve
+ * a la pantalla de acceso sin drama.
+ */
+async function volverALaEspera(token) {
+  try {
+    const situacion = await consultarSolicitud(configuracion, token);
+    if (situacion.estado === 'activa') {
+      borrarSesion();
+      return mostrarAcceso('Ya tienes acceso. Vuelve a entrar con Apple.');
+    }
+    return pintarEspera(token, situacion);
+  } catch {
+    borrarSesion();
+    return mostrarAcceso();
+  }
+}
+
+const TEXTO_ESPERA = {
+  pendiente: {
+    titulo: 'Tu solicitud está hecha.',
+    cuerpo: 'La revisa una persona, así que no hay un plazo. Cuando te aprueben, entra otra vez con Apple y ya estarás dentro.',
+  },
+  rechazada: {
+    titulo: 'De momento, no.',
+    cuerpo: 'Esta cuenta no tiene acceso a la agenda. Si crees que es un error, habla con quien te pasó la aplicación.',
+  },
+};
+
+function pintarEspera(token, situacion) {
+  document.getElementById('aplicacion').hidden = true;
+  document.getElementById('acceso').hidden = true;
+  document.getElementById('espera').hidden = false;
+
+  const marco = vaciar(document.getElementById('esperaMarco'));
+
+  if (situacion.estado === 'sin_solicitud') return pintarFormulario(marco, token, situacion);
+
+  const texto = TEXTO_ESPERA[situacion.estado] || TEXTO_ESPERA.pendiente;
+  marco.append(
+    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
+    el('h1', { texto: texto.titulo }),
+    el('p', { class: 'acceso-texto', texto: texto.cuerpo }),
+  );
+
+  if (situacion.estado === 'pendiente') {
+    marco.append(el('button', {
+      class: 'boton crecer', type: 'button',
+      onclick: async (evento) => {
+        const boton = evento.currentTarget;
+        boton.disabled = true;
+        boton.textContent = 'Comprobando…';
+        await volverALaEspera(token);
+      },
+    }, ['Comprobar si ya está']));
+  }
+
+  // Retirar tiene que estar aquí, y no es una comodidad: desde que se guarda el
+  // correo de alguien, la directriz 5.1.1(v) de la App Store exige que pueda
+  // borrarlo desde dentro de la aplicación, tenga cuenta o no.
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button',
+    onclick: () => confirmarRetirada(token),
+  }, ['Retirar mi solicitud']));
+
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button', onclick: () => elegirObservadorDemo(),
+  }, ['Ver una demostración mientras tanto']));
+}
+
+/**
+ * El formulario de la sala de espera: un campo, el nombre.
+ *
+ * Se pide a mano porque Apple no lo da de forma fiable —solo llega en la
+ * primerísima autorización y nunca en el token—, y porque es lo único que
+ * identifica a quien pide entrar cuando ha elegido ocultar su correo.
+ */
+function pintarFormulario(marco, token, situacion) {
+  const nombre = entrada({ placeholder: 'Marta Ruiz', autocomplete: 'name' });
+
+  marco.append(
+    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
+    el('h1', { texto: 'Casi está.' }),
+    el('p', {
+      class: 'acceso-texto',
+      texto: 'Dinos quién eres y le llegará a quien puede darte acceso.',
+    }),
+    campo('Tu nombre', nombre),
+  );
+
+  if (situacion.correo) {
+    marco.append(el('p', {
+      class: 'pista',
+      texto: situacion.correo_privado
+        ? `Se enviará con ${situacion.correo}, la dirección de reenvío que te ha dado Apple.`
+        : `Se enviará con ${situacion.correo}.`,
+    }));
+  }
+
+  const enviar = el('button', {
+    class: 'boton crecer', type: 'button',
+    onclick: async () => {
+      if (!nombre.value.trim()) { avisar('Falta tu nombre'); return; }
+      enviar.disabled = true;
+      enviar.textContent = 'Enviando…';
+      try {
+        const resultado = await pedirEntrar(configuracion, token, nombre.value.trim());
+        pintarEspera(token, resultado);
+      } catch (error) {
+        enviar.disabled = false;
+        enviar.textContent = 'Pedir acceso';
+        avisar(error.message || 'No se ha podido enviar la solicitud.');
+      }
+    },
+  }, ['Pedir acceso']);
+
+  marco.append(enviar);
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button', onclick: () => salirDeLaEspera(),
+  }, ['Ahora no']));
+}
+
+function confirmarRetirada(token) {
+  abrirHoja('Retirar mi solicitud', (cuerpo) => {
+    cuerpo.append(el('p', {
+      texto: 'Se borra todo lo que hemos guardado de ti: tu nombre, tu correo y el vínculo con tu Apple ID. No queda constancia de que lo hayas pedido.',
+    }));
+    cuerpo.append(el('p', {
+      class: 'pista',
+      texto: 'Puedes volver a solicitarlo cuando quieras, entrando otra vez con Apple.',
+    }));
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+        onclick: async () => {
+          try {
+            await retirarSolicitud(configuracion, token);
+          } catch {
+            /* si ya no estaba, el resultado para quien mira es el mismo */
+          }
+          cerrarHoja();
+          await salirDeLaEspera();
+          avisar('Solicitud retirada');
+        },
+      }, ['Retirar']),
+    ]));
+  });
+}
+
+async function salirDeLaEspera() {
+  borrarSesion();
+  document.getElementById('espera').hidden = true;
+  mostrarAcceso();
 }
 
 async function elegirObservadorDemo() {
@@ -132,8 +320,11 @@ async function elegirObservadorDemo() {
         class: 'tarjeta', type: 'button',
         onclick: async () => {
           cerrarHoja();
+          // La demostración sustituye a la sesión que hubiera, incluida la de
+          // espera: se sale de ella y se vuelve entrando otra vez con Apple.
           guardarSesion({ demostracion: true, observador: persona.id });
           document.getElementById('acceso').hidden = true;
+          document.getElementById('espera').hidden = true;
           await arrancarDemostracion(persona.id);
         },
       }, [
@@ -183,6 +374,7 @@ function prepararInterfaz() {
   document.getElementById('botonAjustes').onclick = abrirAjustes;
 
   let ultimaInstantanea = null;
+  let ultimosRechazos = null;
 
   suscribir((datos, situacion) => {
     if (situacion.estado === 'sesion-caducada') {
@@ -191,6 +383,16 @@ function prepararInterfaz() {
       return;
     }
     pintarIndicador(situacion);
+
+    // Lo que el servidor no ha aplicado se dice, y una sola vez por lote: se vio
+    // guardado —la interfaz es optimista— y desaparece con esta instantánea. En
+    // silencio no parece un error, parece que la aplicación pierde cosas.
+    if (situacion.rechazados?.length && situacion.rechazados !== ultimosRechazos) {
+      ultimosRechazos = situacion.rechazados;
+      const cuantos = situacion.rechazados.length;
+      avisar(cuantos === 1 ? 'Un cambio no se ha podido guardar' : `${cuantos} cambios no se han podido guardar`);
+    }
+
     if (!datos) return;
     refrescar();
 
@@ -229,11 +431,20 @@ function refrescar() {
   ctx.vista = crearVista(datos);
   const definicion = PESTANAS[pestana];
 
-  document.getElementById('tituloPantalla').textContent = definicion.titulo;
+  const titulo = document.getElementById('tituloPantalla');
+  titulo.textContent = typeof definicion.titulo === 'function' ? definicion.titulo() : definicion.titulo;
+  // El de la agenda es una fecha y no un nombre: se compone más largo y se
+  // compone en cifras, así que se dibuja con su propio tamaño.
+  titulo.dataset.pestana = pestana;
   document.getElementById('fab').hidden = !definicion.fab;
 
+  // Cada pestaña parte de la pantalla desnuda y le añade las clases de
+  // disposición que necesite, sin heredar las de la anterior.
+  const pantalla = document.getElementById('pantalla');
+  pantalla.className = 'pantalla';
+
   definicion.pintar(
-    document.getElementById('pantalla'),
+    pantalla,
     document.getElementById('subcabecera'),
     ctx,
   );
@@ -248,10 +459,17 @@ const TEXTO_SINCRONIZACION = {
   demostracion: 'demostración',
 };
 
+/**
+ * El punto de la sincronización. El estado va en su color y, escrito, en la
+ * etiqueta: quien no ve el color lo oye igual, y quien lo ve no necesita leer
+ * «al día» a todas horas para saber que todo va bien.
+ */
 function pintarIndicador(situacion) {
   const indicador = document.getElementById('indicadorSync');
+  const texto = TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
   indicador.dataset.estado = situacion.estado;
-  document.getElementById('syncTexto').textContent = TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
+  indicador.setAttribute('aria-label', `Sincronización: ${texto}`);
+  indicador.setAttribute('title', texto);
 }
 
 // -------------------------------------------- Panel de estado y ajustes --
@@ -293,7 +511,11 @@ function abrirPanelDeSincronizacion() {
  * daría un peso que no tiene y le quitaría sitio a las cuatro que sí.
  */
 function abrirAjustes() {
+  const demostracion = estado().estado === 'demostracion';
+
   abrirHoja('Ajustes', (cuerpo) => {
+    // Quién eres queda fuera de los apartados: es lo primero que uno comprueba
+    // al entrar aquí, y no algo que se venga a cambiar.
     if (sesionActual?.persona?.nombre) {
       cuerpo.append(el('p', {
         class: 'pista',
@@ -301,33 +523,208 @@ function abrirAjustes() {
       }));
     }
 
-    const tema = seleccion(
-      [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
-      localStorage.getItem('agenda.tema') || 'auto',
-    );
-    tema.addEventListener('change', () => aplicarTema(tema.value));
-    cuerpo.append(campo('Aspecto', tema));
+    // Todos empiezan plegados. Ajustes es una lista de cosas que casi nunca se
+    // tocan: enseñarlas todas abiertas obliga a leerlas enteras para encontrar
+    // la única que se venía a buscar.
+    cuerpo.append(acordeon('Aspecto', (dentro) => {
+      const tema = seleccion(
+        [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
+        localStorage.getItem('agenda.tema') || 'auto',
+      );
+      tema.addEventListener('change', () => aplicarTema(tema.value));
+      dentro.append(campo('Tema', tema));
+    }));
 
-    cuerpo.append(bloqueDeVersion());
-    cuerpo.append(bloqueLegal());
+    if (ctx.vista?.esAdministrador() && !demostracion) {
+      cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
+    }
 
-    const demostracion = estado().estado === 'demostracion';
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
-        onclick: () => salir(),
-      }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
-    ]));
+    cuerpo.append(acordeon('La aplicación', (dentro) => {
+      dentro.append(bloqueDeVersion());
+      dentro.append(bloqueLegal());
+    }));
 
-    // La baja no está en la demostración porque allí no hay cuenta que dar de
-    // baja: nada de lo que se ve ha salido nunca de este navegador.
-    if (!demostracion) {
-      cuerpo.append(el('button', {
-        class: 'enlace-discreto', type: 'button',
-        onclick: () => confirmarBaja(),
-      }, ['Eliminar mi cuenta']));
+    cuerpo.append(acordeon('Tu cuenta', (dentro) => {
+      dentro.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+          onclick: () => salir(),
+        }, [demostracion ? 'Salir de la demostración' : 'Cerrar sesión']),
+      ]));
+
+      // La baja no está en la demostración porque allí no hay cuenta que dar de
+      // baja: nada de lo que se ve ha salido nunca de este navegador.
+      if (!demostracion) {
+        dentro.append(el('button', {
+          class: 'enlace-discreto', type: 'button',
+          onclick: () => confirmarBaja(),
+        }, ['Eliminar mi cuenta']));
+      }
+    }));
+  }, [
+    // Salir de aquí se hacía tocando fuera de la hoja, que es la convención de
+    // la plataforma pero no se ve. Con los apartados plegados la hoja es corta y
+    // queda mucho fuera que tocar; aun así, quien la busque merece una salida
+    // dibujada.
+    botonIcono('cerrar', { etiqueta: 'Cerrar los ajustes', tono: 'discreto', onclick: cerrarHoja }),
+  ]);
+}
+
+/**
+ * La configuración de la inteligencia artificial: la clave, el modelo y las
+ * instrucciones de lo que la agenda le pide.
+ *
+ * La clave y el modelo son de la instalación entera y no de una función: hoy la
+ * única que los usa es contar un día o un tramo antes de compartirlo, pero lo
+ * que venga después tirará de los mismos. Por eso el apartado se llama por la
+ * herramienta y no por el uso, y las instrucciones van dentro, una por función.
+ *
+ * Solo para administradores, y solo de escritura: la clave se guarda en el
+ * servidor y de vuelta llegan sus cuatro últimos caracteres, lo justo para
+ * reconocer cuál está puesta sin poder copiarla de esta pantalla.
+ *
+ * El botón de probar existe porque un fallo aquí es invisible desde la agenda
+ * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
+ * la clave, el modelo o la instrucción.
+ */
+function bloqueDeRedaccion(seccion) {
+  seccion.append(el('p', { class: 'pista', texto: 'Cargando…' }));
+
+  leerAjustesDeIa()
+    .then((ajustes) => vaciar(seccion).append(...formularioDeRedaccion(ajustes)))
+    .catch((error) => {
+      vaciar(seccion).append(
+        el('p', { class: 'pista', texto: `No he podido leer los ajustes: ${error.message}` }),
+      );
+    });
+}
+
+function formularioDeRedaccion(ajustes) {
+  const clave = entrada({
+    type: 'password', autocomplete: 'off', spellcheck: 'false',
+    placeholder: ajustes.hay_clave ? `Guardada, termina en ${ajustes.cola}` : 'sk-ant-…',
+  });
+
+  // Los modelos los da Anthropic para esa cuenta; si no contesta, la lista de
+  // reserva. El configurado se preselecciona aunque ya no esté en la lista.
+  const lista = ajustes.modelos.some((m) => m.id === ajustes.modelo)
+    ? ajustes.modelos
+    : [{ id: ajustes.modelo, nombre: ajustes.modelo }, ...ajustes.modelos];
+  const modelo = seleccion(lista.map((m) => ({ valor: m.id, texto: m.nombre })), ajustes.modelo);
+
+  const instruccion = el('textarea', { rows: '5', spellcheck: 'false' });
+  instruccion.value = ajustes.instruccion;
+
+  const regalo = el('textarea', { rows: '5', spellcheck: 'false' });
+  regalo.value = ajustes.regalo;
+
+  const felicitacion = el('textarea', { rows: '5', spellcheck: 'false' });
+  felicitacion.value = ajustes.felicitacion;
+
+  const traza = el('pre', { class: 'traza', hidden: true });
+  const contar = (texto, clase = 'traza') => {
+    traza.className = clase;
+    traza.textContent = texto;
+    traza.hidden = false;
+  };
+
+  const guardar = el('button', { class: 'boton crecer', type: 'button' }, ['Guardar']);
+  const probar = el('button', { class: 'boton', type: 'button' }, ['Probar']);
+
+  const conBotonesQuietos = async (activo, trabajo) => {
+    const antes = activo.textContent;
+    guardar.disabled = true;
+    probar.disabled = true;
+    activo.textContent = 'Un momento…';
+    try {
+      await trabajo();
+    } finally {
+      activo.textContent = antes;
+      guardar.disabled = false;
+      probar.disabled = false;
+    }
+  };
+
+  guardar.onclick = () => conBotonesQuietos(guardar, async () => {
+    try {
+      // La clave solo se manda si se ha escrito una: el campo en blanco no borra
+      // la que hay, que es lo que esperaría cualquiera al cambiar solo el modelo.
+      const guardado = await guardarAjustesDeIa({
+        clave: clave.value.trim() || undefined,
+        modelo: modelo.value,
+        instruccion: instruccion.value.trim(),
+        regalo: regalo.value.trim(),
+        felicitacion: felicitacion.value.trim(),
+      });
+      clave.value = '';
+      clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
+      avisar('Guardado');
+      refrescar();
+    } catch (error) {
+      contar(`No he podido guardar: ${error.message}`, 'traza mal');
     }
   });
+
+  probar.onclick = () => conBotonesQuietos(probar, async () => {
+    try {
+      const resultado = await probarRedaccion(iso(hoy()));
+      contar(resumenDeLaPrueba(resultado), resultado.texto ? 'traza bien' : 'traza mal');
+    } catch (error) {
+      contar(`No he podido probar: ${error.message}`, 'traza mal');
+    }
+  });
+
+  return [
+    el('p', {
+      class: 'pista',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son tres, contar los días antes de compartirlos, proponer un regalo y felicitar un cumpleaños.',
+    }),
+    campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
+    campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
+      ? 'Lista de reserva: Anthropic no ha respondido con los modelos de la cuenta.'
+      : 'Si falla, se prueba con los demás por orden.'),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Contar los días para compartirlos' }),
+    campo('Instrucción', instruccion, 'Lo que se le pide al modelo. Los eventos se los da la agenda aparte; aquí va solo el encargo.'),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Proponer un regalo' }),
+    campo('Instrucción', regalo, 'Se pide una tanda de cinco, y la agenda espera una por línea: si reescribes esto, conserva esa forma. Lo que se sabe de la persona —su edad, lo que ha pedido, lo que ya tiene apuntado y lo que recibió— se lo da aparte. Vacío, vuelve el encargo de origen.'),
+
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Felicitar un cumpleaños' }),
+    campo('Instrucción', felicitacion, 'También en tandas de cinco, una por línea, y es el único encargo con emojis: el texto se copia y se pega en un WhatsApp. Se le dan el nombre, los años que cumple y lo que hay apuntado de esa persona; los regalos no, porque quien lo lea es quien cumple. Vacío, vuelve el encargo de origen.'),
+
+    el('div', { class: 'acciones' }, [guardar, probar]),
+    el('p', {
+      class: 'pista',
+      texto: 'Guardar los guarda los tres. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+    }),
+    traza,
+  ];
+}
+
+/** El resultado de probar, con un renglón por intento: modelo, código, tiempo y
+ *  el mensaje de error tal como lo devuelve la API. */
+function resumenDeLaPrueba(resultado) {
+  const renglones = (resultado.intentos || []).map((intento) => {
+    const partes = [intento.modelo, intento.estado ? `HTTP ${intento.estado}` : 'sin respuesta'];
+    if (intento.ms !== null && intento.ms !== undefined) partes.push(`${intento.ms} ms`);
+    if (intento.tipo) partes.push(intento.tipo);
+    if (intento.mensaje) partes.push(intento.mensaje);
+    return `· ${partes.join(' · ')}`;
+  });
+
+  // Lo que el servidor no ha sabido resolver va primero, porque no es un fallo
+  // del modelo y no se descubre leyendo el texto: es un evento que el
+  // dispositivo compone y que aquí no se reconoce, y el mensaje sale corto sin
+  // que nadie lo note.
+  if (resultado.omitidos?.length) {
+    renglones.unshift(`⚠ sin resolver: ${resultado.omitidos.join(', ')}`, '');
+  }
+
+  if (resultado.texto) {
+    return [`Ha contestado ${resultado.modelo}:`, '', resultado.texto, '', ...renglones].join('\n');
+  }
+  return [resultado.motivo || 'no ha salido', '', ...renglones].join('\n');
 }
 
 /**
@@ -425,7 +822,7 @@ async function salir() {
   await olvidarTodo();
   borrarSesion();
   sesionActual = null;
-  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda();
+  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda(); reiniciarFamilia();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
 }

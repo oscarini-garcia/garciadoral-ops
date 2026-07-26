@@ -10,7 +10,7 @@
  */
 
 import { el, vaciar, entrada } from '../ui.js';
-import { formatearImporte } from '../modelo.js';
+import { estaActivo, formatearImporte, normalizar } from '../modelo.js';
 import { abrirDetalleIdea, abrirDetalleRegalo, abrirOcasion } from './regalos.js';
 
 let consulta = '';
@@ -19,9 +19,6 @@ export function reiniciarBusqueda() {
   consulta = '';
 }
 
-const normalizar = (texto) =>
-  String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
 export function pintarBuscar(pantalla, subcabecera, ctx) {
   vaciar(subcabecera);
   vaciar(pantalla);
@@ -29,7 +26,7 @@ export function pintarBuscar(pantalla, subcabecera, ctx) {
   const control = entrada({
     type: 'search',
     value: consulta,
-    placeholder: 'Buscar entre ideas y campañas',
+    placeholder: 'Buscar entre ideas y ocasiones',
     'aria-label': 'Buscar',
   });
   const resultados = el('div', {});
@@ -55,15 +52,15 @@ function componerResultados(ctx, texto) {
   const coincide = (...partes) => partes.some((parte) => normalizar(parte).includes(aguja));
 
   const ideas = (ctx.vista.datos.ideas || []).filter(
-    (idea) => idea.activa !== false && coincide(idea.titulo, idea.descripcion, idea.establecimiento),
+    (idea) => estaActivo(idea, 'activa') && coincide(idea.titulo, idea.descripcion, idea.establecimiento),
   );
 
   const ocasiones = (ctx.vista.datos.ocasiones || []).filter(
-    (ocasion) => ocasion.activa !== false && coincide(ocasion.nombre),
+    (ocasion) => estaActivo(ocasion, 'activa') && coincide(ocasion.nombre),
   );
 
   const regalos = (ctx.vista.datos.regalos || []).filter((regalo) => {
-    if (regalo.activo === false) return false;
+    if (!estaActivo(regalo)) return false;
     const idea = regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null;
     return coincide(idea?.titulo, ctx.vista.nombre(regalo.destinatario_principal_id));
   });
@@ -87,7 +84,7 @@ function componerResultados(ctx, texto) {
 
   if (ocasiones.length) {
     contenedor.append(el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: `Campañas (${ocasiones.length})` }),
+      el('p', { class: 'grupo-titulo', texto: `Ocasiones (${ocasiones.length})` }),
       ...ocasiones.map((ocasion) => el('button', {
         class: 'tarjeta', type: 'button', onclick: () => abrirOcasion(ocasion.id, ctx),
       }, [

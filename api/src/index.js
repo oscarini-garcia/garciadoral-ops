@@ -8,17 +8,34 @@
  * del sistema (spec funcional §9).
  *
  * Rutas:
- *   GET  /api/salud       · comprobación sin autenticar
- *   POST /api/sesion      · canjea un token de Apple por una sesión propia
- *   POST /api/cuenta/baja · elimina la cuenta de quien la pide (App Store 5.1.1)
- *   GET  /api/sync        · instantánea filtrada para el lector autenticado
- *   POST /api/cambios     · aplica la cola de cambios del dispositivo
- *   GET  /api/conflictos  · coordinación pendiente de revisar (administradores)
- *   GET  /api/registro    · registro completo para el generador del plan semanal
+ *   GET    /api/salud       · comprobación sin autenticar
+ *   POST   /api/sesion      · canjea un token de Apple por la sesión que corresponda
+ *   POST   /api/solicitud   · pide entrar (sala de espera)
+ *   GET    /api/solicitud   · en qué ha quedado la solicitud propia
+ *   DELETE /api/solicitud   · retira la solicitud propia (App Store 5.1.1)
+ *   POST   /api/cuenta/baja · elimina la cuenta de quien la pide (App Store 5.1.1)
+ *   GET    /api/sync        · instantánea filtrada para el lector autenticado
+ *   POST   /api/cambios     · aplica la cola de cambios del dispositivo
+ *   GET    /api/conflictos  · coordinación pendiente de revisar (administradores)
+ *   GET    /api/solicitudes · bandeja de quien espera (administradores)
+ *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
+ *   GET    /api/registro    · registro completo para el generador del plan semanal
+ *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
+ *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
+ *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
+ *   GET    /api/ia          · configuración de la redacción (administradores)
+ *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
+ *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
  */
 
 import { verificarTokenDeApple } from './apple.js';
-import { coincideEnTiempoConstante, emitirSesion, verificarSesion } from './sesion.js';
+import {
+  coincideEnTiempoConstante,
+  emitirEspera,
+  emitirSesion,
+  verificarSesionDeEspera,
+  verificarSesionPlena,
+} from './sesion.js';
 import {
   administradoresRestantes,
   aplicarCambio,
@@ -27,11 +44,43 @@ import {
   personaPorApple,
   personaPorId,
 } from './repositorio.js';
+import {
+  Rechazo,
+  anotarLlegada,
+  aprobarSolicitud,
+  pendientes,
+  purgarCaducadas,
+  rechazarSolicitud,
+  registrarSolicitud,
+  retirarSolicitud,
+  solicitudPorApple,
+} from './solicitudes.js';
 import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
+import {
+  cabeUnaMas,
+  componerMaterial,
+  componerMaterialDePeriodo,
+  componerMaterialDeFelicitacion,
+  componerMaterialDeRegalo,
+  configuracionPublica,
+  guardarConfiguracion,
+  interpretarFelicitaciones,
+  interpretarPropuestas,
+  leerConfiguracion,
+  modelosDisponibles,
+  redactar,
+} from './redaccion.js';
 
 const TIPOS_JSON = { 'content-type': 'application/json; charset=utf-8' };
+
+// Un día inventado para el botón de probar de Ajustes, cuando el de verdad no
+// tiene nada. Lo que se prueba es la configuración, no la agenda.
+const MATERIAL_DE_PRUEBA = {
+  titulo: 'martes 14 de Abril',
+  lineas: ['09:00 · Dentista de Marta · Calle Mayor 3', '17:30 · Entreno de baloncesto', 'todo el día · Cumpleaños de la abuela'],
+};
 
 function json(cuerpo, estado = 200, cabeceras = {}) {
   return new Response(JSON.stringify(cuerpo), {
@@ -47,7 +96,7 @@ function cabecerasCors(env, peticion) {
   return {
     'Access-Control-Allow-Origin': origen,
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Max-Age': '86400',
     Vary: 'Origin',
   };
@@ -59,7 +108,7 @@ function credencial(peticion) {
 }
 
 async function lectorAutenticado(peticion, env) {
-  const sesion = await verificarSesion(env.SESION_SECRETO, credencial(peticion));
+  const sesion = await verificarSesionPlena(env.SESION_SECRETO, credencial(peticion));
   const persona = await personaPorId(env.DB, sesion.sub);
   if (!persona || !persona.tiene_cuenta || !persona.activa) {
     throw new Error('la sesión ya no corresponde a una persona con cuenta activa');
@@ -67,34 +116,129 @@ async function lectorAutenticado(peticion, env) {
   return persona;
 }
 
+async function administradorAutenticado(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (lector.rol !== 'administrador') throw new SinPermiso('reservado a los administradores');
+  return lector;
+}
+
+/** Quien espera en la puerta. Su credencial no vale para nada más, y lleva
+ *  dentro el correo tal como lo dijo Apple. */
+async function enEspera(peticion, env) {
+  return verificarSesionDeEspera(env.SESION_SECRETO, credencial(peticion));
+}
+
+/** Un «no» por falta de permisos, que responde 403 en lugar de 500. */
+class SinPermiso extends Error {}
+
 // ---------------------------------------------------------------------------
 // Rutas
 // ---------------------------------------------------------------------------
 
+/**
+ * Canjea el token de Apple por la credencial que corresponda.
+ *
+ * Responde siempre 200 y dice en qué estado está ese identificador, porque
+ * llegar sin cuenta no es un error de autorización: es el estado normal de
+ * quien acaba de descargarse la aplicación, y el cliente necesita saber qué
+ * pantalla pintar. El identificador de Apple ya no se devuelve a nadie: con la
+ * bandeja no hay que copiarlo a ninguna parte (specs/autenticacion.md §7).
+ */
 async function abrirSesion(peticion, env) {
   const { id_token: idToken, plataforma = 'web' } = await peticion.json();
 
-  const { sub } = await verificarTokenDeApple(idToken, [env.APPLE_AUD_IOS, env.APPLE_AUD_WEB]);
-  const persona = await personaPorApple(env.DB, sub);
+  const { sub, email, correoPrivado } = await verificarTokenDeApple(
+    idToken,
+    [env.APPLE_AUD_IOS, env.APPLE_AUD_WEB],
+  );
 
-  if (!persona) {
-    // La incorporación se produce por invitación de un administrador, que
-    // vincula el identificador a la persona correspondiente (spec funcional §8).
-    return json(
-      {
-        error: 'sin_vincular',
-        mensaje: 'Este identificador de Apple todavía no está vinculado a ninguna persona del hogar.',
-        identificador: sub,
-      },
-      403,
-    );
+  const persona = await personaPorApple(env.DB, sub);
+  if (persona) {
+    const token = await emitirSesion(env.SESION_SECRETO, persona, plataforma);
+    return json({
+      estado: 'activa',
+      token,
+      persona: { id: persona.id, nombre: persona.nombre, rol: persona.rol },
+    });
   }
 
-  const token = await emitirSesion(env.SESION_SECRETO, persona, plataforma);
+  // Quien llama a la puerta es el momento natural para barrer lo caducado.
+  await purgarCaducadas(env.DB);
+
+  const solicitud = await solicitudPorApple(env.DB, sub);
+  if (solicitud) await anotarLlegada(env.DB, sub);
+
   return json({
-    token,
-    persona: { id: persona.id, nombre: persona.nombre, rol: persona.rol },
+    // Solo puede ser 'pendiente' o 'rechazada': la aprobación borra la fila, y
+    // quien la tuviera aprobada ya habría salido por la rama de arriba.
+    estado: solicitud ? solicitud.estado : 'sin_solicitud',
+    token_espera: await emitirEspera(env.SESION_SECRETO, sub, plataforma, {
+      direccion: email,
+      privado: correoPrivado,
+    }),
+    // El correo se devuelve para que la sala de espera pueda decir con cuál se
+    // ha solicitado: es lo único que verá quien decide, y quien lo envía tiene
+    // derecho a saberlo antes de enviarlo.
+    correo: email,
+    correo_privado: correoPrivado,
   });
+}
+
+// ------------------------------------------------------------ Sala de espera --
+
+async function pedirEntrar(peticion, env) {
+  const espera = await enEspera(peticion, env);
+  const { nombre } = await peticion.json().catch(() => ({}));
+
+  // Que ya esté vinculado significa que le aprobaron mientras rellenaba el
+  // formulario. No es un error: se le dice que ya está.
+  if (await personaPorApple(env.DB, espera.sub)) return json({ estado: 'activa' });
+
+  await purgarCaducadas(env.DB);
+  const solicitud = await registrarSolicitud(env.DB, {
+    identificadorApple: espera.sub,
+    correo: espera.correo,
+    correoPrivado: espera.correo_privado,
+    nombre,
+  });
+
+  return json({ estado: solicitud.estado, solicitado_en: solicitud.creado_en });
+}
+
+async function estadoDeLaSolicitud(peticion, env) {
+  const espera = await enEspera(peticion, env);
+  if (await personaPorApple(env.DB, espera.sub)) return json({ estado: 'activa' });
+
+  const solicitud = await solicitudPorApple(env.DB, espera.sub);
+  return json({ estado: solicitud ? solicitud.estado : 'sin_solicitud' });
+}
+
+async function retirar(peticion, env) {
+  const espera = await enEspera(peticion, env);
+  await retirarSolicitud(env.DB, espera.sub);
+  return json({ retirada: true });
+}
+
+// ------------------------------------------------------------------ Bandeja --
+
+async function bandeja(peticion, env) {
+  await administradorAutenticado(peticion, env);
+  await purgarCaducadas(env.DB);
+  return json({ solicitudes: await pendientes(env.DB) });
+}
+
+async function resolverSolicitud(peticion, env) {
+  const actor = await administradorAutenticado(peticion, env);
+  const { id, accion, persona_id: personaId, persona, rol } = await peticion.json();
+
+  if (accion === 'rechazar') {
+    return json(await rechazarSolicitud(env.DB, { id, actorId: actor.id }));
+  }
+  if (accion !== 'aprobar') return json({ error: `acción desconocida: ${accion}` }, 400);
+
+  return json(
+    await aprobarSolicitud(env.DB, { id, personaId, persona, rol }),
+  );
 }
 
 /**
@@ -151,7 +295,7 @@ async function darDeBaja(peticion, env) {
 async function sincronizar(peticion, env) {
   const lector = await lectorAutenticado(peticion, env);
   const registro = await leerRegistro(env.DB);
-  const instantanea = componerInstantanea(registro, lector);
+  const instantanea = await conBanderaDeRedaccion(env, componerInstantanea(registro, lector));
 
   await env.DB.prepare(
     `INSERT INTO dispositivo (id, persona_id, plataforma, ultima_sincronizacion)
@@ -188,12 +332,11 @@ async function recibirCambios(peticion, env) {
   // siempre con lo que le corresponde ver, incluido lo que acaba de dejar de
   // corresponderle por haber pasado a ser destinatario de algo.
   const registro = await leerRegistro(env.DB);
-  return json({ resultados, instantanea: componerInstantanea(registro, lector) });
+  return json({ resultados, instantanea: await conBanderaDeRedaccion(env, componerInstantanea(registro, lector)) });
 }
 
 async function conflictosPendientes(peticion, env) {
-  const lector = await lectorAutenticado(peticion, env);
-  if (lector.rol !== 'administrador') return json({ error: 'reservado' }, 403);
+  await administradorAutenticado(peticion, env);
   const { results } = await env.DB.prepare(
     'SELECT * FROM conflicto WHERE revisado = 0 ORDER BY detectado_en DESC',
   ).all();
@@ -216,16 +359,256 @@ async function registroCompleto(peticion, env) {
   return json(registro);
 }
 
+// ------------------------------------------------------- Redacción con IA --
+
+/**
+ * El dispositivo necesita saber si el botón de contar el día tiene algo detrás.
+ * Va la bandera, nunca la clave: la instantánea la recibe todo el mundo.
+ */
+async function conBanderaDeRedaccion(env, instantanea) {
+  const { clave } = await leerConfiguracion(env.DB);
+  return { ...instantanea, redaccion: { disponible: Boolean(clave) } };
+}
+
+/**
+ * Un día suelto o un tramo de días, según lo que traiga el cuerpo. Es la misma
+ * petición porque para quien la hace es el mismo gesto: contar lo que está
+ * mirando, sea un día, una semana o lo que viene.
+ */
+function materialDe(instantanea, { fecha, eventos = [], desde, hasta, dias }) {
+  if (desde) return componerMaterialDePeriodo(instantanea, { desde, hasta: hasta || desde, dias });
+  return componerMaterial(instantanea, fecha, eventos);
+}
+
+/**
+ * El día de hoy, contado por un modelo.
+ *
+ * El cliente manda una fecha y los identificadores de lo que está viendo; el
+ * texto que llega al modelo se compone aquí, a partir de la instantánea
+ * filtrada de quien pide, de modo que ni se le puede inyectar nada ni puede
+ * salir por ahí un evento que esa persona no ve.
+ */
+async function contarElDia(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas redacciones seguidas; prueba dentro de un minuto');
+  }
+
+  const cuerpo = await peticion.json().catch(() => ({}));
+  if (!cuerpo.fecha && !cuerpo.desde) return json({ error: 'falta la fecha' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = materialDe(componerInstantanea(registro, lector), cuerpo);
+
+  // Un identificador que el servidor no sabe resolver es un fallo suyo, no de
+  // quien pide: significa que el dispositivo compone algo que aquí no se
+  // reconoce, y el modelo cuenta entonces una semana incompleta sin que nadie
+  // se entere. Ya pasó una vez con los cumpleaños derivados.
+  if (material.omitidos?.length) {
+    console.warn('redacción con eventos sin resolver', JSON.stringify(material.omitidos));
+  }
+
+  const resultado = await redactar({ configuracion, material });
+
+  if (!resultado.texto) {
+    // El motivo se cuenta entero solo a quien puede arreglarlo. Al resto le
+    // basta con saber que no ha podido ser: su aplicación comparte tal cual.
+    console.warn('redacción fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        texto: null,
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({
+    texto: resultado.texto,
+    modelo: resultado.modelo,
+    omitidos: material.omitidos?.length || 0,
+  });
+}
+
+/**
+ * Una tanda de regalos propuestos para una persona.
+ *
+ * Son cinco de una vez, y no una, porque lo caro de esta llamada es contarle al
+ * modelo quién es la persona: eso se manda igual para una que para cinco, así
+ * que pasar de una propuesta a otra en el teléfono no cuesta nada. Pedir otra
+ * tanda sí es otra llamada, y lleva las ya propuestas para no repetirlas.
+ *
+ * El cliente manda a quién, la pista que quien apunta llevara escrita y los
+ * títulos que ya ha visto. Lo que se le cuenta al modelo lo compone el Worker
+ * con la instantánea filtrada de quien pide: sus atributos, lo que ha pedido,
+ * las ideas que ya hay y lo que recibió otros años. Una idea reservada para
+ * alguien no puede asomar por aquí, porque aquí no se lee el registro entero.
+ *
+ * Comparte el freno con la redacción del día: es la misma cuenta de pago y el
+ * mismo bucle en la consola el que la gastaría.
+ */
+async function sugerirUnRegalo(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
+  }
+
+  const {
+    persona_id: personaId, pista = '', descartadas = [],
+  } = await peticion.json().catch(() => ({}));
+  if (!personaId) return json({ error: 'falta la persona' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeRegalo(componerInstantanea(registro, lector), {
+    personaId, pista, descartadas,
+  });
+
+  if (!material.lineas.length) return json({ error: 'esa persona no está' }, 404);
+
+  // Cinco propuestas no caben en el tope de dos frases con el que se cuenta un
+  // día: con él, la quinta llega cortada a la mitad.
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.regalo, tope: 700,
+  });
+
+  const propuestas = interpretarPropuestas(resultado.texto);
+
+  if (!propuestas.length) {
+    console.warn('sugerencia fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        propuestas: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ propuestas, modelo: resultado.modelo });
+}
+
+/**
+ * Cinco felicitaciones para quien cumple, que se copian y se pegan en WhatsApp.
+ *
+ * Va por el mismo camino que la sugerencia de regalo —el mismo freno por minuto y
+ * la misma cadena de modelos—, y se diferencia en el material: lo compone
+ * `componerMaterialDeFelicitacion` con lo que quien cumple ya sabe de sí mismo, de
+ * modo que por aquí no puede salir hacia el modelo un regalo pendiente.
+ */
+async function felicitarUnCumple(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas felicitaciones seguidas; prueba dentro de un minuto');
+  }
+
+  const { persona_id: personaId, descartadas = [] } = await peticion.json().catch(() => ({}));
+  if (!personaId) return json({ error: 'falta la persona' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeFelicitacion(componerInstantanea(registro, lector), {
+    personaId, descartadas,
+  });
+
+  if (!material.lineas.length) return json({ error: 'esa persona no está' }, 404);
+
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.felicitacion, tope: 700,
+  });
+
+  const felicitaciones = interpretarFelicitaciones(resultado.texto);
+
+  if (!felicitaciones.length) {
+    console.warn('felicitación fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        felicitaciones: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ felicitaciones, modelo: resultado.modelo });
+}
+
+async function leerAjustesDeIa(peticion, env) {
+  await administradorAutenticado(peticion, env);
+  const configuracion = await leerConfiguracion(env.DB);
+  const { modelos, de } = await modelosDisponibles(configuracion.clave);
+  return json({ ...configuracionPublica(configuracion), modelos, modelos_de: de });
+}
+
+async function guardarAjustesDeIa(peticion, env) {
+  const administrador = await administradorAutenticado(peticion, env);
+  const { clave, modelo, instruccion, regalo, felicitacion } = await peticion.json().catch(() => ({}));
+  const configuracion = await guardarConfiguracion(env.DB, administrador, {
+    clave, modelo, instruccion, regalo, felicitacion,
+  });
+  return json(configuracionPublica(configuracion));
+}
+
+/**
+ * Redacta y devuelve la traza entera, haya salido bien o mal: con qué modelo se
+ * intentó, qué contestó cada uno y cuánto tardó. Es lo que convierte «no
+ * funciona» en algo que se puede mirar.
+ */
+async function probarLaRedaccion(peticion, env) {
+  const administrador = await administradorAutenticado(peticion, env);
+  const { fecha, eventos = [] } = await peticion.json().catch(() => ({}));
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const propio = componerMaterial(
+    componerInstantanea(registro, administrador),
+    fecha || new Date().toISOString().slice(0, 10),
+    eventos,
+  );
+
+  // Probar tiene que probar aunque el día esté vacío: lo que se comprueba es la
+  // clave, el modelo y la instrucción, no que hoy haya algo que contar.
+  const material = propio.lineas.length ? propio : MATERIAL_DE_PRUEBA;
+  const resultado = await redactar({ configuracion, material });
+
+  return json({
+    texto: resultado.texto,
+    modelo: resultado.modelo,
+    motivo: resultado.motivo || null,
+    intentos: resultado.intentos,
+    material: material.lineas,
+    omitidos: material.omitidos || [],
+  });
+}
+
 // ---------------------------------------------------------------------------
 
+// La resolución va por cuerpo y no por ruta con parámetro porque aquí los
+// caminos se comparan enteros. Meter segmentos variables obligaría a reescribir
+// el enrutador para una sola ruta.
 const RUTAS = [
   ['GET', '/api/salud', async () => json({ estado: 'ok', ahora: new Date().toISOString() })],
   ['POST', '/api/sesion', abrirSesion],
+  ['POST', '/api/solicitud', pedirEntrar],
+  ['GET', '/api/solicitud', estadoDeLaSolicitud],
+  ['DELETE', '/api/solicitud', retirar],
   ['POST', '/api/cuenta/baja', darDeBaja],
   ['GET', '/api/sync', sincronizar],
   ['POST', '/api/cambios', recibirCambios],
   ['GET', '/api/conflictos', conflictosPendientes],
+  ['GET', '/api/solicitudes', bandeja],
+  ['POST', '/api/solicitudes/resolver', resolverSolicitud],
   ['GET', '/api/registro', registroCompleto],
+  ['POST', '/api/redactar', contarElDia],
+  ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
+  ['POST', '/api/cumple/felicitar', felicitarUnCumple],
+  ['GET', '/api/ia', leerAjustesDeIa],
+  ['POST', '/api/ia', guardarAjustesDeIa],
+  ['POST', '/api/ia/probar', probarLaRedaccion],
 ];
 
 export default {
@@ -247,6 +630,13 @@ export default {
       return respuesta;
     } catch (error) {
       const mensaje = String(error.message || error);
+      // Un «no» previsible no es una avería: la sala de espera llena, una
+      // solicitud que el otro administrador acaba de resolver o una persona que
+      // ya tiene cuenta son respuestas legítimas, y el cliente tiene que poder
+      // distinguirlas de un fallo del servidor para saber qué decirle a quien
+      // está mirando la pantalla.
+      if (error instanceof SinPermiso) return json({ error: mensaje }, 403, cors);
+      if (error instanceof Rechazo) return json({ error: mensaje }, 409, cors);
       const autenticacion = /sesión|token|firma/i.test(mensaje);
       return json({ error: mensaje }, autenticacion ? 401 : 500, cors);
     }

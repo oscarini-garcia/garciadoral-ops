@@ -44,8 +44,24 @@ async function clavesDeApple() {
 }
 
 /**
- * Devuelve `{ sub, email }` si el token es auténtico y está vigente.
- * Lanza excepción en cualquier otro caso; nunca devuelve un resultado parcial.
+ * Apple no es consistente con los booleanos de sus reclamaciones: `email_verified`
+ * y `is_private_email` llegan unas veces como booleano y otras como la cadena
+ * `"true"`. Comparar con `true` a secas funciona hasta el día que no.
+ */
+function esCierto(valor) {
+  return valor === true || valor === 'true';
+}
+
+/**
+ * Devuelve los datos del token si es auténtico y está vigente. Lanza excepción
+ * en cualquier otro caso; nunca devuelve un resultado parcial.
+ *
+ * Del correo conviene desconfiar por partida doble. Solo llega si se pidió el
+ * ámbito `email` en la **primera** autorización de esa persona —ampliarlo
+ * después no vuelve a preguntar—, y si eligió «Ocultar mi correo» lo que llega
+ * es un buzón de reenvío que no identifica a nadie. Por eso `correo_privado`
+ * viaja hasta la bandeja: para que allí se diga, en lugar de mostrar una
+ * dirección incomprensible sin explicación.
  */
 export async function verificarTokenDeApple(idToken, audiencias) {
   const partes = String(idToken || '').split('.');
@@ -82,6 +98,12 @@ export async function verificarTokenDeApple(idToken, audiencias) {
     new TextEncoder().encode(`${cabeceraB64}.${cuerpoB64}`),
   );
   if (!valida) throw new Error('la firma del token de Apple no es válida');
+  if (!cuerpo.sub) throw new Error('el token de Apple no identifica a nadie');
 
-  return { sub: cuerpo.sub, email: cuerpo.email || null };
+  return {
+    sub: cuerpo.sub,
+    email: cuerpo.email || null,
+    correoPrivado: esCierto(cuerpo.is_private_email),
+    correoVerificado: esCierto(cuerpo.email_verified),
+  };
 }

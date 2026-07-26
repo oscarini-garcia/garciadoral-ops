@@ -23,12 +23,42 @@
   --sello-text: #5B7288;
   --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
 
+  /* El plano de arriba. Las hojas superpuestas no se sirven sobre el mismo
+     papel que las pestañas: llevan el suyo, un peldaño por encima, y dentro de
+     ellas la escala de papeles se recalcula entera (véase `.hoja`) para que lo
+     que va dentro conserve su relieve. En claro es un pliego más blanco y menos
+     cálido; en oscuro es **más claro**, que es como se lee la elevación cuando
+     no hay luz: lo que está más cerca recibe más. */
+  --paper-alto:   #FFFDFA;
+  --paper-alto-2: #F6F2EA;
+  --paper-alto-3: #EDE8DE;
+  --borde-alto:   rgba(28, 43, 51, .06);
+  /* El velo era un negro fijo para los dos temas, y en el oscuro no separaba
+     nada. Va uno por tema, y de paso más denso: lo de detrás deja de competir
+     con lo que se ha venido a leer. */
+  --velo:         rgba(8, 16, 20, .55);
+  /* La de las tarjetas decía «esto está apoyado». Una hoja no está apoyada:
+     está encima, y a bastante altura. */
+  --sombra-alta:  0 -2px 6px rgba(28, 43, 51, .10), 0 -20px 50px rgba(28, 43, 51, .22);
+  /* El hueco donde se escribe. No es un peldaño de la escala de papeles: esa
+     va en direcciones distintas según el tema —hacia el gris en claro, hacia la
+     luz en oscuro—, y un campo tiene que hundirse en los dos. Un hueco no se
+     levanta. Va uno por plano, porque dentro de una hoja el papel es otro y el
+     hueco tiene que seguir quedando por debajo del suyo. */
+  --hueco:            #F0EBE0;
+  --hueco-linea:      #DCD6C9;
+  --hueco-alto:       #F5F0E7;
+  --hueco-alto-linea: #E3DDD0;
+
   --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
   --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
 
   --radio: 12px;
   --toque: 44px;
+  /* Lo que mide la barra de pestañas: el toque más su aire. Lo usan la hoja
+     —para que sus botones no caigan sobre ella— y quien necesite dejarla libre. */
+  --alto-tabbar: 58px;
   --ancho: 620px;
 }
 
@@ -50,6 +80,16 @@
     --sello-line: rgba(156, 176, 186, .22);
     --sello-text: #9CB0BA;
     --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    --paper-alto:   #1E282D;
+    --paper-alto-2: #253238;
+    --paper-alto-3: #2C3C43;
+    --borde-alto:   rgba(231, 238, 241, .07);
+    --velo:         rgba(0, 0, 0, .68);
+    --sombra-alta:  0 -2px 6px rgba(0, 0, 0, .5), 0 -20px 50px rgba(0, 0, 0, .6);
+    --hueco:            #0A0F11;
+    --hueco-linea:      #2A363C;
+    --hueco-alto:       #131B1F;
+    --hueco-alto-linea: #2C3A41;
   }
 }
 
@@ -61,6 +101,11 @@
   --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
   --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
   --sello-bg: #E9EEF3; --sello-line: rgba(110,134,158,.22); --sello-text: #5B7288;
+  --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA; --paper-alto-3: #EDE8DE;
+  --borde-alto: rgba(28,43,51,.06); --velo: rgba(8,16,20,.55);
+  --sombra-alta: 0 -2px 6px rgba(28,43,51,.10), 0 -20px 50px rgba(28,43,51,.22);
+  --hueco: #F0EBE0; --hueco-linea: #DCD6C9;
+  --hueco-alto: #F5F0E7; --hueco-alto-linea: #E3DDD0;
 }
 :root[data-tema="oscuro"] {
   --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
@@ -68,6 +113,11 @@
   --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
   --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
   --sello-bg: #1A252B; --sello-line: rgba(156,176,186,.22); --sello-text: #9CB0BA;
+  --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
+  --borde-alto: rgba(231,238,241,.07); --velo: rgba(0,0,0,.68);
+  --sombra-alta: 0 -2px 6px rgba(0,0,0,.5), 0 -20px 50px rgba(0,0,0,.6);
+  --hueco: #0A0F11; --hueco-linea: #2A363C;
+  --hueco-alto: #131B1F; --hueco-alto-linea: #2C3A41;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -92,7 +142,10 @@ html, body {
   -webkit-touch-callout: none;
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 16px;
+  /* La escala de texto sube un punto sobre la anterior. La agenda se lee de
+     lejos y de paso —el móvil en la mano mientras se hace otra cosa—, y un
+     cuerpo pequeño obliga a acercarse justo cuando no se puede. */
+  font-size: 17px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
@@ -104,7 +157,7 @@ button { background: none; border: 0; cursor: pointer; }
 
 .eyebrow {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -128,25 +181,25 @@ button { background: none; border: 0; cursor: pointer; }
   letter-spacing: -.015em;
   text-wrap: balance;
 }
-.acceso-texto { color: var(--ink-soft); font-size: 14.5px; max-width: 34ch; }
+.acceso-texto { color: var(--ink-soft); font-size: 15.5px; max-width: 34ch; }
 .acceso-aviso {
   background: var(--regalo-suave);
   color: var(--regalo);
   border-radius: var(--radio);
   padding: 12px 14px;
-  font-size: 13.5px;
+  font-size: 14.5px;
 }
 .apple-boton {
   min-height: var(--toque);
   display: flex; align-items: center; justify-content: center; gap: 9px;
   background: var(--ink); color: var(--paper);
   border-radius: var(--radio);
-  font-weight: 500; font-size: 15px;
+  font-weight: 500; font-size: 16px;
   user-select: none;
 }
 .enlace-discreto {
   color: var(--ink-soft);
-  font-size: 13.5px;
+  font-size: 14.5px;
   text-decoration: underline;
   text-underline-offset: 3px;
   min-height: var(--toque);
@@ -163,23 +216,40 @@ button { background: none; border: 0; cursor: pointer; }
   border-bottom: 1px solid var(--line);
   padding: max(10px, env(safe-area-inset-top)) 20px 0;
 }
-.cabecera-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-/* El título se queda con el hueco sobrante y empuja al indicador y a los
-   ajustes contra el borde, que es donde se buscan. */
-.cabecera-fila .titulo-pantalla { margin-right: auto; }
+.cabecera-fila { display: flex; align-items: baseline; gap: 12px; }
 .titulo-pantalla {
   font-family: var(--serif);
-  font-weight: 500; font-size: 24px; letter-spacing: -.01em;
+  font-weight: 500; font-size: 29px; letter-spacing: -.01em;
+  min-width: 0; text-wrap: balance;
 }
+/* El de la agenda lleva un año, así que sus cifras van de ancho fijo: si no, el
+   rótulo se mueve un pelo al pasar de mes. Del mismo tamaño que el de las demás
+   pestañas desde que dejó de nombrar los días del tramo —«Julio de 2026» y no
+   «20 – 26 de Julio de 2026»—, que ya están escritos en la columna de la
+   izquierda. Solo desborda la semana que cambia de año, una al año, y esa se
+   parte en dos antes que recortar el rótulo el resto del año. */
+.titulo-pantalla[data-pestana="semana"] {
+  font-variant-numeric: tabular-nums;
+}
+/* La agenda no pone título: allí la cabecera se queda con el indicador y los
+   ajustes, que van igualmente contra el borde porque quien empuja es el
+   indicador y no el título. */
+.titulo-pantalla:empty { display: none; }
 .subcabecera { display: flex; align-items: center; gap: 8px; padding: 8px 0 10px; flex-wrap: wrap; }
 .subcabecera:empty { padding: 0 0 10px; }
 
+/* Solo el punto, con sitio alrededor para que el dedo lo encuentre: sin la
+   palabra, el blanco que la rodea es lo único que lo hace tocable. */
 .sync {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em;
+  display: inline-flex; align-items: center; justify-content: center;
+  align-self: center;
+  margin-left: auto;
+  width: 28px; height: 28px; margin-right: -4px;
+  border-radius: 50%;
   color: var(--ink-faint);
 }
-.sync i { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); }
+.sync i { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); }
+.sync:hover { background: var(--paper-2); }
 .sync[data-estado="sincronizando"] i { background: var(--aviso); animation: latido 1.1s ease-in-out infinite; }
 .sync[data-estado="sin-conexion"] i { background: var(--ink-faint); }
 .sync[data-estado="error"] i { background: var(--regalo); }
@@ -200,19 +270,28 @@ button { background: none; border: 0; cursor: pointer; }
 .progreso { margin: 10px 0 0; display: grid; gap: 6px; }
 .progreso li {
   display: flex; align-items: baseline; gap: 8px;
-  font-size: 14px; color: var(--ink-faint);
+  font-size: 15px; color: var(--ink-faint);
   list-style: none;
 }
 .progreso li[data-estado="hecho"] { color: var(--ink-soft); }
 .progreso li[data-estado="curso"] { color: var(--ink); font-weight: 500; }
 .progreso li[data-estado="fallo"] { color: var(--regalo); }
-.progreso-marca { font-family: var(--mono); font-size: 12px; width: 1.2em; flex: none; }
+.progreso-marca { font-family: var(--mono); font-size: 13px; width: 1.2em; flex: none; }
 
 .pantalla {
   flex: 1;
   width: 100%; max-width: var(--ancho); margin: 0 auto;
   padding: 14px 20px calc(96px + env(safe-area-inset-bottom));
 }
+/* La agenda estira su cuerpo hasta el final de la pantalla: el deslizamiento
+   que pasa de semana se escucha ahí, y por debajo del domingo es donde el
+   pulgar encuentra sitio libre. Las ideas lo estiran por lo mismo. */
+.pantalla-agenda, .pantalla-ideas { display: flex; flex-direction: column; }
+.pantalla-agenda > *, .pantalla-ideas > * { flex: 1 0 auto; }
+/* El mes, la lista y las ideas reparten ese alto entre su contenido y el
+   blanco del final, que es lo que recibe el doble toque para crear. */
+.cuerpo-agenda, .cuerpo-ideas { display: flex; flex-direction: column; }
+.zona-libre { flex: 1 0 auto; min-height: 64px; }
 
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
@@ -225,10 +304,12 @@ button { background: none; border: 0; cursor: pointer; }
 .tab {
   min-height: var(--toque);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  font-size: 10.5px; letter-spacing: .02em; color: var(--ink-faint);
+  font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
   padding: 7px 4px;
 }
-.tab-icono { font-size: 17px; line-height: 1; }
+/* Dibujados sobre la rejilla de 24, igual que los de dentro de la
+   aplicación: heredan el color de la pestaña y con él su estado. */
+.tab-icono { width: 22px; height: 22px; display: block; }
 .tab[aria-current="page"] { color: var(--tinta); }
 
 .fab {
@@ -247,17 +328,53 @@ button { background: none; border: 0; cursor: pointer; }
 .seg {
   display: inline-flex; gap: 3px; padding: 3px;
   background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+  /* Sus rótulos no encogen: si se le quita anchura, el texto se sale por
+     debajo del borde en lugar de estrecharse. Antes que eso, que baje de línea
+     lo que venga detrás. */
+  flex: none;
 }
 .seg button {
-  min-height: 34px; padding: 4px 12px; border-radius: 7px;
-  font-size: 13px; color: var(--ink-soft);
+  min-height: 38px; padding: 6px 12px; border-radius: 7px;
+  font-size: 15.5px; color: var(--ink-soft);
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
 
 .paso { display: inline-flex; align-items: center; gap: 4px; }
-.paso button { width: 34px; height: 34px; border-radius: 8px; color: var(--ink-soft); font-size: 17px; }
+.paso button { width: 36px; height: 36px; border-radius: 8px; color: var(--ink-soft); font-size: 19px; }
 .paso button:hover { background: var(--paper-2); }
-.rango { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); min-width: 12ch; text-align: center; }
+
+/* Los mandos de la agenda, en una sola fila: con qué vista se mira, por dónde
+   se anda y cómo se lleva uno lo que ve. De cuándo se habla lo dice el título
+   de la pantalla, arriba, que es una fila que la agenda ya tenía puesta y no
+   estaba usando.
+   Son cuatro grupos en la anchura de un teléfono, así que el hueco entre ellos
+   es corto y los botones de compartir, algo más finos que los de una hoja. */
+.vistas { display: flex; align-items: center; gap: 6px; width: 100%; flex-wrap: wrap; }
+.compartir-periodo { display: inline-flex; gap: 6px; }
+.compartir-periodo:empty { display: none; }
+.vistas .icono-accion { width: 34px; height: 34px; }
+.vistas .icono-accion .icono-svg svg { width: 17px; height: 17px; }
+
+/* Los cuatro grupos —vistas, flechas, compartir y «Hoy»— no caben en la anchura
+   de un teléfono, y las flechas son lo único que sobra: el deslizamiento
+   lateral hace ya eso mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en
+   cuanto hay sitio, que es también donde el ratón se queda sin deslizamiento
+   con el que pasar de semana. El corte está medido: a 410 px entran justas. */
+@media (max-width: 409px) {
+  .vistas .paso { display: none; }
+  .compartir-periodo { margin-left: auto; }
+}
+/* En los teléfonos estrechos de verdad, el conmutador aprieta un poco más. */
+@media (max-width: 360px) {
+  .seg button { padding: 5px 7px; font-size: 13.5px; }
+}
+/* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
+.boton-hoy {
+  min-height: 38px; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper-2);
+  font-size: 15.5px; color: var(--ink-soft);
+}
+.boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
 
 .empujar { margin-left: auto; }
 
@@ -267,39 +384,55 @@ button { background: none; border: 0; cursor: pointer; }
 
 .dia {
   display: grid;
-  grid-template-columns: 46px 1fr;
+  grid-template-columns: 52px 1fr;
   gap: 10px;
   border-bottom: 1px solid var(--line);
   padding: 9px 0;
-  min-height: 52px;
+  min-height: 58px;
 }
 .dia[data-hoy="si"] { background: var(--tinta-suave); margin: 0 -12px; padding: 9px 12px; border-radius: 8px; }
 .dia-fecha { text-align: left; }
-.dia-inicial { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-faint); }
-.dia-numero { font-family: var(--serif); font-size: 19px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.dia-inicial { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-faint); }
+.dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .dia[data-hoy="si"] .dia-numero { color: var(--tinta); }
 .dia-contenido { display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: center; }
-.dia-vacio { color: var(--ink-faint); font-size: 14px; }
+/* El hueco de un día vacío ocupa todo su lado de la fila, que entera es la
+   superficie del doble toque con el que se crea el evento de ese día. */
+.dia-vacio {
+  align-self: stretch;
+  display: flex; align-items: center;
+  min-height: 28px;
+  color: var(--ink-faint); font-size: 15px;
+}
+
+/* Al cambiar de periodo, lo que entra lo hace por el lado del que se viene. */
+@keyframes entra-derecha { from { transform: translateX(16px); opacity: .35; } }
+@keyframes entra-izquierda { from { transform: translateX(-16px); opacity: .35; } }
+.entra-derecha { animation: entra-derecha .18s ease-out; }
+.entra-izquierda { animation: entra-izquierda .18s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .entra-derecha, .entra-izquierda { animation: none; }
+}
 
 .linea {
   display: flex; align-items: baseline; gap: 7px;
-  min-height: 26px; width: 100%; text-align: left;
+  min-height: 28px; width: 100%; text-align: left;
   padding: 2px 0; min-width: 0;
 }
-.linea-emoji { flex: 0 0 auto; font-size: 15px; }
-.linea-titulo { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; }
-.linea-hora { flex: 0 0 auto; font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.linea-emoji { flex: 0 0 auto; font-size: 16.5px; }
+.linea-titulo { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+.linea-hora { flex: 0 0 auto; font-family: var(--mono); font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .linea[data-continuacion="si"] .linea-titulo { color: var(--ink-soft); }
 .linea-banda { flex: 0 0 3px; align-self: stretch; border-radius: 2px; background: var(--tinta); opacity: .55; }
-.desbordamiento { font-size: 12.5px; color: var(--tinta); text-align: left; min-height: 24px; }
+.desbordamiento { font-size: 14px; color: var(--tinta); text-align: left; min-height: 26px; }
 
 /* Vista de mes */
 .mes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.mes-cabecera { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: var(--ink-faint); text-align: center; padding: 6px 0; }
+.mes-cabecera { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; color: var(--ink-faint); text-align: center; padding: 6px 0; }
 .mes-celda {
   aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px;
-  font-variant-numeric: tabular-nums; font-size: 13.5px; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums; font-size: 15.5px; color: var(--ink-soft);
 }
 .mes-celda[data-fuera="si"] { color: var(--ink-faint); opacity: .45; }
 .mes-celda[aria-pressed="true"] { background: var(--tinta); color: var(--paper); }
@@ -312,7 +445,7 @@ button { background: none; border: 0; cursor: pointer; }
 .grupo { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
 .grupo:first-child { margin-top: 6px; }
 .grupo-titulo {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: .13em;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--ink-faint);
 }
 
@@ -324,18 +457,27 @@ button { background: none; border: 0; cursor: pointer; }
   display: flex; flex-direction: column; gap: 6px;
   text-align: left; width: 100%;
 }
-.tarjeta h3 { font-size: 15.5px; font-weight: 600; letter-spacing: -.005em; }
-.tarjeta p { font-size: 13.5px; color: var(--ink-soft); }
+.tarjeta h3 { font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+.tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
 .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
 
 .etiqueta {
   display: inline-flex; align-items: center; gap: 5px;
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em;
-  padding: 3px 8px; border-radius: 999px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+  padding: 3px 9px; border-radius: 999px;
   background: var(--paper-3); color: var(--ink-soft);
 }
 .etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }
 .etiqueta[data-tono="tinta"] { background: var(--tinta-suave); color: var(--tinta); }
+
+/* Una idea ya seleccionada para un regalo: un visto y nada más. Sin caja, para
+   que no se lea como una casilla que se pueda desmarcar —no se desmarca: eso se
+   hace quitando el regalo— y sin palabra, que a la derecha de un título largo
+   lo partía en dos líneas. */
+.marca-seleccionada { display: grid; place-items: center; color: var(--tinta); flex: none; }
+/* Lo que falta por repartir y lo que se quedó sin comprar: no es un error, pero
+   es lo único de la lista que pide que alguien haga algo. */
+.etiqueta[data-tono="aviso"] { background: var(--paper-3); color: var(--aviso); }
 
 .sello {
   background: var(--sello-bg);
@@ -345,78 +487,414 @@ button { background: none; border: 0; cursor: pointer; }
   text-align: center;
   color: var(--sello-text);
 }
-.sello strong { display: block; font-family: var(--serif); font-size: 17px; font-weight: 500; }
-.sello span { font-size: 12.5px; opacity: .85; }
+.sello strong { display: block; font-family: var(--serif); font-size: 18.5px; font-weight: 500; }
+.sello span { font-size: 13.5px; opacity: .85; }
 
-.vacio { color: var(--ink-faint); font-size: 14px; padding: 22px 0; text-align: center; }
+.vacio { color: var(--ink-faint); font-size: 15px; padding: 22px 0; text-align: center; }
 
 .avatar {
   width: 42px; height: 42px; border-radius: 50%;
   display: grid; place-items: center;
-  font-family: var(--mono); font-size: 13px; letter-spacing: .04em;
+  font-family: var(--mono); font-size: 14px; letter-spacing: .04em;
   color: var(--paper); flex: 0 0 auto;
 }
 
-.personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; }
+/* Personas sin avatar: las iniciales sobre un color inventado no decían nada
+   que no dijera el nombre, que va justo debajo. En su sitio va lo que de
+   verdad se consulta —de quién es y cuándo cumple—, que además cabe en menos
+   alto (specs/ux.md §7.1). */
+.personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
 .persona {
-  display: flex; flex-direction: column; align-items: center; gap: 7px;
-  padding: 12px 6px; border-radius: var(--radio);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  /* Con cuatro columnas en un teléfono estrecho la celda baja de los setenta
+     píxeles, así que el relleno lateral es corto y el texto no se envuelve. */
+  padding: 9px 9px 10px; border-radius: var(--radio);
+  background: var(--paper-2); border: 1px solid var(--line);
+  text-align: left; min-height: var(--toque);
+  overflow: hidden;
 }
-.persona:hover { background: var(--paper-2); }
-.persona .avatar { width: 52px; height: 52px; font-size: 15px; }
-.persona-nombre { font-size: 13px; text-align: center; }
-.persona-nota { font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint); letter-spacing: .06em; }
+.persona:hover { background: var(--paper-3); }
+.persona-nombre {
+  font-size: 15px; line-height: 1.25;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.persona-quien {
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.3;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.persona-nota { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+/* Los años que hará, un peldaño por detrás de la fecha: acompañan, no compiten
+   con el dato que se ha venido a mirar. */
+.persona-anos { color: var(--ink-faint); opacity: .8; }
+.persona-nota[data-pronto="si"] .persona-anos { color: var(--ink-faint); }
+/* Lo que cumple dentro de un mes se dice en tinta; la fecha que falta, no en
+   blanco —un hueco no se ve— sino escrita y apagada. */
+.persona-nota[data-pronto="si"] { color: var(--tinta); }
+.persona-nota[data-falta="si"] { font-style: italic; }
+
+/* En la pantalla de personas el conmutador ocupa el ancho y reparte a partes
+   iguales: son dos rótulos de longitud muy distinta —«Familia Extendida» y
+   «Amigos»— y a lo ancho quedarían dos mitades desiguales. */
+.grupo > .seg { display: flex; }
+/* «Familia Extendida · 4» no cabe en media pantalla al cuerpo de los demás
+   conmutadores, y partido deja el recuento huérfano en la segunda línea. */
+.grupo > .seg button { flex: 1; font-size: 13px; padding: 5px 6px; white-space: nowrap; }
+
+/* El «+» de un círculo, al pie de su lista. Sigue diciendo a cuál añade, que
+   es lo que importaba de tenerlo dentro del grupo. */
+.anadir-persona {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  min-height: var(--toque); padding: 9px 13px;
+  border: 1.5px dashed var(--line); border-radius: var(--radio);
+  color: var(--ink-soft); font-size: 14.5px; text-align: left;
+}
+.anadir-persona:hover { border-color: var(--tinta); color: var(--tinta); background: var(--paper-2); }
+.anadir-signo { font-size: 19px; line-height: 1; }
+
+/* Buscar devuelve una tabla y no una rejilla: es donde hace falta el nombre
+   entero —lo que distingue a dos Marías—, de quién es y cuándo cumple, en tres
+   columnas que se leen hacia abajo de un vistazo. */
+.tabla-personas { overflow-x: auto; }
+.tabla-personas table { border-collapse: collapse; width: 100%; }
+.tabla-personas th, .tabla-personas td {
+  text-align: left; padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.tabla-personas th {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-faint); font-weight: 400;
+  padding-top: 0;
+}
+.tabla-personas td { font-size: 15px; }
+.tabla-personas td:nth-child(2) { color: var(--ink-soft); font-size: 13.5px; }
+.tabla-personas td:last-child { text-align: right; padding-right: 0; white-space: nowrap; }
+.tabla-personas tbody tr { cursor: pointer; }
+.tabla-personas tbody tr:hover { background: var(--paper-2); }
+.tabla-personas tbody tr:last-child td { border-bottom: 0; }
+
+/* El aspa que borra la búsqueda. `type="search"` trae una del navegador, pero
+   en la cáscara de iOS no aparece, que es justo donde se usa esto. */
+.buscador { position: relative; }
+.buscador input { padding-right: 40px; }
+.buscador-aspa {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: var(--ink-faint); font-size: 13px; line-height: 1;
+}
+.buscador-aspa:hover { background: var(--paper-3); color: var(--ink); }
+/* La `x` nativa de WebKit sobraría al lado de la nuestra. */
+.buscador input::-webkit-search-cancel-button { display: none; }
+
+/* La fecha, con las dos maneras de ponerla una al lado de la otra: el selector
+   del sistema para lo cercano, y el texto para 1947, que en un calendario está
+   a setenta y nueve pantallas. */
+.fecha-doble { display: flex; gap: 8px; }
+.fecha-doble > * { flex: 1 1 0; min-width: 0; }
+
+/* El teclado numérico de iPhone no trae tecla de retorno, así que de la casilla
+   escrita no se sale escribiendo. Este es el modo de salir, y solo aparece
+   mientras el campo tiene el foco. */
+.fecha-escrita { position: relative; display: flex; }
+.fecha-escrita input { width: 100%; }
+.fecha-escrita:focus-within input { padding-right: 62px; }
+.fecha-listo {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  min-height: 32px; padding: 0 11px; border-radius: 8px;
+  background: var(--tinta); color: var(--paper);
+  font-size: 13.5px; font-weight: 500; letter-spacing: .01em;
+}
 
 /* --------------------------------------------------------------- Formulario -- */
 
 .campo { display: flex; flex-direction: column; gap: 6px; }
-.campo > label { font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
+.campo > label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
 .campo input, .campo select, .campo textarea {
   min-height: var(--toque);
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--hueco);
+  border: 1px solid var(--hueco-linea);
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 16px; /* evita el zoom automático de iOS */
+  font-size: 16.5px; /* de 16 para arriba, o iOS hace zoom al enfocar */
 }
 .campo textarea { min-height: 84px; resize: vertical; }
-.pista { font-size: 12.5px; color: var(--ink-soft); }
+
+/* La propuesta de la IA se pide desde el final del campo que va a rellenar, con
+   el destello dentro del recuadro. El hueco solo se reserva cuando el botón
+   está: sin persona a quien regalarle nada, el título escribe de borde a borde. */
+.campo[data-con-destello] { position: relative; }
+.campo[data-con-destello] input { padding-right: 48px; }
+.destello-campo {
+  position: absolute; right: 5px; bottom: 5px;
+  width: 34px; height: 34px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--tinta-suave); color: var(--tinta);
+}
+.destello-campo:disabled { opacity: .5; cursor: default; }
+.destello-campo .icono-svg svg { width: 17px; height: 17px; }
+
+/* La tanda de cinco: se pasan con las flechas y solo cambia el texto. El hueco
+   lleva el alto reservado a propósito, porque si la tarjeta creciera con la
+   propuesta más larga, «Usarla» se escaparía de debajo del dedo al pasar. */
+.propuesta {
+  border: 1px solid var(--tinta); border-radius: var(--radio); background: var(--tinta-suave);
+  padding: 11px 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.propuesta-cuerpo { display: flex; align-items: center; gap: 9px; }
+.propuesta-texto {
+  flex: 1; min-width: 0; min-height: 72px;
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+}
+.propuesta-que { font-size: 16px; font-weight: 500; }
+.propuesta-porque { font-size: 14px; color: var(--ink-soft); }
+/* Una felicitación es un párrafo, no un título de ocho palabras: ocupa dos o
+   tres líneas y el hueco reservado crece con ella para que el marco siga sin
+   moverse al pasar de una a otra. */
+.propuesta-felicitacion { font-size: 15.5px; line-height: 1.45; }
+.propuesta[data-holgado="si"] .propuesta-texto { min-height: 104px; }
+.propuesta-flecha {
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  display: grid; place-items: center;
+  background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+  font-family: var(--serif); font-size: 19px; line-height: 1;
+}
+.propuesta-flecha:disabled { opacity: .35; cursor: default; }
+.propuesta-pie { display: flex; align-items: center; gap: 8px; }
+.propuesta-cuenta {
+  margin-left: auto;
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.pista { font-size: 14px; color: var(--ink-soft); }
 .pista[data-tono="aviso"] { color: var(--aviso); }
 
 .acciones { display: flex; gap: 9px; margin-top: 4px; }
 .boton {
   min-height: var(--toque); padding: 10px 18px; border-radius: 10px;
-  font-size: 15px; font-weight: 500;
+  font-size: 16px; font-weight: 500;
   background: var(--tinta); color: var(--paper);
 }
 .boton[data-tono="discreto"] { background: var(--paper-3); color: var(--ink); }
 .boton[data-tono="peligro"] { background: transparent; color: var(--regalo); }
 .boton:disabled { opacity: .5; cursor: default; }
+/* Botón de dentro de una tarjeta, más bajo que los de una hoja: ahí compiten
+   con el texto y no deben ganarle. */
+/* Un botón que lleva su dibujo delante. Hace falta decirlo porque el icono se
+   dibuja como bloque —para que el SVG no cuelgue de la línea base— y sin esto se
+   pondría en un renglón propio, encima del texto. */
+.boton[data-con-icono] { display: flex; align-items: center; justify-content: center; gap: 9px; }
+.boton[data-con-icono] .icono-svg svg { width: 17px; height: 17px; }
+
+.boton-mini {
+  min-height: 36px; padding: 7px 14px; border-radius: 9px; font-size: 15px;
+  background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+}
+.boton-mini[data-tono="principal"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+.boton-mini:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
+
+/* Una de las maneras de compartir, en la hoja que se abre al tocar el botón.
+   Lleva su dibujo a la izquierda y su explicación debajo del nombre, que es lo
+   que un icono suelto en una cabecera no puede decir. */
+.eleccion {
+  display: flex; align-items: center; gap: 12px; text-align: left; width: 100%;
+  min-height: var(--toque); padding: 11px 13px;
+  border: 1px solid var(--line); border-radius: var(--radio);
+  background: var(--paper-2); color: var(--ink);
+}
+.eleccion:hover { background: var(--paper-3); }
+.eleccion:disabled { opacity: .5; cursor: default; }
+.eleccion .icono-accion { flex: none; }
+.eleccion-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eleccion-nombre { font-size: 15.5px; }
+.eleccion-pista { font-size: 13px; color: var(--ink-soft); }
+
+
+/* La idea marcada en el selector de regalos. Reutiliza la fila de `.eleccion`
+   —el mismo dibujo que las dos maneras de compartir— y le antepone una casilla:
+   sin ella, nada diría que se puede marcar más de una. */
+.eleccion-idea { flex-direction: row; align-items: center; gap: 12px; }
+.eleccion-idea[aria-pressed="true"] { border-color: var(--tinta); background: var(--tinta-suave); }
+.casilla {
+  width: 21px; height: 21px; border-radius: 6px; flex: none;
+  display: grid; place-items: center;
+  border: 1.6px solid var(--hueco-linea); background: var(--hueco);
+  color: var(--paper);
+}
+.eleccion-idea[aria-pressed="true"] .casilla { background: var(--tinta); border-color: var(--tinta); }
+.casilla .icono-svg svg { width: 13px; height: 13px; stroke-width: 2.6; }
+
+/* «Ver también las de otras personas»: sigue siendo la casilla del sistema,
+   que ya sabe anunciarse y responder al teclado, pero pintada a mano. Con el
+   dibujo del sistema, `accent-color` solo tiñe la marcada: la vacía la pintaba
+   el teléfono de negro y quedaba un cuadrado macizo en medio de la hoja. Se le
+   quita el dibujo y se le dan el hueco y la tinta de `.casilla`, que es la que
+   tiene al lado, con la marca hecha de dos bordes girados. */
+.conmutador { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--ink-soft); min-height: var(--toque); }
+.conmutador input {
+  appearance: none; -webkit-appearance: none;
+  width: 21px; height: 21px; border-radius: 6px; flex: none; margin: 0;
+  display: grid; place-items: center;
+  border: 1.6px solid var(--hueco-linea); background: var(--hueco);
+}
+.conmutador input:checked { background: var(--tinta); border-color: var(--tinta); }
+.conmutador input::after {
+  content: ''; width: 10px; height: 5px;
+  border-left: 2.4px solid var(--paper); border-bottom: 2.4px solid var(--paper);
+  border-radius: 1px;
+  transform: translateY(-1.5px) rotate(-45deg);
+  opacity: 0;
+}
+.conmutador input:checked::after { opacity: 1; }
+
+/* Apartado plegable. El triángulo del navegador se retira y en su lugar va un
+   ángulo a la derecha, que es donde el pulgar lo espera en un teléfono. */
+.acordeon { border-top: 1px solid var(--line); }
+.acordeon:last-of-type { border-bottom: 1px solid var(--line); }
+.acordeon > summary {
+  display: flex; align-items: center; gap: 10px;
+  min-height: var(--toque); padding: 4px 0;
+  font-size: 16.5px; font-weight: 500;
+  cursor: pointer; list-style: none;
+}
+.acordeon > summary::-webkit-details-marker { display: none; }
+.acordeon > summary::after {
+  content: ''; margin-left: auto; flex: none;
+  width: 9px; height: 9px;
+  border-right: 1.8px solid var(--ink-faint); border-bottom: 1.8px solid var(--ink-faint);
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .16s ease;
+}
+.acordeon[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+.acordeon > summary:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 6px; }
+.acordeon-cuerpo { display: flex; flex-direction: column; gap: 11px; padding: 2px 0 15px; }
+@media (prefers-reduced-motion: reduce) { .acordeon > summary::after { transition: none; } }
+
+/* Lo que el apartado sigue diciendo con la solapa bajada: cuántas fechas hay en
+   marcha, o quién es el próximo que cumple. Va apagado y a la derecha, pegado a
+   la flecha, para que se lea como una nota del rótulo y no como parte de él. */
+.acordeon-nota {
+  margin-left: auto; padding-left: 10px;
+  font-size: 13px; font-weight: 400; color: var(--ink-faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Los verbos de una tarjeta, escondidos debajo de ella y descubiertos al
+   deslizarla hacia la izquierda. El recorte del marco es lo que los tapa; la
+   cara lleva fondo propio —el de la tarjeta— y por eso no se transparentan.
+
+   `touch-action: pan-y` reparte los gestos sin discutirlos: el vertical sigue
+   siendo de la página y el horizontal es de la fila. Y con el teclado no hay
+   nada que arrastrar: enfocar cualquiera de los dos botones abre la fila. */
+.deslizable { position: relative; overflow: hidden; border-radius: var(--radio); --verbos: 96px; }
+.deslizable-verbos {
+  position: absolute; inset: 0 0 0 auto; width: var(--verbos);
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-right: 4px;
+}
+/* Aquí los dos verbos son dos fichas iguales. El de borrar lleva su fondo, que
+   en una cabecera de hoja no hace falta —va sobre papel— pero aquí sí: sin él
+   parecería un dibujo suelto en el hueco. */
+.deslizable-verbos .icono-accion { width: 40px; height: 40px; }
+.deslizable-verbos .icono-accion[data-tono="peligro"] { background: var(--regalo-suave); }
+.deslizable-cara { position: relative; touch-action: pan-y; transition: transform .18s ease; }
+.deslizable:focus-within .deslizable-cara { transform: translateX(calc(-1 * var(--verbos))); }
+@media (prefers-reduced-motion: reduce) { .deslizable-cara { transition: none; } }
+
+/* Una función dentro de un apartado: la instrucción de contar los días, dentro
+   del de la inteligencia artificial. */
+.subtitulo-ajuste {
+  font-size: 14px; font-weight: 600; color: var(--ink-soft);
+  margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--line);
+}
+
+/* La traza de una prueba se lee como salida de máquina: monoespaciada, con sus
+   saltos de línea y con desplazamiento propio si se pasa de ancha. */
+.traza {
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+  background: var(--paper-2); border-radius: 10px; padding: 10px 12px;
+  max-height: 240px; overflow-y: auto;
+  color: var(--ink-soft);
+}
+.traza.mal { color: var(--regalo); }
 
 .opciones { display: flex; flex-wrap: wrap; gap: 7px; }
 .opcion {
-  min-height: 38px; padding: 7px 12px; border-radius: 999px;
+  min-height: 40px; padding: 8px 13px; border-radius: 999px;
   border: 1px solid var(--line); background: var(--paper);
-  font-size: 13.5px; color: var(--ink-soft);
+  font-size: 15px; color: var(--ink-soft);
 }
 .opcion[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+.opcion-quitar { margin-left: 6px; opacity: .75; }
 
-.emojis { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 5px; }
-.emojis button { min-height: 44px; border-radius: 9px; font-size: 20px; }
-.emojis button[aria-pressed="true"] { background: var(--tinta-suave); }
+/* El «+» del final de «Para quién»: la fila enseña solo a los de casa —y lo que
+   ya se haya elegido de fuera, que no puede esconderse— y detrás va este botón,
+   con el borde discontinuo de lo que abre algo en lugar de elegirse. */
+.opcion-mas {
+  width: 40px; padding: 8px 0; text-align: center;
+  color: var(--tinta); border-color: var(--tinta); border-style: dashed;
+  font-size: 17px; line-height: 1;
+}
+
+/* Una sola lista debajo del buscador: en reposo son los últimos, y al escribir
+   pasa a ser el resultado. Nunca las dos a la vez, de modo que el hueco es el
+   mismo antes y después de teclear. */
+.buscagente {
+  display: flex; flex-direction: column; gap: 8px;
+  border: 1px solid var(--tinta); border-radius: var(--radio);
+  background: var(--tinta-suave); padding: 10px;
+}
+.buscagente-rotulo {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.buscagente .opciones { min-height: 40px; }
+/* El campo no vive dentro de un `.campo`, así que se le da aquí lo que allí
+   heredaría: alto de toque y cuerpo de 16 para que iOS no haga zoom al enfocar. */
+.buscagente input {
+  min-height: var(--toque);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; font-size: 16.5px; width: 100%;
+}
 
 /* -------------------------------------------------------------- Hoja modal -- */
 
-.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(8, 16, 20, .42); }
+.scrim { position: fixed; inset: 0; z-index: 40; background: var(--velo); }
+
+/**
+ * La hoja es el plano de arriba, y se dibuja como tal.
+ *
+ * Las cuatro pestañas son el suelo: siempre están y se pasa de una a otra sin
+ * salir de ninguna. Todo lo que llega en una hoja —el día, el evento, el
+ * formulario, Ajustes, compartir— está encima, y de ahí hay que salir antes de
+ * seguir. Antes los dos planos compartían papel, borde y la sombra suave de las
+ * tarjetas, de modo que la diferencia había que deducirla del contenido.
+ *
+ * Lo que hace que esto salga barato es la línea de abajo: dentro de la hoja se
+ * redefine la escala entera de papeles, no solo el fondo. Todo lo que va dentro
+ * —tarjetas, campos, botones discretos, apartados— está escrito contra
+ * `--paper-2` y `--paper-3`, así que se recalcula solo sobre el papel elevado y
+ * conserva exactamente el relieve que tenía. Sin esto habría que repasar una a
+ * una cada pieza que vive en una hoja.
+ */
 .hoja {
+  --paper:   var(--paper-alto);
+  --paper-2: var(--paper-alto-2);
+  --paper-3: var(--paper-alto-3);
+  --hueco:       var(--hueco-alto);
+  --hueco-linea: var(--hueco-alto-linea);
+
   position: fixed; z-index: 41; left: 0; right: 0; bottom: 0;
   max-height: 88dvh; overflow-y: auto;
   background: var(--paper);
   border-radius: 18px 18px 0 0;
-  border-top: 1px solid var(--line);
-  box-shadow: var(--sombra);
-  padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--borde-alto);
+  box-shadow: var(--sombra-alta);
+  /* Por debajo del contenido se deja libre la banda de las pestañas. La hoja
+     las tapa —es el plano de arriba— pero sus botones no deben terminar justo
+     encima de ellas: quien va a guardar tiene el pulgar sobre cuatro rótulos
+     que no puede tocar, y el borde de la pantalla a un milímetro. */
+  padding: 8px 20px calc(20px + var(--alto-tabbar) + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 14px;
   animation: subir .22s cubic-bezier(.22, .8, .3, 1);
 }
@@ -426,27 +904,59 @@ button { background: none; border: 0; cursor: pointer; }
   .hoja { left: 50%; right: auto; bottom: 24px; width: min(560px, 92vw); transform: translateX(-50%); border-radius: 18px; }
 }
 .hoja-asa { width: 38px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 2px; }
-.hoja h2 { font-family: var(--serif); font-weight: 500; font-size: 21px; letter-spacing: -.01em; }
+.hoja h2 { font-family: var(--serif); font-weight: 500; font-size: 23px; letter-spacing: -.01em; }
+
+/* Las acciones de la hoja van a la altura del título, que es donde se buscan.
+   Un pie de hoja no se ve hasta que se ha bajado del todo. */
+.hoja-cabecera { display: flex; align-items: flex-start; gap: 10px; }
+.hoja-cabecera h2 { flex: 1 1 auto; min-width: 0; text-wrap: balance; }
+.hoja-acciones { display: flex; gap: 5px; flex: 0 0 auto; }
+.icono-accion {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: grid; place-items: center;
+  color: var(--tinta); background: var(--tinta-suave);
+}
+.icono-accion[data-tono="discreto"] { color: var(--ink-soft); background: var(--paper-2); }
+.icono-accion[data-tono="peligro"] { color: var(--regalo); background: transparent; }
+.icono-accion { position: relative; }
+.icono-accion:disabled { opacity: .45; cursor: default; }
+/* La insignia va fuera del dibujo, con reborde de papel, para que se lea como
+   una marca aparte y no como un trazo más del icono. */
+.icono-insignia {
+  position: absolute; top: -3px; right: -3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--tinta); color: var(--paper);
+  border: 2px solid var(--paper);
+}
+.icono-insignia .icono-svg svg { width: 9px; height: 9px; }
+.icono-accion:hover { filter: brightness(.97); }
+.icono-svg { display: block; line-height: 0; }
+.icono-svg svg { width: 19px; height: 19px; display: block; }
 .hoja-seccion { display: flex; flex-direction: column; gap: 11px; }
 
 .avisos { position: fixed; z-index: 50; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
 .aviso-burbuja {
   background: var(--ink); color: var(--paper);
-  border-radius: 999px; padding: 9px 16px; font-size: 13.5px;
+  border-radius: 999px; padding: 10px 17px; font-size: 14.5px;
   box-shadow: var(--sombra);
 }
 
 .lista { display: flex; flex-direction: column; gap: 8px; }
+
+/* Un dato de una persona se escribe de corrido y puede traer saltos de línea
+   dentro, así que se respetan tal cual. */
+.dato { white-space: pre-wrap; overflow-wrap: anywhere; }
 .comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
-.comentario-meta { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--ink-faint); }
-.comentario p { font-size: 14px; }
+.comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+.comentario p { font-size: 15px; }
 
 .barra { height: 7px; border-radius: 999px; background: var(--paper-3); overflow: hidden; }
 .barra i { display: block; height: 100%; background: var(--tinta); }
 .barra[data-excedido="si"] i { background: var(--regalo); }
 
-table.presupuesto { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-table.presupuesto th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); padding-bottom: 7px; }
+table.presupuesto { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+table.presupuesto th { text-align: left; font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); padding-bottom: 7px; }
 table.presupuesto td { padding: 7px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 table.presupuesto td:not(:first-child) { text-align: right; }
 .desplazable { overflow-x: auto; }

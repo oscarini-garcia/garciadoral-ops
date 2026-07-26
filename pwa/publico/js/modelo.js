@@ -12,6 +12,144 @@
 
 export const EMOJI_POR_DEFECTO = '📌';
 
+/**
+ * Los tres círculos, y cómo se llaman en pantalla.
+ *
+ * Son cerrados y no un catálogo editable: cada círculo que se añadiera sería una
+ * pregunta más en cada alta, y la pantalla de personas está construida justo
+ * para no tener que hacerla —el «+» vive dentro de su grupo y ya sabe a cuál
+ * añade (specs/ux.md §7.1).
+ */
+export const CIRCULOS = {
+  familia: 'Familia',
+  extendida: 'Familia Extendida',
+  amigos: 'Amigos',
+};
+
+/** Cuántos caben en «Familia». Es el hogar, no un grupo que crece. */
+export const TAMANO_FAMILIA = 4;
+
+/**
+ * Los parentescos que se ofrecen al dar de alta a alguien, por círculo.
+ *
+ * Antes era un campo libre, y un campo libre aquí se llena de variantes de lo
+ * mismo —«mamá», «madre», «Mama»— que luego no se pueden leer. Dentro de casa
+ * importa además que se escriban tal cual, porque de ahí sale lo que cada uno
+ * ve bajo el nombre de los demás (specs/ux.md §7.1).
+ *
+ * Están en orden de cercanía y no alfabético: se elige de una lista corta
+ * mirando, no leyéndola entera.
+ */
+export const PARENTESCOS = {
+  // «Lóver» se traduce a «mamá» o «papá» para quien mira desde abajo, según el
+  // género. Cuando esa pareja no es madre ni padre de las crías están
+  // «madrastra» y «padrastro», que se leen tal cual y no se traducen.
+  familia: ['madre', 'padre', 'hija', 'hijo', 'lóver', 'madrastra', 'padrastro'],
+  extendida: [
+    // De dentro hacia fuera, y dentro de cada escalón la sangre antes que lo
+    // que llega por matrimonio.
+    'lóver',
+    'hermana', 'hermano',
+    'abuela', 'abuelo',
+    'bisabuela', 'bisabuelo',
+    'nieta', 'nieto',
+    'tía', 'tío',
+    'tía abuela', 'tío abuelo',
+    'tía segunda', 'tío segundo',
+    'prima', 'primo',
+    'prima segunda', 'primo segundo',
+    'sobrina', 'sobrino',
+    'sobrina segunda', 'sobrino segundo',
+    'suegra', 'suegro',
+    'cuñada', 'cuñado',
+    'nuera', 'yerno',
+    'madrastra', 'padrastro',
+    'hermanastra', 'hermanastro',
+    'madrina', 'padrino',
+    'ahijada', 'ahijado',
+  ],
+  amigos: ['amiga', 'amigo', 'vecina', 'vecino', 'compañera', 'compañero'],
+};
+
+/** El valor que abre el campo libre, para lo que no entre en ninguna lista. */
+export const PARENTESCO_OTRO = '__otro';
+
+/**
+ * El nombre entero, con los apellidos si los hay.
+ *
+ * Es lo que va en las listas donde se lee un nombre y no se habla de alguien:
+ * los apellidos son lo que distingue a dos Marías, y hay quien está dado de
+ * alta sin ellos —«la abuela»—, así que se pega solo lo que exista. Dentro de
+ * una frase no se usa: «un regalo para Marta Ruiz Gómez» no lo dice nadie.
+ */
+export const nombreCompleto = (persona) =>
+  [persona?.nombre, persona?.apellidos].filter(Boolean).join(' ');
+
+/**
+ * «de Marta», pero «del abuelo».
+ *
+ * Aquí hay gente dada de alta con el artículo dentro del nombre —«la abuela»,
+ * «el abuelo»—, que es como se la llama en casa y por tanto como debe figurar.
+ * Con «el» delante, la preposición se contrae, y «Cumpleaños de el abuelo» es
+ * de las cosas que hacen que una pantalla parezca escrita por una máquina.
+ *
+ * Solo el artículo suelto, no cualquier palabra que empiece por esas dos
+ * letras: «de Elena» se queda como está.
+ */
+export const deQuien = (nombre) => {
+  const texto = String(nombre || '');
+  return /^el\s/i.test(texto) ? `del ${texto.slice(3)}` : `de ${texto}`;
+};
+
+/**
+ * El género, que solo existe para afinar cómo se nombra a cada uno.
+ *
+ * No es un dato del que la aplicación saque nada más: sirve para elegir entre
+ * «mamá» y «papá», entre «hermana» y «hermano», cuando lo que hay escrito en el
+ * parentesco no lo dice —«lóver», o cualquier cosa puesta a mano en «Otro»—.
+ * Por eso puede quedarse sin poner, y entonces se deduce de la propia palabra.
+ */
+export const GENEROS = { f: 'Femenino', m: 'Masculino' };
+
+/**
+ * Emoji con el que arranca un título, si es que arranca con uno.
+ *
+ * Cuenta como uno solo la secuencia entera —el emoji, su selector de
+ * presentación, el tono de piel y lo que venga unido con el enlazador de ancho
+ * cero—, porque «👩‍🍳» es un símbolo y no tres.
+ */
+const EMOJI_INICIAL = /^(\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier}|\u200D\p{Extended_Pictographic})*)\s*/u;
+
+/**
+ * ¿Sigue vivo este registro?
+ *
+ * El borrado nunca es físico: se marca como inactivo (specs/modelo-datos.md
+ * §1). Lo que hay que mirar con cuidado es **cómo** viene marcado: D1 guarda
+ * `activo` como entero, así que por la sincronización llega un `0`, mientras
+ * que la escritura optimista del propio dispositivo también escribe `0`. Un
+ * `!== false` a secas deja pasar los dos, y lo borrado se queda en pantalla.
+ */
+export const estaActivo = (registro, campo = 'activo') => {
+  const valor = registro?.[campo];
+  if (valor === undefined || valor === null) return true;
+  return valor !== false && valor !== 0 && valor !== '0';
+};
+
+/**
+ * ¿Hay una clave de Anthropic puesta en el servidor?
+ *
+ * La instantánea trae la bandera y nunca la clave. Sirve para no ofrecer el
+ * botón de contar el día cuando detrás no hay nada: pulsarlo daría siempre el
+ * mismo error, y un botón que solo sabe fallar sobra.
+ */
+export const redaccionDisponible = (instantanea) => Boolean(instantanea?.redaccion?.disponible);
+
+/** Texto comparable: sin mayúsculas y sin acentos. Lo usan la búsqueda global y
+ *  el buscador de gente del formulario de una idea, que tienen que encontrar lo
+ *  mismo escribiendo lo mismo. */
+export const normalizar = (texto) =>
+  String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 export const nuevoId = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
@@ -30,16 +168,18 @@ export function crearVista(instantanea) {
 
     persona: (id) => personas.get(id) || null,
     nombre: (id) => personas.get(id)?.nombre || '—',
-    personas: () => [...personas.values()].filter((p) => p.activa !== false),
+    personas: () => [...personas.values()].filter((p) => estaActivo(p, 'activa')),
     personasConCuenta: () => api.personas().filter((p) => p.tiene_cuenta),
     personasSinCuenta: () => api.personas().filter((p) => !p.tiene_cuenta),
+    // Quien venga de un registro anterior a los círculos no trae el campo. Cae
+    // en «extendida», que es el valor por defecto también en la base.
+    personasDe: (circulo) => api.personas().filter((p) => (p.circulo || 'extendida') === circulo),
     categoria: (id) => categorias.get(id) || null,
     categorias: () => [...categorias.values()],
     tipoEvento: (id) => tipos.get(id) || null,
     tiposEvento: () => [...tipos.values()],
     etiqueta: (id) => etiquetas.get(id) || null,
     etiquetas: () => [...etiquetas.values()],
-    emojisPermitidos: () => instantanea.emojis_permitidos || [],
     esAdministrador: () => yo.rol === 'administrador',
 
     evento: (id) => (instantanea.eventos || []).find((e) => e.id === id) || null,
@@ -48,9 +188,27 @@ export function crearVista(instantanea) {
     regalo: (id) => (instantanea.regalos || []).find((r) => r.id === id) || null,
 
     emojiDe(evento) {
-      if (!evento) return EMOJI_POR_DEFECTO;
-      if (evento.emoji) return evento.emoji;
-      return tipos.get(evento.tipo_id)?.emoji || EMOJI_POR_DEFECTO;
+      return api.caraDe(evento).emoji;
+    },
+
+    /**
+     * La cara del evento: con qué emoji se le reconoce y con qué título se
+     * escribe.
+     *
+     * Si el título ya empieza por un emoji, ese manda y el del tipo sobra: dos
+     * emojis seguidos en una fila de una sola línea no dicen el doble, estorban.
+     * El del título se saca del texto y se pone en su sitio, de modo que la
+     * columna de emojis de la semana sigue cuadrando y el título no lo repite.
+     */
+    caraDe(evento) {
+      if (!evento) return { emoji: EMOJI_POR_DEFECTO, titulo: '' };
+      const titulo = evento.titulo || '';
+      const propio = titulo.match(EMOJI_INICIAL);
+      if (propio) return { emoji: propio[1], titulo: titulo.slice(propio[0].length) || titulo };
+      return {
+        emoji: evento.emoji || tipos.get(evento.tipo_id)?.emoji || EMOJI_POR_DEFECTO,
+        titulo,
+      };
     },
 
     /** Valor propuesto por el tipo, salvo que el evento lo haya corregido.
@@ -73,7 +231,7 @@ export function crearVista(instantanea) {
     },
 
     ocasionDeEvento: (eventoId) => (instantanea.ocasiones || []).find((o) => o.evento_id === eventoId) || null,
-    regalosDe: (ocasionId) => (instantanea.regalos || []).filter((r) => r.ocasion_id === ocasionId && r.activo !== false),
+    regalosDe: (ocasionId) => (instantanea.regalos || []).filter((r) => r.ocasion_id === ocasionId && estaActivo(r)),
 
     regalosPara(ocasionId, personaId) {
       return api.regalosDe(ocasionId).filter(
@@ -82,40 +240,104 @@ export function crearVista(instantanea) {
     },
 
     comentariosDe: (tipo, id) =>
-      (instantanea.comentarios || []).filter((c) => c.objeto_tipo === tipo && c.objeto_id === id && c.activo !== false),
+      (instantanea.comentarios || []).filter((c) => c.objeto_tipo === tipo && c.objeto_id === id && estaActivo(c)),
 
     /** Banco de ideas: lo activo y lo que está en curso, que permanece a la
      *  vista señalado con su ocasión para que nadie lo registre por su cuenta. */
     banco: () => (instantanea.ideas || []).filter(
-      (i) => i.activa !== false && i.tipo === 'sugerencia' && ['activa', 'en_curso'].includes(i.estado),
+      (i) => estaActivo(i, 'activa') && i.tipo === 'sugerencia' && ['activa', 'en_curso'].includes(i.estado),
     ),
 
     deseosDe: (personaId) =>
       (instantanea.ideas || []).filter(
-        (i) => i.activa !== false && i.tipo === 'deseo' && i.autor_id === personaId && i.estado !== 'descartada',
+        (i) => estaActivo(i, 'activa') && i.tipo === 'deseo' && i.autor_id === personaId && i.estado !== 'descartada',
       ),
+
+    /**
+     * A quiénes se les apuntan más ideas en el hogar, de más a menos.
+     *
+     * Es lo que rellena «los últimos» mientras este dispositivo no tenga los
+     * suyos: abrir el buscador y encontrar un hueco vacío la primera vez sería
+     * la peor bienvenida posible. Se deduce de la instantánea, así que no hay
+     * nada que mantener ni que sincronizar.
+     */
+    masRegaladas() {
+      const cuenta = new Map();
+      for (const idea of instantanea.ideas || []) {
+        if (!estaActivo(idea, 'activa') || idea.estado === 'descartada') continue;
+        for (const orientacion of idea.orientaciones || []) {
+          if (!orientacion.persona_id) continue;
+          cuenta.set(orientacion.persona_id, (cuenta.get(orientacion.persona_id) || 0) + 1);
+        }
+      }
+      return [...cuenta.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([id]) => id);
+    },
+
+    /** Quiénes aparecen en más eventos. Es el respaldo del buscador de gente en
+     *  la agenda, igual que `masRegaladas` lo es en los regalos. */
+    masEnEventos() {
+      const cuenta = new Map();
+      for (const evento of instantanea.eventos || []) {
+        if (!estaActivo(evento)) continue;
+        for (const participante of evento.participantes || []) {
+          if (!participante.persona_id) continue;
+          cuenta.set(participante.persona_id, (cuenta.get(participante.persona_id) || 0) + 1);
+        }
+      }
+      return [...cuenta.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
+    },
 
     ideasPara: (personaId) =>
       (instantanea.ideas || []).filter(
-        (i) => i.activa !== false && i.tipo === 'sugerencia'
+        (i) => estaActivo(i, 'activa') && i.tipo === 'sugerencia'
           && (i.orientaciones || []).some((o) => o.persona_id === personaId),
       ),
+
+    /**
+     * Los regalos que están en marcha, cada uno con la ocasión de la que cuelga.
+     *
+     * En marcha es todo lo que cuelga de una ocasión **abierta**, esté comprado
+     * o no y haya pasado su fecha o no. Lo que se cierra deja de estar en marcha
+     * y pasa al histórico de quien lo recibió, que se consulta en su ficha: son
+     * las dos mitades de lo mismo y por eso se leen de la misma condición
+     * (specs/ux.md §6.2).
+     *
+     * La ocasión viene pegada porque de ella salen la fecha y el nombre, que es
+     * lo que sitúa cada regalo; buscarla después, fila a fila, sería recorrer la
+     * lista de ocasiones una vez por regalo.
+     */
+    regalosEnMarcha() {
+      const abiertas = new Map(
+        (instantanea.ocasiones || [])
+          .filter((o) => estaActivo(o, 'activa') && o.estado === 'abierta')
+          .map((o) => [o.id, o]),
+      );
+      return (instantanea.regalos || [])
+        .filter((r) => estaActivo(r) && abiertas.has(r.ocasion_id))
+        .map((regalo) => ({ regalo, ocasion: abiertas.get(regalo.ocasion_id) }));
+    },
 
     /** Histórico derivado por consulta sobre las ocasiones cerradas: no existe
      *  entidad de histórico, de modo que no puede divergir del dato de origen. */
     historicoDe(personaId) {
       const cerradas = new Set((instantanea.ocasiones || []).filter((o) => o.estado === 'cerrada').map((o) => o.id));
       return (instantanea.regalos || []).filter(
-        (r) => r.activo !== false && cerradas.has(r.ocasion_id)
+        (r) => estaActivo(r) && cerradas.has(r.ocasion_id)
           && (r.destinatario_principal_id === personaId || (r.codestinatarios || []).includes(personaId)),
       );
     },
 
     atributosDe: (personaId) =>
-      (instantanea.atributos_persona || []).filter((a) => a.persona_id === personaId && a.activo !== false),
+      (instantanea.atributos_persona || []).filter((a) => a.persona_id === personaId && estaActivo(a)),
 
     /** Gasto registrado y número de regalos sin importe. Distinguir ambas cosas
-     *  evita mostrar una desviación favorable inexistente (spec funcional §6.3). */
+     *  evita mostrar una desviación favorable inexistente (spec funcional §6.3).
+     *
+     *  El panel que lo pintaba está retirado de la interfaz mientras se decide
+     *  qué forma tiene; el dato lo sigue transmitiendo el servidor y la consulta
+     *  se conserva para cuando vuelva. */
     gastoDe(ocasionId, personaId) {
       const regalos = api.regalosPara(ocasionId, personaId);
       const conImporte = regalos.filter((r) => typeof r.coste_real === 'number');
@@ -130,12 +352,38 @@ export function crearVista(instantanea) {
   return api;
 }
 
+/**
+ * Cómo va un regalo. Tres estados, y ninguno de adorno.
+ *
+ * «Envuelto» era el cuarto y se ha ido: no lo marcaba nadie, de modo que su
+ * único efecto era añadir una opción más a un desplegable que contesta a una
+ * pregunta de sí o no. «Entregado» se queda porque es el que cierra el ciclo:
+ * es lo que pasa la idea a cerrada y manda el regalo al histórico de quien lo
+ * recibió (specs/modelo-datos.md §4).
+ *
+ * Se llaman por lo que hay que hacer con ellos y no por su nombre en la base:
+ * «pendiente» no dice qué falta, «Por comprar» sí.
+ */
 export const ESTADOS_REGALO = [
-  { valor: 'pendiente', texto: 'Pendiente' },
-  { valor: 'comprado', texto: 'Comprado' },
-  { valor: 'envuelto', texto: 'Envuelto' },
+  { valor: 'pendiente', texto: 'Por comprar' },
+  { valor: 'comprado', texto: 'Listo' },
   { valor: 'entregado', texto: 'Entregado' },
 ];
+
+/**
+ * El estado de un regalo, leído a prueba de lo que ya está escrito.
+ *
+ * La migración convierte a «comprado» lo que estuviera «envuelto», pero la
+ * instantánea puede llegar antes que ella —el despliegue de la aplicación y el
+ * de la API son dos—. Sin esto, un regalo así caería en un desplegable que no
+ * tiene su valor, y el desplegable enseñaría el primero de la lista: diría «por
+ * comprar» de algo ya comprado.
+ */
+export const estadoDeRegalo = (regalo) => (regalo?.estado === 'envuelto' ? 'comprado' : regalo?.estado || 'pendiente');
+
+/** Cómo se escribe ese estado en pantalla. */
+export const textoDeEstado = (regalo) =>
+  ESTADOS_REGALO.find((e) => e.valor === estadoDeRegalo(regalo))?.texto || estadoDeRegalo(regalo);
 
 export const REPETICIONES = [
   { valor: 'ninguna', texto: 'No se repite' },

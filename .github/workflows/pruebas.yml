@@ -14,7 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Con la historia entera: el paso del service worker compara con la base
+      # de la rama para saber qué ha cambiado.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -22,6 +26,85 @@ jobs:
 
       - name: Ejecutar las pruebas
         run: python3 -m unittest discover -s tests -v
+
+      # Los módulos y los estilos se sirven de la caché del service worker antes
+      # que de la red, de modo que un cambio en ellos no llega a quien ya tiene
+      # la aplicación abierta hasta que sube `VERSION` en `sw.js`. Olvidarlo no
+      # rompe nada visible: simplemente se sigue viendo lo de antes, y desde
+      # fuera parece que el cambio no se hizo.
+      # Lo mismo por la otra vía. La app de iPhone no lee la web: aplica el
+      # bundle OTA, y `ota.yml` solo corta uno nuevo si `pwa/package.json` trae
+      # una versión que aún no tiene release. Cambiar `pwa/publico/**` sin subir
+      # esa versión hace que el workflow corra, no publique nada y no diga nada:
+      # el cambio queda en la web y no llega al teléfono.
+      - name: Comprobar que el OTA sube de versión si cambia lo que empaqueta
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if ! git diff --name-only "$BASE" HEAD | grep -q '^pwa/publico/'; then
+            echo "No cambia nada de pwa/publico/; el OTA no tiene que moverse."
+            exit 0
+          fi
+          antes=$(git show "$BASE:pwa/package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+          ahora=$(node -p "require('./pwa/package.json').version")
+          if [ "$antes" = "$ahora" ]; then
+            echo "Cambia pwa/publico/ y la versión del OTA sigue en $ahora."
+            echo ""
+            echo "Suba \"version\" en pwa/package.json: sin eso, ota.yml ve que"
+            echo "esa versión ya tiene release, no corta bundle nuevo, y la app"
+            echo "de iPhone se queda con lo anterior sin que nada lo diga."
+            exit 1
+          fi
+          echo "OTA $antes → $ahora, correcto."
+
+      - name: Comprobar que el service worker sube de versión si cambia lo que cachea
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE" HEAD > /tmp/cambiados.txt
+          python3 - <<'PY'
+          import os, re, subprocess, sys
+          from pathlib import Path
+
+          sw = Path('pwa/publico/sw.js')
+          armazon = set(re.findall(r"'([^']+)'", re.search(
+              r'const ARMAZON = \[(.*?)\];', sw.read_text(encoding='utf-8'), re.S).group(1)))
+          cacheados = {f'pwa/publico{r}' for r in armazon if r != '/'}
+
+          cambiados = set(Path('/tmp/cambiados.txt').read_text().split())
+          tocados = sorted(cambiados & cacheados)
+          if not tocados:
+              sys.exit(0)
+
+          def version(ref):
+              try:
+                  texto = subprocess.run(
+                      ['git', 'show', f'{ref}:pwa/publico/sw.js'],
+                      capture_output=True, text=True, check=True).stdout
+              except subprocess.CalledProcessError:
+                  return None
+              hallado = re.search(r"const VERSION = '([^']+)'", texto)
+              return hallado.group(1) if hallado else None
+
+          antes, ahora = version(os.environ['BASE']), version('HEAD')
+          if antes == ahora:
+              print('Cambia lo que cachea el service worker y VERSION sigue en', ahora)
+              for ruta in tocados:
+                  print(' ·', ruta)
+              print('\nSuba VERSION en pwa/publico/sw.js: sin eso, quien ya tenga')
+              print('la aplicación abierta seguirá viendo la versión anterior.')
+              sys.exit(1)
+          print(f'VERSION {antes} → {ahora}, correcto.')
+          PY
+
+      # El mapa es lo que se le inyecta a una sesión al abrirse. Si el commit lo
+      # trae desfasado, quien llegue leerá una descripción del código anterior.
+      - name: Comprobar que docs/mapa.md corresponde al código
+        run: python3 herramientas/mapa.py --verificar
 
       - name: Comprobar que el registro de ejemplo compone los siete planes
         env:
