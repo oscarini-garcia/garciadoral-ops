@@ -170,6 +170,15 @@ button { background: none; border: 0; cursor: pointer; }
 .titulo-pantalla {
   font-family: var(--serif);
   font-weight: 500; font-size: 26px; letter-spacing: -.01em;
+  min-width: 0; text-wrap: balance;
+}
+/* El de la agenda es una fecha y no un nombre: va en cifras, se compone mucho
+   más largo y tiene que caber al lado del indicador. Con el mes escrito entero
+   solo desborda la semana que cambia de año, una al año, que se parte en dos
+   antes que recortar el rótulo siempre. */
+.titulo-pantalla[data-pestana="semana"] {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
 }
 /* La agenda no pone título: allí la cabecera se queda con el indicador y los
    ajustes, que van igualmente contra el borde porque quien empuja es el
@@ -272,12 +281,10 @@ button { background: none; border: 0; cursor: pointer; }
 .paso button { width: 36px; height: 36px; border-radius: 8px; color: var(--ink-soft); font-size: 19px; }
 .paso button:hover { background: var(--paper-2); }
 
-/* Los controles de la agenda, en dos líneas: primero de cuándo se habla y
-   luego con qué vista se mira. El periodo lleva el mes y el año porque el
-   número del día, solo, no dice en qué punto del calendario está uno. */
-.agenda-controles { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-.periodo { display: flex; align-items: center; gap: 8px; min-height: 36px; }
-.vistas { display: flex; align-items: center; gap: 8px; }
+/* Los mandos de la agenda, en una sola fila: con qué vista se mira y por dónde
+   se anda. De cuándo se habla lo dice el título de la pantalla, arriba, que es
+   una fila que la agenda ya tenía puesta y no estaba usando. */
+.vistas { display: flex; align-items: center; gap: 8px; width: 100%; }
 /* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
 .boton-hoy {
   min-height: 36px; padding: 5px 15px; border-radius: 999px;
@@ -285,14 +292,6 @@ button { background: none; border: 0; cursor: pointer; }
   font-size: 14.5px; color: var(--ink-soft);
 }
 .boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
-.periodo-titulo {
-  font-family: var(--serif);
-  font-weight: 500; font-size: 20px; letter-spacing: -.01em;
-  font-variant-numeric: tabular-nums;
-  /* Con el mes escrito entero solo desborda la semana que cambia de año, una
-     al año: en lugar de recortar el rótulo siempre, esa se parte en dos. */
-  min-width: 0; text-wrap: balance;
-}
 
 .empujar { margin-left: auto; }
 

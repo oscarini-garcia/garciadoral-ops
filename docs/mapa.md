@@ -104,8 +104,8 @@ tener que recorrer la aplicación entera cada vez.
   reiniciarRegalos · pintarRegalos · seccionActual · abrirOcasion · abrirDetalleIdea
   abrirDetalleRegalo · abrirSelectorDeRegalo · abrirCapturaDeIdea
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
-  reiniciarAgenda · pintarAgenda · abrirDia · abrirDetalleEvento · bloqueDeComentarios
-  abrirFormularioEvento · anclaActual
+  reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
+  bloqueDeComentarios · abrirFormularioEvento · anclaActual
 
 ### `herramientas/` · Utilidades de desarrollo
 

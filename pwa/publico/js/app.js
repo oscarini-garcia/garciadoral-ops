@@ -39,16 +39,17 @@ import {
   versionInstalada,
 } from './native.js';
 import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
-import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda } from './vistas/semana.js';
+import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
 import { abrirCapturaDeIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
-  // La agenda no repite su nombre en la cabecera: la vista en la que se está
-  // ya se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es
-  // lo único de esa pantalla que cambia.
-  semana: { titulo: '', pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
+  // La agenda no repite su nombre en la cabecera: la vista en la que se está ya
+  // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
+  // único de esa pantalla que cambia. Por eso su título es una función: cambia
+  // al pasar de semana, y con las demás pestañas no cambia nunca.
+  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirCapturaDeIdea(ctx) },
   familia: { titulo: 'Familia', pintar: pintarFamilia, fab: (ctx) => abrirCapturaDeIdea(ctx) },
   // En las pantallas sin acción de creación el botón no aparece.
@@ -412,7 +413,11 @@ function refrescar() {
   ctx.vista = crearVista(datos);
   const definicion = PESTANAS[pestana];
 
-  document.getElementById('tituloPantalla').textContent = definicion.titulo;
+  const titulo = document.getElementById('tituloPantalla');
+  titulo.textContent = typeof definicion.titulo === 'function' ? definicion.titulo() : definicion.titulo;
+  // El de la agenda es una fecha y no un nombre: se compone más largo y se
+  // compone en cifras, así que se dibuja con su propio tamaño.
+  titulo.dataset.pestana = pestana;
   document.getElementById('fab').hidden = !definicion.fab;
 
   // Cada pestaña parte de la pantalla desnuda y le añade las clases de

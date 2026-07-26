@@ -40,12 +40,15 @@ export function reiniciarAgenda() {
 }
 
 /**
- * Encabezado de la agenda: de cuándo se está hablando, y luego con qué vista se
- * mira. El periodo va primero y en grande porque es la pregunta que se hace
- * quien llega —«¿qué semana es esta?»— y porque el número del día suelto, sin
- * mes ni año, no la responde.
+ * De cuándo se está hablando. Es el título de la pantalla, en la misma línea
+ * que el indicador y los ajustes: donde las demás pestañas ponen su nombre.
+ *
+ * Es la pregunta que se hace quien llega —«¿qué semana es esta?»— y el número
+ * del día suelto, sin mes ni año, no la responde. Ocupando la línea del título
+ * en lugar de una propia, la agenda gana una fila entera de pantalla, que en un
+ * teléfono es un día más de semana a la vista.
  */
-function tituloDePeriodo() {
+export function tituloDeAgenda() {
   if (modo === 'semana') return formatearRango(lunesDe(ancla));
   if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
   const desde = hoy();
@@ -58,37 +61,34 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
     onclick: () => { mover(pasos); ctx.refrescar(); },
   }, [rotulo]);
 
+  // Una sola fila de mandos: con qué vista se mira y por dónde se anda. El
+  // rótulo del periodo no está aquí, sino arriba, ocupando la línea del título
+  // de la pantalla (`tituloDeAgenda`).
   vaciar(subcabecera).append(
-    el('div', { class: 'agenda-controles' }, [
-      el('div', { class: 'periodo' }, [
-        el('h2', { class: 'periodo-titulo', texto: tituloDePeriodo() }),
-        // La lista arranca siempre en hoy y llega hasta donde llegue: no hay
-        // periodo anterior ni siguiente al que saltar.
-        modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
-          paso('‹', -1, 'Anterior'),
-          paso('›', 1, 'Siguiente'),
-        ]),
+    el('div', { class: 'vistas' }, [
+      el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
+        ...['semana', 'mes', 'lista'].map((nombre) =>
+          el('button', {
+            type: 'button',
+            'aria-pressed': modo === nombre ? 'true' : 'false',
+            onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
+          }, [nombre[0].toUpperCase() + nombre.slice(1)]),
+        ),
       ]),
-      el('div', { class: 'vistas' }, [
-        el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
-          ...['semana', 'mes', 'lista'].map((nombre) =>
-            el('button', {
-              type: 'button',
-              'aria-pressed': modo === nombre ? 'true' : 'false',
-              onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
-            }, [nombre[0].toUpperCase() + nombre.slice(1)]),
-          ),
-        ]),
-        // Volver es tan necesario como irse: con las flechas y el
-        // deslizamiento, tres gestos distraídos dejan la agenda en un mes que
-        // no le importa a nadie y sin forma evidente de regresar. En la lista
-        // no hace falta, porque siempre arranca en hoy.
-        modo === 'lista' ? null : el('button', {
-          class: 'boton-hoy empujar', type: 'button',
-          'aria-label': 'Volver a hoy',
-          onclick: () => { toque(); ancla = hoy(); ultimoPaso = 0; ctx.refrescar(); },
-        }, ['Hoy']),
+      // La lista arranca siempre en hoy y llega hasta donde llegue: no hay
+      // periodo anterior ni siguiente al que saltar, ni sitio al que volver.
+      modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
+        paso('‹', -1, 'Anterior'),
+        paso('›', 1, 'Siguiente'),
       ]),
+      // Volver es tan necesario como irse: con las flechas y el deslizamiento,
+      // tres gestos distraídos dejan la agenda en un mes que no le importa a
+      // nadie y sin forma evidente de regresar.
+      modo === 'lista' ? null : el('button', {
+        class: 'boton-hoy', type: 'button',
+        'aria-label': 'Volver a hoy',
+        onclick: () => { toque(); ancla = hoy(); ultimoPaso = 0; ctx.refrescar(); },
+      }, ['Hoy']),
     ]),
   );
 
