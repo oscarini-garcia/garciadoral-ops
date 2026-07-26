@@ -106,9 +106,9 @@ tener que recorrer la aplicación entera cada vez.
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
-  reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · personaDelCumple
-  ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo
-  …y 2 más
+  reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · marcaDeSeleccionada
+  personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
+  …y 3 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
   abrirFormularioEvento · anclaActual

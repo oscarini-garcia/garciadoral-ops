@@ -44,13 +44,13 @@ let filtroRegalos = 'todos';
  * rehace en cada sincronización: sin esto, plegar los cumpleaños duraría hasta
  * que llegase la siguiente instantánea.
  */
-let plegado = { senaladas: false, cumples: false, pasados: true };
+let plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, libres: false };
 
 export function reiniciarRegalos() {
   seccion = 'ideas';
   filtroPersona = null;
   filtroRegalos = 'todos';
-  plegado = { senaladas: false, cumples: false, pasados: true };
+  plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, libres: false };
 }
 
 /**
@@ -146,16 +146,44 @@ function vistaIdeas(ctx) {
     ideas = ideas.filter((idea) => (idea.orientaciones || []).some((o) => o.persona_id === filtroPersona));
   }
 
-  const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: `${ideas.length} ${ideas.length === 1 ? 'idea' : 'ideas'}` }),
-  ]);
+  /**
+   * Dos apartados, y las seleccionadas primero.
+   *
+   * Una idea seleccionada es la que ya se ha llevado a una ocasión: sigue en el
+   * banco a propósito —retirarla de la vista invitaría a que otra persona la
+   * registrase por su cuenta— pero mezclada con las libres obligaba a mirar la
+   * marca de cada una para saber con cuáles se puede contar todavía.
+   *
+   * Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones:
+   * plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en
+   * el que se abre la pantalla. Y lo que se pliegue se queda plegado mientras
+   * dure la sesión, porque la pantalla se rehace en cada sincronización.
+   */
+  const seleccionadas = ideas.filter((idea) => idea.estado === 'en_curso');
+  const libres = ideas.filter((idea) => idea.estado !== 'en_curso');
+
+  const apartado = (titulo, cuales, clave) => {
+    if (!cuales.length) return null;
+    const bloque = acordeon(titulo, (cuerpo) => {
+      for (const idea of cuales) cuerpo.append(tarjetaDeIdea(idea, ctx));
+    }, { abierta: !plegado[clave], nota: String(cuales.length) });
+    bloque.addEventListener('toggle', () => { plegado[clave] = !bloque.open; });
+    return bloque;
+  };
+
+  contenedor.append(...[
+    apartado('Seleccionadas', seleccionadas, 'seleccionadas'),
+    apartado('Libres', libres, 'libres'),
+  ].filter(Boolean));
 
   if (!ideas.length) {
-    grupo.append(el('p', { class: 'vacio', texto: 'Nada por aquí todavía. Dos toques en el hueco apuntan una idea en diez segundos.' }));
+    contenedor.append(el('p', {
+      class: 'vacio',
+      texto: filtroPersona
+        ? 'Ninguna idea para esa persona todavía. Dos toques en el hueco apuntan una.'
+        : 'Nada por aquí todavía. Dos toques en el hueco apuntan una idea en diez segundos.',
+    }));
   }
-  for (const idea of ideas) grupo.append(tarjetaDeIdea(idea, ctx));
-
-  contenedor.append(grupo);
 
   // Lo que uno se apunta para sí mismo ya no está aquí: tiene su propio
   // apartado, el primero de la fila. Aquí solo hay lo que se le regala a otros.
@@ -219,6 +247,21 @@ function vistaDeseos(ctx) {
 
 // ----------------------------------------------------------------- Común --
 
+/**
+ * El visto de una idea ya seleccionada, o nada.
+ *
+ * Lo pintan la lista de ideas y la ficha de cada persona, y tiene que ser el
+ * mismo dibujo en las dos. Va con `role` y etiqueta porque es la única manera
+ * de saber que esa idea está cogida: un icono mudo no lo cuenta.
+ */
+export function marcaDeSeleccionada(idea, ctx) {
+  if (idea.estado !== 'en_curso' || esDeseoPropio(idea, ctx)) return null;
+  return el('span', {
+    class: 'marca-seleccionada empujar', role: 'img',
+    'aria-label': 'Seleccionada para un regalo', title: 'Seleccionada para un regalo',
+  }, [icono('visto')]);
+}
+
 /** El precio de una idea, que puede venir como horquilla o como cifra suelta.
  *  Lo escriben la tarjeta del banco y la línea del selector, y tiene que salir
  *  igual en las dos. */
@@ -238,14 +281,14 @@ function tarjetaDeIdea(idea, ctx) {
   return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleIdea(idea.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: idea.titulo }),
-      // El estado «en curso» mantiene la idea a la vista, señalada con su
-      // ocasión: retirarla invitaría a que otra persona la registrase de nuevo.
+      // Una idea ya seleccionada para un regalo se queda a la vista —retirarla
+      // invitaría a que otra persona la registrase de nuevo— con un visto y sin
+      // ninguna palabra: el apartado en el que está ya lo dice, y una pastilla
+      // de once caracteres partía en dos líneas los títulos largos.
       //
-      // Sobre lo que uno pide para sí mismo, ese sello no se pinta jamás: ahí
-      // no diría «alguien está con esto», diría «alguien te ha comprado esto».
-      idea.estado === 'en_curso' && !esDeseoPropio(idea, ctx)
-        ? el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: 'en curso' })
-        : null,
+      // Sobre lo que uno pide para sí mismo no se pinta jamás: ahí no diría
+      // «alguien está con esto», diría «alguien te ha comprado esto».
+      marcaDeSeleccionada(idea, ctx),
     ]),
     el('p', {
       // En lo que uno pide para sí mismo no van ni el destinatario ni el autor:

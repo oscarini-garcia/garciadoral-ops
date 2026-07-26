@@ -294,6 +294,39 @@ Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo
 
 **Lo que alguien ha pedido sale al prepararle un regalo.** Es el otro medio cambio, y estaba cojo desde el principio: los deseos no están en el banco de ideas —un deseo es de quien lo escribe—, así que el selector de regalos no los ofrecía y solo se podían coger entrando en la ficha de esa persona, justo cuando lo que se estaba haciendo era prepararle el cumpleaños. Ahora encabezan la lista del selector, en su propio grupo —«Lo que pide Marta»—, porque una cosa que te han pedido gana a cualquier idea. En esas líneas no se escribe de quién es la idea: lo dice el rótulo, y en su lugar va el precio, que es lo que ayuda a decidir.
 
+### 6.4 El banco de ideas, como se construyó
+
+**Dos apartados, y las seleccionadas primero.** Una idea seleccionada es la que ya se ha llevado a una ocasión. Sigue en el banco a propósito —retirarla de la vista invitaría a que otra persona la registrase por su cuenta—, pero mezclada con las demás obligaba a mirar la marca de cada una para saber con cuáles se puede contar todavía. Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones: plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en el que se abre la pantalla. Un apartado vacío no se dibuja.
+
+```
+┌──────────────────────────────┐
+│ PARA QUIÉN                   │
+│ (Todo) ( Marta ) ( la abuela )│
+│ Seleccionadas        3    ⌃  │
+│ ┌──────────────────────────┐ │
+│ │ Botas de montar        ✓ │ │
+│ │ Para Marta · 80–120 €    │ │
+│ └──────────────────────────┘ │
+│ Libres               1    ⌃  │
+│ ┌──────────────────────────┐ │
+│ │ Guía de rutas            │ │
+│ │ Para Rosa · 25 €         │ │
+│ └──────────────────────────┘ │
+└──────────────────────────────┘
+```
+
+**La marca es un visto y nada más.** Antes era una pastilla granate que decía «en curso»: el color de los regalos para algo que no lo es todavía, y once caracteres a la derecha que partían en dos líneas los títulos largos —el mismo problema que ya apareció en la pantalla de Regalos—. Va sin caja a propósito: una casilla invita a tocarla para desmarcarla, y aquí no se desmarca; una idea se libera quitando el regalo que cuelga de ella. Lleva etiqueta accesible, porque un icono mudo no cuenta nada a quien no lo ve.
+
+El mismo visto va en **la ficha de cada persona**, donde antes el estado iba pegado al autor —«de Ana · en curso»—, que es el sitio donde menos se lee.
+
+**Sobre lo que uno pide para sí mismo no se pinta nunca.** En la lista de deseos de uno, ese visto no diría «alguien está con esto»: diría «alguien te ha comprado esto» (§6.3).
+
+**Los verbos de una idea están arriba, junto al título: editar y descartar.** El cuerpo de la hoja se queda con uno solo —«Llevar a una ocasión», o «Reactivar» si estaba descartada—, y la hoja de un deseo propio se queda sin ninguno, porque un deseo no se lleva a ninguna parte: el regalo que saliera de ahí se lo ocultaría el servidor a su propio autor.
+
+**Descartar no lleva papelera ni aspa.** No destruye —aparta, y se reactiva desde la misma hoja—, así que la papelera mentiría; y un aspa en la cabecera de una hoja se lee como «cierra esto», que es lo contrario de lo que hace, con el agravante de que estas hojas no tienen ningún otro botón de cerrar. Lleva un círculo con una raya, que dice «quítalo de la lista».
+
+**«Duplicar» se retiró.** Dejaba dos apuntes iguales, que casi siempre es un error y no una intención, y su único caso real —reutilizar una idea cerrada— solo se alcanzaba desde Buscar. Reutilizar una idea del año pasado es ahora volver a escribirla, que son los diez segundos que esta aplicación se pone como límite para apuntar algo.
+
 ---
 
 ## 7. Opción C — Las personas
