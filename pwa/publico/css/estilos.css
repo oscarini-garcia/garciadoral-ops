@@ -449,10 +449,6 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .opcion[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
 
-.emojis { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 5px; }
-.emojis button { min-height: 46px; border-radius: 9px; font-size: 22px; }
-.emojis button[aria-pressed="true"] { background: var(--tinta-suave); }
-
 /* -------------------------------------------------------------- Hoja modal -- */
 
 .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(8, 16, 20, .42); }

@@ -13,6 +13,15 @@
 export const EMOJI_POR_DEFECTO = '📌';
 
 /**
+ * Emoji con el que arranca un título, si es que arranca con uno.
+ *
+ * Cuenta como uno solo la secuencia entera —el emoji, su selector de
+ * presentación, el tono de piel y lo que venga unido con el enlazador de ancho
+ * cero—, porque «👩‍🍳» es un símbolo y no tres.
+ */
+const EMOJI_INICIAL = /^(\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier}|\u200D\p{Extended_Pictographic})*)\s*/u;
+
+/**
  * ¿Sigue vivo este registro?
  *
  * El borrado nunca es físico: se marca como inactivo (specs/modelo-datos.md
@@ -54,7 +63,6 @@ export function crearVista(instantanea) {
     tiposEvento: () => [...tipos.values()],
     etiqueta: (id) => etiquetas.get(id) || null,
     etiquetas: () => [...etiquetas.values()],
-    emojisPermitidos: () => instantanea.emojis_permitidos || [],
     esAdministrador: () => yo.rol === 'administrador',
 
     evento: (id) => (instantanea.eventos || []).find((e) => e.id === id) || null,
@@ -63,9 +71,27 @@ export function crearVista(instantanea) {
     regalo: (id) => (instantanea.regalos || []).find((r) => r.id === id) || null,
 
     emojiDe(evento) {
-      if (!evento) return EMOJI_POR_DEFECTO;
-      if (evento.emoji) return evento.emoji;
-      return tipos.get(evento.tipo_id)?.emoji || EMOJI_POR_DEFECTO;
+      return api.caraDe(evento).emoji;
+    },
+
+    /**
+     * La cara del evento: con qué emoji se le reconoce y con qué título se
+     * escribe.
+     *
+     * Si el título ya empieza por un emoji, ese manda y el del tipo sobra: dos
+     * emojis seguidos en una fila de una sola línea no dicen el doble, estorban.
+     * El del título se saca del texto y se pone en su sitio, de modo que la
+     * columna de emojis de la semana sigue cuadrando y el título no lo repite.
+     */
+    caraDe(evento) {
+      if (!evento) return { emoji: EMOJI_POR_DEFECTO, titulo: '' };
+      const titulo = evento.titulo || '';
+      const propio = titulo.match(EMOJI_INICIAL);
+      if (propio) return { emoji: propio[1], titulo: titulo.slice(propio[0].length) || titulo };
+      return {
+        emoji: evento.emoji || tipos.get(evento.tipo_id)?.emoji || EMOJI_POR_DEFECTO,
+        titulo,
+      };
     },
 
     /** Valor propuesto por el tipo, salvo que el evento lo haya corregido.

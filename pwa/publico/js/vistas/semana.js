@@ -186,6 +186,7 @@ function vistaSemana(ctx) {
 
 function lineaDeEvento(aparicion, ctx) {
   const hora = horaDe(aparicion);
+  const cara = ctx.vista.caraDe(aparicion.evento);
   return el('button', {
     class: 'linea', type: 'button',
     'data-continuacion': aparicion.continuacion ? 'si' : 'no',
@@ -194,8 +195,8 @@ function lineaDeEvento(aparicion, ctx) {
     // Un evento de varios días se marca con una banda continua en el margen.
     aparicion.instancia.inicio.getTime() !== aparicion.instancia.fin.getTime()
       ? el('span', { class: 'linea-banda' }) : null,
-    el('span', { class: 'linea-emoji', texto: ctx.vista.emojiDe(aparicion.evento) }),
-    el('span', { class: 'linea-titulo', texto: aparicion.evento.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
+    el('span', { class: 'linea-emoji', texto: cara.emoji }),
+    el('span', { class: 'linea-titulo', texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
     hora ? el('span', { class: 'linea-hora', texto: hora }) : null,
   ]);
 }
@@ -276,14 +277,15 @@ function nombreDeGrupo(momento, referencia) {
 
 function tarjetaDeEvento(aparicion, ctx) {
   const hora = horaDe(aparicion);
+  const cara = ctx.vista.caraDe(aparicion.evento);
   const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
   return el('button', {
     class: 'tarjeta', type: 'button',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     el('div', { class: 'tarjeta-fila' }, [
-      el('span', { class: 'linea-emoji', texto: ctx.vista.emojiDe(aparicion.evento) }),
-      el('h3', { texto: aparicion.evento.titulo }),
+      el('span', { class: 'linea-emoji', texto: cara.emoji }),
+      el('h3', { texto: cara.titulo }),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
     ]),
     el('p', {
@@ -334,10 +336,11 @@ async function compartirDia(fecha, apariciones, ctx) {
   const titulo = formatearFechaLarga(fecha);
   const lineas = apariciones.map((aparicion) => {
     const hora = horaDe(aparicion);
+    const cara = ctx.vista.caraDe(aparicion.evento);
     return [
-      ctx.vista.emojiDe(aparicion.evento),
+      cara.emoji,
       hora ? `${hora} ·` : null,
-      aparicion.evento.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+      cara.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
       aparicion.evento.ubicacion ? `· ${aparicion.evento.ubicacion}` : null,
     ].filter(Boolean).join(' ');
   });
@@ -354,6 +357,7 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
 
   const derivado = evento.origen !== 'manual';
   const inicio = parsearMomento(evento.inicio);
+  const cara = ctx.vista.caraDe(evento);
 
   // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
   // `navigator.share` —o al portapapeles— en el navegador. Solo sale la cara
@@ -361,17 +365,17 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
   const compartirEvento = async () => {
     toque();
     const enviado = await compartir({
-      titulo: evento.titulo,
-      texto: `${ctx.vista.emojiDe(evento)} ${evento.titulo}\n${formatearFechaLarga(aparicion ? aparicion.dia : inicio)}`
+      titulo: cara.titulo,
+      texto: `${cara.emoji} ${cara.titulo}\n${formatearFechaLarga(aparicion ? aparicion.dia : inicio)}`
         + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
         + (evento.ubicacion ? `\n${evento.ubicacion}` : ''),
     });
     if (!enviado) avisar('No he podido compartirlo');
   };
 
-  abrirHoja(evento.titulo, (cuerpo) => {
+  abrirHoja(cara.titulo, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
-      el('span', { style: 'font-size:26px', texto: ctx.vista.emojiDe(evento) }),
+      el('span', { style: 'font-size:26px', texto: cara.emoji }),
       el('div', {}, [
         el('p', { texto: formatearFechaLarga(aparicion ? aparicion.dia : inicio) }),
         el('p', {
@@ -420,12 +424,11 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
 
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
   }, [
-    // Los dos verbos que se usan van arriba, junto al título. De un evento
-    // derivado solo se puede cambiar el emoji, y el formulario se abre reducido
-    // a eso: el resto se corrige en su origen.
-    botonIcono('editar', {
-      etiqueta: derivado ? 'Cambiar el emoji' : 'Editar',
-      onclick: () => abrirFormularioEvento(ctx, { id: evento.id, evento }),
+    // Los dos verbos que se usan van arriba, junto al título. Un cumpleaños o
+    // un evento traído de fuera no se edita: se corrige en su origen.
+    derivado ? null : botonIcono('editar', {
+      etiqueta: 'Editar',
+      onclick: () => abrirFormularioEvento(ctx, { id: evento.id }),
     }),
     botonIcono('compartir', { etiqueta: 'Compartir', tono: 'discreto', onclick: compartirEvento }),
   ]);
@@ -515,44 +518,15 @@ export function bloqueDeComentarios(tipo, id, ctx) {
 // --------------------------------------------------------- Crear y editar --
 
 /**
- * Rejilla para elegir el emoji del evento, con la casilla de dejárselo al tipo.
- *
- * La selección es corta a propósito: la variedad ilimitada convierte la semana
- * en un mosaico y destruye el reconocimiento de un vistazo. Devuelve una
- * función que da el valor elegido —cadena vacía si manda el tipo—.
- */
-function selectorDeEmoji(ctx, inicial) {
-  let elegido = inicial || '';
-  const contenedor = el('div', { class: 'emojis' });
-
-  const opciones = ['', ...ctx.vista.emojisPermitidos()];
-  const botones = opciones.map((emoji) => el('button', {
-    type: 'button',
-    'aria-pressed': emoji === elegido ? 'true' : 'false',
-    'aria-label': emoji || 'El del tipo de evento',
-    title: emoji || 'El del tipo de evento',
-    onclick: () => {
-      elegido = emoji;
-      for (const otro of botones) otro.setAttribute('aria-pressed', 'false');
-      botones[opciones.indexOf(emoji)].setAttribute('aria-pressed', 'true');
-    },
-  }, [emoji || '—']));
-
-  contenedor.append(...botones);
-  return { nodo: contenedor, valor: () => elegido };
-}
-
-/**
  * La creación tiene dos niveles. La hoja rápida pide título y día, y con eso
  * guarda; el resto de campos aparece solo si se piden (specs/ux.md §10.1).
  *
- * De un evento derivado o externo solo se admite el emoji —el resto se corrige
- * en su origen (specs/modelo-datos.md §4.2)—, así que el formulario se abre
- * reducido a ese campo en lugar de no abrirse.
+ * No hay campo de emoji: lo propone el tipo, y quien quiera otro empieza el
+ * título por él. Una rejilla de emojis dentro del formulario era un paso más
+ * para decir lo mismo que ya se puede escribir en el título.
  */
-export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = null } = {}) {
-  const existente = (id ? ctx.vista.evento(id) : null) || evento;
-  if (existente && existente.origen !== 'manual') return abrirFormularioDeEmoji(existente, ctx);
+export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
+  const existente = id ? ctx.vista.evento(id) : null;
   const inicio = existente ? parsearMomento(existente.inicio) : (fecha || hoy());
 
   const borrador = {
@@ -609,14 +583,10 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = n
     const repite = seleccion(REPETICIONES.map((r) => ({ valor: r.valor, texto: r.texto })), borrador.repeticion);
 
     const gente = ctx.vista.personas().map((p) => ({ valor: p.id, texto: p.nombre }));
-    // El emoji va detrás del tipo, que es quien lo propone: aquí solo se
-    // corrige cuando el propuesto no dice lo que se quiere decir.
-    const emoji = selectorDeEmoji(ctx, existente?.emoji);
 
     avanzado.append(
       campo('A qué hora', hora, 'Déjala vacía si dura todo el día.'),
-      campo('Qué es', tipo, 'El tipo elige el emoji y propone si el evento lleva regalos.'),
-      campo('Emoji', emoji.nodo, 'Con «—» manda el del tipo. La lista es corta a propósito: la variedad ilimitada convierte la semana en un mosaico.'),
+      campo('Qué es', tipo, 'El tipo elige el emoji y propone si el evento lleva regalos. Para otro emoji, empieza el título con él.'),
       campo('De quién es', opciones(gente, borrador.protagonistas, (v) => { borrador.protagonistas = v; }),
         'Determina a quién se le ocultan los regalos de este evento y qué ideas se proponen al asociarlos.'),
       campo('Quién más va', opciones(gente, borrador.asistentes, (v) => { borrador.asistentes = v; }),
@@ -655,7 +625,6 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = n
           const campos = {
             titulo: titulo.value.trim(),
             tipo_id: tipo.value,
-            emoji: emoji.valor(),
             inicio: jornadaCompleta ? dia.value : isoConHora(momento),
             jornada_completa: jornadaCompleta ? 1 : 0,
             ubicacion: lugar.value.trim(),
@@ -682,40 +651,6 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null, evento = n
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   }, [borrarEvento]);
-}
-
-/**
- * Lo único que se puede cambiar de un cumpleaños o de un evento traído de fuera.
- *
- * El dato maestro está en otro sitio —la ficha de la persona, el calendario de
- * origen— y no puede divergir de su reflejo, pero el emoji es de aquí: lo
- * decide quien mira la semana (specs/modelo-datos.md §4.2).
- */
-function abrirFormularioDeEmoji(evento, ctx) {
-  const emoji = selectorDeEmoji(ctx, evento.emoji);
-
-  abrirHoja('Cambiar el emoji', (cuerpo) => {
-    cuerpo.append(el('p', {
-      class: 'pista',
-      texto: evento.origen === 'derivado'
-        ? 'De un cumpleaños solo se cambia el emoji: la fecha sale de la ficha de la persona y se corrige allí.'
-        : 'De un evento de un calendario externo solo se cambia el emoji: lo demás se corrige en su origen.',
-    }));
-    cuerpo.append(campo('Emoji', emoji.nodo, 'Con «—» manda el del tipo de evento.'));
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: async () => {
-          await guardar('evento', evento.id, { emoji: emoji.valor() });
-          toque('media');
-          cerrarHoja();
-          avisar('Emoji cambiado');
-          ctx.refrescar();
-        },
-      }, ['Guardar']),
-      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
-    ]));
-  });
 }
 
 export const anclaActual = () => ancla;
