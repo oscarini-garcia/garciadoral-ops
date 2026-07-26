@@ -329,6 +329,10 @@ El mismo visto va en **la ficha de cada persona**, donde antes el estado iba peg
 
 Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es que no se ven —el servidor los oculta a su destinatario—, así que decir «no hay ninguno» sería mentir con cara de dato, y decir cuántos hay sería contar justo lo que no se puede contar.
 
+**Llevar una idea a una ocasión quiere decir llevarla a una fecha señalada.** Los cumpleaños se quedan fuera de esa lista aunque tengan ocasión abierta: a un cumpleaños no se le lleva una idea suelta, se entra en él —desde Ocasiones o desde la agenda— y allí se eligen los regalos de quien cumple, con lo que se sabe de esa persona delante. Mezclar «Cumpleaños de Marta 2026» con «Navidad» en un desplegable obligaba además a acertar el año en un sitio donde no se ve ni de quién es.
+
+**Quitar un regalo devuelve su idea al banco, y se dice.** El aviso decía «Regalo retirado», que solo cuenta lo que desaparece; ahora dice a dónde va lo que queda —«Quitado. La idea vuelve a Disponibles»—, porque desde la pantalla no se ve, y un regalo que se esfuma sin más parece habérselo llevado todo por delante.
+
 **«Duplicar» se retiró.** Dejaba dos apuntes iguales, que casi siempre es un error y no una intención, y su único caso real —reutilizar una idea cerrada— solo se alcanzaba desde Buscar. Reutilizar una idea del año pasado es ahora volver a escribirla, que son los diez segundos que esta aplicación se pone como límite para apuntar algo.
 
 ---

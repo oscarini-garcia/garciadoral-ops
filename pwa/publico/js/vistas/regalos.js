@@ -1045,7 +1045,7 @@ function tarjetaDeRegalo(regalo, ctx, { alQuitar = null } = {}) {
       onclick: async () => {
         await retirar('regalo', regalo.id);
         toque('media');
-        avisar(idea ? 'Quitado. La idea sigue en el banco.' : 'Regalo quitado');
+        avisar(idea ? 'Quitado. La idea vuelve a Disponibles.' : 'Regalo quitado');
         alQuitar();
       },
     }),
@@ -1091,7 +1091,7 @@ export function abrirDetalleIdea(ideaId, ctx) {
       : esDeseoPropio(idea, ctx) ? null : el('button', {
           class: 'boton crecer', type: 'button',
           onclick: () => abrirPromocion(idea, ctx),
-        }, ['Llevar a una ocasión']);
+        }, ['Llevar a una fecha señalada']);
     if (verbo) cuerpo.append(el('div', { class: 'acciones' }, [verbo]));
 
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
@@ -1185,7 +1185,15 @@ export function abrirDetalleRegalo(regaloId, ctx) {
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
         class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
-        onclick: async () => { await retirar('regalo', regalo.id); cerrarHoja(); avisar('Regalo retirado'); ctx.refrescar(); },
+        onclick: async () => {
+          await retirar('regalo', regalo.id);
+          cerrarHoja();
+          // Se dice a dónde va, que es lo que no se veía: el regalo desaparece,
+          // pero la idea de la que salió vuelve al banco y se puede volver a
+          // coger. Sin decirlo, quitar un regalo parece perderlo todo.
+          avisar(idea ? 'Quitado. La idea vuelve a Disponibles.' : 'Regalo quitado');
+          ctx.refrescar();
+        },
       }, ['Quitar de la ocasión']),
     ]));
   }, [
@@ -1201,13 +1209,28 @@ export function abrirDetalleRegalo(regaloId, ctx) {
 
 // -------------------------------------------------------------- Promoción --
 
+/**
+ * Llevar una idea a una ocasión, que aquí quiere decir **a una fecha señalada**.
+ *
+ * Los cumpleaños se quedan fuera de esta lista a propósito, aunque tengan
+ * ocasión abierta. A un cumpleaños no se le lleva una idea suelta: se entra en
+ * él —desde Ocasiones o desde la agenda— y allí se eligen los regalos de quien
+ * cumple, con lo que se sabe de esa persona delante. Mezclar «Cumpleaños de
+ * Marta 2026» con «Navidad» en un desplegable obligaba además a acertar el año
+ * en un sitio donde no se ve ni de quién es.
+ */
 function abrirPromocion(idea, ctx) {
-  const abiertas = (ctx.vista.datos.ocasiones || []).filter((o) => o.estado === 'abierta' && estaActivo(o, 'activa'));
+  const abiertas = (ctx.vista.datos.ocasiones || []).filter(
+    (o) => o.estado === 'abierta' && estaActivo(o, 'activa') && !esDeCumple(o, ctx),
+  );
   const destinos = (idea.orientaciones || []).map((o) => o.persona_id).filter(Boolean);
 
-  abrirHoja('Llevar a una ocasión', (cuerpo) => {
+  abrirHoja('Llevar a una fecha señalada', (cuerpo) => {
     if (!abiertas.length) {
-      cuerpo.append(el('p', { class: 'pista', texto: 'No hay ninguna ocasión abierta. Crea una desde Regalos → Ocasiones.' }));
+      cuerpo.append(el('p', {
+        class: 'pista',
+        texto: 'No hay ninguna fecha señalada en marcha. Se crea en Ocasiones. Para un cumpleaños no hace falta: se entra en él y allí se eligen los regalos.',
+      }));
       return;
     }
     const ocasion = seleccion(abiertas.map((o) => ({ valor: o.id, texto: `${o.nombre} · ${o.fecha}` })), abiertas[0].id);

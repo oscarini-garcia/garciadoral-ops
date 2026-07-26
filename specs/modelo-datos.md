@@ -198,6 +198,7 @@ stateDiagram-v2
     Activa --> EnCurso: promoción a una ocasión
     EnCurso --> Activa: retirada de la ocasión
     EnCurso --> Cerrada: regalo entregado u ocasión cerrada
+    Cerrada --> Activa: se retira el regalo
     Activa --> Descartada: acción manual
     EnCurso --> Descartada: acción manual
     Descartada --> Activa: reactivación
@@ -207,6 +208,8 @@ stateDiagram-v2
 Las transiciones hacia En curso y hacia Cerrada se derivan de lo que ocurre en la ocasión vinculada. Solo el descarte y la reactivación son manuales.
 
 Cierran la idea las dos maneras que tiene un regalo de terminar: que se entregue, o que su ocasión se dé por cerrada. Contar solo la primera dejaba en el banco ideas En curso para siempre, señaladas con una ocasión archivada que ya nunca las iba a liberar.
+
+**Y la vuelta es simétrica:** una idea que se queda sin ningún regalo activo vuelve a Activa, esté En curso o Cerrada. La regla es una sola —una idea está cogida mientras algo cuelgue de ella, y libre cuando no cuelga nada—, y eso es lo que hace que retirar un regalo la devuelva siempre al banco. Sin esa simetría, marcar un regalo como entregado por error era un punto sin retorno: la idea se iba y retirarlo después no la traía de vuelta.
 
 ### 5.2 Regalo
 

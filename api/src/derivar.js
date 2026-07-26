@@ -44,11 +44,18 @@ export async function derivarEstados(db) {
     .run();
 
   // 2. Idea retirada de la ocasión -> vuelve a estar disponible.
+  //
+  //    Vale también para la que estaba cerrada, y no solo para la que estaba en
+  //    curso. Cerrar era hasta ahora un punto sin retorno escondido: bastaba con
+  //    marcar un regalo como entregado por error para que su idea se fuera del
+  //    banco, y retirarlo después no la devolvía. La regla queda simétrica —una
+  //    idea está cogida mientras algo cuelgue de ella, y libre cuando no cuelga
+  //    nada—, que es lo que hace que tirar atrás un regalo funcione siempre.
   await db
     .prepare(
       `UPDATE idea
           SET estado = 'activa', actualizado_en = datetime('now')
-        WHERE estado = 'en_curso'
+        WHERE estado IN ('en_curso', 'cerrada')
           AND NOT EXISTS (SELECT 1 FROM regalo r
                            WHERE r.idea_id = idea.id AND r.activo = 1)`,
     )
