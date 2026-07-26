@@ -32,6 +32,17 @@ pendiente. El hook lo inyecta al final del mapa.
   cambio lo nuevo no llega a quien ya tenga la aplicación abierta: no falla
   nada, simplemente se sigue viendo lo de antes. Desde fuera parece que el
   cambio no se hizo. `pruebas.yml` lo comprueba ahora en cada PR.
+- **Hay ocho temas de diseño propuestos y ninguno decidido.** Están en
+  `specs/propuesta-temas-de-diseno.html`: ocho identidades más —cada una con sus
+  dos modos y sus dieciséis fichas de color escritas con los nombres que ya usa
+  `estilos.css`— con lo que gana y lo que cuesta cada una. Nada de esto está
+  implementado: hoy sigue habiendo una sola identidad y el selector de Ajustes
+  elige únicamente el modo. Ponerlas pide un segundo eje —un `data-identidad` en
+  la raíz, con su preferencia guardada— y que las etiquetas `theme-color` de
+  `index.html`, que hoy llevan el verde a mano, se escriban desde el código.
+  Queda por decidir **cuáles se construyen** —la propuesta recomienda empezar por
+  Azulete y Nocturno de cocina— y **si la identidad es de cada dispositivo, como
+  el modo, o de la casa entera** y se guarda en `configuracion`.
 - **Queda una migración por aplicar: `0007_estado_regalo.sql`**, que convierte a
   «comprado» lo que estuviera «envuelto». Es corriente y no `.unavez` —se puede
   repetir sin consecuencias—, así que basta con marcar la casilla de las

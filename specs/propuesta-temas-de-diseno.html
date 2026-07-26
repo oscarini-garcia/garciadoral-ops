@@ -1,0 +1,879 @@
+<meta charset="utf-8">
+<title>Ocho temas más para la agenda</title>
+
+<style>
+  /* El documento se viste con la identidad de la aplicación
+     (pwa/publico/css/estilos.css): papel cálido, tinta verde, granate para los
+     regalos. Newsreader no puede cargarse desde fuera, así que queda Georgia,
+     que es su propio repuesto —el mismo que declara la hoja de estilos—.
+
+     Las fichas del documento van con prefijo `--doc-` a propósito: las
+     muestras de abajo declaran `--paper`, `--ink`, `--tinta`… con los nombres
+     de verdad, y así lo que se ve dentro de cada muestra es exactamente el
+     código que se pegaría en la aplicación, sin que se pisen las dos escalas. */
+  :root {
+    color-scheme: light dark;
+
+    --doc-paper:     #FBF9F5;
+    --doc-paper-2:   #F2EFE8;
+    --doc-paper-3:   #EAE6DC;
+    --doc-ink:       #1C2B33;
+    --doc-ink-soft:  #5F7280;
+    --doc-ink-faint: #93A3AD;
+    --doc-line:      #E2DED4;
+    --doc-tinta:     #0E6E62;
+    --doc-tinta-suave:#DCEDE9;
+    --doc-regalo:    #8E3B5E;
+    --doc-sombra:    0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --doc-marco:     rgba(28, 43, 51, .10);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+
+    --ancho: 1180px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --doc-paper:     #10171A;
+      --doc-paper-2:   #172025;
+      --doc-paper-3:   #1F2A30;
+      --doc-ink:       #E7EEF1;
+      --doc-ink-soft:  #9CB0BA;
+      --doc-ink-faint: #6C818C;
+      --doc-line:      #263238;
+      --doc-tinta:     #55C9B4;
+      --doc-tinta-suave:#12312E;
+      --doc-regalo:    #E48FAE;
+      --doc-sombra:    0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+      --doc-marco:     rgba(231, 238, 241, .12);
+    }
+  }
+  /* El conmutador de quien lee gana sobre la preferencia del sistema en los dos
+     sentidos, igual que `data-tema` en la aplicación. */
+  :root[data-theme="light"] {
+    --doc-paper: #FBF9F5; --doc-paper-2: #F2EFE8; --doc-paper-3: #EAE6DC;
+    --doc-ink: #1C2B33; --doc-ink-soft: #5F7280; --doc-ink-faint: #93A3AD;
+    --doc-line: #E2DED4; --doc-tinta: #0E6E62; --doc-tinta-suave: #DCEDE9;
+    --doc-regalo: #8E3B5E;
+    --doc-sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --doc-marco: rgba(28, 43, 51, .10);
+  }
+  :root[data-theme="dark"] {
+    --doc-paper: #10171A; --doc-paper-2: #172025; --doc-paper-3: #1F2A30;
+    --doc-ink: #E7EEF1; --doc-ink-soft: #9CB0BA; --doc-ink-faint: #6C818C;
+    --doc-line: #263238; --doc-tinta: #55C9B4; --doc-tinta-suave: #12312E;
+    --doc-regalo: #E48FAE;
+    --doc-sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    --doc-marco: rgba(231, 238, 241, .12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  * { margin: 0; padding: 0; }
+
+  body {
+    background: var(--doc-paper);
+    color: var(--doc-ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .marco {
+    max-width: var(--ancho);
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--doc-ink-faint);
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(34px, 5.2vw, 50px);
+    line-height: 1.08;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    max-width: 24ch;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 29px;
+    line-height: 1.15;
+    letter-spacing: -.005em;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 21px;
+    line-height: 1.2;
+  }
+
+  .portada { display: flex; flex-direction: column; gap: 14px; }
+  .lede { font-size: 19px; color: var(--doc-ink-soft); max-width: 62ch; }
+  p, li { max-width: 66ch; }
+  .prosa { display: flex; flex-direction: column; gap: 12px; }
+  .prosa p { font-size: 16.5px; color: var(--doc-ink-soft); }
+  .prosa strong { color: var(--doc-ink); font-weight: 600; }
+  code {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: var(--doc-paper-2);
+    border: 1px solid var(--doc-line);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+
+  /* ---------------------------------------------------------------- Índice -- */
+
+  .indice {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+    gap: 8px;
+    list-style: none;
+  }
+  .indice a {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 12px;
+    border: 1px solid var(--doc-line);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--doc-paper-2);
+  }
+  .indice a:hover, .indice a:focus-visible { border-color: var(--doc-tinta); }
+  .indice-num {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+    color: var(--doc-ink-faint); flex: none;
+  }
+  .indice-nombre { font-size: 15px; flex: 1 1 auto; min-width: 0; }
+  .par { display: flex; flex: none; }
+  .par i {
+    display: block; width: 13px; height: 22px;
+    border: 1px solid var(--doc-marco);
+  }
+  .par i:first-child { border-radius: 4px 0 0 4px; border-right: 0; }
+  .par i:last-child { border-radius: 0 4px 4px 0; }
+
+  /* ------------------------------------------------------------ Un tema -- */
+
+  .tema {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 28px 40px;
+    padding-top: 40px;
+    border-top: 1px solid var(--doc-line);
+    align-items: start;
+  }
+  .tema-texto { display: flex; flex-direction: column; gap: 13px; min-width: 0; }
+  .tema-lede { font-size: 16.5px; color: var(--doc-ink-soft); }
+
+  .balance { display: flex; flex-direction: column; gap: 9px; margin-top: 3px; }
+  .balance div { display: flex; gap: 10px; align-items: baseline; }
+  .balance dt {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; padding-top: 4px;
+    flex: 0 0 62px;
+  }
+  .balance .gana dt { color: var(--doc-tinta); }
+  .balance .cuesta dt { color: var(--doc-regalo); }
+  .balance dd { font-size: 15.5px; color: var(--doc-ink-soft); max-width: 58ch; }
+
+  .fichas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .ficha {
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--doc-ink-soft);
+    border: 1px solid var(--doc-line);
+    border-radius: 999px;
+    padding: 3px 9px 3px 4px;
+  }
+  .ficha b {
+    width: 15px; height: 15px; border-radius: 50%;
+    border: 1px solid var(--doc-marco);
+    flex: none;
+  }
+
+  details {
+    border: 1px solid var(--doc-line);
+    border-radius: 10px;
+    background: var(--doc-paper-2);
+    padding: 10px 13px;
+    grid-column: 1 / -1;
+  }
+  summary {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--doc-ink-soft);
+    cursor: pointer;
+  }
+  summary:focus-visible { outline: 2px solid var(--doc-tinta); outline-offset: 3px; border-radius: 4px; }
+  details[open] summary { margin-bottom: 10px; }
+  .bloques { display: flex; flex-wrap: wrap; gap: 10px; }
+  pre {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.65;
+    color: var(--doc-ink);
+    background: var(--doc-paper);
+    border: 1px solid var(--doc-line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    flex: 1 1 320px;
+    max-width: 100%;
+  }
+  pre b { color: var(--doc-ink-faint); font-weight: 400; }
+
+  /* --------------------------------------------------------- Las muestras -- */
+
+  .vistas { display: flex; gap: 14px; }
+  .vista { display: flex; flex-direction: column; gap: 7px; }
+  .vista figcaption {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--doc-ink-faint); text-align: center;
+  }
+
+  /* De aquí hacia abajo se usan los nombres de verdad de la aplicación. Cada
+     lienzo recibe los suyos por `style`, escritos desde la misma tabla que
+     imprime el bloque de fichas, de modo que lo que se ve y lo que se copia no
+     pueden separarse. */
+  .lienzo {
+    width: 252px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--marco);
+    border-radius: 14px;
+    box-shadow: var(--doc-sombra);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .l-cabecera {
+    padding: 13px 13px 9px;
+    border-bottom: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .l-eyebrow {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .l-titulo { font-family: var(--serif); font-size: 20px; line-height: 1.1; }
+  .l-cuerpo { padding: 4px 13px 12px; display: flex; flex-direction: column; }
+
+  .l-dia {
+    display: grid; grid-template-columns: 30px 1fr; gap: 9px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+  }
+  .l-dia:last-of-type { border-bottom: 0; }
+  .l-dia[data-hoy] {
+    background: var(--tinta-suave);
+    margin: 0 -9px; padding: 7px 9px;
+    border-radius: 7px; border-bottom: 0;
+  }
+  .l-inicial { font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em; color: var(--ink-faint); }
+  .l-numero { font-family: var(--serif); font-size: 17px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .l-dia[data-hoy] .l-numero { color: var(--tinta); }
+  .l-linea { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .l-banda { flex: 0 0 3px; align-self: stretch; min-height: 16px; border-radius: 2px; background: var(--tinta); opacity: .55; }
+  .l-que { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+  .l-hora { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); font-variant-numeric: tabular-nums; flex: none; }
+  .l-vacio { font-size: 12px; color: var(--ink-faint); font-style: italic; }
+
+  .l-grupo { font-family: var(--mono); font-size: 8.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); margin: 13px 0 7px; }
+  .l-tarjeta {
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 11px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .l-tarjeta h4 { font-size: 13.5px; font-weight: 600; }
+  .l-tarjeta p { font-size: 11.5px; color: var(--ink-soft); }
+  .l-fila { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .l-etiqueta {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .06em;
+    padding: 2px 7px; border-radius: 999px;
+    background: var(--paper-3); color: var(--ink-soft);
+  }
+  .l-etiqueta[data-tono="regalo"] { background: var(--regalo-suave); color: var(--regalo); }
+  .l-etiqueta[data-tono="tinta"] { background: var(--tinta-suave); color: var(--tinta); }
+  .l-etiqueta[data-tono="aviso"] { background: var(--paper-3); color: var(--aviso); }
+
+  .l-sello {
+    background: var(--sello-bg);
+    border: 1px dashed var(--sello-line);
+    border-radius: 10px;
+    padding: 11px 10px;
+    text-align: center;
+    color: var(--sello-text);
+    margin-top: 10px;
+  }
+  .l-sello strong { display: block; font-family: var(--serif); font-size: 14px; font-weight: 500; }
+  .l-sello span { font-size: 10.5px; opacity: .85; }
+
+  .l-hueco {
+    margin-top: 11px;
+    background: var(--hueco);
+    border: 1px solid var(--hueco-linea);
+    border-radius: 9px;
+    padding: 7px 10px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+
+  .l-tabbar {
+    margin-top: 12px;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+  }
+  .l-tab {
+    padding: 8px 2px 9px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 8.5px; letter-spacing: .02em;
+    color: var(--ink-faint);
+  }
+  .l-tab[aria-current] { color: var(--tinta); }
+  .l-tab svg { width: 16px; height: 16px; display: block; }
+
+  /* ---------------------------------------------------------------- Cierre -- */
+
+  .cierre {
+    border-top: 1px solid var(--doc-line);
+    padding-top: 40px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .lista { display: flex; flex-direction: column; gap: 11px; padding-left: 0; list-style: none; }
+  .lista li {
+    font-size: 16.5px; color: var(--doc-ink-soft);
+    padding-left: 18px; position: relative;
+  }
+  .lista li::before {
+    content: ""; position: absolute; left: 0; top: .62em;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--doc-tinta);
+  }
+  .lista li strong { color: var(--doc-ink); font-weight: 600; }
+
+  .recomendacion {
+    background: var(--doc-paper-2);
+    border: 1px solid var(--doc-line);
+    border-left: 3px solid var(--doc-tinta);
+    border-radius: 4px 12px 12px 4px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .recomendacion p { font-size: 16.5px; color: var(--doc-ink-soft); }
+
+  a { color: var(--doc-tinta); }
+  :focus-visible { outline: 2px solid var(--doc-tinta); outline-offset: 3px; border-radius: 4px; }
+
+  @media (max-width: 900px) {
+    .tema { grid-template-columns: minmax(0, 1fr); }
+    .vistas { flex-wrap: wrap; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="marco">
+
+  <header class="portada">
+    <p class="eyebrow">Refinar el diseño · ocho identidades sobre las mismas fichas</p>
+    <h1>Ocho temas más, y lo que cada uno le hace a la agenda</h1>
+    <p class="lede">
+      Hoy la aplicación tiene una identidad —papel cálido, tinta verde para la
+      agenda, granate para los regalos— y dos modos, claro y oscuro, diseñados
+      por igual. Lo que sigue son ocho identidades más, cada una completa en sus
+      dos modos, escritas con los nombres de ficha que ya usa
+      <code>estilos.css</code>: se ponen cambiando valores, no reglas.
+    </p>
+  </header>
+
+  <section class="prosa">
+    <h2>Lo que no cambia</h2>
+    <p>
+      Un tema aquí no es un tono de acento: es una <strong>escala de papel, una
+      tinta y un color de regalo</strong>. La aplicación pinta con esas fichas de
+      punta a punta —la tinta es a la vez el número de hoy, la banda del evento,
+      la pestaña activa y el relleno del botón redondo—, así que cambiarlas
+      cambia la aplicación entera sin tocar un solo componente.
+    </p>
+    <p>
+      Cada tema declara <strong>dieciséis valores por modo</strong>, que son los
+      que se ven en las muestras. El resto se deriva de ellos con las reglas que
+      la hoja ya tiene escritas: el papel elevado de las hojas sube un peldaño
+      —hacia el blanco en claro, hacia la luz en oscuro—, el hueco donde se
+      escribe se hunde en los dos, y las sombras y el velo llevan el negro del
+      tema. Eso no se rediseña por tema; se recalcula.
+    </p>
+    <p>
+      Dos condiciones se cumplen en los ocho. La primera:
+      <strong>el oscuro no es la inversión del claro</strong>, y por eso las dos
+      muestras van siempre juntas, para juzgarlas a la vez. La segunda:
+      <strong>la tinta tiene que contrastar con el papel en los dos
+      sentidos</strong>, porque se usa como texto sobre papel y como fondo con
+      el papel encima —el botón redondo y el día elegido del mes—. Los pares de
+      texto están comprobados a AA; los apretados son siempre los mismos, la
+      pastilla de tinta y la de regalo.
+    </p>
+  </section>
+
+  <nav aria-label="Los ocho temas">
+    <ul class="indice" id="indice"></ul>
+  </nav>
+
+  <div id="temas"></div>
+
+  <section class="cierre">
+    <h2>Qué hace falta para ponerlos</h2>
+    <ul class="lista">
+      <li>
+        <strong>Un eje más, no un selector más largo.</strong> Hoy Ajustes tiene
+        Tema con tres valores —como el sistema, claro, oscuro— y
+        <code>aplicarTema</code> escribe <code>data-tema</code>. La identidad es
+        otra cosa: un <code>data-identidad</code> en la raíz y su propia
+        preferencia guardada. Los dos ejes se multiplican: ocho identidades por
+        dos modos, y el «como el sistema» sigue decidiendo el modo.
+      </li>
+      <li>
+        <strong>El color de la barra de estado deja de ser una constante.</strong>
+        Las dos etiquetas <code>theme-color</code> de <code>index.html</code>
+        llevan el verde y el negro azulado escritos a mano. Con varias
+        identidades hay que ponerlas desde el código al aplicar el tema, o en la
+        cáscara de iOS la barra se queda verde encima de un tema violeta.
+      </li>
+      <li>
+        <strong>Las fichas derivadas se generan, no se copian.</strong> El papel
+        elevado, el hueco, la sombra y el velo salen de los dieciséis valores.
+        Escribirlos a mano ocho veces es donde aparecerían las incoherencias.
+      </li>
+      <li>
+        <strong>Sube <code>VERSION</code> en <code>sw.js</code>.</strong> Es CSS:
+        sin eso, quien ya tenga la aplicación abierta sigue viendo el tema de
+        antes y parece que el cambio no se hizo.
+      </li>
+      <li>
+        <strong>Un tema no arregla una jerarquía.</strong> Ninguno de los ocho
+        cambia dónde está nada. Si algo no se encuentra hoy, tampoco se
+        encontrará repintado.
+      </li>
+    </ul>
+
+    <div class="recomendacion">
+      <h3>Por dónde empezaría</h3>
+      <p>
+        Por <strong>Azulete</strong> y <strong>Nocturno de cocina</strong>. El
+        primero es el vecino más cercano de lo que ya hay —invierte la
+        temperatura sin mover la estructura— y sirve para probar el eje de la
+        identidad con poco riesgo. El segundo es el que más cambia el uso real:
+        la agenda se consulta de noche, en la cocina, con el móvil en una mano.
+      </p>
+      <p>
+        El comodín es <strong>Papel de estraza</strong>, el único que se atreve
+        con un papel que no es blanco. Es el que puede salir memorable y el que
+        puede salir sucio; no se sabe hasta verlo a pantalla llena.
+      </p>
+      <p>
+        Queda por decidir si la identidad es una elección por dispositivo, como
+        el modo, o algo de la casa entera que se guarda en
+        <code>configuracion</code> y llega a todos.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  /* Los ocho temas. Una sola tabla: de aquí salen los colores del lienzo, las
+     fichas redondas, el índice y el bloque de código que se copia. */
+
+  const ORDEN = [
+    ['paper', 'el papel de la pantalla'],
+    ['paper-2', 'la tarjeta'],
+    ['paper-3', 'el peldaño de dentro'],
+    ['ink', 'lo que se lee'],
+    ['ink-soft', 'lo secundario'],
+    ['ink-faint', 'los rótulos'],
+    ['line', 'la raya entre días'],
+    ['tinta', 'la agenda'],
+    ['tinta-suave', 'el día de hoy'],
+    ['regalo', 'los regalos'],
+    ['regalo-suave', 'su pastilla'],
+    ['aviso', 'lo que pide algo'],
+    ['sello-bg', 'el sello'],
+    ['sello-text', 'su texto'],
+    ['hueco', 'donde se escribe'],
+    ['hueco-linea', 'su borde'],
+  ];
+
+  const TEMAS = [
+    {
+      id: 'azulete',
+      nombre: 'Azulete',
+      tagline: 'frío en la tinta, cálido en el regalo',
+      lede: 'El cuaderno de tapa de tela azul y el azulete del lavado, sobre un algodón sin blanquear. Invierte la temperatura de hoy: la agenda pasa a un azul de escribir y el regalo se queda con el ocre del azulejo, que es el color con el que se envuelve.',
+      gana: 'La agenda deja de competir con el regalo por el mismo sitio del círculo cromático: azul y ocre se separan solos, y la etiqueta de «por comprar» se ve sin leerla.',
+      cuesta: 'Es el tema menos sorprendente de los ocho. Puesto al lado del actual, se nota que cambió algo pero no qué.',
+      claro: {
+        'paper': '#F9F7F2', 'paper-2': '#F0EDE6', 'paper-3': '#E7E3DA',
+        'ink': '#1F2733', 'ink-soft': '#5C6672', 'ink-faint': '#929BA6',
+        'line': '#DEDAD1', 'tinta': '#2C4B8F', 'tinta-suave': '#E0E6F3',
+        'regalo': '#B0651E', 'regalo-suave': '#F6E7D5', 'aviso': '#A33A2A',
+        'sello-bg': '#E9EBF2', 'sello-text': '#55627E',
+        'hueco': '#EFEBE2', 'hueco-linea': '#DAD5C9',
+      },
+      oscuro: {
+        'paper': '#101620', 'paper-2': '#171F2A', 'paper-3': '#202935',
+        'ink': '#E6EAF1', 'ink-soft': '#9BA6B5', 'ink-faint': '#6B7686',
+        'line': '#253040', 'tinta': '#8FB0E8', 'tinta-suave': '#17253C',
+        'regalo': '#E5A867', 'regalo-suave': '#33251A', 'aviso': '#E08A6B',
+        'sello-bg': '#1A2230', 'sello-text': '#9BA6B5',
+        'hueco': '#0A0F16', 'hueco-linea': '#28323F',
+      },
+      nota: 'El oscuro es una noche azul, no un negro: el papel conserva el tono de la tinta en lugar de apagarse a gris.',
+    },
+    {
+      id: 'huerta',
+      nombre: 'Huerta de agosto',
+      tagline: 'aceituna y ciruela',
+      lede: 'El verde de hoy movido del petróleo a la aceituna —un verde con amarillo dentro, de hoja al sol— y el regalo a la ciruela. El papel es lino con una pizca de verde, de mantel puesto en la sombra.',
+      gana: 'Es el más cálido de los ocho sin ser marrón, y el que mejor le sienta a una aplicación que se usa sobre todo en verano: cumpleaños, vacaciones, la comida en casa de los abuelos.',
+      cuesta: 'La aceituna y el papel de lino están cerca en el tono: la banda del evento pierde algo de fuerza y hay que sostenerla con la opacidad, no con el color.',
+      claro: {
+        'paper': '#F7F6EF', 'paper-2': '#EEEDE3', 'paper-3': '#E4E4D7',
+        'ink': '#232A20', 'ink-soft': '#5D6656', 'ink-faint': '#929A88',
+        'line': '#DCDBCC', 'tinta': '#55691F', 'tinta-suave': '#E6EBD3',
+        'regalo': '#75407D', 'regalo-suave': '#EFE2F2', 'aviso': '#9A6212',
+        'sello-bg': '#ECEEE4', 'sello-text': '#5D6656',
+        'hueco': '#EDEBDF', 'hueco-linea': '#D7D6C4',
+      },
+      oscuro: {
+        'paper': '#12160F', 'paper-2': '#191E15', 'paper-3': '#22281C',
+        'ink': '#E9EDE2', 'ink-soft': '#A2AC96', 'ink-faint': '#717C66',
+        'line': '#262D20', 'tinta': '#A8C468', 'tinta-suave': '#1E2A12',
+        'regalo': '#D89FE0', 'regalo-suave': '#2A1B2E', 'aviso': '#DCA95C',
+        'sello-bg': '#1A1F16', 'sello-text': '#A2AC96',
+        'hueco': '#0B0E08', 'hueco-linea': '#29301F',
+      },
+      nota: 'En oscuro la aceituna sube a un verde de brote para poder leerse, y la ciruela se aclara a lila: el par se mantiene, la profundidad no.',
+    },
+    {
+      id: 'estraza',
+      nombre: 'Papel de estraza',
+      tagline: 'el papel deja de ser blanco',
+      lede: 'El papel de envolver del mercado, con la tinta ferrogálica encima y el rojo del tampón de goma para los regalos. Es el único de los ocho cuyo modo claro no es casi blanco: el fondo es un tostado de medio tono, y todo lo demás se apoya en él.',
+      gana: 'Ningún otro tema se parece a una aplicación. El sello de cumpleaños —que ya es un recuadro de línea discontinua— por fin está sobre el material que le corresponde.',
+      cuesta: 'Un fondo de medio tono se lleva por delante los recursos habituales: el peldaño de papel elevado tiene menos sitio hacia arriba, y las capturas de pantalla en la App Store se ven amarillentas al lado de las de cualquier otra aplicación.',
+      claro: {
+        'paper': '#E9DCC3', 'paper-2': '#E0D2B6', 'paper-3': '#D6C7A8',
+        'ink': '#2B2114', 'ink-soft': '#5F513C', 'ink-faint': '#8C7C63',
+        'line': '#CDBB99', 'tinta': '#2F4A5C', 'tinta-suave': '#D4DAD8',
+        'regalo': '#9B3524', 'regalo-suave': '#EFD5C7', 'aviso': '#8A5A12',
+        'sello-bg': '#DED0B2', 'sello-text': '#5F513C',
+        'hueco': '#DFD1B4', 'hueco-linea': '#C6B48F',
+      },
+      oscuro: {
+        'paper': '#1B1611', 'paper-2': '#231D16', 'paper-3': '#2C251C',
+        'ink': '#EDE3D2', 'ink-soft': '#A99B85', 'ink-faint': '#7A6E5C',
+        'line': '#322A20', 'tinta': '#8FB6C6', 'tinta-suave': '#16262E',
+        'regalo': '#E28C74', 'regalo-suave': '#33201A', 'aviso': '#D9A45A',
+        'sello-bg': '#241E17', 'sello-text': '#A99B85',
+        'hueco': '#120E0A', 'hueco-linea': '#342C21',
+      },
+      nota: 'El oscuro no es el mismo papel apagado: es el cartón bajo una bombilla, marrón y no negro, con la tinta subida a un azul de tiza.',
+    },
+    {
+      id: 'baldosa',
+      nombre: 'Baldosa hidráulica',
+      tagline: 'dos cálidos sobre un gris frío',
+      lede: 'El suelo de mosaico de un piso viejo: cemento gris, y encima los dos pigmentos que traen esas baldosas —mostaza y granate de tierra—. Es el único que junta los dos colores en la misma familia cálida y los sujeta con un papel frío.',
+      gana: 'La pantalla se lee como una sola pieza en lugar de dos mitades, y el gris de cemento hace que la mostaza parezca luz y no aviso.',
+      cuesta: 'La tinta mostaza y el color de aviso son primos: hay que separarlos por saturación, y en la pastilla de «falta repartir» se distinguen menos de lo que sería deseable.',
+      claro: {
+        'paper': '#F2F1EC', 'paper-2': '#E8E7E1', 'paper-3': '#DDDCD5',
+        'ink': '#22262A', 'ink-soft': '#5C6167', 'ink-faint': '#91969C',
+        'line': '#D6D5CE', 'tinta': '#7A6212', 'tinta-suave': '#F0E7CB',
+        'regalo': '#8C3944', 'regalo-suave': '#F3DEE0', 'aviso': '#B2451B',
+        'sello-bg': '#E6E8EA', 'sello-text': '#5C6167',
+        'hueco': '#EAE9E2', 'hueco-linea': '#D3D2C9',
+      },
+      oscuro: {
+        'paper': '#14171A', 'paper-2': '#1B1F22', 'paper-3': '#23282C',
+        'ink': '#E8EAEC', 'ink-soft': '#9CA3A9', 'ink-faint': '#6D747A',
+        'line': '#262C31', 'tinta': '#D9B65A', 'tinta-suave': '#2B2413',
+        'regalo': '#E4909C', 'regalo-suave': '#33212A', 'aviso': '#E68A5C',
+        'sello-bg': '#1C2124', 'sello-text': '#9CA3A9',
+        'hueco': '#0D0F11', 'hueco-linea': '#2A3035',
+      },
+      nota: 'La mostaza en oscuro se vuelve latón. Es el único tema en el que el modo oscuro parece más lujoso que el claro.',
+    },
+    {
+      id: 'violeta',
+      nombre: 'Tinta violeta de escuela',
+      tagline: 'los papeles cambiados: el regalo es verde',
+      lede: 'La tinta violeta de las copias del colegio, sobre un blanco frío de cuadrícula. Y aquí el reparto se invierte a propósito: el verde deja de ser la agenda y pasa a ser el regalo, que es donde el verde significa «listo».',
+      gana: 'El violeta no lo usa ninguna otra aplicación de la casa, así que el icono y la barra de estado se reconocen de lejos. Y un verde en «comprado» dice lo que dice sin explicarlo.',
+      cuesta: 'Cambiar de sitio el verde reeduca a quien ya usa la aplicación: durante unos días, el verde seguirá pareciendo «la agenda». Es el único de los ocho que además de repintar, reasigna.',
+      claro: {
+        'paper': '#FAF9FB', 'paper-2': '#F1F0F5', 'paper-3': '#E8E6EE',
+        'ink': '#221F2B', 'ink-soft': '#5C5870', 'ink-faint': '#918DA3',
+        'line': '#E0DDE8', 'tinta': '#59399B', 'tinta-suave': '#E7E1F5',
+        'regalo': '#46703A', 'regalo-suave': '#E0EDDA', 'aviso': '#A05A16',
+        'sello-bg': '#EDEAF3', 'sello-text': '#5C5870',
+        'hueco': '#F0EDF5', 'hueco-linea': '#DCD8E6',
+      },
+      oscuro: {
+        'paper': '#131118', 'paper-2': '#1A1721', 'paper-3': '#221E2B',
+        'ink': '#EAE7F1', 'ink-soft': '#A29DB4', 'ink-faint': '#726D85',
+        'line': '#282434', 'tinta': '#B79BF0', 'tinta-suave': '#241C3A',
+        'regalo': '#9CCB8C', 'regalo-suave': '#1B2A17', 'aviso': '#DFA35C',
+        'sello-bg': '#1B1823', 'sello-text': '#A29DB4',
+        'hueco': '#0B0910', 'hueco-linea': '#2B2637',
+      },
+      nota: 'Es el único tema cuyo papel claro es frío de verdad. Sin ese frío, el violeta se va a morado de cumpleaños infantil.',
+    },
+    {
+      id: 'nocturno',
+      nombre: 'Nocturno de cocina',
+      tagline: 'pensado de noche, y luego de día',
+      lede: 'La cocina a las once, con la campana encendida y el resto a oscuras. La tinta es el ámbar de esa luz y el regalo un verde salvia. Los otros siete se diseñan en claro y se traducen a oscuro; este va al revés, porque es a esa hora cuando alguien mira lo que hay mañana.',
+      gana: 'El modo oscuro deja de ser una traducción y pasa a ser el original: cálido, de poca luz, sin el azul que despierta. Y el ámbar como tinta es lo más lejano al verde de hoy sin salirse de casa.',
+      cuesta: 'El modo claro es un segundo idioma. El ámbar hay que oscurecerlo a bronce para que se lea sobre papel, y el tema pierde de día justo lo que lo hacía reconocible de noche.',
+      claro: {
+        'paper': '#F7F3ED', 'paper-2': '#EFEAE1', 'paper-3': '#E5DFD3',
+        'ink': '#241E17', 'ink-soft': '#625849', 'ink-faint': '#988D7C',
+        'line': '#DDD6C8', 'tinta': '#8A5F14', 'tinta-suave': '#F2E6CC',
+        'regalo': '#2F6B48', 'regalo-suave': '#DCEBE0', 'aviso': '#A5511C',
+        'sello-bg': '#EDEAE3', 'sello-text': '#625849',
+        'hueco': '#EEE8DC', 'hueco-linea': '#D8D0C0',
+      },
+      oscuro: {
+        'paper': '#14100D', 'paper-2': '#1C1712', 'paper-3': '#251E18',
+        'ink': '#F0E7DA', 'ink-soft': '#B0A493', 'ink-faint': '#7E7365',
+        'line': '#2B241D', 'tinta': '#E5B65E', 'tinta-suave': '#2E2314',
+        'regalo': '#97C6A6', 'regalo-suave': '#16281D', 'aviso': '#E78C5A',
+        'sello-bg': '#1E1813', 'sello-text': '#B0A493',
+        'hueco': '#0C0907', 'hueco-linea': '#2E271F',
+      },
+      nota: 'Aquí la muestra que manda es la de la derecha. Conviene mirarla primero.',
+    },
+    {
+      id: 'cianotipia',
+      nombre: 'Cianotipia',
+      tagline: 'el plano, y su negativo',
+      lede: 'El azul de Prusia del plano heliográfico, con las líneas en tiza clara y un óxido para los regalos. El modo oscuro es la copia de verdad —fondo azul, no negro— y el claro es su negativo: el papel pálido con la tinta encima.',
+      gana: 'Es el único tema cuyo modo oscuro tiene color en el papel, y eso hace que las hojas superpuestas y sus peldaños de elevación se lean mucho mejor que sobre un gris neutro.',
+      cuesta: 'Un fondo azul saturado cansa en lecturas largas y tiñe las fotos y los emojis que aparezcan encima. Y es el segundo azul de la lista: al lado de Azulete hay que elegir uno.',
+      claro: {
+        'paper': '#F2F5F7', 'paper-2': '#E8EDF1', 'paper-3': '#DDE4EA',
+        'ink': '#10222E', 'ink-soft': '#4F6A7B', 'ink-faint': '#85A0B0',
+        'line': '#D3DCE3', 'tinta': '#185C7E', 'tinta-suave': '#DCE9EF',
+        'regalo': '#A2532B', 'regalo-suave': '#F3E1D5', 'aviso': '#97621A',
+        'sello-bg': '#E7EDF1', 'sello-text': '#4F6A7B',
+        'hueco': '#EBEFF2', 'hueco-linea': '#D5DDE3',
+      },
+      oscuro: {
+        'paper': '#0C2436', 'paper-2': '#123047', 'paper-3': '#183A54',
+        'ink': '#E7F0F5', 'ink-soft': '#9FBACB', 'ink-faint': '#6D8EA3',
+        'line': '#1D4159', 'tinta': '#7FD0E8', 'tinta-suave': '#123B4D',
+        'regalo': '#F0B492', 'regalo-suave': '#2C3A46', 'aviso': '#F0C36A',
+        'sello-bg': '#14324A', 'sello-text': '#9FBACB',
+        'hueco': '#081C2B', 'hueco-linea': '#1E4257',
+      },
+      nota: 'El óxido de los regalos sobre azul es el par más difícil de los ocho: funciona porque la pastilla es casi del color del papel y el color va en el texto.',
+    },
+    {
+      id: 'hierro',
+      nombre: 'Hierro y cuerda',
+      tagline: 'un solo color en toda la aplicación',
+      lede: 'Todo en grafito —el papel, el texto, la agenda— y un único color en la pantalla: el tostado de cuerda de los regalos. La agenda deja de tener color propio y se dibuja con peso y con línea; el color queda reservado para lo que se compra.',
+      gana: 'Es el tema más silencioso, y el que hace que un regalo pendiente destaque más que en cualquier otro: no compite con nada.',
+      cuesta: 'La tinta era lo que marcaba el día de hoy y la pestaña activa. Sin color, esos dos estados pasan a depender del peso y del relleno, y hay que comprobar uno por uno que siguen leyéndose —es el único de los ocho que además de fichas pide retoques de componente.',
+      claro: {
+        'paper': '#F6F5F3', 'paper-2': '#EDECE9', 'paper-3': '#E3E2DE',
+        'ink': '#26282A', 'ink-soft': '#5F6265', 'ink-faint': '#94979A',
+        'line': '#DBDAD6', 'tinta': '#33383B', 'tinta-suave': '#E4E3DF',
+        'regalo': '#7E6134', 'regalo-suave': '#EEE7D8', 'aviso': '#8A4A22',
+        'sello-bg': '#EAE9E6', 'sello-text': '#5F6265',
+        'hueco': '#EEEDEA', 'hueco-linea': '#D8D7D2',
+      },
+      oscuro: {
+        'paper': '#131414', 'paper-2': '#1A1B1B', 'paper-3': '#222323',
+        'ink': '#EAEAE8', 'ink-soft': '#A0A19E', 'ink-faint': '#71736F',
+        'line': '#272827', 'tinta': '#D6D6D2', 'tinta-suave': '#232423',
+        'regalo': '#CBA76A', 'regalo-suave': '#2A2318', 'aviso': '#D98F5E',
+        'sello-bg': '#1B1C1B', 'sello-text': '#A0A19E',
+        'hueco': '#0B0C0B', 'hueco-linea': '#2A2B2A',
+      },
+      nota: 'Es el tema que más depende de la tipografía. Con la Newsreader puesta se sostiene; con su repuesto, menos.',
+    },
+  ];
+
+  /* Los iconos de la barra, los mismos cuatro trazos de la aplicación: heredan
+     el color de la pestaña y con él su estado. */
+  const ICONOS = {
+    semana: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M8 3v3M16 3v3M3.5 10h17"/></svg>',
+    regalos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.5" y="9" width="17" height="11" rx="2"/><path d="M3.5 13h17M12 9v11M12 9c-2.6 0-4-.8-4-2.2S9 4.5 10.2 5 12 7.4 12 9zm0 0c2.6 0 4-.8 4-2.2S14.9 4.5 13.7 5 12 7.4 12 9z"/></svg>',
+    gente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9.5" cy="9" r="3.2"/><path d="M4 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.4a3.2 3.2 0 010 5.2M18.5 19.5c0-2-.6-3.5-1.7-4.5"/></svg>',
+    buscar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20"/></svg>',
+  };
+
+  /** El lienzo: un trozo de la Semana y un trozo de Regalos, con el mismo
+   *  contenido en los dieciséis, para que lo único distinto sea el color. */
+  function lienzo(tema, modo) {
+    const el = document.createElement('div');
+    el.className = 'lienzo';
+    for (const [ficha, _] of ORDEN) el.style.setProperty('--' + ficha, tema[modo][ficha]);
+    el.style.setProperty('--sello-line', modo === 'claro'
+      ? 'color-mix(in srgb, ' + tema[modo]['sello-text'] + ' 34%, transparent)'
+      : 'color-mix(in srgb, ' + tema[modo]['sello-text'] + ' 30%, transparent)');
+    el.style.setProperty('--marco', modo === 'claro'
+      ? 'color-mix(in srgb, ' + tema[modo].ink + ' 12%, transparent)'
+      : 'color-mix(in srgb, ' + tema[modo].ink + ' 14%, transparent)');
+
+    el.innerHTML = `
+      <div class="l-cabecera">
+        <p class="l-eyebrow">27 de julio — 2 de agosto</p>
+        <p class="l-titulo">Semana</p>
+      </div>
+      <div class="l-cuerpo">
+        <div class="l-dia">
+          <div><div class="l-inicial">L</div><div class="l-numero">27</div></div>
+          <div class="l-linea"><i class="l-banda"></i><span class="l-que">Piscina con los primos</span><span class="l-hora">18:30</span></div>
+        </div>
+        <div class="l-dia" data-hoy>
+          <div><div class="l-inicial">M</div><div class="l-numero">28</div></div>
+          <div class="l-linea"><i class="l-banda"></i><span class="l-que">Cena en casa de la abuela</span><span class="l-hora">21:00</span></div>
+        </div>
+        <div class="l-dia">
+          <div><div class="l-inicial">X</div><div class="l-numero">29</div></div>
+          <div class="l-linea"><span class="l-vacio">Nada apuntado</span></div>
+        </div>
+
+        <p class="l-grupo">Por comprar</p>
+        <div class="l-tarjeta">
+          <h4>Bici de paseo</h4>
+          <p>Para Marta · lo lleva papá</p>
+          <div class="l-fila">
+            <span class="l-etiqueta" data-tono="regalo">POR COMPRAR</span>
+            <span class="l-etiqueta" data-tono="tinta">CUMPLE</span>
+            <span class="l-etiqueta" data-tono="aviso">SIN NADIE</span>
+          </div>
+        </div>
+
+        <div class="l-sello">
+          <strong>Cumple de Marta</strong>
+          <span>el 6 de agosto · hará 12</span>
+        </div>
+
+        <div class="l-hueco">Buscar en la agenda</div>
+
+        <nav class="l-tabbar">
+          <span class="l-tab" aria-current="page">${ICONOS.semana}Semana</span>
+          <span class="l-tab">${ICONOS.regalos}Regalos</span>
+          <span class="l-tab">${ICONOS.gente}Gente</span>
+          <span class="l-tab">${ICONOS.buscar}Buscar</span>
+        </nav>
+      </div>`;
+    return el;
+  }
+
+  function fichaRedonda(color, nombre) {
+    const el = document.createElement('span');
+    el.className = 'ficha';
+    el.innerHTML = '<b></b>' + nombre + ' ' + color.toUpperCase();
+    el.querySelector('b').style.background = color;
+    return el;
+  }
+
+  function bloque(tema, modo) {
+    const sel = modo === 'claro' ? ':root[data-identidad="' + tema.id + '"]'
+                                 : ':root[data-identidad="' + tema.id + '"][data-tema="oscuro"]';
+    const lineas = ORDEN.map(([ficha, para]) => {
+      const nombre = ('--' + ficha + ':').padEnd(15, ' ');
+      return '  ' + nombre + tema[modo][ficha].toUpperCase() + ';  <b>/* ' + para + ' */</b>';
+    });
+    const pre = document.createElement('pre');
+    pre.innerHTML = sel + ' {\n' + lineas.join('\n') + '\n}';
+    return pre;
+  }
+
+  const contenedor = document.getElementById('temas');
+  const indice = document.getElementById('indice');
+
+  TEMAS.forEach((tema, i) => {
+    const num = String(i + 1).padStart(2, '0');
+
+    const entrada = document.createElement('li');
+    entrada.innerHTML = `<a href="#${tema.id}">
+        <span class="indice-num">${num}</span>
+        <span class="indice-nombre">${tema.nombre}</span>
+        <span class="par"><i></i><i></i></span>
+      </a>`;
+    const [muestraA, muestraB] = entrada.querySelectorAll('.par i');
+    muestraA.style.background = tema.claro.tinta;
+    muestraB.style.background = tema.claro.regalo;
+    indice.append(entrada);
+
+    const sec = document.createElement('section');
+    sec.className = 'tema';
+    sec.id = tema.id;
+    sec.innerHTML = `
+      <div class="tema-texto">
+        <p class="eyebrow">Tema ${num} · ${tema.tagline}</p>
+        <h2>${tema.nombre}</h2>
+        <p class="tema-lede">${tema.lede}</p>
+        <dl class="balance">
+          <div class="gana"><dt>Gana</dt><dd>${tema.gana}</dd></div>
+          <div class="cuesta"><dt>Cuesta</dt><dd>${tema.cuesta}</dd></div>
+          <div><dt>Los modos</dt><dd>${tema.nota}</dd></div>
+        </dl>
+        <div class="fichas"></div>
+      </div>
+      <div class="tema-vistas">
+        <div class="vistas">
+          <figure class="vista"><figcaption>Claro</figcaption></figure>
+          <figure class="vista"><figcaption>Oscuro</figcaption></figure>
+        </div>
+      </div>
+      <details>
+        <summary>Las dieciséis fichas, listas para pegar</summary>
+        <div class="bloques"></div>
+      </details>`;
+
+    const fichas = sec.querySelector('.fichas');
+    fichas.append(
+      fichaRedonda(tema.claro.paper, 'papel'),
+      fichaRedonda(tema.claro.tinta, 'tinta'),
+      fichaRedonda(tema.claro.regalo, 'regalo'),
+      fichaRedonda(tema.oscuro.paper, 'papel oscuro'),
+      fichaRedonda(tema.oscuro.tinta, 'tinta oscuro'),
+    );
+
+    const vistas = sec.querySelectorAll('.vista');
+    vistas[0].prepend(lienzo(tema, 'claro'));
+    vistas[1].prepend(lienzo(tema, 'oscuro'));
+
+    const bloques = sec.querySelector('.bloques');
+    bloques.append(bloque(tema, 'claro'), bloque(tema, 'oscuro'));
+
+    contenedor.append(sec);
+  });
+</script>
