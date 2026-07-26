@@ -527,12 +527,20 @@ button { background: none; border: 0; cursor: pointer; }
    iguales: son dos rótulos de longitud muy distinta —«Familia Extendida» y
    «Amigos»— y a lo ancho quedarían dos mitades desiguales. */
 .grupo > .seg { display: flex; }
-.grupo > .seg button { flex: 1; }
+/* «Familia Extendida · 4» no cabe en media pantalla al cuerpo de los demás
+   conmutadores, y partido deja el recuento huérfano en la segunda línea. */
+.grupo > .seg button { flex: 1; font-size: 13px; padding: 5px 6px; white-space: nowrap; }
 
-.persona-mas { border-style: dashed; background: none; justify-content: center; }
-.persona-mas:hover { background: var(--paper-2); border-color: var(--tinta); }
-.persona-mas:hover .persona-mas-signo, .persona-mas:hover .persona-quien { color: var(--tinta); }
-.persona-mas-signo { font-size: 21px; line-height: 1; color: var(--ink-faint); }
+/* El «+» de un círculo, al pie de su lista. Sigue diciendo a cuál añade, que
+   es lo que importaba de tenerlo dentro del grupo. */
+.anadir-persona {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  min-height: var(--toque); padding: 9px 13px;
+  border: 1.5px dashed var(--line); border-radius: var(--radio);
+  color: var(--ink-soft); font-size: 14.5px; text-align: left;
+}
+.anadir-persona:hover { border-color: var(--tinta); color: var(--tinta); background: var(--paper-2); }
+.anadir-signo { font-size: 19px; line-height: 1; }
 
 /* Buscar devuelve una tabla y no una rejilla: es donde hace falta el nombre
    entero —lo que distingue a dos Marías—, de quién es y cuándo cumple, en tres
