@@ -43,7 +43,7 @@ import {
 import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
 import { abrirFormularioIdea, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
-import { pintarFamilia } from './vistas/familia.js';
+import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
@@ -54,8 +54,11 @@ const PESTANAS = {
   semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => abrirFormularioIdea(ctx) },
   // La pestaña se llama Gente en la barra; la clave conserva el nombre del
-  // módulo que la pinta, que es de donde sale.
-  familia: { titulo: 'Gente', pintar: pintarFamilia, fab: (ctx) => abrirFormularioIdea(ctx) },
+  // módulo que la pinta, que es de donde sale. Y va sin botón flotante: la
+  // pantalla lleva un «+» dentro de cada círculo, y uno encima que hiciera otra
+  // cosa —apuntar una idea— dejaría dos signos iguales con dos significados a
+  // la vez (specs/ux.md §7.1).
+  familia: { titulo: 'Gente', pintar: pintarFamilia, fab: null },
   // En las pantallas sin acción de creación el botón no aparece.
   buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
 };
@@ -801,7 +804,7 @@ async function salir() {
   await olvidarTodo();
   borrarSesion();
   sesionActual = null;
-  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda();
+  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda(); reiniciarFamilia();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
 }

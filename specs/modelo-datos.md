@@ -34,7 +34,10 @@
 | tiene_cuenta | Determina si le aplican las reglas de ocultación |
 | identificador_apple | Nulo si no tiene cuenta |
 | rol | administrador, miembro, o nulo si no tiene cuenta |
+| circulo | familia, extendida o amigos. Es lo que ordena la pantalla de personas |
 | activa | La independencia de una hija no altera este campo |
+
+**Círculo.** El vínculo, que es cosa distinta de tener cuenta: la abuela no tiene y es de la familia; un amigo podría tenerla sin serlo. Toma tres valores cerrados y cada persona pertenece a uno solo. Al migrar, quien tenía cuenta pasa a `familia` y el resto a `extendida`, que es también el valor por defecto: equivocarse hacia fuera se corrige desde una ficha, mientras que equivocarse hacia dentro rompe la regla de los cuatro en cuanto entra la quinta persona.
 
 **AtributoPersona.** Pares de clave y valor: talla de calzado, alergias, aficiones. Las claves son de creación libre, y la interfaz sugiere las ya utilizadas en el hogar. Se modela como entidad separada y no como campos fijos porque el conjunto de atributos útiles difiere mucho entre una hija y un sobrino, y crece de forma imprevisible.
 
@@ -171,6 +174,8 @@ Una ocasión se vincula como máximo a un evento, y un evento como máximo a una
 Un presupuesto por persona requiere que esa persona figure como participante de la ocasión.
 
 Una persona sin cuenta no puede figurar como autor de ninguna entidad de contenido, ni como responsable de compra, ni en las listas de acceso a categorías restringidas.
+
+El círculo `familia` admite cuatro personas activas como máximo: es el hogar, no un grupo que crece. La pantalla lo sostiene no ofreciendo por dónde añadir; la regla es la red debajo, para lo que entre por la API o por una edición a mano del registro. Dar de baja a alguien libera su hueco.
 
 Un regalo en estado entregado no admite modificación de destinatario ni de ocasión.
 

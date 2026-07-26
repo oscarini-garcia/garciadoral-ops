@@ -1,0 +1,921 @@
+<meta charset="utf-8">
+<title>Familia, Familia Extendida y Amigos — opciones de pantalla</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css),
+     para que lo que se ve aquí sea lo que se verá allí. La Newsreader no puede
+     cargarse desde fuera, así que queda Georgia, que es su propio repuesto en
+     la cadena de la aplicación. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sello-text: #5B7288;
+    --sello-bg:   #E9EEF3;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --regalo:     #E48FAE;
+      --regalo-suave:#33202A;
+      --aviso:      #E0A253;
+      --sello-text: #9CB0BA;
+      --sello-bg:   #1A252B;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sello-text: #5B7288; --sello-bg: #E9EEF3;
+    --sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --sello-text: #9CB0BA; --sello-bg: #1A252B;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 28px 20px 72px;
+  }
+  .hoja { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17px; }
+  p, ul, ol { margin: 0; }
+  ul, ol { padding-left: 1.15em; }
+  li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; }
+
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .bloque { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .bloque p, .bloque li { color: var(--ink-soft); max-width: 68ch; }
+  .bloque h2 + p { max-width: 68ch; }
+
+  .nota {
+    background: var(--sello-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 15px; display: flex; flex-direction: column; gap: 5px;
+  }
+  .nota strong { color: var(--sello-text); font-family: var(--serif); font-weight: 500; font-size: 16px; }
+  .nota p { color: var(--sello-text); max-width: 68ch; }
+
+  /* -------------------------------------------------------------- Opciones -- */
+
+  .opcion { display: flex; flex-direction: column; gap: 18px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 8px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-titulo .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 68ch; }
+
+  .par { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 322px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 14px; }
+  .juicio ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  /* El marcador va posicionado y no como celda de una rejilla: dentro de un
+     contenedor de rejilla, cada trozo de texto suelto y cada <code> del párrafo
+     se convertiría en un elemento más y la línea se partiría en pedazos. */
+  .juicio li { position: relative; padding-left: 25px; margin: 0; color: var(--ink-soft); }
+  .juicio li::before { position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 13px; }
+  .juicio .si li::before { content: "+"; color: var(--tinta); }
+  .juicio .no li::before { content: "−"; color: var(--aviso); }
+
+  /* -------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 322px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden;
+    font-size: 14px;
+  }
+  .tel-estado {
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; color: var(--ink-faint);
+    padding: 10px 15px 0;
+  }
+  .tel-titulo {
+    font-family: var(--serif); font-size: 19px; padding: 6px 15px 0;
+  }
+  .tel-cuerpo { padding: 10px 15px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* Buscador y filtros dentro del teléfono */
+  .p-buscador { position: relative; display: flex; }
+  .p-buscador input {
+    width: 100%; font: inherit; font-size: 13.5px; color: var(--ink);
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 9px;
+    padding: 7px 10px 7px 29px; -webkit-appearance: none; appearance: none;
+  }
+  .p-buscador input::placeholder { color: var(--ink-faint); }
+  .p-buscador svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); }
+
+  .p-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .p-chip {
+    font: inherit; font-size: 11.5px; color: var(--ink-soft); cursor: pointer;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 10px; white-space: nowrap;
+  }
+  .p-chip[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+
+  .p-seg { display: flex; gap: 3px; padding: 3px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; }
+  .p-seg button {
+    flex: 1; font: inherit; font-size: 12.5px; color: var(--ink-soft); cursor: pointer;
+    background: none; border: 0; border-radius: 7px; padding: 5px 4px;
+  }
+  .p-seg button[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.07); }
+
+  /* Grupos y rejillas */
+  .p-grupo { display: flex; flex-direction: column; gap: 9px; }
+  .p-grupo-cabeza { display: flex; align-items: baseline; gap: 7px; }
+  .p-grupo-titulo {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .p-grupo-cuenta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-left: auto; }
+
+  .p-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px 6px; }
+  .p-rejilla.cuatro { grid-template-columns: repeat(4, 1fr); }
+
+  .p-persona {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    background: none; border: 0; padding: 6px 2px; border-radius: 10px; cursor: pointer;
+    font: inherit; color: var(--ink); text-align: center;
+  }
+  .p-persona:hover { background: var(--paper-2); }
+  .p-avatar {
+    width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+    color: #fff; font-size: 14px; font-weight: 600; letter-spacing: .02em; flex: none;
+  }
+  .p-nombre { font-size: 12.5px; line-height: 1.25; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p-nota { font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em; color: var(--ink-faint); }
+  .p-nota.pronto { color: var(--tinta); }
+  .p-nota.sin { color: var(--ink-faint); opacity: .75; }
+
+  /* El botón de añadir, como una celda más de la rejilla */
+  .p-mas {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    background: none; border: 0; padding: 6px 2px; cursor: pointer; font: inherit;
+  }
+  .p-mas-circulo {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 1.5px dashed var(--line); color: var(--ink-faint);
+    display: grid; place-items: center; font-size: 20px; line-height: 1;
+  }
+  .p-mas:hover .p-mas-circulo { border-color: var(--tinta); color: var(--tinta); }
+  .p-mas span:last-child { font-size: 11px; color: var(--ink-faint); }
+
+  .p-mas-fila {
+    display: flex; align-items: center; gap: 9px; cursor: pointer; font: inherit;
+    background: none; border: 1.5px dashed var(--line); border-radius: 10px;
+    padding: 8px 11px; color: var(--ink-soft); font-size: 13px; width: 100%;
+  }
+  .p-mas-fila:hover { border-color: var(--tinta); color: var(--tinta); }
+  .p-mas-fila b { font-weight: 400; font-size: 17px; line-height: 1; }
+
+  /* Filas (opción C) */
+  .p-lista { display: flex; flex-direction: column; }
+  .p-fila {
+    display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center;
+    padding: 7px 4px; border-bottom: 1px solid var(--line);
+    background: none; border-left: 0; border-right: 0; border-top: 0; cursor: pointer;
+    font: inherit; color: var(--ink); text-align: left; width: 100%;
+  }
+  .p-fila:hover { background: var(--paper-2); }
+  .p-fila .p-avatar { width: 34px; height: 34px; font-size: 11.5px; }
+  .p-fila-nombre { font-size: 13.5px; }
+  .p-fila-circulo { font-size: 10.5px; color: var(--ink-faint); }
+  .p-fila-cuando { font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); text-align: right; font-variant-numeric: tabular-nums; }
+  .p-fila-cuando.pronto { color: var(--tinta); }
+
+  .p-sello {
+    background: var(--sello-bg); border: 1px solid var(--line); border-radius: 9px;
+    padding: 9px 11px; font-size: 12px; color: var(--sello-text);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .p-sello b { font-weight: 600; font-size: 12px; }
+
+  .p-vacio { font-size: 12.5px; color: var(--ink-faint); padding: 6px 2px; }
+
+  /* Marca de círculo, sólo donde hace falta distinguirlos */
+  .p-punto { width: 6px; height: 6px; border-radius: 50%; flex: none; display: inline-block; }
+  .c-familia { background: var(--tinta); }
+  .c-extendida { background: var(--sello-text); }
+  .c-amigos { background: var(--regalo); }
+
+  /* ------------------------------------------------------------ Comparación -- */
+
+  .tabla-marco { overflow-x: auto; border: 1px solid var(--line); border-radius: 11px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; padding: 10px 13px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 400; }
+  tbody th { font-weight: 400; color: var(--ink); width: 33%; }
+  tbody td { color: var(--ink-soft); }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+
+  .pie { border-top: 1px solid var(--line); padding-top: 20px; color: var(--ink-faint); font-size: 13.5px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="hoja">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta de pantalla</p>
+    <h1>Familia, Familia Extendida y Amigos</h1>
+    <p>
+      Hoy la pantalla de personas se parte en dos por un dato técnico: quién tiene cuenta
+      y quién no. Se propone partirla por el vínculo real —tres círculos—, dejar a los
+      cuatro de casa en una sola fila, y añadir en cada círculo abierto un
+      <strong>+</strong> para meter a alguien. Encima de todo, un buscador; y en cada
+      persona, cuándo cumple —o el aviso de que aún no lo sabemos.
+    </p>
+    <p>
+      Cuatro maneras de dibujarlo, todas vivas: se puede escribir en los buscadores,
+      cambiar de pestaña, tocar los filtros y pulsar el <strong>+</strong>.
+    </p>
+
+    <div class="nota" style="border-color: var(--tinta)">
+      <strong>Decidido: la opción B, sin avatares</strong>
+      <p>
+        Se eligió el conmutador —la familia fija arriba, Extendida y Amigos por
+        turnos— y se quitaron los avatares de las tres rejillas: las iniciales sobre
+        un color inventado no decían nada que no dijera el nombre, que va justo
+        debajo. Del defecto que se le apuntaba a esta opción —tener que acertar la
+        pestaña antes de buscar— se salió poniendo el buscador encima de todo:
+        mientras hay algo escrito, busca en los tres círculos a la vez.
+      </p>
+      <p>
+        Lo construido está en <strong>specs/ux.md §7.1</strong>. Lo que sigue abajo se
+        conserva como estaba, que es el porqué de la elección.
+      </p>
+    </div>
+  </header>
+
+  <!-- ------------------------------------------------------------------- -->
+
+  <section class="bloque">
+    <p class="rotulo">Antes de las opciones</p>
+    <h2>Lo que cambia por debajo</h2>
+    <p>
+      Poco: una columna en <code>persona</code> con el círculo al que pertenece, y una
+      regla de integridad que dice que <em>Familia</em> es un conjunto cerrado de cuatro.
+      Todo lo demás —tener cuenta, el rol, el parentesco escrito a mano— sigue igual y
+      deja de servir para ordenar la pantalla.
+    </p>
+    <ul>
+      <li><code>circulo</code> con tres valores posibles: <code>familia</code>, <code>extendida</code>, <code>amigos</code>. Obligatorio, uno solo por persona.</li>
+      <li>Alta y edición sólo de administradores, como ahora. En el formulario, el círculo es un campo más; el <strong>+</strong> lo trae ya elegido.</li>
+      <li>El círculo <em>Familia</em> no ofrece <strong>+</strong>: quien intente crecerlo se encuentra con que no hay por dónde. Es la manera más barata de sostener la regla.</li>
+      <li>Tener cuenta pasa a leerse dentro de la ficha, que es donde importa, y no en la portada.</li>
+    </ul>
+
+    <div class="nota">
+      <strong>Un aviso sobre la palabra «categoría»</strong>
+      <p>
+        En el modelo ya hay una tabla <code>categoria</code>, que es la de los eventos y la
+        que gobierna quién ve qué. Llamar igual a esto sería tropezarse en cada consulta.
+        En la pantalla se dirá <em>Familia</em>, <em>Familia Extendida</em> y <em>Amigos</em>,
+        sin nombre colectivo visible; en el código se propone <code>circulo</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------- -->
+
+  <section class="bloque">
+    <p class="rotulo">Antes de las opciones</p>
+    <h2>Tres decisiones comunes a las cuatro</h2>
+
+    <h3>El cumpleaños se lee de dos maneras</h3>
+    <p>
+      «Ver quién tiene cumpleaños o no» son dos preguntas, y las dos se responden con la
+      misma línea bajo el nombre: si la fecha está y cae cerca, dice
+      <span style="color:var(--tinta);font-family:var(--mono);font-size:12px">EN 6 D</span>;
+      si está y cae lejos, dice el día;
+      y si no está, en vez de quedarse en blanco dice
+      <span style="color:var(--ink-faint);font-family:var(--mono);font-size:12px">SIN FECHA</span>.
+      Ese hueco declarado es lo que convierte la pantalla en una lista de deberes: cada
+      «sin fecha» es un cumpleaños que la agenda no va a avisar.
+    </p>
+
+    <h3>El buscador es pequeño porque el registro es pequeño</h3>
+    <p>
+      Quince personas, no quinientas. No hace falta pantalla propia ni resultados por
+      categoría: una línea arriba que va tachando de la vista a quien no encaja, sobre el
+      nombre y sobre el parentesco. Buscar «abuel» debe encontrar a los dos abuelos;
+      buscar «lucia», con o sin tilde, a Lucía.
+    </p>
+
+    <h3>El + es una celda más, no un botón aparte</h3>
+    <p>
+      Puesto al final de cada rejilla, con el mismo tamaño que una persona y el borde
+      discontinuo, se lee sin leerlo y dice de qué círculo es sin necesidad de rotularlo.
+      Un botón «Añadir una persona» al pie, como el de hoy, obligaría además a preguntar
+      a cuál de los tres.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------- Opción A -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">A</span>
+        <h2>Tres bloques, uno debajo de otro</h2>
+      </div>
+      <p>
+        La evolución literal de lo que ya hay: se cambian los dos títulos actuales por
+        tres, y el primero se fija a cuatro columnas para que la familia entre en una
+        fila. Dentro de cada bloque, las personas se ordenan por cumpleaños próximo, y
+        las que no tienen fecha caen al final. Nadie queda escondido tras un gesto.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span>9:41</span><span>Familia</span></div>
+        <div class="tel-cuerpo" id="tel-a"></div>
+      </div>
+      <div class="juicio">
+        <ul class="si">
+          <li>Todo el registro cabe en una ojeada y un scroll corto. Los tres círculos existen a la vez, no por turnos.</li>
+          <li>Cada <strong>+</strong> está pegado a su círculo: no hay que decir a cuál se añade.</li>
+          <li>Es el cambio más pequeño sobre <code>vistas/familia.js</code>: dos títulos más, una regla de rejilla y el orden.</li>
+        </ul>
+        <ul class="no">
+          <li>Con veinte amigos, el tercer bloque empuja hacia abajo y la pantalla se hace larga.</li>
+          <li>«¿Quién cumple pronto?» obliga a mirar tres sitios: el orden ayuda dentro de cada bloque, pero no entre ellos.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------- Opción B -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">B</span>
+        <h2>La familia fija arriba, el resto por pestañas</h2>
+      </div>
+      <p>
+        Los cuatro de casa no se mueven nunca: son la cabecera de la pantalla, siempre en
+        su fila. Debajo, un conmutador entre <em>Familia Extendida</em> y <em>Amigos</em>,
+        y una sola rejilla que cambia de contenido. El <strong>+</strong> pertenece a la
+        pestaña abierta.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span>9:41</span><span>Familia</span></div>
+        <div class="tel-cuerpo" id="tel-b"></div>
+      </div>
+      <div class="juicio">
+        <ul class="si">
+          <li>La pantalla no crece: da igual que haya cinco amigos o cincuenta, siempre ocupa lo mismo.</li>
+          <li>Jerarquiza de verdad. Dice, sin escribirlo, que los cuatro de casa no son un grupo más.</li>
+          <li>El recuento en cada pestaña deja ver el tamaño del otro círculo sin abrirlo.</li>
+        </ul>
+        <ul class="no">
+          <li>Media pantalla está siempre oculta. Buscar obliga a decidir antes en qué pestaña se busca —o a que el buscador salte solo de pestaña, que es un truco que se nota.</li>
+          <li>El <strong>+</strong> cambia de significado según lo que esté abierto: si alguien no mira la pestaña, añade al círculo equivocado.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------- Opción C -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">C</span>
+        <h2>Los cuatro arriba, y debajo el calendario de la gente</h2>
+      </div>
+      <p>
+        La fila de la familia se conserva, pero el resto deja de ser una rejilla de caras:
+        pasa a ser una lista ordenada por el cumpleaños que viene, con el círculo escrito
+        en pequeño bajo cada nombre. Al final, un bloque aparte —<em>Sin fecha de
+        nacimiento</em>— que reúne a quien no va a recibir aviso nunca. Los dos
+        <strong>+</strong> viven al pie, uno por círculo.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span>9:41</span><span>Familia</span></div>
+        <div class="tel-cuerpo" id="tel-c"></div>
+      </div>
+      <div class="juicio">
+        <ul class="si">
+          <li>Responde la pregunta de los cumpleaños directamente, sin filtrar ni contar: el orden <em>es</em> la respuesta.</li>
+          <li>El bloque «sin fecha» convierte un dato que falta en una tarea visible, y se vacía solo a medida que se rellena.</li>
+          <li>Una fila cabe un nombre largo, un parentesco y una fecha; una celda de rejilla, no.</li>
+        </ul>
+        <ul class="no">
+          <li>El círculo deja de estructurar la pantalla y queda como etiqueta. Ver «todos mis amigos» pasa a ser un filtro, no un vistazo.</li>
+          <li>Se pierde el reconocimiento por cara: una lista de avatares pequeños se lee, no se mira.</li>
+          <li>Dos <strong>+</strong> al pie están más lejos y se rotulan más largo.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------- Opción D -- -->
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo">
+        <span class="letra">D</span>
+        <h2>Una sola rejilla, y una tira de filtros</h2>
+      </div>
+      <p>
+        Todos juntos en una rejilla, la familia primero, y encima una tira de filtros que
+        recorta lo que se ve: por círculo, por «cumple pronto», por «sin fecha». El
+        buscador y los filtros son la misma barra. El <strong>+</strong> cierra siempre la
+        rejilla y, cuando el filtro no dice de qué círculo hablamos, lo pregunta al abrir
+        el formulario.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-estado"><span>9:41</span><span>Familia</span></div>
+        <div class="tel-cuerpo" id="tel-d"></div>
+      </div>
+      <div class="juicio">
+        <ul class="si">
+          <li>Un único mecanismo para todas las preguntas: los cumpleaños próximos y los datos que faltan son un toque, igual que un círculo.</li>
+          <li>La pantalla es la más corta de las cuatro y la que mejor aguanta que el registro crezca.</li>
+          <li>El filtro deja constancia de lo que se está mirando; una pestaña, en cambio, se olvida.</li>
+        </ul>
+        <ul class="no">
+          <li>Sin títulos permanentes, los tres círculos no se ven: hay que filtrar para descubrir que existen. Es justo lo contrario de lo que se pedía.</li>
+          <li>El <strong>+</strong> pierde el círculo y tiene que preguntarlo, que era lo que se quería evitar.</li>
+          <li>Seis controles arriba en una pantalla que se abre para ver caras.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------- -->
+
+  <section class="bloque">
+    <p class="rotulo">Comparación</p>
+    <h2>Qué gana cada una</h2>
+    <div class="tabla-marco">
+      <table>
+        <thead>
+          <tr><th scope="col">Criterio</th><th scope="col">A · Bloques</th><th scope="col">B · Pestañas</th><th scope="col">C · Calendario</th><th scope="col">D · Filtros</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Los tres círculos se ven sin tocar nada</th>
+            <td>Sí</td><td>Dos de tres</td><td>Sólo Familia</td><td>No</td>
+          </tr>
+          <tr>
+            <th scope="row">El + sabe a qué círculo añade</th>
+            <td>Sí</td><td>Según la pestaña</td><td>Sí, dos botones</td><td>Lo pregunta</td>
+          </tr>
+          <tr>
+            <th scope="row">«¿Quién cumple pronto?»</th>
+            <td>Dentro de cada bloque</td><td>Dentro de cada pestaña</td><td>De un vistazo</td><td>Un filtro</td>
+          </tr>
+          <tr>
+            <th scope="row">«¿A quién le falta la fecha?»</th>
+            <td>Al final de cada bloque</td><td>Al final de cada pestaña</td><td>Bloque propio</td><td>Un filtro</td>
+          </tr>
+          <tr>
+            <th scope="row">Aguanta treinta amigos</th>
+            <td>Regular</td><td>Bien</td><td>Bien</td><td>Bien</td>
+          </tr>
+          <tr>
+            <th scope="row">Trabajo sobre lo que ya está escrito</th>
+            <td>Mínimo</td><td>Medio</td><td>Alto</td><td>Alto</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="bloque">
+    <p class="rotulo">Recomendación</p>
+    <h2>La A, con una cosa prestada de la C</h2>
+    <p>
+      La <strong>A</strong> es la única que hace exactamente lo que se pidió: tres
+      secciones que existen a la vez, la familia en su fila, y un <strong>+</strong> por
+      círculo que no tiene que preguntar nada. Es además el cambio más barato, y el que
+      no obliga a decidir hoy nada que se pueda decidir después.
+    </p>
+    <p>
+      De la <strong>C</strong> conviene llevarse dos cosas, que caben dentro de la A sin
+      romperla: <em>ordenar cada bloque por el cumpleaños que viene</em> —de modo que lo
+      inminente esté siempre arriba a la izquierda— y <em>dejar a los sin fecha al
+      final</em>, con su marca, formando un pequeño montón que pide ser resuelto.
+    </p>
+    <p>
+      La <strong>B</strong> es la respuesta correcta el día que <em>Amigos</em> pase de
+      unas doce personas y el tercer bloque se vuelva incómodo; hasta entonces esconde
+      medio registro sin necesidad. La <strong>D</strong> es la más potente y la que peor
+      responde a lo que se pedía: los círculos que se querían ver se vuelven invisibles.
+    </p>
+    <p>
+      Si la A se queda corta con el tiempo, el salto natural es A → B: los títulos de
+      bloque se convierten en pestañas y no hay que rehacer nada más.
+    </p>
+  </section>
+
+  <footer class="pie">
+    <p>
+      Nada de esto está implementado todavía: es una propuesta para elegir. Al escoger
+      una opción se recogen sus decisiones en <code>specs/ux.md</code> y se lleva a
+      <code>pwa/publico/js/vistas/familia.js</code>.
+    </p>
+  </footer>
+</div>
+
+<script>
+  // ---------------------------------------------------------------- Datos --
+  // Un registro de ejemplo del tamaño real: quince personas, con tres fechas
+  // sin rellenar a propósito, que es lo que hace visible el caso «sin fecha».
+
+  const PERSONAS = [
+    { id: 'p-ana',    nombre: 'Ana',       parentesco: 'madre',   nace: '1980-05-12', circulo: 'familia' },
+    { id: 'p-oscar',  nombre: 'Óscar',     parentesco: 'padre',   nace: '1978-11-03', circulo: 'familia' },
+    { id: 'p-marta',  nombre: 'Marta',     parentesco: 'hija',    nace: '2010-08-01', circulo: 'familia' },
+    { id: 'p-lucia',  nombre: 'Lucía',     parentesco: 'hija',    nace: '2013-02-19', circulo: 'familia' },
+
+    { id: 'p-pilar',  nombre: 'Pilar',     parentesco: 'abuela',  nace: '1949-07-30', circulo: 'extendida' },
+    { id: 'p-manuel', nombre: 'Manuel',    parentesco: 'abuelo',  nace: '1947-03-05', circulo: 'extendida' },
+    { id: 'p-rosa',   nombre: 'Rosa',      parentesco: 'tía',     nace: '1972-08-21', circulo: 'extendida' },
+    { id: 'p-javi',   nombre: 'Javi',      parentesco: 'tío',     nace: null,         circulo: 'extendida' },
+    { id: 'p-nuria',  nombre: 'Nuria',     parentesco: 'prima',   nace: '1998-09-14', circulo: 'extendida' },
+    { id: 'p-sara',   nombre: 'Sara',      parentesco: 'sobrina', nace: '2019-01-02', circulo: 'extendida' },
+
+    { id: 'p-nacho',  nombre: 'Nacho',     parentesco: 'amigo',   nace: '1979-08-09', circulo: 'amigos' },
+    { id: 'p-bea',    nombre: 'Bea',       parentesco: 'amiga',   nace: null,         circulo: 'amigos' },
+    { id: 'p-diego',  nombre: 'Diego',     parentesco: 'amigo',   nace: '1980-04-27', circulo: 'amigos' },
+    { id: 'p-elena',  nombre: 'Elena',     parentesco: 'amiga',   nace: '1981-12-03', circulo: 'amigos' },
+    { id: 'p-pablo',  nombre: 'Pablo',     parentesco: 'amigo',   nace: null,         circulo: 'amigos' },
+  ];
+
+  const CIRCULOS = {
+    familia:   { titulo: 'Familia',           corto: 'Familia',   clase: 'c-familia' },
+    extendida: { titulo: 'Familia Extendida', corto: 'Extendida', clase: 'c-extendida' },
+    amigos:    { titulo: 'Amigos',            corto: 'Amigos',    clase: 'c-amigos' },
+  };
+
+  const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+  // --------------------------------------------------------------- Cálculo --
+
+  // Mismo criterio que `proximoCumple` en vistas/familia.js: días hasta el
+  // próximo aniversario, contados desde hoy a medianoche.
+  function cumple(persona) {
+    if (!persona.nace) return { falta: true, dias: Infinity, texto: 'sin fecha' };
+    const [, mes, dia] = persona.nace.split('-').map(Number);
+    const ahora = new Date();
+    const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    let proximo = new Date(hoy.getFullYear(), mes - 1, dia);
+    if (proximo < hoy) proximo = new Date(hoy.getFullYear() + 1, mes - 1, dia);
+    const dias = Math.round((proximo - hoy) / 86400000);
+    if (dias === 0) return { falta: false, dias, texto: 'hoy 🎂', pronto: true };
+    if (dias <= 30) return { falta: false, dias, texto: 'en ' + dias + ' d', pronto: true };
+    return { falta: false, dias, texto: dia + ' ' + MESES[mes - 1], pronto: false };
+  }
+
+  const porCumple = (a, b) => cumple(a).dias - cumple(b).dias;
+
+  const normalizar = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  function encaja(persona, consulta) {
+    const aguja = normalizar(consulta).trim();
+    if (!aguja) return true;
+    return normalizar(persona.nombre).includes(aguja) || normalizar(persona.parentesco).includes(aguja);
+  }
+
+  // Color estable por persona, igual que `colorDePersona` en ui.js.
+  function color(id) {
+    let suma = 0;
+    for (const caracter of String(id)) suma = (suma * 31 + caracter.charCodeAt(0)) % 360;
+    return 'hsl(' + suma + ' 42% 38%)';
+  }
+
+  // ------------------------------------------------------------- Fabricación --
+
+  function el(etiqueta, atributos, hijos) {
+    const nodo = document.createElement(etiqueta);
+    for (const [clave, valor] of Object.entries(atributos || {})) {
+      if (valor === null || valor === undefined || valor === false) continue;
+      if (clave === 'texto') nodo.textContent = valor;
+      else if (clave === 'html') nodo.innerHTML = valor;
+      else if (clave.startsWith('on')) nodo.addEventListener(clave.slice(2), valor);
+      else nodo.setAttribute(clave, valor);
+    }
+    for (const hijo of (hijos || []).filter(Boolean)) nodo.append(hijo);
+    return nodo;
+  }
+
+  const vaciar = (nodo) => { while (nodo.firstChild) nodo.firstChild.remove(); return nodo; };
+
+  const iniciales = (p) => p.nombre.trim().slice(0, 2).toUpperCase();
+
+  function avatar(persona, clase) {
+    return el('div', { class: clase || 'p-avatar', style: 'background:' + color(persona.id), 'aria-hidden': 'true' }, [
+      document.createTextNode(iniciales(persona)),
+    ]);
+  }
+
+  function celdaPersona(persona) {
+    const c = cumple(persona);
+    return el('button', { class: 'p-persona', type: 'button', onclick: () => aviso(persona.nombre) }, [
+      avatar(persona),
+      el('span', { class: 'p-nombre', texto: persona.nombre }),
+      el('span', { class: 'p-nota' + (c.falta ? ' sin' : c.pronto ? ' pronto' : ''), texto: c.texto }),
+    ]);
+  }
+
+  function celdaMas(circulo) {
+    return el('button', {
+      class: 'p-mas', type: 'button',
+      'aria-label': 'Añadir a ' + CIRCULOS[circulo].titulo,
+      onclick: () => aviso('Nueva persona en ' + CIRCULOS[circulo].titulo),
+    }, [
+      el('span', { class: 'p-mas-circulo', 'aria-hidden': 'true', texto: '+' }),
+      el('span', { texto: 'Añadir' }),
+    ]);
+  }
+
+  function filaMas(circulo) {
+    return el('button', {
+      class: 'p-mas-fila', type: 'button',
+      onclick: () => aviso('Nueva persona en ' + CIRCULOS[circulo].titulo),
+    }, [
+      el('b', { texto: '+', 'aria-hidden': 'true' }),
+      el('span', { texto: 'Añadir a ' + CIRCULOS[circulo].titulo }),
+    ]);
+  }
+
+  function cabezaGrupo(titulo, cuenta) {
+    return el('div', { class: 'p-grupo-cabeza' }, [
+      el('span', { class: 'p-grupo-titulo', texto: titulo }),
+      cuenta === null ? null : el('span', { class: 'p-grupo-cuenta', texto: String(cuenta) }),
+    ]);
+  }
+
+  function buscador(valor, alEscribir, textoGuia) {
+    const control = el('input', {
+      type: 'search', value: valor, placeholder: textoGuia || 'Buscar una persona',
+      'aria-label': 'Buscar una persona',
+    });
+    control.addEventListener('input', () => alEscribir(control.value));
+    return el('div', { class: 'p-buscador' }, [
+      el('span', { html: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' }),
+      control,
+    ]);
+  }
+
+  // Un mensaje breve, para que los toques del prototipo se noten.
+  let temporizador = null;
+  function aviso(texto) {
+    let caja = document.getElementById('aviso');
+    if (!caja) {
+      caja = el('div', {
+        id: 'aviso',
+        style: 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9;'
+          + 'background:var(--ink);color:var(--paper);font-size:13.5px;padding:9px 16px;'
+          + 'border-radius:999px;box-shadow:var(--sombra);max-width:80vw;text-align:center',
+      });
+      document.body.append(caja);
+    }
+    caja.textContent = texto;
+    caja.style.opacity = '1';
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => { caja.style.opacity = '0'; }, 1800);
+  }
+
+  const del = (circulo) => PERSONAS.filter((p) => p.circulo === circulo);
+
+  // --------------------------------------------------------------- Opción A --
+
+  const estadoA = { consulta: '' };
+
+  function pintarA() {
+    const raiz = vaciar(document.getElementById('tel-a'));
+    raiz.append(buscador(estadoA.consulta, (v) => { estadoA.consulta = v; pintarA(); }));
+
+    for (const clave of ['familia', 'extendida', 'amigos']) {
+      const todos = del(clave);
+      const vistos = todos.filter((p) => encaja(p, estadoA.consulta)).sort(porCumple);
+      const celdas = vistos.map(celdaPersona);
+      if (clave !== 'familia') celdas.push(celdaMas(clave));
+
+      raiz.append(el('div', { class: 'p-grupo' }, [
+        cabezaGrupo(CIRCULOS[clave].titulo, todos.length),
+        vistos.length || clave !== 'familia'
+          ? el('div', { class: 'p-rejilla' + (clave === 'familia' ? ' cuatro' : '') }, celdas)
+          : el('p', { class: 'p-vacio', texto: 'Nadie con ese nombre.' }),
+      ]));
+    }
+  }
+
+  // --------------------------------------------------------------- Opción B --
+
+  const estadoB = { consulta: '', pestana: 'extendida' };
+
+  function pintarB() {
+    const raiz = vaciar(document.getElementById('tel-b'));
+
+    raiz.append(el('div', { class: 'p-grupo' }, [
+      cabezaGrupo('Familia', null),
+      el('div', { class: 'p-rejilla cuatro' }, del('familia').sort(porCumple).map(celdaPersona)),
+    ]));
+
+    raiz.append(buscador(estadoB.consulta, (v) => { estadoB.consulta = v; pintarB(); },
+      'Buscar en ' + CIRCULOS[estadoB.pestana].corto));
+
+    raiz.append(el('div', { class: 'p-seg', role: 'tablist' }, ['extendida', 'amigos'].map((clave) =>
+      el('button', {
+        type: 'button', role: 'tab', 'aria-selected': String(estadoB.pestana === clave),
+        onclick: () => { estadoB.pestana = clave; pintarB(); },
+        texto: CIRCULOS[clave].corto + ' · ' + del(clave).length,
+      }))));
+
+    const vistos = del(estadoB.pestana).filter((p) => encaja(p, estadoB.consulta)).sort(porCumple);
+    raiz.append(vistos.length
+      ? el('div', { class: 'p-rejilla' }, [...vistos.map(celdaPersona), celdaMas(estadoB.pestana)])
+      : el('div', {}, [
+          el('p', { class: 'p-vacio', texto: 'Nadie con ese nombre en ' + CIRCULOS[estadoB.pestana].corto + '.' }),
+          el('div', { class: 'p-rejilla' }, [celdaMas(estadoB.pestana)]),
+        ]));
+  }
+
+  // --------------------------------------------------------------- Opción C --
+
+  const estadoC = { consulta: '' };
+
+  function filaPersona(persona) {
+    const c = cumple(persona);
+    return el('button', { class: 'p-fila', type: 'button', onclick: () => aviso(persona.nombre) }, [
+      avatar(persona),
+      el('span', {}, [
+        el('span', { class: 'p-fila-nombre', texto: persona.nombre }),
+        el('br'),
+        el('span', { class: 'p-fila-circulo' }, [
+          el('span', { class: 'p-punto ' + CIRCULOS[persona.circulo].clase, 'aria-hidden': 'true' }),
+          document.createTextNode(' ' + CIRCULOS[persona.circulo].corto + ' · ' + persona.parentesco),
+        ]),
+      ]),
+      el('span', { class: 'p-fila-cuando' + (c.pronto ? ' pronto' : ''), texto: c.falta ? '—' : c.texto }),
+    ]);
+  }
+
+  function pintarC() {
+    const raiz = vaciar(document.getElementById('tel-c'));
+
+    raiz.append(el('div', { class: 'p-grupo' }, [
+      cabezaGrupo('Familia', null),
+      el('div', { class: 'p-rejilla cuatro' }, del('familia').sort(porCumple).map(celdaPersona)),
+    ]));
+
+    raiz.append(buscador(estadoC.consulta, (v) => { estadoC.consulta = v; pintarC(); }));
+
+    const resto = PERSONAS
+      .filter((p) => p.circulo !== 'familia' && encaja(p, estadoC.consulta));
+    const conFecha = resto.filter((p) => p.nace).sort(porCumple);
+    const sinFecha = resto.filter((p) => !p.nace);
+
+    raiz.append(el('div', { class: 'p-grupo' }, [
+      cabezaGrupo('Van cumpliendo', conFecha.length),
+      conFecha.length
+        ? el('div', { class: 'p-lista' }, conFecha.map(filaPersona))
+        : el('p', { class: 'p-vacio', texto: 'Nadie con ese nombre.' }),
+    ]));
+
+    if (sinFecha.length) {
+      raiz.append(el('div', { class: 'p-grupo' }, [
+        cabezaGrupo('Sin fecha de nacimiento', sinFecha.length),
+        el('div', { class: 'p-sello' }, [
+          el('b', { texto: 'La agenda no puede avisar de estos cumpleaños.' }),
+          el('span', { texto: 'Basta con abrir la ficha y poner la fecha.' }),
+        ]),
+        el('div', { class: 'p-lista' }, sinFecha.map(filaPersona)),
+      ]));
+    }
+
+    raiz.append(el('div', { class: 'p-grupo' }, [filaMas('extendida'), filaMas('amigos')]));
+  }
+
+  // --------------------------------------------------------------- Opción D --
+
+  const estadoD = { consulta: '', filtro: 'todos' };
+
+  const FILTROS = [
+    { clave: 'todos',     texto: 'Todos' },
+    { clave: 'familia',   texto: 'Familia' },
+    { clave: 'extendida', texto: 'Extendida' },
+    { clave: 'amigos',    texto: 'Amigos' },
+    { clave: 'pronto',    texto: 'Cumple pronto' },
+    { clave: 'sin',       texto: 'Sin fecha' },
+  ];
+
+  function pasaFiltro(persona) {
+    const f = estadoD.filtro;
+    if (f === 'todos') return true;
+    if (f === 'pronto') return Boolean(cumple(persona).pronto);
+    if (f === 'sin') return !persona.nace;
+    return persona.circulo === f;
+  }
+
+  function pintarD() {
+    const raiz = vaciar(document.getElementById('tel-d'));
+
+    raiz.append(buscador(estadoD.consulta, (v) => { estadoD.consulta = v; pintarD(); }));
+
+    raiz.append(el('div', { class: 'p-chips' }, FILTROS.map((f) =>
+      el('button', {
+        class: 'p-chip', type: 'button', 'aria-pressed': String(estadoD.filtro === f.clave),
+        onclick: () => { estadoD.filtro = f.clave; pintarD(); },
+        texto: f.texto,
+      }))));
+
+    const orden = { familia: 0, extendida: 1, amigos: 2 };
+    const vistos = PERSONAS
+      .filter((p) => pasaFiltro(p) && encaja(p, estadoD.consulta))
+      .sort((a, b) => (orden[a.circulo] - orden[b.circulo]) || porCumple(a, b));
+
+    const circuloDelMas = ['familia', 'extendida', 'amigos'].includes(estadoD.filtro)
+      ? estadoD.filtro
+      : null;
+
+    raiz.append(el('div', { class: 'p-grupo' }, [
+      cabezaGrupo(estadoD.filtro === 'todos' ? 'Todo el registro' : FILTROS.find((f) => f.clave === estadoD.filtro).texto, vistos.length),
+      vistos.length
+        ? el('div', { class: 'p-rejilla' }, [
+            ...vistos.map(celdaPersona),
+            circuloDelMas === 'familia' ? null : el('button', {
+              class: 'p-mas', type: 'button', 'aria-label': 'Añadir una persona',
+              onclick: () => aviso(circuloDelMas
+                ? 'Nueva persona en ' + CIRCULOS[circuloDelMas].titulo
+                : 'Nueva persona · ¿en qué círculo?'),
+            }, [
+              el('span', { class: 'p-mas-circulo', 'aria-hidden': 'true', texto: '+' }),
+              el('span', { texto: 'Añadir' }),
+            ]),
+          ].filter(Boolean))
+        : el('p', { class: 'p-vacio', texto: 'Nadie encaja con eso.' }),
+    ]));
+  }
+
+  pintarA();
+  pintarB();
+  pintarC();
+  pintarD();
+</script>

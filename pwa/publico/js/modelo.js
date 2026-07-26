@@ -13,6 +13,54 @@
 export const EMOJI_POR_DEFECTO = '📌';
 
 /**
+ * Los tres círculos, y cómo se llaman en pantalla.
+ *
+ * Son cerrados y no un catálogo editable: cada círculo que se añadiera sería una
+ * pregunta más en cada alta, y la pantalla de personas está construida justo
+ * para no tener que hacerla —el «+» vive dentro de su grupo y ya sabe a cuál
+ * añade (specs/ux.md §7.1).
+ */
+export const CIRCULOS = {
+  familia: 'Familia',
+  extendida: 'Familia Extendida',
+  amigos: 'Amigos',
+};
+
+/** Cuántos caben en «Familia». Es el hogar, no un grupo que crece. */
+export const TAMANO_FAMILIA = 4;
+
+/**
+ * Los parentescos que se ofrecen al dar de alta a alguien, por círculo.
+ *
+ * Antes era un campo libre, y un campo libre aquí se llena de variantes de lo
+ * mismo —«mamá», «madre», «Mama»— que luego no se pueden leer. Dentro de casa
+ * importa además que se escriban tal cual, porque de ahí sale lo que cada uno
+ * ve bajo el nombre de los demás (specs/ux.md §7.1).
+ *
+ * Están en orden de cercanía y no alfabético: se elige de una lista corta
+ * mirando, no leyéndola entera.
+ */
+export const PARENTESCOS = {
+  familia: ['madre', 'padre', 'hija', 'hijo'],
+  extendida: [
+    'abuela', 'abuelo',
+    'hermana', 'hermano',
+    'tía', 'tío',
+    'prima', 'primo',
+    'sobrina', 'sobrino',
+    'nieta', 'nieto',
+    'suegra', 'suegro',
+    'cuñada', 'cuñado',
+    'nuera', 'yerno',
+    'madrina', 'padrino',
+  ],
+  amigos: ['amiga', 'amigo', 'vecina', 'vecino', 'compañera', 'compañero'],
+};
+
+/** El valor que abre el campo libre, para lo que no entre en ninguna lista. */
+export const PARENTESCO_OTRO = '__otro';
+
+/**
  * Emoji con el que arranca un título, si es que arranca con uno.
  *
  * Cuenta como uno solo la secuencia entera —el emoji, su selector de
@@ -66,6 +114,9 @@ export function crearVista(instantanea) {
     personas: () => [...personas.values()].filter((p) => estaActivo(p, 'activa')),
     personasConCuenta: () => api.personas().filter((p) => p.tiene_cuenta),
     personasSinCuenta: () => api.personas().filter((p) => !p.tiene_cuenta),
+    // Quien venga de un registro anterior a los círculos no trae el campo. Cae
+    // en «extendida», que es el valor por defecto también en la base.
+    personasDe: (circulo) => api.personas().filter((p) => (p.circulo || 'extendida') === circulo),
     categoria: (id) => categorias.get(id) || null,
     categorias: () => [...categorias.values()],
     tipoEvento: (id) => tipos.get(id) || null,

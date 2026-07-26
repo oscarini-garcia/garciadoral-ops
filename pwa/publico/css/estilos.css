@@ -440,15 +440,45 @@ button { background: none; border: 0; cursor: pointer; }
   color: var(--paper); flex: 0 0 auto;
 }
 
-.personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; }
+/* Personas sin avatar: las iniciales sobre un color inventado no decían nada
+   que no dijera el nombre, que va justo debajo. En su sitio va lo que de
+   verdad se consulta —de quién es y cuándo cumple—, que además cabe en menos
+   alto (specs/ux.md §7.1). */
+.personas { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
 .persona {
-  display: flex; flex-direction: column; align-items: center; gap: 7px;
-  padding: 12px 6px; border-radius: var(--radio);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  /* Con cuatro columnas en un teléfono estrecho la celda baja de los setenta
+     píxeles, así que el relleno lateral es corto y el texto no se envuelve. */
+  padding: 9px 9px 10px; border-radius: var(--radio);
+  background: var(--paper-2); border: 1px solid var(--line);
+  text-align: left; min-height: var(--toque);
+  overflow: hidden;
 }
-.persona:hover { background: var(--paper-2); }
-.persona .avatar { width: 52px; height: 52px; font-size: 16px; }
-.persona-nombre { font-size: 14.5px; text-align: center; }
-.persona-nota { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); letter-spacing: .06em; }
+.persona:hover { background: var(--paper-3); }
+.persona-nombre {
+  font-size: 15px; line-height: 1.25;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.persona-quien {
+  font-size: 12.5px; color: var(--ink-soft); line-height: 1.3;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.persona-nota { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+/* Lo que cumple dentro de un mes se dice en tinta; la fecha que falta, no en
+   blanco —un hueco no se ve— sino escrita y apagada. */
+.persona-nota[data-pronto="si"] { color: var(--tinta); }
+.persona-nota[data-falta="si"] { font-style: italic; }
+
+/* En la pantalla de personas el conmutador ocupa el ancho y reparte a partes
+   iguales: son dos rótulos de longitud muy distinta —«Familia Extendida» y
+   «Amigos»— y a lo ancho quedarían dos mitades desiguales. */
+.grupo > .seg { display: flex; }
+.grupo > .seg button { flex: 1; }
+
+.persona-mas { border-style: dashed; background: none; justify-content: center; }
+.persona-mas:hover { background: var(--paper-2); border-color: var(--tinta); }
+.persona-mas:hover .persona-mas-signo, .persona-mas:hover .persona-quien { color: var(--tinta); }
+.persona-mas-signo { font-size: 21px; line-height: 1; color: var(--ink-faint); }
 
 /* --------------------------------------------------------------- Formulario -- */
 

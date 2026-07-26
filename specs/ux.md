@@ -215,6 +215,76 @@ flowchart TD
 
 **A quién conviene.** A una familia cuyo interés principal sea el archivo de personas más que la coordinación. Como arquitectura principal es arriesgada; como pantalla dentro de otra opción, es valiosa.
 
+### 7.1 La pantalla de personas, como se construyó
+
+Lo que sigue no es una opción sino la decisión tomada: de las cuatro maneras que se pusieron sobre la mesa en `propuesta-familia-circulos.html` se eligió la de las pestañas.
+
+La pantalla se llama **Gente** en la barra, y *Familia* es uno de los tres círculos que hay dentro. Conviene que no coincidan: la pestaña reúne a todo el mundo, y sólo cuatro son de casa.
+
+**Tres círculos, y no dos grupos por si tienen cuenta.** Hasta aquí la pantalla se partía por `tiene_cuenta`, que es un dato técnico —quién ha entrado con Apple— usado como si fuera un vínculo. No lo es: la abuela no tiene cuenta y es de la familia, y un amigo podría tenerla sin serlo. Lo que ordena la pantalla pasa a ser el vínculo, escrito aparte en `persona.circulo`:
+
+- **Familia**, los cuatro de casa. Conjunto cerrado.
+- **Familia Extendida** y **Amigos**, abiertos.
+
+Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto círculo obligaría a decidir en cada alta a cuál va cada quien, que es justo la pregunta que esta pantalla evita.
+
+**La forma.** Los cuatro de casa, arriba y siempre, en una fila de cuatro columnas. Debajo, un conmutador entre los otros dos círculos y una sola rejilla que cambia de contenido. Así la pantalla no crece cuando crecen los amigos, y queda dicho sin escribirlo que el hogar no es un grupo más.
+
+```
+┌──────────────────────────────┐
+│ Gente              ⟳    ⚙   │
+│ ⌕ Buscar una persona         │
+├──────────────────────────────┤
+│ FAMILIA          (lo ve Marta)│
+│ ┌─────┐┌─────┐┌─────┐┌─────┐ │
+│ │Marta││Óscar││Lucía││ Ana │ │
+│ │ yo  ││papá ││herma││mamá │ │
+│ │en 6d││3 nov││19feb││12may│ │
+│ └─────┘└─────┘└─────┘└─────┘ │
+│                              │
+│ ┌ Familia Extendida·4 ┬ Amigos·3 ┐ │
+│ ┌───────┐┌───────┐┌───────┐  │
+│ │abuela ││ Rosa  ││abuelo │  │
+│ │en 4 d ││en 26 d││ 5 mar │  │
+│ └───────┘└───────┘└───────┘  │
+│ ┌───────┐┌ ─ ─ ─ ┐           │
+│ │ Javi  ││   +   │           │
+│ │sinfech││ Añadir│           │
+│ └───────┘└ ─ ─ ─ ┘           │
+└──────────────────────────────┘
+```
+
+**Sin avatares.** Las iniciales sobre un color inventado no decían nada que no dijera el nombre, que va justo debajo. En su lugar va lo que de verdad se consulta —de quién es y cuándo cumple—, que además cabe en menos alto. El avatar se conserva en la cabecera de la ficha, donde identifica de quién es la hoja abierta y no compite con nada.
+
+**El parentesco, dentro de casa, se dice respecto a quien mira.** El campo lo escribió quien dio de alta a esa persona, y es el papel que ocupa en el hogar: «madre», «padre», «hija». Puesto tal cual bajo el nombre no dice nada de nadie —Marta leía «madre» junto a Ana, que no es la madre de nadie en abstracto sino la suya—, así que en el círculo de casa se traduce a lo que esa persona es para quien tiene el teléfono en la mano:
+
+| Mira | Ve a los mayores | Ve a los pequeños | Se ve a sí mismo |
+|---|---|---|---|
+| una hija | mamá, papá | hermana, hermano | yo |
+| la madre o el padre | pareja | hija, hijo | yo |
+
+Se infiere del dato, no se pregunta: nadie escribe dos veces lo mismo. Fuera de ese círculo no hay nada que inferir —la tía es la tía mire quien mire— y se deja lo escrito; tampoco se infiere cuando quien mira no es de casa, porque para alguien de fuera «madre» y «padre» sí describen el hogar. Lo que no encaje en esas formas se deja tal cual: menos útil, pero nunca falso. La ficha usa la misma traducción, para que no diga «madre» lo que en la rejilla ponía «mamá».
+
+De todo esto, la única inferencia que va más allá del dato es **«pareja»**: nadie ha escrito que los dos adultos lo sean, se deduce de que comparten hogar y generación. Es una línea de código y se quita sola si algún día deja de ser cierto.
+
+**El parentesco se elige de una lista, distinta en cada círculo.** Era un campo libre, y un campo libre aquí se llena de variantes de lo mismo —«mamá», «madre», «Mama»— que después no hay quien lea. Dentro de casa importa el doble, porque de ese texto sale la traducción de arriba. Como el parentesco depende del círculo, el círculo se pregunta antes en el formulario, y la lista se rehace al cambiarlo conservando lo elegido si sigue estando.
+
+| Círculo | Se ofrece |
+|---|---|
+| Familia | madre, padre, hija, hijo |
+| Familia Extendida | abuela y abuelo, hermana y hermano, tía y tío, prima y primo, sobrina y sobrino, nieta y nieto, suegra y suegro, cuñada y cuñado, nuera y yerno, madrina y padrino |
+| Amigos | amiga y amigo, vecina y vecino, compañera y compañero |
+
+En orden de cercanía y no alfabético: de una lista corta se elige mirando, no leyéndola entera. Encima de todas, **Sin decir**, porque el dato no es obligatorio; y al final, **Otro…**, que abre un campo libre para lo que no entre en ninguna lista —«el marido de mi prima»— y se guarda tal cual. Lo que ya estuviera escrito de antes, o quedara fuera de lista al mover a alguien de círculo, no se pierde: reaparece en *Otro* con su texto puesto.
+
+**El cumpleaños, en sus dos lecturas.** Bajo cada nombre, una línea: `en 6 d` si cae dentro de un mes, en tinta; el día si cae lejos; y `sin fecha` —escrito, no en blanco— si no la hay. Un hueco vacío no se ve; escrito, es un cumpleaños del que la agenda no va a avisar y una ficha que pide que la abran. Dentro de cada rejilla se ordena por el aniversario que viene, y quien no tiene fecha queda al final, junto.
+
+**El «+» es una celda más de la rejilla**, con el borde discontinuo y el tamaño de una persona, al final del círculo al que pertenece. Puesto ahí no tiene que preguntar a cuál se añade. Familia no lo ofrece: quien intente crecerla se encuentra con que no hay por dónde, que es la manera más barata de sostener que son cuatro. El botón flotante desaparece de esta pantalla, porque un segundo «+» encima que hiciera otra cosa dejaría dos signos iguales con dos significados.
+
+**El buscador está encima de todo, no dentro de una pestaña.** Es el defecto conocido del conmutador —tener que acertar la pestaña antes de buscar—, y se resuelve así: mientras hay algo escrito la pantalla deja de estar dividida y enseña un único resultado sobre los tres círculos, con el círculo de cada persona escrito bajo su nombre. Al borrar la búsqueda vuelve la pestaña que estaba. Busca por nombre, apellidos y parentesco, e ignora las tildes: «abuel» tiene que dar con los dos abuelos aunque ninguno se llame así.
+
+**Cuándo dejará de servir.** El día que *Amigos* pase de unas doce personas, su rejilla pedirá su propio buscador o un orden distinto. Nada de lo de aquí lo impide.
+
 ---
 
 ## 8. Opción D — La semana

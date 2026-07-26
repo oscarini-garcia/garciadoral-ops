@@ -8,7 +8,8 @@
       "fecha_nacimiento": "1980-05-12",
       "parentesco": "madre",
       "tiene_cuenta": true,
-      "rol": "administrador"
+      "rol": "administrador",
+      "circulo": "familia"
     },
     {
       "id": "p-oscar",
@@ -17,7 +18,8 @@
       "fecha_nacimiento": "1978-11-03",
       "parentesco": "padre",
       "tiene_cuenta": true,
-      "rol": "administrador"
+      "rol": "administrador",
+      "circulo": "familia"
     },
     {
       "id": "p-marta",
@@ -26,7 +28,8 @@
       "fecha_nacimiento": "2010-08-01",
       "parentesco": "hija",
       "tiene_cuenta": true,
-      "rol": "miembro"
+      "rol": "miembro",
+      "circulo": "familia"
     },
     {
       "id": "p-lucia",
@@ -35,21 +38,67 @@
       "fecha_nacimiento": "2013-02-19",
       "parentesco": "hija",
       "tiene_cuenta": true,
-      "rol": "miembro"
+      "rol": "miembro",
+      "circulo": "familia"
     },
     {
       "id": "p-abuela",
       "nombre": "la abuela",
       "fecha_nacimiento": "1949-07-30",
       "parentesco": "abuela",
-      "tiene_cuenta": false
+      "tiene_cuenta": false,
+      "circulo": "extendida"
     },
     {
       "id": "p-abuelo",
       "nombre": "el abuelo",
       "fecha_nacimiento": "1947-03-05",
       "parentesco": "abuelo",
-      "tiene_cuenta": false
+      "tiene_cuenta": false,
+      "circulo": "extendida"
+    },
+    {
+      "id": "p-rosa",
+      "nombre": "Rosa",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1972-08-21",
+      "parentesco": "tía",
+      "tiene_cuenta": false,
+      "circulo": "extendida"
+    },
+    {
+      "id": "p-javi",
+      "nombre": "Javi",
+      "apellidos": "Ejemplo",
+      "parentesco": "tío",
+      "tiene_cuenta": false,
+      "circulo": "extendida"
+    },
+    {
+      "id": "p-nacho",
+      "nombre": "Nacho",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1979-08-09",
+      "parentesco": "amigo",
+      "tiene_cuenta": false,
+      "circulo": "amigos"
+    },
+    {
+      "id": "p-bea",
+      "nombre": "Bea",
+      "apellidos": "Ejemplo",
+      "parentesco": "amiga",
+      "tiene_cuenta": false,
+      "circulo": "amigos"
+    },
+    {
+      "id": "p-diego",
+      "nombre": "Diego",
+      "apellidos": "Ejemplo",
+      "fecha_nacimiento": "1980-04-27",
+      "parentesco": "amigo",
+      "tiene_cuenta": false,
+      "circulo": "amigos"
     }
   ],
   "atributos_persona": [
