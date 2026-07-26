@@ -469,6 +469,36 @@ button { background: none; border: 0; cursor: pointer; }
   text-transform: uppercase; color: var(--ink-faint);
 }
 
+/* La cabecera de una persona dentro de una fecha señalada. No es un rótulo de
+   sección como los de arriba —diminutos, en versalitas— porque aquí el nombre es
+   lo que organiza la pantalla y pesaba menos que el título de sus regalos. Va
+   con cuerpo de título, y el «+» que le añade uno al final de su misma línea.
+
+   Las cuentas van debajo y en voz baja: escritas con todas sus palabras caben,
+   que es lo que hace que no haya que descifrarlas. */
+.persona-cabeza { display: flex; flex-direction: column; gap: 1px; }
+.persona-cabeza-fila { display: flex; align-items: center; gap: 10px; min-height: 34px; }
+.persona-cabeza h3 {
+  font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: -.01em;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mas-regalo {
+  margin-left: auto; flex: none;
+  width: 34px; height: 34px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--tinta-suave); color: var(--tinta);
+  font-size: 22px; line-height: 1;
+}
+.mas-regalo:hover { filter: brightness(.97); }
+.persona-cuentas {
+  font-size: 13.5px; color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+/* Lo que falta por comprar es lo único de la línea que pide algo, y se lee sin
+   leerla. El dinero, en tinta plena: es la cifra que se ha venido a buscar. */
+.persona-cuentas .falta { color: var(--aviso); }
+.persona-cuentas .dinero { color: var(--ink); }
+
 .tarjeta {
   background: var(--paper-2);
   border: 1px solid var(--line);

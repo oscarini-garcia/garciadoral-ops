@@ -732,20 +732,28 @@ function tarjetaDeCumple(persona, ctx) {
   ]);
 }
 
+/**
+ * La hoja de una fecha señalada: una sección por persona, y en cada una cómo va
+ * lo suyo (specs/propuesta-ocasion-senalada.html).
+ *
+ * El nombre encabeza con cuerpo de título y el «+» que le añade un regalo va al
+ * final de esa misma línea: era un enlace por sección —«Añadir un regalo para
+ * X»— y con seis personas eran seis renglones diciendo lo mismo. Debajo, en voz
+ * baja, las tres cuentas que se vienen a mirar en noviembre.
+ */
 export function abrirOcasion(ocasionId, ctx) {
   const ocasion = ctx.vista.ocasion(ocasionId);
   if (!ocasion) return;
 
   abrirHoja(ocasion.nombre, (cuerpo) => {
-    for (const personaId of ocasion.participantes || []) {
-      const persona = ctx.vista.persona(personaId);
-      if (!persona) continue;
-
+    for (const persona of participantesEnOrden(ocasion, ctx)) {
       // Un miembro ve todas las listas salvo la suya propia, en cuyo lugar
-      // aparece el aviso (spec funcional §6.1).
-      if (personaId === ctx.vista.yo.id) {
+      // aparece el aviso (spec funcional §6.1). Ni cuentas ni «+»: el recuento
+      // de lo propio es justo lo que no se puede enseñar, y a uno mismo no se
+      // le añade un regalo desde aquí.
+      if (persona.id === ctx.vista.yo.id) {
         cuerpo.append(el('div', { class: 'grupo' }, [
-          el('p', { class: 'grupo-titulo', texto: persona.nombre }),
+          cabeceraDePersona(persona),
           el('div', { class: 'sello' }, [
             el('strong', { texto: 'Por aquí no se mira' }),
             el('span', { texto: 'Vuelve otro día.' }),
@@ -754,30 +762,28 @@ export function abrirOcasion(ocasionId, ctx) {
         continue;
       }
 
-      const regalos = ctx.vista.regalosPara(ocasion.id, personaId);
+      const regalos = ctx.vista.regalosPara(ocasion.id, persona.id);
       cuerpo.append(el('div', { class: 'grupo' }, [
-        el('p', { class: 'grupo-titulo', texto: persona.nombre }),
+        cabeceraDePersona(persona, {
+          cuentas: cuentasDeLaSeccion(regalos, ctx),
+          alAnadir: () => abrirSelectorDeRegalo(ctx, { ocasion, destinatario: persona.id }),
+        }),
         ...regalos.map((regalo) => tarjetaDeRegalo(regalo, ctx)),
-        regalos.length ? null : el('p', { class: 'pista', texto: 'Sin nada asignado.' }),
-        el('button', {
-          class: 'enlace-discreto', type: 'button',
-          onclick: () => abrirSelectorDeRegalo(ctx, { ocasion, destinatario: personaId }),
-        }, [`Añadir un regalo para ${persona.nombre}`]),
       ]));
     }
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
-        onclick: () => abrirFormularioOcasion(ctx, { duplicarDe: ocasion.id }),
-      }, ['Duplicar para otro año']),
-      // Cerrar es lo que archiva de verdad: mientras la ocasión siga abierta,
-      // sus regalos se quedan a la vista aunque la fecha se haya ido.
-      ocasion.estado === 'abierta' ? el('button', {
-        class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
-        onclick: () => confirmarCierreDeOcasion(ocasion, ctx),
-      }, ['Darla por cerrada']) : null,
-    ]));
+    // Cerrar es lo que archiva de verdad: mientras la ocasión siga abierta, sus
+    // regalos se quedan a la vista aunque la fecha se haya ido. Duplicar estaba
+    // aquí al lado y se ha ido: crear la del año que viene son cuatro toques, y
+    // las personas rara vez son las mismas.
+    if (ocasion.estado === 'abierta') {
+      cuerpo.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+          onclick: () => confirmarCierreDeOcasion(ocasion, ctx),
+        }, ['Darla por cerrada']),
+      ]));
+    }
   }, [
     // El verbo que se usa va arriba, junto al título, igual que en un evento y en
     // una idea. Borrar no: vive donde se edita.
@@ -785,6 +791,146 @@ export function abrirOcasion(ocasionId, ctx) {
       etiqueta: 'Editar',
       onclick: () => abrirFormularioOcasion(ctx, { id: ocasion.id }),
     }),
+  ]);
+}
+
+/**
+ * Los círculos, en el orden en que se piensa en la gente al repartir una fecha
+ * señalada: primero la casa, después la familia de fuera y al final los amigos.
+ */
+const ORDEN_DE_CIRCULOS = ['familia', 'extendida', 'amigos'];
+
+/**
+ * En qué orden salen las personas de una ocasión.
+ *
+ * Por círculos, y dentro de cada uno por edad, los mayores delante. La edad y no
+ * el próximo cumpleaños: el orden de una Navidad no puede cambiar de un día para
+ * otro porque alguien haya cumplido años.
+ *
+ * Quien no tiene fecha de nacimiento cierra su círculo, por orden alfabético: no
+ * se le puede colocar por una edad que no está, y ponerlo delante haría que dar
+ * de alta una fecha reordenase media pantalla sin avisar.
+ *
+ * **Uno mismo va siempre, y siempre el último**, participe o no de la ocasión.
+ * Participe o no, porque su ausencia sería información: no verse a uno mismo en
+ * la Navidad de la casa diría que nadie le ha puesto nada, que es justo lo que
+ * esta pantalla existe para no decir.
+ */
+function participantesEnOrden(ocasion, ctx) {
+  const mio = ctx.vista.yo.id;
+  const gente = (ocasion.participantes || [])
+    .filter((id) => id !== mio)
+    .map((id) => ctx.vista.persona(id))
+    .filter(Boolean)
+    .sort(porCirculoYEdad);
+
+  const propia = ctx.vista.persona(mio);
+  return propia ? [...gente, propia] : gente;
+}
+
+function porCirculoYEdad(una, otra) {
+  const circulo = (persona) => {
+    const donde = ORDEN_DE_CIRCULOS.indexOf(persona.circulo || 'extendida');
+    return donde === -1 ? ORDEN_DE_CIRCULOS.length : donde;
+  };
+  if (circulo(una) !== circulo(otra)) return circulo(una) - circulo(otra);
+
+  const nacida = Boolean(una.fecha_nacimiento);
+  const nacido = Boolean(otra.fecha_nacimiento);
+  if (nacida !== nacido) return nacida ? -1 : 1;
+  // Las fechas del registro son «aaaa-mm-dd», así que la comparación de textos
+  // es la de calendario: la más antigua primero, que es quien más años tiene.
+  if (nacida && una.fecha_nacimiento !== otra.fecha_nacimiento) {
+    return String(una.fecha_nacimiento).localeCompare(String(otra.fecha_nacimiento));
+  }
+  return nombreCompleto(una).localeCompare(nombreCompleto(otra), 'es');
+}
+
+/** El nombre con cuerpo de título y, al final de su línea, el «+» que le añade
+ *  un regalo. Debajo, las cuentas, si es que se pueden dar. */
+function cabeceraDePersona(persona, { cuentas = null, alAnadir = null } = {}) {
+  return el('div', { class: 'persona-cabeza' }, [
+    el('div', { class: 'persona-cabeza-fila' }, [
+      el('h3', { texto: nombreCompleto(persona) }),
+      alAnadir ? el('button', {
+        class: 'mas-regalo', type: 'button',
+        'aria-label': `Añadir un regalo para ${persona.nombre}`,
+        title: `Añadir un regalo para ${persona.nombre}`,
+        onclick: () => { toque(); alAnadir(); },
+      }, ['+']) : null,
+    ]),
+    cuentas ? el('p', { class: 'persona-cuentas' }, cuentas) : null,
+  ]);
+}
+
+/** El precio que se le apuntó a la idea, que es lo más parecido a un precio que
+ *  tiene un regalo antes de comprarse. El máximo antes que el mínimo: es el que
+ *  escribe el formulario, y de los dos es el que no se queda corto. */
+function precioApuntado(idea) {
+  for (const valor of [idea?.precio_max, idea?.precio_min]) {
+    if (typeof valor === 'number') return valor;
+  }
+  return null;
+}
+
+/**
+ * Cuánto se va a gastar en esta persona: lo que ya se pagó más lo que se piensa
+ * pagar.
+ *
+ * Un regalo solo tiene importe cuando alguien lo escribe **después** de
+ * comprarlo. Para lo que aún no está comprado se usa el precio de su idea, que
+ * es una estimación y por eso la cifra sale con `≈` en cuanto lleva una dentro.
+ *
+ * Lo que no tiene ni una cosa ni la otra no suma cero: se cuenta aparte y se
+ * dice. Es la misma regla que ya escribió `gastoDe` en su día —distinguir lo
+ * registrado de lo que falta por registrar evita enseñar una desviación
+ * favorable inexistente—, y sin ella la suma se leería como si estuviera
+ * completa.
+ */
+function dineroDe(regalos, ctx) {
+  let suma = 0;
+  let hay = false;
+  let estimado = false;
+  let sinPrecio = 0;
+
+  for (const regalo of regalos) {
+    if (typeof regalo.coste_real === 'number') {
+      suma += regalo.coste_real;
+      hay = true;
+      continue;
+    }
+    const precio = precioApuntado(regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null);
+    if (precio === null) {
+      sinPrecio += 1;
+      continue;
+    }
+    suma += precio;
+    hay = true;
+    estimado = true;
+  }
+
+  return { hay, suma, estimado, sinPrecio };
+}
+
+/** Las piezas del renglón de cuentas, con su separador entre medias. */
+const unidasPor = (piezas, separador = ' · ') =>
+  piezas.filter(Boolean).flatMap((pieza, i) => (i ? [separador, pieza] : [pieza]));
+
+function cuentasDeLaSeccion(regalos, ctx) {
+  if (!regalos.length) return ['Sin nada asignado'];
+
+  const porComprar = regalos.filter((r) => estadoDeRegalo(r) === 'pendiente').length;
+  const { hay, suma, estimado, sinPrecio } = dineroDe(regalos, ctx);
+
+  return unidasPor([
+    `${regalos.length} ${regalos.length === 1 ? 'regalo' : 'regalos'}`,
+    porComprar
+      ? el('span', { class: 'falta', texto: `${porComprar} por comprar` })
+      : 'todo comprado',
+    hay
+      ? el('span', { class: 'dinero', texto: `${estimado ? '≈ ' : ''}${formatearImporte(suma)}` })
+      : null,
+    sinPrecio ? `${sinPrecio} sin precio` : null,
   ]);
 }
 
@@ -1474,38 +1620,35 @@ async function asegurarParticipante(ctx, ocasionId, destinatario) {
 // ------------------------------------------------- Crear, editar y borrar --
 
 /**
- * La misma hoja para las tres cosas: crear una fecha señalada, duplicar la del
- * año pasado y corregir una que ya existe. Es la regla del evento y la de la
- * idea —se corrige por la misma puerta por la que se crea— y con ella el borrado
- * queda arriba, junto al título, y no entre lo que se mira.
+ * La misma hoja para crear una fecha señalada y para corregirla. Es la regla del
+ * evento y la de la idea —se corrige por la misma puerta por la que se crea— y
+ * con ella el borrado queda arriba, junto al título, y no entre lo que se mira.
+ *
+ * Hubo una tercera cosa aquí, duplicar la del año pasado, que traía el nombre con
+ * el año siguiente y las mismas personas marcadas. Se retiró: crear la de este
+ * año son cuatro toques, las personas rara vez son las mismas y lo único que
+ * ahorraba era teclear el nombre, que es el trabajo que menos cuesta.
  *
  * Al editar no se reescriben ni el estado ni la autoría: una ocasión que ya está
  * cerrada no vuelve a abrirse por corregirle el nombre, y quien la creó sigue
  * siendo quien la creó.
  */
-function abrirFormularioOcasion(ctx, { id = null, duplicarDe = null } = {}) {
+function abrirFormularioOcasion(ctx, { id = null } = {}) {
   const existente = id ? ctx.vista.ocasion(id) : null;
-  const origen = duplicarDe ? ctx.vista.ocasion(duplicarDe) : null;
-  const modelo = existente || origen;
-  let participantes = modelo ? [...(modelo.participantes || [])] : [];
+  let participantes = existente ? [...(existente.participantes || [])] : [];
 
-  const titulo = existente ? 'Editar la ocasión' : origen ? 'Duplicar la ocasión' : 'Nueva fecha señalada';
+  const titulo = existente ? 'Editar la ocasión' : 'Nueva fecha señalada';
   const borrarOcasion = existente ? botonIcono('borrar', {
     etiqueta: 'Borrar la ocasión', tono: 'peligro',
     onclick: () => confirmarBorradoDeOcasion(existente, ctx),
   }) : null;
 
   abrirHoja(titulo, (cuerpo) => {
-    const nombre = entrada({
-      value: existente
-        ? existente.nombre
-        : origen ? `${origen.nombre.replace(/\s*\d{4}$/, '')} ${new Date().getFullYear() + 1}` : '',
-    });
+    const nombre = entrada({ value: existente ? existente.nombre : '' });
     const fecha = el('input', { type: 'date', value: existente ? existente.fecha : iso(hoy()) });
     cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha));
     cuerpo.append(campoDeGente(ctx, {
       etiqueta: 'Para quién',
-      pista: origen ? 'Se traen las personas del año pasado. Los importes y los regalos no: repetirlos induce a no revisarlos.' : null,
       elegidos: participantes,
       alCambiar: (ids) => { participantes = ids; },
     }));
