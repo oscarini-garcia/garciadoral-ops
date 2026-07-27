@@ -308,6 +308,10 @@
       visto, porque un descarte que se deshace al abrir el iPad no es un descarte; y el
       sitio que deja libre en la cabecera el punto de sincronización, que se va a Ajustes.
     </p>
+    <p>
+      <strong>Con la parte 10, el documento queda cerrado y no hay nada pendiente de
+      decidir.</strong> Allí está también el orden en que se construye.
+    </p>
   </header>
 
   <!-- ============================================================ Decidido -->
@@ -1132,14 +1136,39 @@ POST /api/sitio/apuntar   cinco propuestas para un sitio y una clase</div>
 
   <section class="parte">
     <p class="rotulo">Parte 10</p>
-    <h2>Lo que queda por decidir</h2>
+    <h2>Las cinco últimas, cerradas</h2>
+    <p>
+      No queda nada abierto. Las cuatro que iban a votación se resolvieron como estaban
+      propuestas, y la quinta no necesitaba a nadie.
+    </p>
     <ul class="lista-seca">
-      <li><strong>Si Hoy conserva su banda de «Por contestar»</strong> o se queda sin ninguna y el sobre lo lleva todo. La propuesta es conservarla —se contesta de un toque y el sobre no le quita nada—, pero si lo que se busca es una pantalla de inicio sin bandas, es una línea menos.</li>
-      <li><strong>Dónde vive el verbo del modelo</strong>: dentro del formulario de apunte nuevo, o como un renglón al final de cada grupo.</li>
-      <li><strong>Si un hilo se puede silenciar del todo</strong>, además de descartar sus avisos de uno en uno. Hoy se propone que no, hasta que un hilo concreto moleste.</li>
-      <li><strong>Si un sitio debería poder salir del círculo de casa</strong> para enseñar la guía del pueblo a la familia extendida. Hoy se propone que no, y es lo más fácil de revertir.</li>
-      <li><strong>Qué se hace con <code>ux.md</code> §7.3</strong> cuando Buscar se retire: se propone dejarlo escrito como historia, con una línea que diga por qué se fue, y no borrarlo.</li>
+      <li><strong>Hoy conserva su banda de «Por contestar».</strong> Contestar sigue costando un toque en lo único de la aplicación donde otra persona espera, y el sobre no le quita nada: las notificaciones ya no pasan por ahí. En la práctica, esta pantalla no cambia.</li>
+      <li><strong>El verbo del modelo vive dentro del formulario de apunte nuevo</strong>, debajo del campo del título. Ni un botón fijo en la cabecera del sitio ni cuatro renglones al pie de los cuatro grupos: se pide justo cuando uno ya está pensando qué escribir.</li>
+      <li><strong>Un sitio no sale del círculo de casa.</strong> Como Lío. Y de ahí sale, gratis, que el módulo <strong>nunca evalúe la función de visibilidad</strong> —se ve entero o no se ve nada—, que es lo que permite que el voto enseñe iniciales sin delatar a nadie. Hacia fuera ya se comparte por WhatsApp, que es donde tiene sentido.</li>
+      <li><strong>Un hilo no se silencia, todavía.</strong> Descartar resuelve el caso normal y el aviso vuelve solo si llega algo nuevo. Silenciar es un ajuste para un problema que aún no ha pasado, y hasta que un hilo concreto moleste de verdad no se sabe ni cómo tendría que comportarse —si el punto en contexto debería seguir apareciendo o no—.</li>
+      <li><strong>Y <code>ux.md</code> §7.3 se queda escrito como historia</strong> cuando Buscar se retire, con una línea que diga por qué se fue. Borrarlo dejaría el documento contando una aplicación que nunca tuvo búsqueda, y el porqué de haberla quitado vale más que el apartado.</li>
     </ul>
+
+    <div class="nota veredicto">
+      <p><strong>Y el orden en que se construye</strong>, que es lo único que queda por escribir aquí:</p>
+      <p>
+        <strong>1.</strong> La migración <code>0009</code> y el registro de comentables, con
+        idea y regalo enchufados. Es lo que arregla algo que ya está mal, y no depende de
+        nada. · <strong>2.</strong> Las tablas de Sitios y el módulo entero sin voto ni
+        comentarios: sitios, apuntes, las cuatro clases, la hoja con sus tres verbos, y la
+        pestaña en el hueco de Buscar. · <strong>3.</strong> El voto y el hilo. ·
+        <strong>4.</strong> <code>avisos.js</code>, la tabla <code>visto</code>, el sobre y
+        el descarte. · <strong>5.</strong> El apartado de sincronización en Ajustes y la
+        retirada del punto de la cabecera. · <strong>6.</strong> Los apuntes del modelo, que
+        es lo único que se puede quedar sin hacer sin que el módulo cojee.
+      </p>
+      <p>
+        Los pasos 2 y 3 tocan <code>pwa/publico/</code>, así que <strong>cada uno sube las
+        tres versiones</strong> —la del service worker, la del <code>package.json</code> y la
+        copia de <code>version.js</code>— y por encima de lo que haya en <code>main</code> en
+        ese momento, no de donde salga la rama.
+      </p>
+    </div>
     <p class="pie">
       Fuentes: <code>ux.md</code> §6.5, §7.3 y §10.3 · <code>modelo-datos.md</code> §2.5 y §2.6 ·
       <code>especificacion.md</code> §3.5 y §5.3 · <code>autenticacion.md</code> §377 ·

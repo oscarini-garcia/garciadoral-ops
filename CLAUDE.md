@@ -27,8 +27,14 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- **Hay una propuesta decidida y sin construir: el módulo de Sitios**, en
-  `specs/propuesta-sitios.html`. Un sitio con apuntes de **llevar, hacer, ir o
+- **Hay una propuesta cerrada y sin construir: el módulo de Sitios**, en
+  `specs/propuesta-sitios.html`. **No queda nada por decidir**, y el orden de
+  construcción está en su parte 10: primero la migración de `comentario` y el
+  registro de comentables —que arregla algo que ya está mal y no depende de nada—,
+  después Sitios sin voto ni hilo, luego el voto y el hilo, después `avisos.js` con
+  la tabla `visto` y el sobre, después el apartado de sincronización en Ajustes, y
+  por último los apuntes del modelo, que es lo único que puede quedarse sin hacer
+  sin que el módulo cojee. Un sitio con apuntes de **llevar, hacer, ir o
   saber**, cada uno con descripción y hoja propia, con voto —un pulgar, con las
   iniciales de quien votó en vez de un número— e hilo de comentarios; en el hueco
   que deja Buscar en la barra de abajo, que se retira sin sustituto. **Borrar un
@@ -40,8 +46,12 @@ pendiente. El hook lo inyecta al final del mapa.
   Worker, y compartir, que va a dos alturas y con dos contenidos distintos —el sitio
   entero **sin** votos ni comentarios, porque sale del círculo de casa; un apunte
   suelto **con** su descripción y su hilo, porque ahí lo que se manda es la
-  conversación, y la hoja lo dice antes de enviar—. Queda por decidir **dónde vive
-  el verbo del modelo**.
+  conversación, y la hoja lo dice antes de enviar—. El verbo que le pide apuntes al
+  modelo **vive dentro del formulario de apunte nuevo**, debajo del título, que es
+  cuando uno ya está pensando justo eso; ni botón fijo en la cabecera del sitio ni
+  cuatro renglones al pie de los cuatro grupos. Y **un sitio no sale del círculo de
+  casa**, que es de donde sale gratis que el módulo nunca evalúe la función de
+  visibilidad.
 - **Y de ahí sale una pieza que no es de Sitios: `avisos.js`.** Lo que se acumula
   arriba de Hoy ya es un módulo de avisos —hoy `vistas/hoy.js` importa
   `tratosParaMi` de `lio.js` y dibuja sus peticiones—. Lo decidido es **un registro
