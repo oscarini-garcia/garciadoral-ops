@@ -60,7 +60,7 @@ pendiente. El hook lo inyecta al final del mapa.
   web lleva su copia en `pwa/publico/js/version.js`, así que **al subir la
   versión del OTA hay que subir también esa**. `tests/test_version.py` falla si
   se separan.
-- **Lio está construido**, y es el primer módulo que no cuelga de la agenda.
+- **Lío está construido**, y es el primer módulo que no cuelga de la agenda.
   Los turnos —mañana de 6 a 10, noche de 20 a 24— **se derivan de un cuadro de
   catorce casillas** que vive en `configuracion` y que solo editan los
   administradores desde Ajustes; **se escribe una fila de `paseo` cuando alguien
@@ -82,7 +82,7 @@ pendiente. El hook lo inyecta al final del mapa.
   a «comprado» lo que estuviera «envuelto», **y `0008_lio.sql`**, que crea las dos
   tablas de Lio. Las dos son corrientes y no `.unavez` —se pueden repetir sin
   consecuencias—, así que basta con marcar la casilla de las migraciones al
-  desplegar la API. Sin la de Lio, la aplicación no falla pero el módulo no
+  desplegar la API. Sin la de Lío, la aplicación no falla pero el módulo no
   aparece: el cuadro no se puede guardar y no hay dónde escribir los paseos. Las dos `.unavez` —los círculos (`0005`) y el
   género (`0006`)— ya están puestas, y no se vuelven a pedir porque no se pueden
   repetir: el `ALTER TABLE` falla si la columna ya está. La

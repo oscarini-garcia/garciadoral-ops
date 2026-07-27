@@ -178,7 +178,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     })),
     comentarios: comentarios.map((c) => ({ ...c, activo: bool(c.activo) })),
     conflictos,
-    // Lio: el cuadro es la regla y los paseos son las excepciones escritas. Van
+    // Lío: el cuadro es la regla y los paseos son las excepciones escritas. Van
     // los dos porque sin el cuadro un día sin fila no diría nada, y sin las
     // filas el cuadro reescribiría el pasado cada vez que se cambia.
     lio_cuadro: cuadroLio,
@@ -280,7 +280,7 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
   // Los paseos son de la casa: quien no está en el círculo cerrado no los ve
   // (`filtrado.js`) y tampoco los escribe.
   if ((tipo === 'paseo' || tipo === 'trato_paseo') && !esDeLaCasa(actor)) {
-    throw new Rechazo('los paseos de Lio son de quien vive en casa');
+    throw new Rechazo('los paseos de Lío son de quien vive en casa');
   }
 
   // Una propuesta la resuelve **su destinatario y nadie más**, que es lo único
@@ -391,7 +391,7 @@ async function guardarRelaciones(db, tipo, id, campos) {
 export async function aplicarCambio(db, actor, cambio) {
   const { tipo, id, campos = {}, actualizado_en: marca } = cambio;
 
-  // El cuadro de Lio no es una fila con identificador sino una casilla de
+  // El cuadro de Lío no es una fila con identificador sino una casilla de
   // `configuracion`, así que viaja por la cola como un tipo propio y se escribe
   // entero de una vez: catorce casillas son un solo dato.
   if (tipo === 'lio_cuadro') {

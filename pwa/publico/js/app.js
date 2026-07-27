@@ -447,7 +447,7 @@ function refrescarRecordatorios(datos) {
 }
 
 /**
- * Los turnos de Lio que le tocan a quien mira en los próximos días, aplanados a
+ * Los turnos de Lío que le tocan a quien mira en los próximos días, aplanados a
  * lo que el aviso necesita saber.
  *
  * El horizonte es más corto que el de la agenda —una semana— porque el cuadro
@@ -589,12 +589,12 @@ function abrirAjustes() {
       dentro.append(campo('Tema', tema));
     }));
 
-    // El cuadro de Lio es el reparto de la casa, no una preferencia de quien
+    // El cuadro de Lío es el reparto de la casa, no una preferencia de quien
     // mira: cambiarlo por sorpresa reordena la semana de otras tres personas, y
     // por eso lo edita quien administra. Un cambio de un día suelto no pasa por
     // aquí, sino por el turno mismo, que se le pide al otro y él acepta.
     if (ctx.vista?.esAdministrador() && !demostracion) {
-      cuerpo.append(acordeon('🐾 Lio', cuadroDeLio));
+      cuerpo.append(acordeon('🐾 Lío', cuadroDeLio));
     }
 
     if (ctx.vista?.esAdministrador() && !demostracion) {
@@ -633,7 +633,7 @@ function abrirAjustes() {
 }
 
 /**
- * Quién saca a Lio cada día, si nadie dice lo contrario.
+ * Quién saca a Lío cada día, si nadie dice lo contrario.
  *
  * De aquí se derivan los turnos de cualquier día que se mire, y por eso
  * cambiarlo cambia el futuro y no el pasado: en cuanto alguien marca un turno o

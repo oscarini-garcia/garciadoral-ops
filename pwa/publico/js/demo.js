@@ -60,7 +60,7 @@ export function componerDemo(registro, observadorId) {
 
   const ids = { evento: new Set(eventos.map((e) => e.id)), idea: new Set(ideas.map((i) => i.id)), regalo: new Set(regalos.map((r) => r.id)) };
   const esAdministrador = observador.rol === 'administrador';
-  // Lio es de la casa, también en la demostración: mirando con los ojos de la
+  // Lío es de la casa, también en la demostración: mirando con los ojos de la
   // abuela no aparece, igual que no aparecería de verdad.
   const deLaCasa = observador.circulo === 'familia' && observador.tiene_cuenta;
 

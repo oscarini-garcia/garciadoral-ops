@@ -1,4 +1,4 @@
--- Lio: los turnos de paseo, y el trato que los cambia de dueño.
+-- Lío: los turnos de paseo, y el trato que los cambia de dueño.
 --
 -- Dos tablas y ninguna fila por adelantado. El cuadro semanal —quién saca al
 -- perro cada día por la mañana y por la noche— vive en `configuracion`, bajo la

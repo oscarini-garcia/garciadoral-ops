@@ -92,7 +92,7 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 
 **PreferenciaNotificación.** Por persona y evento o tipo de evento. Por defecto solo está activo el recordatorio previo; los avisos de modificación quedan desactivados, lo que además reduce la superficie de filtración descrita en el apartado 3.5 de la especificación funcional.
 
-### 2.6 Lio
+### 2.6 Lío
 
 Los turnos de paseo del perro no son eventos y no viven en la tabla de eventos: tienen dueño, el dueño cambia con el consentimiento del otro, y no terminan al pasar la fecha sino cuando alguien dice que lo hizo. Nada de eso lo sabe expresar un Evento. La forma de la pantalla está en `ux.md` §10.3 y el porqué, en `propuesta-lio.html`.
 
@@ -100,7 +100,7 @@ Los turnos de paseo del perro no son eventos y no viven en la tabla de eventos: 
 
 **Paseo.** Un turno que ha dejado de derivarse del cuadro: fecha, turno —mañana o noche—, persona asignada, persona que lo sacó y cuándo lo marcó. La fila aparece cuando alguien marca el turno o cuando se acuerda un cambio para ese día, y desde entonces manda sobre el cuadro. Es la regla que permite cambiar el reparto sin reescribir el pasado. El identificador es compuesto y determinista —`lio:2026-07-27:manana`—, porque el dispositivo lo necesita antes de haber visto ninguna fila; el par fecha y turno es único.
 
-**TratoPaseo.** Una propuesta sobre un turno, que no surte efecto hasta que la acepta su destinatario. Dos clases, con el mismo mecanismo: `cambio`, cuando el asignado pide que lo saque otro, y `correccion`, cuando alguien dice que lo sacó y el turno era de otro. Guarda quién propone, a quién, a qué asignación se vuelve si la respuesta es que no, y en qué quedó —pendiente, aceptado, rechazado o caducado—. Mientras está pendiente no altera nada, de modo que rechazar es exactamente no haber propuesto. Solo el destinatario la resuelve; el proponente únicamente puede retirarla.
+**TratoPaseo.** Una propuesta sobre un turno, que no surte efecto hasta que la acepta su destinatario. Hoy solo se crea de una clase, `cambio`: la que abre quien tiene el turno y no puede sacarlo. La clase `correccion` —alguien dice que sacó el turno de otro— sigue admitida por el esquema y se resuelve si queda alguna pendiente, pero ya no se crea: coger trabajo ajeno no necesita permiso y se escribe en el acto. Guarda quién propone, a quién, a qué asignación se vuelve si la respuesta es que no, y en qué quedó —pendiente, aceptado, rechazado o caducado—. Mientras está pendiente no altera nada, de modo que rechazar es exactamente no haber propuesto. Solo el destinatario la resuelve; el proponente únicamente puede retirarla.
 
 **Ventanas de los turnos.** De 6 a 10 y de 20 a 24, fijas. Su única función es derivar el tercer estado de un turno —el que nadie marca—: un previsto cuya ventana terminó queda sin marcar. También caducan por ellas las propuestas de cambio sin contestar. Las de corrección hablan del pasado y no vencen con él: duran una semana **desde que se piden**, de modo que corregir un turno de hace un mes es tan posible como corregir el de ayer, y en los dos casos hay el mismo plazo para contestar.
 

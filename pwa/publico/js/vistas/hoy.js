@@ -78,7 +78,7 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
   vaciar(pantalla);
   pantalla.classList.add('pantalla-hoy');
   // Lo que hay que contestar va lo primero, porque es lo único de esta pantalla
-  // que espera a alguien; los turnos de Lio, justo detrás, porque marcar es el
+  // que espera a alguien; los turnos de Lío, justo detrás, porque marcar es el
   // gesto que se hace dos veces al día. Después ya viene lo que se venía a leer.
   pantalla.append(
     ...bandaDePeticiones(ctx),
@@ -88,7 +88,7 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
   );
 }
 
-// ---------------------------------------------------------------- Lio --
+// ---------------------------------------------------------------- Lío --
 
 /**
  * Cuántas peticiones se enseñan de golpe.
@@ -145,7 +145,7 @@ function tarjetaDePeticion(trato, ctx) {
  * Los dos turnos de hoy, y el de ayer que se quedó sin marcar.
  *
  * Lo de ayer sube una sola vez, al día siguiente, y con la pregunta puesta
- * —«¿la sacaste?»— en lugar de la afirmación. Arrastrarlo más días convertiría
+ * —«¿sacaste a Lío?»— en lugar de la afirmación. Arrastrarlo más días convertiría
  * Hoy en una lista de reproches, y afirmar que el perro no salió sería casi
  * siempre falso: lo que faltó fue el gesto en el teléfono.
  *
@@ -155,7 +155,7 @@ function bloqueDeLio(dia, ctx) {
   if (!hayLio(ctx.vista.datos)) return [];
 
   const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: '🐾 Lio' }),
+    el('p', { class: 'grupo-titulo', texto: '🐾 Lío' }),
   ]);
 
   for (const turno of turnosDe(ctx.vista.datos, dia)) grupo.append(filaDeTurno(turno, ctx));

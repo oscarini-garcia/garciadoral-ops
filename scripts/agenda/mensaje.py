@@ -232,7 +232,7 @@ def componer(
         if restantes > 0:
             lineas.append(f"{' ' * len(prefijo)}  y {restantes} más")
 
-        # Lio va el último y fuera del techo: no compite por las tres líneas.
+        # Lío va el último y fuera del techo: no compite por las tres líneas.
         if renglon_de_lio:
             lineas.append(f"{' ' * len(prefijo)}  {renglon_de_lio}")
 
