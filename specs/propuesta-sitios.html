@@ -1,0 +1,1010 @@
+<meta charset="utf-8">
+<title>Sitios: lo que hay que saber de un lugar, y el comentario como pieza común</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css, para que lo que se mide
+     aquí sean las medidas de la aplicación y no las de una maqueta parecida. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --radio: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 66ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.veredicto { border-left-width: 3px; border-left-color: var(--ink); background: var(--paper-3); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 7px; max-width: 68ch; }
+  .lista-seca strong { color: var(--ink); }
+
+  .par { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 820px) { .par { grid-template-columns: 360px 1fr; } }
+  .par > div { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .opcion { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 66ch; }
+  .opcion.elegida .letra { background: var(--tinta); color: var(--paper); }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio div span:last-child { color: var(--ink-soft); }
+  .juicio strong { color: var(--ink); }
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .tabla-envoltorio { overflow-x: auto; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); white-space: nowrap; }
+  .comparativa .ojo { color: var(--aviso); }
+  .comparativa .bien { color: var(--tinta); }
+
+  /* ------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 360px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--sombra); overflow: hidden; padding: 4px 14px 0;
+  }
+  .tel-rot {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 9px 0 6px;
+  }
+  .tel-titulo { font-family: var(--serif); font-size: 23px; padding: 2px 0 10px; }
+  .tel-cuerpo { display: flex; flex-direction: column; padding-bottom: 12px; }
+
+  .grupo { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .grupo:first-child { margin-top: 4px; }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px;
+    text-align: left; width: 100%;
+  }
+  .tarjeta h3 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+  .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
+  .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
+
+  /* La fila de un apunte: título, y el voto a la derecha. */
+  .apunte {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--line); min-height: 44px;
+  }
+  .apunte:last-child { border-bottom: 0; }
+  .apunte-texto { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .apunte-texto span { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .apunte-pie { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .04em; }
+
+  .voto {
+    display: inline-flex; align-items: center; gap: 5px; flex: none;
+    min-height: 30px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2);
+    font-family: var(--mono); font-size: 11px; color: var(--ink-soft); letter-spacing: .06em;
+  }
+  .voto[data-mio="si"] { background: var(--tinta-suave); border-color: var(--tinta); color: var(--tinta); }
+  .voto[data-vacio="si"] { color: var(--ink-faint); }
+  .voto .pulgar { font-size: 12px; }
+
+  .cuenta-com {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .cuenta-com[data-sin-leer="si"] { color: var(--tinta); }
+  .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); display: inline-block; }
+
+  /* La barra de abajo, con las cinco pestañas. */
+  .tabbar {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid var(--line); margin: 0 -14px; padding: 0 2px;
+    background: var(--paper);
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
+    padding: 8px 4px; min-height: 52px; position: relative;
+  }
+  .tab svg { width: 22px; height: 22px; display: block; }
+  .tab[data-actual="si"] { color: var(--tinta); }
+  .tab .globo {
+    position: absolute; top: 6px; right: calc(50% - 16px);
+    width: 8px; height: 8px; border-radius: 50%; background: var(--tinta);
+    border: 1.5px solid var(--paper);
+  }
+
+  .comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
+  .comentario.nuevo { border-left-color: var(--tinta); }
+  .comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+  .comentario p { font-size: 15px; }
+  .lista { display: flex; flex-direction: column; gap: 8px; }
+
+  .banda {
+    background: var(--tinta-suave); border-radius: var(--radio);
+    padding: 11px 13px; display: flex; flex-direction: column; gap: 3px;
+  }
+  .banda .rot { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--tinta); }
+  .banda p { font-size: 15px; }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--paper-2); }
+  .seg span { flex: 1; text-align: center; font-size: 13px; padding: 6px 8px; color: var(--ink-soft); }
+  .seg span[data-sel="si"] { background: var(--tinta); color: var(--paper); }
+
+  .codigo {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--ink-soft);
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 15px; overflow-x: auto; white-space: pre;
+  }
+  .codigo b { color: var(--ink); font-weight: 600; }
+  .codigo i { color: var(--aviso); font-style: normal; }
+
+  .pie { border-top: 1px solid var(--line); padding-top: 18px; color: var(--ink-faint); font-size: 14px; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Propuesta · julio de 2026</p>
+    <h1>Sitios: lo que hay que saber de un lugar, y el comentario como pieza común</h1>
+    <p>
+      Un módulo nuevo, el segundo que no cuelga de la agenda. Guarda lo que una casa
+      sabe de un lugar y se le olvida cada año: qué hay que llevar a la playa, qué se
+      puede hacer en el pueblo, dónde está el súper que abre los domingos. Ocupa el sitio
+      de Buscar en la barra de abajo, que se retira.
+    </p>
+    <p>
+      Dentro va también la parte que no se ve: los comentarios existen desde el principio
+      y hoy solo están enchufados a la mitad de las cosas que el modelo dice que los
+      admiten. Este módulo los convierte en una pieza de verdad —una sola— y les añade
+      lo único que les faltaba para servir de conversación: enterarse de que te han
+      contestado.
+    </p>
+  </header>
+
+  <!-- ============================================================= El nombre -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 1</p>
+    <h2>El nombre</h2>
+    <p>
+      «Tips» no entra: es la única palabra en inglés que habría en toda la aplicación, y
+      la barra de abajo dice Hoy, Agenda, Regalos y Gente. Lo que hace falta es un
+      sustantivo corto, en español y de casa. Hay tres candidatos con tesis distintas, y
+      la tesis importa más que la palabra: cada uno de los tres decide, de rebote, qué
+      es el objeto principal del módulo.
+    </p>
+
+    <div class="opcion elegida">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>Sitios</h3></div>
+        <p>
+          El lugar es el objeto y el módulo es su índice. Se lee en pareja con la pestaña
+          que ya está al lado: <strong>Gente · Sitios</strong>, las personas de esta casa y
+          los lugares de esta casa, que son los dos ejes de todo lo que la familia recuerda.
+          Seis letras, cabe en la pestaña sin recortarse.
+        </p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Dice qué se va a encontrar al tocar: una lista de lugares. Ninguna de las otras dos lo dice.</span></div>
+        <div class="si"><span>+</span><span>Es la palabra que ya se usa en casa: «¿qué sitios hay por allí?».</span></div>
+        <div class="no"><span>−</span><span>Uno de los tres tipos de apunte es «sitios donde ir», así que la palabra estaría en dos alturas a la vez. <strong>Se resuelve llamando a los tipos por su verbo</strong> —Llevar, Hacer, Ir— y no por su sustantivo, que además es como se dicen en voz alta.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">B</span><h3>Pistas</h3></div>
+        <p>
+          La traducción exacta de «tip», sin el anglicismo. El objeto principal no sería el
+          lugar sino el dato suelto —«en la playa de Bolonia no hay sombra»—, y el lugar
+          pasaría a ser una etiqueta suya.
+        </p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es literalmente lo que se pidió, y tiene el tono justo: una pista se da, no se documenta.</span></div>
+        <div class="no"><span>−</span><span>Choca con las pistas de pádel y con la acepción de rastro; en una casa con niños no es la primera lectura.</span></div>
+        <div class="no"><span>−</span><span>Empuja hacia la lista plana (opción B de la parte 2), que es la forma que peor envejece.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">C</span><h3>Guía</h3></div>
+        <p>
+          El módulo como cuaderno de viaje de la casa: «la guía de Menorca». Cuatro letras,
+          la más corta de la barra, y la única que promete que lo escrito de un año sirve
+          para el siguiente.
+        </p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es la que mejor explica <em>por qué</em> existe el módulo: no es una lista de tareas, es memoria.</span></div>
+        <div class="no"><span>−</span><span>Suena a documento cerrado que alguien redacta, y esto lo escriben cuatro personas a trozos y desde el móvil.</span></div>
+        <div class="no"><span>−</span><span>En singular no dice si hay una guía o muchas; en plural, «Guías», suena a manual de instrucciones.</span></div>
+      </div>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>Sitios.</strong> Gana por la pareja con Gente, que le da a la barra una
+        simetría que hoy no tiene, y porque la única pega que traía —la palabra repetida en
+        dos alturas— desaparece al nombrar los tipos por su verbo, que es como se dicen de
+        todas formas. «Guía» queda como el nombre del contenido de un sitio, y puede
+        aparecer escrito dentro sin ser el nombre de la pestaña.
+      </p>
+      <p>
+        <strong>Y las palabras de dentro:</strong> un <strong>sitio</strong> tiene
+        <strong>apuntes</strong>, y cada apunte es de <strong>llevar</strong>,
+        <strong>hacer</strong> o <strong>ir</strong>. «Apunte» es deliberadamente humilde
+        —lo contrario de «entrada» o «ficha»—: lo que se escribe ahí es una línea desde el
+        coche, no una redacción. En el código las tablas se llaman <code>lugar</code> y
+        <code>apunte</code>, y no <code>sitio</code>, para que un <code>sitio</code> de la
+        tabla no se confunda con un apunte de clase «ir»; es la misma distancia que ya hay
+        entre la pestaña Gente y el módulo <code>familia</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================== La forma -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 2</p>
+    <h2>De qué cuelga un apunte</h2>
+    <p>
+      Es la única decisión estructural de todo el módulo y de ella salen las demás.
+      Cuatro formas, de la más plana a la más armada.
+    </p>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">A · Sitios</p>
+          <p class="tel-titulo">Sitios</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <button class="tarjeta" type="button">
+                <div class="tarjeta-fila"><h3>🏖 Bolonia</h3></div>
+                <p>7 apuntes · Marta comentó ayer</p>
+              </button>
+              <button class="tarjeta" type="button">
+                <div class="tarjeta-fila"><h3>🏝 Menorca</h3></div>
+                <p>12 apuntes · agosto</p>
+              </button>
+              <button class="tarjeta" type="button">
+                <div class="tarjeta-fila"><h3>🏡 El pueblo</h3></div>
+                <p>5 apuntes</p>
+              </button>
+              <button class="tarjeta" type="button">
+                <div class="tarjeta-fila"><h3>🛒 Aquí al lado</h3></div>
+                <p>3 apuntes</p>
+              </button>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Hoy</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg>Agenda</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/></svg>Regalos</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.6"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Gente</div>
+            <div class="tab" data-actual="si"><span class="globo"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>Sitios</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="opcion elegida" style="border-top: 0; padding-top: 0;">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">A</span><h3>El sitio es la carpeta</h3></div>
+            <p>
+              Dos alturas. La pestaña es la lista de sitios; dentro de cada uno están sus
+              apuntes, agrupados por verbo. Crear un apunte exige elegir sitio, y no hay
+              apuntes huérfanos.
+            </p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span>Es como se habla: «lo de Bolonia». El objeto que la familia nombra en voz alta existe en la pantalla.</span></div>
+            <div class="si"><span>+</span><span>La lista de arriba <strong>no crece con el uso</strong>: son cinco o seis sitios para siempre, mientras los apuntes se multiplican. Es la única de las cuatro con esa propiedad.</span></div>
+            <div class="si"><span>+</span><span>Un sitio abierto es exactamente la lista que se lee antes de salir de casa. No hay que filtrar nada para tenerla.</span></div>
+            <div class="no"><span>−</span><span>Dos toques hasta el apunte, y un sitio con un solo apunte parece una carpeta vacía.</span></div>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">B</span><h3>Lista plana, el sitio como etiqueta</h3></div>
+            <p>Una sola lista de apuntes; el sitio es una pastilla de filtro arriba.</p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span>Un toque hasta cualquier apunte y nada que crear antes de escribir el primero.</span></div>
+            <div class="no"><span>−</span><span>A los dos años son ciento y pico líneas de cinco sitios mezclados, y la pantalla de entrada deja de decir nada. La solución sería agrupar por sitio, que es la opción A con más pasos.</span></div>
+            <div class="no"><span>−</span><span>Obliga a una fila de filtros permanente, que es el mecanismo que la aplicación reserva hoy para Regalos y que ahí ya pesa.</span></div>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">C</span><h3>El sitio es lo único que existe</h3></div>
+            <p>Sin entidad para el apunte: cada sitio guarda tres campos de texto largo, uno por verbo.</p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span>Lo más simple que se puede construir: una tabla, tres campos.</span></div>
+            <div class="no"><span>−</span><span><strong>Rompe lo que se ha pedido:</strong> sin apunte no hay a qué votar ni sobre qué comentar. El voto tendría que ser al sitio entero, y votar «Bolonia» no significa nada.</span></div>
+            <div class="no"><span>−</span><span>Dos personas escribiendo a la vez en el mismo campo de texto es el conflicto que peor resuelve la sincronización de esta aplicación.</span></div>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">D</span><h3>Colgado del viaje, en la agenda</h3></div>
+            <p>Sin módulo nuevo: los apuntes cuelgan del evento de tipo «viaje» que ya existe.</p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span>Cero pestañas nuevas y aparece justo donde hace falta, al abrir el viaje.</span></div>
+            <div class="no"><span>−</span><span>La mitad de los ejemplos no son viajes: el súper y las tiendas de aquí al lado no tienen evento ninguno.</span></div>
+            <div class="no"><span>−</span><span><strong>Lo escrito se muere con el viaje.</strong> El valor entero de esto es que lo de agosto del año pasado siga ahí en agosto del que viene, y un evento que ya pasó no lo sostiene.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>A, el sitio como carpeta.</strong> Es la única forma en la que la pantalla
+        de entrada sigue siendo legible dentro de tres años, y la única que da al voto y al
+        comentario una cosa pequeña de la que colgar. Los dos toques que cuesta llegar a un
+        apunte son el precio, y se pagan bien: al apunte no se entra casi nunca —se lee de
+        pasada en la lista del sitio—; se entra cuando hay algo que decir sobre él.
+      </p>
+      <p>
+        <strong>Y de D se queda el gancho, no la forma:</strong> un sitio puede apuntar a
+        un evento de viaje —<code>evento_id</code> opcional—, de modo que abrir Menorca en
+        la agenda ofrezca su sitio. El vínculo vive en el sitio y no en el evento, igual
+        que el de la ocasión (<code>modelo-datos.md</code> §2.5): así el evento sigue sin
+        saber que este módulo existe.
+      </p>
+    </div>
+  </section>
+
+  <!-- ========================================================== La pantalla -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 3</p>
+    <h2>Un sitio abierto</h2>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">Sitio abierto</p>
+          <p class="tel-titulo">🏖 Bolonia</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Llevar</p>
+              <div>
+                <div class="apunte">
+                  <span class="apunte-texto"><span>Sombrilla — allí no hay ni una sombra</span></span>
+                  <span class="voto" data-mio="si"><span class="pulgar">👍</span>MA·OS·JU</span>
+                </div>
+                <div class="apunte">
+                  <span class="apunte-texto">
+                    <span>Monedas para el parquímetro</span>
+                    <span class="apunte-pie">2 comentarios</span>
+                  </span>
+                  <span class="voto"><span class="pulgar">👍</span>OS</span>
+                </div>
+                <div class="apunte">
+                  <span class="apunte-texto"><span>Zapatillas para subir a la duna</span></span>
+                  <span class="voto" data-vacio="si"><span class="pulgar">👍</span>—</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grupo">
+              <p class="grupo-titulo">Hacer</p>
+              <div>
+                <div class="apunte">
+                  <span class="apunte-texto">
+                    <span>Subir a la duna al atardecer</span>
+                    <span class="apunte-pie">Marta · <span class="cuenta-com" data-sin-leer="si"><span class="punto"></span>1 sin leer</span></span>
+                  </span>
+                  <span class="voto" data-mio="si"><span class="pulgar">👍</span>MA·OS</span>
+                </div>
+                <div class="apunte">
+                  <span class="apunte-texto"><span>Las ruinas romanas, por la mañana temprano</span></span>
+                  <span class="voto"><span class="pulgar">👍</span>JU</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grupo">
+              <p class="grupo-titulo">Ir</p>
+              <div>
+                <div class="apunte">
+                  <span class="apunte-texto">
+                    <span>Súper del pueblo</span>
+                    <span class="apunte-pie">cierra a las 14 los domingos</span>
+                  </span>
+                  <span class="voto"><span class="pulgar">👍</span>MA</span>
+                </div>
+                <div class="apunte">
+                  <span class="apunte-texto"><span>Chiringuito de las tortillitas</span></span>
+                  <span class="voto" data-mio="si"><span class="pulgar">👍</span>MA·OS·JU·PA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Tres rótulos y ninguna pestaña.</strong> Los apartados plegables que
+            usan Ocasiones, Regalos e Ideas están para grupos que crecen sin fin; aquí son
+            tres grupos de cinco líneas y plegarlos costaría tres toques para ver lo que ya
+            cabía. <strong>El grupo vacío no se dibuja</strong>: un sitio al que solo hay que
+            ir no enseña dos rótulos huecos.
+          </p>
+          <p>
+            <strong>El orden dentro de cada grupo lo pone el voto</strong>, y de ahí lo más
+            votado arriba. Si el voto no ordenara nada sería un adorno; ordenando, la
+            sombrilla sube sola al primer renglón de la lista que se lee antes de salir.
+            A igualdad de votos, lo último escrito primero.
+          </p>
+          <p>
+            <strong>Y el detalle del apunte es opcional</strong>: una segunda línea en gris
+            —«cierra a las 14 los domingos»— que casi nunca se escribe. Cuando hace falta
+            decir más, eso es un comentario, y el comentario ya se cuenta en esa misma línea.
+          </p>
+        </div>
+
+        <div class="nota pega">
+          <p>
+            <strong>La pega de los tres verbos.</strong> Obligan a clasificar al escribir, y
+            hay apuntes que no son ninguno de los tres —«el año pasado fuimos el 14 y estaba
+            vacío»—. La salida barata es un cuarto cajón de «notas», y es la que se descarta:
+            un cajón llamado «otros» se traga la mitad de las filas en dos veranos.
+            <strong>Lo que se propone es que la clase se elija de un conmutador de tres, con
+            «Hacer» puesto por defecto</strong>, y que quien tenga una nota suelta la escriba
+            como comentario del sitio o como apunte de «Hacer» con el detalle debajo. Si en
+            seis meses eso se ve forzado, añadir la cuarta clase es una línea.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================== El voto -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 4</p>
+    <h2>El voto</h2>
+    <p>
+      Aquí votan cuatro personas que viven juntas, no cuatro mil desconocidos. Eso invalida
+      casi todo lo que se hace normalmente con un voto.
+    </p>
+
+    <div class="tabla-envoltorio">
+      <table class="comparativa">
+        <thead>
+          <tr><th>Forma</th><th>Qué pasa en una casa de cuatro</th><th>Veredicto</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Arriba y abajo</td>
+            <td>Votar en contra de la playa que eligió tu mujer es una discusión, no un dato. En un grupo pequeño el voto negativo tiene nombre y apellidos.</td>
+            <td class="ojo">No</td>
+          </tr>
+          <tr>
+            <td>Estrellas del 1 al 5</td>
+            <td>Pide una precisión que nadie tiene sobre un chiringuito, y con cuatro votantes la media es ruido: un 3,5 y un 4,0 no se distinguen en nada.</td>
+            <td class="ojo">No</td>
+          </tr>
+          <tr>
+            <td>Un pulgar con recuento</td>
+            <td>Funciona, pero «2» esconde lo único que de verdad importa aquí, que es <em>quiénes</em>. Con cuatro personas el número es menos información que las letras.</td>
+            <td class="ojo">Casi</td>
+          </tr>
+          <tr>
+            <td><strong>Un pulgar con las iniciales</strong></td>
+            <td>«MA·OS» se lee de un vistazo y contesta la pregunta que se hace de verdad: si esto le apetece a alguien más. Cabe siempre, porque la casa son cuatro.</td>
+            <td class="bien">Sí</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>Un solo voto, positivo, que se pone y se quita tocando la pastilla, y que
+        enseña iniciales en vez de un número.</strong> Es exactamente la regla que ya rige
+        en el carril de Lío: el color dice el estado y las letras dicen quién
+        (<code>ux.md</code> §10.3). Sin votos, la pastilla enseña un guion y se queda en
+        gris; con los cuatro, cuatro pares de letras. La mía va en tinta, para que se vea
+        de un golpe si ya voté.
+      </p>
+      <p>
+        <strong>No es «me gusta», es «yo también».</strong> La etiqueta para quien no ve dirá
+        «Me apunto a esto» y «Quitar mi voto», que es lo que significa: no se está puntuando
+        la calidad de una duna, se está diciendo que uno quiere subirla.
+      </p>
+      <p>
+        <strong>El voto se escribe como fila propia</strong>, con identificador compuesto
+        —<code>voto:&lt;apunte&gt;:&lt;persona&gt;</code>— y bandera de activo, igual que un
+        paseo de Lío. El dispositivo tiene que poder marcar antes de haber visto ninguna
+        fila, y componer el identificador es lo que se lo permite; quitar el voto apaga la
+        bandera, no borra nada.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================ El ciclo -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 5</p>
+    <h2>El ciclo de vida: creado y borrado, y nada más</h2>
+    <p>
+      Sin estados, sin «hecho», sin archivar. Es lo que separa este módulo del de Regalos, y
+      conviene decir en voz alta lo que eso implica, porque hay tres tentaciones que hay que
+      dejar fuera desde el principio.
+    </p>
+
+    <ul class="lista-seca">
+      <li>
+        <strong>Un apunte no se marca como hecho.</strong> «Subir a la duna» no se agota al
+        subir: el año que viene sigue siendo el mejor plan de allí. Un visto convertiría la
+        guía en una lista de tareas de un solo verano, que es justo lo contrario de lo que
+        se quiere guardar.
+      </li>
+      <li>
+        <strong>No hay fechas ni caducidad.</strong> Nada se archiva solo al pasar el verano.
+        Lo que sobra, se borra a mano, y borrar es un gesto de dos toques.
+      </li>
+      <li>
+        <strong>Borrar es apagar la bandera</strong>, como en todo lo demás: la fila se queda
+        y deja de viajar en la instantánea. Sin eso, borrar en el móvil no llegaría nunca al
+        iPad.
+      </li>
+    </ul>
+
+    <div class="nota">
+      <p>
+        <strong>Quién puede borrar: quien lo escribió.</strong> Es la misma regla que ya
+        cumple el comentario en <code>api/src/repositorio.js</code>, y evita el único
+        desperfecto social que este módulo puede producir —que alguien encuentre borrado lo
+        que escribió y no sepa quién fue—. Los administradores pueden borrar cualquiera,
+        que es como funciona todo lo demás.
+      </p>
+      <p>
+        <strong>Borrar un sitio se lleva sus apuntes por delante</strong>, y por eso se
+        pregunta antes con la cuenta escrita: «Bolonia tiene 7 apuntes. ¿Se borra todo?».
+        La alternativa —prohibir borrar un sitio que tenga apuntes— deja al usuario dando
+        vueltas borrando cosas de una en una para poder borrar la carpeta.
+      </p>
+      <p>
+        <strong>Y los votos y comentarios de un apunte borrado se van con él</strong>, sin
+        preguntar: no son objetos por su cuenta.
+      </p>
+    </div>
+  </section>
+
+  <!-- =========================================================== La barra -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 6</p>
+    <h2>La barra de abajo, y lo que se va con Buscar</h2>
+
+    <div class="par">
+      <div>
+        <div class="tel" style="padding-bottom: 0;">
+          <p class="tel-rot">La barra, después</p>
+          <div class="tabbar" style="margin-top: 8px;">
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Hoy</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18"/><path d="M8 3v4M16 3v4"/></svg>Agenda</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/></svg>Regalos</div>
+            <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.6"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Gente</div>
+            <div class="tab" data-actual="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>Sitios</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Ocupa el quinto hueco, el que tenía Buscar</strong>, y no se reordena
+            nada. Gente queda a su izquierda por casualidad y la pareja Gente · Sitios se
+            forma sola.
+          </p>
+          <p>
+            <strong>El icono es la chincheta del mapa.</strong> Se dibuja sobre la misma
+            rejilla de 24 y con el mismo trazo de 1,8 que los otros cuatro. Se estudiaron
+            el mapa plegado —ilegible a 22 puntos, todo pliegues— y la brújula, que dice
+            «orientarse» y no «lugares». La chincheta se lee de golpe y no se parece a
+            ninguno de los otros cuatro iconos, que era la otra condición.
+          </p>
+          <p>
+            <strong>Y el botón flotante depende de dónde estés</strong>: en la lista crea un
+            sitio, dentro de un sitio crea un apunte allí. Es un solo «+» con dos destinos
+            según la altura, que es lo que ya hace Regalos.
+          </p>
+        </div>
+        <div class="nota pega">
+          <p>
+            <strong>Lo que se pierde al retirar Buscar</strong>, dicho una vez y sin
+            insistir: era el único sitio donde se podía escribir dos letras y encontrar una
+            idea de hace dos años o una ocasión antigua (<code>vistas/buscar.js</code>,
+            119 líneas). Se van con él la pestaña, su icono, su reinicio en
+            <code>app.js</code> y la tabla de resultados del CSS; <code>ux.md</code> §7.3
+            pasa a ser historia y hay que anotarlo allí en una línea, no borrarlo.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= Los comentarios -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 7</p>
+    <h2>Los comentarios: qué hay hoy, de verdad</h2>
+    <p>
+      La pregunta era si todos los sitios con comentario usan el mismo código. La respuesta
+      corta es que sí, y no significa lo que parece: usan el mismo código porque solo hay un
+      caso enchufado. Esto es lo que hay, leído del árbol:
+    </p>
+
+    <ul class="lista-seca">
+      <li>
+        <strong>La pieza existe y está bien puesta.</strong>
+        <code>pwa/publico/js/comentarios.js</code> son 45 líneas que reciben tipo, id y
+        contexto, y viven fuera de las vistas a propósito, para que Regalos y la agenda no
+        se importen la una a la otra.
+      </li>
+      <li>
+        <strong>Pero solo se la llama con <code>'evento'</code>.</strong> Hay dos llamadas
+        en toda la aplicación: <code>vistas/semana.js:1127</code>, en el detalle del evento,
+        y <code>vistas/regalos.js:1029</code>, en la hoja del cumpleaños —que es otro evento—.
+      </li>
+      <li>
+        <strong>El modelo promete tres y la pantalla cumple una.</strong> La tabla admite
+        <code>idea</code>, <code>regalo</code> y <code>evento</code>
+        (<code>0001_esquema.sql</code>, con <code>CHECK</code>); el Worker filtra los tres
+        (<code>filtrado.js</code>); el modelo en Python valida los tres
+        (<code>TIPOS_COMENTARIO</code>); la especificación los describe
+        (<code>especificacion.md</code> §5.3). <strong>Ninguna hoja de idea ni de regalo
+        enseña su hilo.</strong> Se pueden escribir por sincronización y nadie los vería.
+      </li>
+      <li>
+        <strong>Y la lista de tipos está copiada en cinco sitios</strong> —el
+        <code>CHECK</code> de SQL, la cadena de <code>if</code> de <code>filtrado.js</code>,
+        <code>TIPOS_COMENTARIO</code> y su diccionario de índices en
+        <code>modelo.py</code>, y <code>comentarios_visibles</code> en
+        <code>visibilidad.py</code>—. Añadir el apunte significa tocar los cinco, y el
+        <code>CHECK</code> de SQLite no se puede modificar: exige rehacer la tabla.
+      </li>
+    </ul>
+
+    <h3 style="margin-top: 6px;">Qué hacer con eso</h3>
+
+    <div class="opcion">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>Añadir la cuarta cadena en los cinco sitios</h3></div>
+        <p>Lo mínimo que compila. Media hora, y la sexta vez vuelve a costar media hora.</p>
+      </div>
+    </div>
+
+    <div class="opcion elegida">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">B</span><h3>Un registro de «cosas que admiten comentario»</h3></div>
+        <p>
+          Una sola tabla de datos, por lado, que diga para cada tipo dónde está su colección
+          y de qué hereda la visibilidad. Los <code>if</code> desaparecen y dar de alta un
+          módulo es una línea.
+        </p>
+      </div>
+      <div class="codigo">// api/src/comentables.js — uno solo, y el Worker deja de tener ifs
+export const COMENTABLES = {
+  evento: (r) =&gt; r.eventos,
+  idea:   (r) =&gt; r.ideas,
+  regalo: (r) =&gt; r.regalos,
+  <b>apunte: (r) =&gt; r.apuntes,</b>
+};</div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Quita las cinco copias y deja una. Es la misma jugada que ya hizo <code>CAMPOS</code> en <code>repositorio.js</code> con las tablas.</span></div>
+        <div class="si"><span>+</span><span>Hace evidente lo que hoy está escondido: que ideas y regalos tienen hilo y no lo enseñan.</span></div>
+        <div class="no"><span>−</span><span>Hay que tocar tres lenguajes —el Worker, el modelo en Python y la webapp— para dejar tres registros en vez de uno. No hay manera de tener uno solo: el plan semanal se compone en Python y el filtro corre en el Worker.</span></div>
+      </div>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>B, y de paso el <code>CHECK</code> se retira.</strong> Rehacer la tabla
+        <code>comentario</code> cada vez que nace un módulo, solo para repetir en SQL una
+        regla que ya se comprueba en el Worker y en el modelo, es pagar una migración por
+        nada. La migración que hace falta rehace la tabla <strong>una vez</strong>, sin
+        <code>CHECK</code>, y deja escrito en el propio fichero que la lista vive en el
+        código. Es una migración de las de una vez —<code>.unavez</code>—, porque copia
+        filas.
+      </p>
+      <p>
+        <strong>Y la pieza crece un poco</strong>, ya que pasa de ser el hilo de los eventos
+        a ser la conversación de toda la aplicación: fecha relativa en vez de
+        <code>2026-07-14</code>, borrar el comentario propio —el Worker ya lo permite y la
+        pantalla no lo ofrece—, una frase cuando no hay ninguno, y la raya de «sin leer»
+        que la parte 8 necesita. Sigue siendo un fichero y una función.
+      </p>
+      <p>
+        <strong>Enchufar idea y regalo va en el mismo viaje</strong>: una línea en cada hoja
+        de detalle. Dejarlo a medias es peor que las dos alternativas, porque el dato existe
+        y no se ve.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================= El aviso -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 8</p>
+    <h2>El aviso de que te han contestado</h2>
+
+    <div class="nota pega">
+      <p>
+        <strong>Antes de las opciones, la restricción, que aquí manda sobre todo lo demás:
+        esta aplicación no puede hacer sonar el teléfono de otra persona.</strong> Los
+        avisos se programan <em>en el dispositivo</em> a partir de su propia instantánea
+        (<code>native.js</code>), y esa decisión es lo que hace que la regla «las
+        notificaciones heredan la visibilidad» se cumpla sola. No hay APNs: se aplazó a
+        propósito en <code>autenticacion.md</code> §377, y es la misma razón por la que Lío
+        no puede avisar a nadie de que le has pedido un cambio (<code>ux.md</code> §10.3).
+        Un comentario es imprevisible por definición, así que <strong>no existe hoy ningún
+        camino por el que un comentario haga vibrar el móvil de otro</strong>. Lo que sigue
+        es qué se puede hacer de verdad.
+      </p>
+    </div>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">1 · Hoy, con el aviso arriba</p>
+          <p class="tel-titulo">Buenas tardes, Óscar</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <div class="banda">
+                <span class="rot">Te han contestado</span>
+                <p>Marta, en «Subir a la duna al atardecer»</p>
+                <p style="color: var(--ink-soft); font-size: 14px;">y 2 más</p>
+              </div>
+            </div>
+            <div class="grupo">
+              <p class="grupo-titulo">Hoy</p>
+              <div>
+                <div class="apunte" style="grid-template-columns: 1fr;">
+                  <span class="apunte-texto"><span>🎾 Pádel con Javi · 19:00</span></span>
+                </div>
+                <div class="apunte" style="grid-template-columns: 1fr;">
+                  <span class="apunte-texto"><span>🐾 Lío, noche · te toca</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="opcion elegida" style="border-top: 0; padding-top: 0;">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">1</span><h3>Dentro de la aplicación: punto en la pestaña y banda en Hoy</h3></div>
+            <p>
+              Se deriva en el dispositivo de la instantánea que ya llega: comentarios más
+              nuevos que mi última lectura, en hilos donde soy el autor del objeto o he
+              comentado antes, y que no he escrito yo. Punto en la pestaña, banda arriba de
+              Hoy y raya de «sin leer» dentro del hilo.
+            </p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span>Cero infraestructura nueva y ni una línea de servidor. Hereda la visibilidad gratis, porque lo que no puedo ver no está en mi instantánea.</span></div>
+            <div class="si"><span>+</span><span>Funciona igual en la web y en el iPhone, y no depende del permiso de notificaciones.</span></div>
+            <div class="no"><span>−</span><span>Solo se entera quien abre la aplicación. Un comentario del martes se ve el jueves.</span></div>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">2</span><h3>Aviso local programado</h3></div>
+            <p>
+              No funciona, y conviene dejarlo escrito para no volver a proponerlo: un aviso
+              local se programa para un instante conocido de antemano, y un comentario llega
+              cuando llega. Lo más que podría hacer es dispararse cuando la aplicación ya
+              está abierta, que es la opción 1 con un permiso de por medio.
+            </p>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">3</span><h3>Por WhatsApp, con el despachador que ya existe</h3></div>
+            <p>
+              El único raíl que hoy llega de verdad a un teléfono ajeno: el mismo que envía
+              el plan de los domingos por CallMeBot.
+            </p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span>Empuja de verdad, sin Apple, sin credenciales nuevas.</span></div>
+            <div class="no"><span>−</span><span><strong>El despachador pasa una vez al día, a las 07:07 UTC.</strong> Un comentario de las nueve de la noche se avisaría a la mañana siguiente, y un aviso de conversación que llega diez horas tarde no es un aviso.</span></div>
+            <div class="no"><span>−</span><span>La cola es un fichero del repositorio que escribe una acción de GitHub; el Worker no puede tocarla sin ponerse a hacer <em>commits</em> por la API.</span></div>
+            <div class="no"><span>−</span><span>Si el texto viaja, hay que volver a aplicar la redacción a mano: «Marta ha comentado en <em>la bici</em>» delante del destinatario de esa bici es exactamente la filtración que §3.5 prohíbe.</span></div>
+          </div>
+        </div>
+
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">4</span><h3>Notificación remota de verdad, con APNs</h3></div>
+            <p>
+              Lo que haría falta para que suene el teléfono en el momento. Pide credenciales
+              de Apple, una tabla de <em>tokens</em> por dispositivo, y —lo caro— volver a
+              aplicar la visibilidad al componer cada mensaje, que hoy sale gratis. Es una
+              decisión de otra escala y sigue aplazada donde ya estaba.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>La 1, y sola.</strong> Es la única que se sostiene con lo que hay, la única
+        que no puede filtrar nada y la que se construye en un día. La 3 queda apuntada para
+        cuando el despachador pase más de una vez —si algún día corre cada hora, un empujón
+        <strong>sin contenido</strong> («tienes un comentario nuevo») es gratis y no filtra
+        nada, porque no dice de qué—.
+      </p>
+      <p>
+        <strong>A quién se avisa</strong>, tal como se pidió: a quien creó la cosa y a quien
+        ya haya comentado en ella. Menos a quien acaba de escribir, y siempre acotado a
+        quien pueda ver el objeto —lo segundo no hay ni que programarlo: si no lo ve, no lo
+        tiene—.
+      </p>
+      <p>
+        <strong>Dónde vive la marca de leído.</strong> Lo más barato es guardarla en el
+        propio dispositivo, junto a la instantánea: un hilo y la fecha del último comentario
+        que vi. No cuesta ni tabla ni migración, y tiene dos costuras que hay que aceptar
+        —un móvil nuevo enseña todo como sin leer, y leer en el iPad no apaga el punto del
+        iPhone—. La alternativa es una fila por persona e hilo que viaje en la instantánea:
+        consistente entre dispositivos, a cambio de una tabla y una escritura cada vez que
+        se abre un hilo. <strong>Se propone empezar por lo local</strong>, que es lo simple,
+        y anotar la otra como la mejora conocida.
+      </p>
+    </div>
+  </section>
+
+  <!-- =============================================================== Datos -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 9</p>
+    <h2>Lo que hay que escribir en la base de datos</h2>
+
+    <div class="codigo">lugar   id · nombre · emoji · <i>evento_id?</i> · autor_id · activo
+apunte  id · lugar_id · <b>clase</b> (llevar|hacer|ir) · titulo · detalle? · autor_id · activo
+voto    id (<b>voto:&lt;apunte&gt;:&lt;persona&gt;</b>) · apunte_id · persona_id · activo
+
+comentario   se rehace <b>sin CHECK</b>; la lista de tipos pasa al código</div>
+
+    <div class="nota">
+      <p>
+        <strong>Alcance: del círculo <code>familia</code>, como Lío.</strong> Quien no vive
+        en casa no recibe ni los sitios ni los apuntes ni los votos, y su aplicación no
+        dibuja la pestaña porque no tiene con qué. La función <code>esDeLaCasa</code> ya
+        está escrita en <code>api/src/lio.js</code> y se reutiliza tal cual; son tres
+        líneas en <code>filtrado.js</code>. <strong>Y con eso el módulo nunca tiene que
+        evaluar la función de visibilidad</strong>: se ve entero o no se ve nada, que es
+        también lo que hace que el voto pueda enseñar iniciales sin delatar a nadie.
+      </p>
+      <p>
+        <strong>Una migración, la <code>0010</code></strong> —la <code>0009</code> es la de
+        rehacer <code>comentario</code>—, con las tres tablas y sus índices. Corriente, no
+        <code>.unavez</code>: se puede repetir sin consecuencias.
+      </p>
+      <p>
+        <strong>Y no hay nada que tocar en el plan de los domingos.</strong> Un sitio no cae
+        en un día y no tiene por qué salir en el mensaje del domingo. Si algún día se quiere
+        —«el sábado vais a Bolonia: 7 cosas apuntadas»—, eso es otra propuesta.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================= Abierto -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 10</p>
+    <h2>Lo que queda por decidir</h2>
+    <ul class="lista-seca">
+      <li><strong>El nombre</strong>, que es lo único que no se puede cambiar barato una vez esté en la barra y en la cabeza de cuatro personas. Sitios, Pistas o Guía.</li>
+      <li><strong>Si los tres verbos bastan</strong>, o hay que admitir el apunte sin clase desde el primer día.</li>
+      <li><strong>Si la marca de leído empieza siendo local</strong> o se hace bien desde el principio con su tabla.</li>
+      <li><strong>Si un sitio debería poder ser de fuera de casa</strong> —enseñarle a la familia extendida la guía del pueblo—, que hoy se propone que no y es la decisión más fácil de revertir de todas.</li>
+      <li><strong>Si al retirar Buscar hace falta algo que lo sustituya</strong> para encontrar una idea vieja, o se da por bueno que no.</li>
+    </ul>
+    <p class="pie">
+      Fuentes de este documento: <code>ux.md</code> §6.5, §7.3 y §10.3 ·
+      <code>modelo-datos.md</code> §2.5 y §2.6 · <code>especificacion.md</code> §3.5 y §5.3 ·
+      <code>autenticacion.md</code> §377 · <code>propuesta-lio.html</code> ·
+      y el código de <code>comentarios.js</code>, <code>filtrado.js</code>,
+      <code>native.js</code>, <code>repositorio.js</code> y <code>vistas/buscar.js</code>.
+    </p>
+  </section>
+
+</div>

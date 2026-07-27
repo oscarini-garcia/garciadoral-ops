@@ -27,6 +27,22 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Hay una propuesta sobre la mesa y sin construir: el módulo de Sitios**, en
+  `specs/propuesta-sitios.html`. Un lugar con apuntes de llevar, hacer o ir, con
+  voto e hilo de comentarios, en el hueco que deja Buscar en la barra de abajo.
+  Está pendiente de elegir **el nombre** —Sitios, Pistas o Guía— y de decidir
+  **si la marca de leído empieza siendo local o lleva tabla propia**. La parte que
+  importa aunque el módulo no se construya: **los comentarios están enchufados a
+  medias**. `pwa/publico/js/comentarios.js` es una pieza compartida de verdad,
+  pero solo se la llama con `'evento'` —`vistas/semana.js` y `vistas/regalos.js`,
+  dos llamadas en toda la aplicación—, mientras que la tabla, el filtro del
+  Worker, el modelo en Python y `especificacion.md` §5.3 admiten los tres tipos:
+  una idea o un regalo pueden tener hilo y **ninguna pantalla lo enseña**. Y la
+  lista de tipos está copiada en cinco sitios —el `CHECK` de `0001_esquema.sql`,
+  `filtrado.js`, `TIPOS_COMENTARIO` y su diccionario en `modelo.py`, y
+  `comentarios_visibles` en `visibilidad.py`—, así que un cuarto tipo los toca los
+  cinco y además obliga a rehacer la tabla, porque un `CHECK` de SQLite no se
+  altera.
 - **Al tocar cualquier cosa de `pwa/publico/`, sube dos versiones, no una.**
   Son dos caminos distintos: `VERSION` en `pwa/publico/sw.js` es lo que hace que
   el **navegador** deje de servir los módulos de su caché, y `version` en
