@@ -15,7 +15,7 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
-  colorDePersona, deslizarHorizontal, dobleToque, botonIcono,
+  deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
@@ -441,9 +441,13 @@ function casillaDeLio(dia, turno, ctx) {
     'aria-label': `${formatearFechaLarga(dia)}, ${turno.nombre.toLowerCase()}: ${resumenDeTurno(estado, ctx)}`,
     onclick: () => { toque(); abrirTurnoDeLio(dia, turno.id, ctx); },
   }, [
+    // Sin color propio de cada persona: a quién le toca lo dicen sus dos
+    // letras, y el color queda para decir en qué está el turno. Cuatro tintes
+    // sacados del identificador distinguían bien pero no eran de esta
+    // aplicación, y encima cambiarían solos si alguien se diera de alta otra vez
+    // (specs/prototipo-cuadro-de-lio.html).
     el('span', {
       class: 'lio-ini',
-      style: (hecho || persona) ? `--color-lio:${colorDePersona((hecho || persona).id)}` : null,
       texto: (hecho || persona) ? inicialesDe(hecho || persona) : '·',
     }),
   ]);

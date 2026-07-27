@@ -443,10 +443,14 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* ------------------------------------------------------------------- Lio -- */
 
-/* El carril y la rejilla son la misma figura —siete columnas de días y una de
-   rótulos— en dos sitios: encima de la semana y dentro de Ajustes. Comparten
-   las medidas para que el cuadro que se edita se reconozca al verlo pintado. */
-.lio-carril, .lio-cuadro {
+/* El carril de la semana: siete columnas de días y una de rótulos.
+
+   **Sin color por persona.** A quién le toca lo dicen sus dos letras; el color
+   dice en qué está el turno, que es lo que se mira al recorrer la semana. Un
+   tinte por persona sacado del identificador los distinguía bien, pero metía
+   cuatro colores ajenos en una paleta de un solo acento —y cambiaban solos si
+   alguien volvía a darse de alta (specs/prototipo-cuadro-de-lio.html). */
+.lio-carril {
   display: grid;
   grid-template-columns: 22px repeat(7, 1fr);
   gap: 4px 2px;
@@ -455,44 +459,55 @@ button { background: none; border: 0; cursor: pointer; }
   border: 1px solid var(--line); border-radius: 12px;
   padding: 7px 8px;
 }
-.lio-rotulo, .lio-cuadro-rotulo { font-size: 13px; }
-.lio-cabecera, .lio-cuadro-cabecera {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--ink-faint);
-}
+.lio-rotulo { font-size: 13px; }
+.lio-cabecera { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--ink-faint); }
 .lio-cabecera[data-hoy="si"] { color: var(--tinta); }
 
-/* En el carril, la casilla es la superficie tocable y la pastilla de dentro es
-   lo que se ve: así el blanco es holgado sin que la marca engorde. En el cuadro
-   de Ajustes no hace falta esa separación —la casilla es la pastilla— porque
-   allí no compite con nada por el espacio. */
+/* La casilla es la superficie tocable y la pastilla de dentro es lo que se ve:
+   así el blanco es holgado sin que la marca engorde. */
 .lio-casilla {
   display: grid; place-items: center;
   width: 100%; min-height: 30px; padding: 3px 0;
   background: none; border: 0; cursor: pointer;
 }
-.lio-ini, .lio-cuadro-casilla {
+.lio-ini {
   display: grid; place-items: center;
   min-width: 24px; min-height: 21px; padding: 2px 5px;
-  border-radius: 999px; border: 0; cursor: pointer;
+  border-radius: 999px; border: 1px solid transparent;
   font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
   background: var(--paper-3); color: var(--ink-soft);
 }
-.lio-cuadro-casilla { min-height: 30px; width: 100%; }
 
 /* Hecho es lo único que se rellena: al recorrer la semana, lo que salta a la
    vista es lo que ya está resuelto y lo que se quedó sin marcar. */
-.lio-casilla[data-estado="hecho"] .lio-ini { background: var(--color-lio, var(--tinta)); color: var(--paper); }
+.lio-casilla[data-estado="hecho"] .lio-ini { background: var(--tinta); color: var(--paper); }
 .lio-casilla[data-estado="sin-marcar"] .lio-ini {
-  background: transparent; border: 1px dashed var(--aviso); color: var(--aviso);
+  background: transparent; border-color: var(--aviso); border-style: dashed; color: var(--aviso);
 }
 .lio-casilla[data-estado="sin-asignar"] .lio-ini { background: transparent; color: var(--ink-faint); }
 .lio-casilla[data-mio="si"] .lio-ini { box-shadow: 0 0 0 1.5px var(--tinta); }
-.lio-casilla[data-pedido="si"] .lio-ini { border: 1px dashed var(--regalo); color: var(--regalo); }
+.lio-casilla[data-pedido="si"] .lio-ini { border-color: var(--regalo); border-style: dashed; color: var(--regalo); }
 .lio-casilla[data-hoy="si"] { background: var(--tinta-suave); border-radius: 8px; }
 
-.lio-cuadro-casilla[data-vacia="no"] { background: var(--color-lio); color: var(--paper); }
-.lio-cuadro-casilla[data-vacia="si"] { background: transparent; color: var(--ink-faint); }
-.lio-cuadro { margin: 8px 0; }
+/* El cuadro de Ajustes: una línea por día y el nombre escrito entero.
+
+   No comparte figura con el carril a propósito. Aquí no hay que caber en siete
+   columnas —se entra dos veces al año, y hay sitio para desplazar—, así que no
+   hace falta abreviar a nadie ni distinguirlo por su color. */
+.lio-dias { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.lio-dia {
+  display: grid; grid-template-columns: 32px 1fr 1fr; gap: 6px; align-items: center;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2); padding: 2px 8px;
+}
+.lio-dia-rotulo { font-size: 13px; color: var(--ink-soft); }
+.lio-dia-turno {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 2px 6px; border-radius: 8px;
+  font-size: 13.5px; text-align: left; min-width: 0;
+}
+.lio-dia-emoji { flex: none; font-size: 12px; }
+.lio-dia-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lio-dia-turno[data-vacio="si"] .lio-dia-nombre { color: var(--ink-faint); }
 
 .agenda-semana { display: flex; flex-direction: column; gap: 10px; }
 

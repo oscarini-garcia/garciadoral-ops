@@ -1,6 +1,6 @@
 {
   "name": "agenda-familiar",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "private": true,
   "type": "module",
   "description": "Agenda Familiar — aplicación web y cáscara iOS con actualizaciones OTA",
