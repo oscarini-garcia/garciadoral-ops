@@ -29,8 +29,8 @@ import { formatearHace, parsearMomento } from './semana.js';
  * El bloque entero: los que hay, la raya de por dónde iba y el campo de
  * escribir.
  *
- * `vistoHasta` es opcional y llega como texto ISO. Sin él no hay raya, que es
- * lo correcto en las hojas a las que no se entra desde un aviso.
+ * `vistoHasta` es opcional y llega como texto ISO. Sin él, todo lo ajeno cuenta
+ * como sin leer: es un hilo en el que uno no ha entrado nunca.
  */
 export function bloqueDeComentarios(tipo, id, ctx, { vistoHasta = null } = {}) {
   const comentarios = ctx.vista.comentariosDe(tipo, id);
@@ -39,10 +39,15 @@ export function bloqueDeComentarios(tipo, id, ctx, { vistoHasta = null } = {}) {
   // Dónde parte la raya: el primero que llegó después de la última vez que se
   // miró y que además no escribió uno mismo, porque lo propio nunca está sin
   // leer. Sin nada nuevo, `-1`, y entonces no se dibuja.
-  const primeroSinLeer = !corte ? -1 : comentarios.findIndex((comentario) => {
+  //
+  // Sin marca ninguna —un hilo en el que uno no ha entrado nunca— cuenta todo lo
+  // ajeno como sin leer, que es la misma cuenta que hace el punto de la lista.
+  // Si aquí se exigiera marca previa, el punto diría que hay algo y la hoja no
+  // enseñaría dónde.
+  const primeroSinLeer = comentarios.findIndex((comentario) => {
     if (comentario.autor_id === ctx.vista.yo.id) return false;
     const cuando = parsearMomento(comentario.creado_en);
-    return cuando && cuando > corte;
+    return cuando && (!corte || cuando > corte);
   });
 
   const lista = el('div', { class: 'lista' }, comentarios.flatMap((comentario, indice) => [

@@ -27,78 +27,58 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- **Hay una propuesta cerrada y sin construir: el módulo de Sitios**, en
-  `specs/propuesta-sitios.html`. **No queda nada por decidir**, y el orden de
-  construcción está en su parte 10: primero la migración de `comentario` y el
-  registro de comentables —que arregla algo que ya está mal y no depende de nada—,
-  después Sitios sin voto ni hilo, luego el voto y el hilo, después `avisos.js` con
-  la tabla `visto` y el sobre, después el apartado de sincronización en Ajustes, y
-  por último los apuntes del modelo, que es lo único que puede quedarse sin hacer
-  sin que el módulo cojee. Un sitio con apuntes de **llevar, hacer, ir o
-  saber**, cada uno con descripción y hoja propia, con voto —un pulgar, con las
-  iniciales de quien votó en vez de un número— e hilo de comentarios; en el hueco
-  que deja Buscar en la barra de abajo, que se retira sin sustituto. **Borrar un
-  sitio exige vaciarlo antes.** La hoja del apunte lleva sus tres verbos arriba
-  junto al título —editar, compartir y borrar—, y ahí **se desvía a propósito de la
-  regla del evento**, que manda borrar al formulario: un apunte es una línea y su
-  formulario son dos campos. Lleva dos cosas más: apuntes escritos por un modelo,
-  que es un encargo más de los que ya viven en Ajustes y un extremo más en el
-  Worker, y compartir, que va a dos alturas y con dos contenidos distintos —el sitio
-  entero **sin** votos ni comentarios, porque sale del círculo de casa; un apunte
-  suelto **con** su descripción y su hilo, porque ahí lo que se manda es la
-  conversación, y la hoja lo dice antes de enviar—. El verbo que le pide apuntes al
-  modelo **vive dentro del formulario de apunte nuevo**, debajo del título, que es
-  cuando uno ya está pensando justo eso; ni botón fijo en la cabecera del sitio ni
-  cuatro renglones al pie de los cuatro grupos. Y **un sitio no sale del círculo de
-  casa**, que es de donde sale gratis que el módulo nunca evalúe la función de
-  visibilidad.
-- **Y de ahí sale una pieza que no es de Sitios: `avisos.js`.** Lo que se acumula
-  arriba de Hoy ya es un módulo de avisos —hoy `vistas/hoy.js` importa
-  `tratosParaMi` de `lio.js` y dibuja sus peticiones—. Lo decidido es **un registro
-  derivado de la instantánea**, no una tabla: cada módulo dice qué tiene pendiente
-  para quien mira, y Hoy lo pinta sin saber qué es un turno de perro. **Lleva solo
-  lo que hay que contestar**; que a uno le hayan comentado se sabe por **marcas en
-  contexto** —punto en la tarjeta del sitio, punto en la línea del apunte, raya de
-  «sin leer» dentro del hilo— y no por una lista de novedades. La razón de escribir
-  el registro es la de después: cuando llegue APNs, el servidor tendrá que
-  contestar esa misma pregunta, y si vive repartida por dentro de `hoy.js` habrá
-  que escribirla dos veces. **Se enseña en un sobre en la cabecera que solo existe
-  cuando hay algo** —así el icono no está mudo veinticinco días de cada treinta, y
-  que aparezca *es* el aviso, sin punto ni número—; sobre y no campana, porque una
-  campana que no puede sonar enseña a no fiarse del icono. Dentro van dos grupos, y
-  **solo el de abajo se descarta**: descartar una petición de turno dejaría al otro
-  esperando una respuesta que ya nadie va a dar. Descartar significa «ya lo he
-  visto», así que un comentario posterior en ese hilo lo trae de vuelta. Y con una
-  × y no con un deslizamiento: `deslizarHorizontal` ya significa «llévame al
-  siguiente» en la agenda, y darle un segundo significado es como un gesto deja de
-  ser fiable.
-- **Y eso obliga a que la marca de lo visto viaje: entra la tabla `visto`.** Se
-  propuso local mientras era pasiva —leer—, pero **un descarte es un acto**, y un
-  acto que se deshace al abrir el iPad no es un acto. Guarda persona, tipo, objeto y
-  **hasta qué momento**, no un booleano: es lo que permite que el aviso vuelva
-  cuando llega algo posterior. Solo viaja a su dueño y hereda la visibilidad sola,
-  porque la escribe quien ya podía ver el objeto.
-- **La cabecera pierde el punto de sincronización.** Se va a Ajustes, a un apartado
-  propio —no dentro de «La aplicación», que es de la instalación—, con la fecha de
-  la última correcta escrita en palabras y con la misma forma que la versión: la
-  línea es a la vez el dato y el verbo, y al tocarla cuenta los tres pasos reales
-  —subir lo pendiente, traer la copia, guardarla—. **Lo que hay que no romper al
-  hacerlo:** ese punto era el único sitio donde se veían tres estados —sin conexión,
-  sin sincronizar y **demostración**—. Lo propuesto es nada mientras va bien y una
-  línea en la subcabecera de Hoy cuando lleva un rato fallando; y la demostración,
-  que cambia el significado de todo lo que se ve, se queda con **pastilla escrita
-  permanente en la cabecera**, solo en demostración.
-- **Y la parte que importa aunque nada de eso se construya: los comentarios están
-  enchufados a medias.** `pwa/publico/js/comentarios.js` es una pieza compartida de verdad,
-  pero solo se la llama con `'evento'` —`vistas/semana.js` y `vistas/regalos.js`,
-  dos llamadas en toda la aplicación—, mientras que la tabla, el filtro del
-  Worker, el modelo en Python y `especificacion.md` §5.3 admiten los tres tipos:
-  una idea o un regalo pueden tener hilo y **ninguna pantalla lo enseña**. Y la
-  lista de tipos está copiada en cinco sitios —el `CHECK` de `0001_esquema.sql`,
-  `filtrado.js`, `TIPOS_COMENTARIO` y su diccionario en `modelo.py`, y
-  `comentarios_visibles` en `visibilidad.py`—, así que un cuarto tipo los toca los
-  cinco y además obliga a rehacer la tabla, porque un `CHECK` de SQLite no se
-  altera.
+- **Sitios está construido**, y es el segundo módulo que no cuelga de la agenda.
+  Un sitio es la carpeta y los apuntes cuelgan de él, con **cuatro clases que son
+  verbos —Llevar, Hacer, Ir y Saber—** y «Saber» puesta de origen, para que quien
+  no quiera clasificar no tenga que hacerlo. **El voto enseña las iniciales de
+  quien votó y no un número** —con cuatro en casa, «MA·OS» contesta la pregunta
+  que de verdad se hace— y **ordena su grupo**, que es lo único que separa un voto
+  de un adorno. La pestaña tiene dos alturas dentro de sí misma y no una hoja para
+  el sitio, y de ahí sale que el botón flotante tenga sus dos significados solos.
+  **Borrar un sitio exige vaciarlo antes**, y eso lo comprueba también el Worker,
+  porque la pantalla decide con la instantánea que tenga. Compartir va a dos
+  alturas con dos contenidos distintos: el sitio **sin** votos ni nombres, un
+  apunte **con** su hilo entero, y la aplicación lo dice antes de enviar. Está en
+  `specs/ux.md` §12.1, las entidades en `specs/modelo-datos.md` §2.7, y el porqué
+  de cada decisión en `specs/propuesta-sitios.html`. Queda abierto **cómo partir un
+  sitio cuando acumule cuarenta apuntes** —hoy los cuatro rótulos bastan— y **si un
+  sitio debería poder salir del círculo de casa**, que hoy se decidió que no.
+- **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
+  mira, venga del módulo que venga, **derivado de la instantánea y no de una
+  tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato
+  desde la agenda la dejaría ahí mintiendo. Dar de alta un módulo es una línea en
+  `FUENTES`. Se enseña en **un sobre en la cabecera que solo existe cuando hay
+  algo** —que aparezca *es* el aviso, sin punto ni número—, con dos grupos de los
+  que **solo el de abajo se descarta**: quitar una petición de turno dejaría al
+  otro esperando sin rastro. Descartar significa «ya lo he visto», así que un
+  comentario posterior lo trae de vuelta. Hoy conserva su banda de lo que espera
+  respuesta, que se contesta de un toque. Está en `specs/ux.md` §12.2. **Y la
+  razón de que exista siendo tan poco código es la de después:** cuando llegue
+  APNs, el servidor tendrá que contestar esa misma pregunta, y se reescribirá con
+  la misma forma en vez de estar repartida por dentro de `hoy.js`.
+- **La marca de lo visto viaja: la tabla `visto`.** Guarda persona, tipo, objeto y
+  **hasta qué momento**, no un booleano, que es lo que permite que un aviso
+  descartado vuelva. Solo llega a su dueño. Se escribe al abrir el hilo, al
+  descartar y al vaciar.
+- **La cabecera ya no lleva el punto de sincronización**: se fue a Ajustes, a un
+  apartado propio, con la fecha de la última correcta en palabras y la línea que
+  es a la vez el dato y el verbo. Lo que había que no perder —que algo lleve un
+  rato sin subir— lo dice **una línea en la subcabecera de Hoy**, y solo cuando
+  pasa; y la demostración conserva **pastilla escrita permanente** en la cabecera,
+  porque es lo único que cambia el significado de todo lo que se ve.
+- **Los comentarios ya no están enchufados a medias.** La lista de tipos vive en
+  `api/src/comentables.js` —con su espejo en `scripts/agenda/modelo.py`— y el
+  `CHECK` de la tabla se retiró en la `0009`, que es lo que hacía que cada módulo
+  nuevo costara rehacerla. **Idea y regalo enseñan por fin su hilo**, que el modelo
+  les prometía desde el principio y ninguna pantalla cumplía. Y la pieza creció lo
+  justo: fecha en palabras, borrar el comentario propio, una frase cuando está
+  vacío y la raya de «sin leer».
+- **Buscar se retiró de la barra** y no se sustituye. De las tres colecciones que
+  su búsqueda global cubría, solo el banco de ideas acumula volumen. Si algún día
+  duele, lo apuntado es **una lupa en la cabecera de Regalos** que filtre esa
+  pantalla; lo que no debe volver a pasar es gastar un hueco de la barra en eso.
+  `specs/ux.md` §7.3 no habla de esto: es el buscador de personas de Gente, que
+  sigue en pie.
 - **Al tocar cualquier cosa de `pwa/publico/`, sube dos versiones, no una.**
   Son dos caminos distintos: `VERSION` en `pwa/publico/sw.js` es lo que hace que
   el **navegador** deje de servir los módulos de su caché, y `version` en
@@ -165,12 +145,18 @@ pendiente. El hook lo inyecta al final del mapa.
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
   turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
   empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
-- **Quedan dos migraciones por aplicar: `0007_estado_regalo.sql`**, que convierte
-  a «comprado» lo que estuviera «envuelto», **y `0008_lio.sql`**, que crea las dos
-  tablas de Lío. Las dos son corrientes y no `.unavez` —se pueden repetir sin
-  consecuencias—, así que basta con marcar la casilla de las migraciones al
-  desplegar la API. Sin la de Lío, la aplicación no falla pero el módulo no
-  aparece: el cuadro no se puede guardar y no hay dónde escribir los paseos. Las dos `.unavez` —los círculos (`0005`) y el
+- **Quedan cinco migraciones por aplicar, y una de ellas hay que pedirla por su
+  nombre.** Las corrientes son `0007_estado_regalo.sql` —convierte a «comprado» lo
+  que estuviera «envuelto»—, `0008_lio.sql` —las dos tablas de Lío—,
+  `0010_sitios.sql` —lugar, apunte y voto— y `0011_visto.sql` —la marca de los
+  avisos—: las cuatro se pueden repetir sin consecuencias, así que basta con marcar
+  la casilla al desplegar la API. **La quinta es
+  `0009_comentario_sin_check.unavez.sql`**, que rehace la tabla `comentario` para
+  quitarle el `CHECK`, y como copia filas y tira la tabla vieja **no se repite**:
+  hay que escribir su nombre en la casilla de la migración de un solo uso. Sin
+  ella, un comentario sobre un apunte lo rechaza la base. Sin las de Sitios el
+  módulo aparece vacío y no se puede crear nada; sin la de Lío, el cuadro no se
+  puede guardar. Las dos `.unavez` viejas —los círculos (`0005`) y el
   género (`0006`)— ya están puestas, y no se vuelven a pedir porque no se pueden
   repetir: el `ALTER TABLE` falla si la columna ya está. La
   pantalla de Gente está decidida y construida: tres círculos

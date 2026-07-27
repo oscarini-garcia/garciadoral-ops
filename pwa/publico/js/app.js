@@ -534,14 +534,14 @@ export const TEXTO_SINCRONIZACION = {
  * él, y lo único que había que no perder —que algo lleve un rato sin subir— lo
  * dice Hoy con una línea, y solo cuando pasa.
  *
- * En demostración el sobre no aparece aunque haya avisos: allí no hay nadie
- * esperando al otro lado, y una petición de turno inventada llevaría a contestar
- * a nadie.
+ * El sobre aparece también en la demostración, igual que la banda de Hoy: allí
+ * hay peticiones y comentarios inventados, y esconder uno de los dos sitios
+ * donde salen enseñaría una aplicación que no es la que se va a usar.
  */
 function pintarCabecera() {
   const demostracion = estado().estado === 'demostracion';
   document.getElementById('pastillaDemo').hidden = !demostracion;
-  document.getElementById('botonAvisos').hidden = demostracion || !ctx.vista || !hayAvisos(ctx);
+  document.getElementById('botonAvisos').hidden = !ctx.vista || !hayAvisos(ctx);
 }
 
 // ------------------------------------------------------ El sobre de avisos --
