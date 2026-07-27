@@ -1,0 +1,521 @@
+<meta charset="utf-8">
+<title>Los comentarios, en voz más baja: cuatro maneras de que ocupen menos</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css. Las medidas citadas están
+     tomadas con esa hoja de verdad a 390 puntos de ancho, dentro de una hoja, y
+     no calculadas a ojo. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --paper-alto:   #FFFDFA;
+    --paper-alto-2: #F6F2EA;
+    --paper-alto-3: #EDE8DE;
+    --hueco:        #F4F1EA;
+    --hueco-linea:  #DDD8CC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
+      --hueco: #141D21; --hueco-linea: #2E3E46;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA; --paper-alto-3: #EDE8DE;
+    --hueco: #F4F1EA; --hueco-linea: #DDD8CC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
+    --hueco: #141D21; --hueco-linea: #2E3E46;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  /* El mismo reajuste que abre `estilos.css`. Sin él las maquetas salen más
+     anchas y más altas que la pantalla de verdad, que es lo que se viene a
+     medir. */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 1020px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 66ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .cifra { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--paper-3); padding: 1px 6px; border-radius: 5px; }
+
+  .fila { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+  .col { display: flex; flex-direction: column; gap: 12px; flex: 1 1 330px; min-width: 330px; max-width: 470px; }
+
+  /* ------------------------------------------------- La hoja de la maqueta -- */
+
+  .hoja {
+    --paper: var(--paper-alto); --paper-2: var(--paper-alto-2); --paper-3: var(--paper-alto-3);
+    width: 390px; max-width: 100%;
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: var(--sombra);
+    padding: 8px 20px 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .hoja-asa { width: 38px; height: 4px; border-radius: 2px; background: var(--line); margin: 4px auto 2px; }
+  .hoja h3 { font-family: var(--serif); font-weight: 500; font-size: 23px; letter-spacing: -.01em; }
+  .hoja-cabeza { display: flex; align-items: flex-start; gap: 10px; }
+  .hoja-cabeza-emoji { font-size: 22px; }
+  .hoja-cabeza p { font-size: 14px; color: var(--ink-soft); }
+
+  .grupo { display: flex; flex-direction: column; gap: 10px; }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .etiqueta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em;
+    padding: 3px 9px; border-radius: 6px;
+    background: var(--paper-3); color: var(--ink-soft);
+  }
+  .acciones { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
+  .boton {
+    min-height: 44px; padding: 10px 18px; border-radius: 10px;
+    font-size: 16px; font-weight: 500; border: 0;
+    background: var(--tinta); color: var(--paper-alto);
+  }
+  .campo { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .campo input {
+    min-height: 44px; width: 100%;
+    background: var(--hueco); border: 1px solid var(--hueco-linea);
+    border-radius: 10px; padding: 10px 12px; font-size: 16.5px; color: var(--ink);
+  }
+  .lista { display: flex; flex-direction: column; gap: 8px; }
+  .comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
+  .comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+  .comentario p { font-size: 15px; }
+  .desbordamiento { font-size: 14px; color: var(--tinta); text-align: left; min-height: 26px; background: none; border: 0; padding: 0; }
+
+  /* --- B: el acordeón, tal como está en Ajustes --- */
+  .acordeon { border-top: 1px solid var(--line); padding-top: 10px; }
+  .acordeon > summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint); min-height: 26px;
+  }
+  .acordeon > summary::-webkit-details-marker { display: none; }
+  .acordeon > summary::after { content: '⌄'; margin-left: auto; font-size: 14px; }
+
+  /* --- C: voz baja --- */
+  .c-lista { display: flex; flex-direction: column; gap: 7px; }
+  .c-comentario { font-size: 13.5px; color: var(--ink-soft); }
+  .c-comentario b { font-weight: 500; color: var(--ink); }
+  .c-comentario i { font-style: normal; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+  .c-campo input {
+    width: 100%; min-height: 34px; background: transparent; border: 0;
+    border-bottom: 1px solid var(--hueco-linea); border-radius: 0; padding: 4px 0;
+    font-size: 16.5px; color: var(--ink);
+  }
+  .c-campo input::placeholder { color: var(--ink-faint); }
+
+  /* --- D: una línea --- */
+  .d-linea { font-size: 14px; color: var(--tinta); text-align: left; min-height: 26px; background: none; border: 0; padding: 0; }
+
+  .elegida {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--paper-alto); background: var(--tinta); padding: 3px 9px; border-radius: 999px;
+    vertical-align: middle; margin-left: 8px;
+  }
+  .pros { display: flex; flex-direction: column; gap: 5px; font-size: 14.5px; }
+  .si, .no { display: flex; gap: 8px; align-items: flex-start; }
+  .si span:first-child { color: var(--tinta); font-weight: 700; }
+  .no span:first-child { color: var(--regalo); font-weight: 700; }
+  .si span:last-child, .no span:last-child { color: var(--ink-soft); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  .tabla-envoltorio { overflow-x: auto; }
+  th, td { text-align: left; padding: 7px 12px 7px 0; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 400; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tr.gana td { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>Los comentarios, en voz más baja: cuatro maneras de que ocupen menos</h1>
+    <p>
+      El hilo de comentarios está al pie del detalle de un evento y del de un
+      regalo. Hoy se dibuja como una sección más de la hoja —rótulo en
+      versalitas, la lista, y un campo con su botón de Enviar— y pesa lo mismo
+      tanto si hay conversación como si no la ha habido nunca.
+    </p>
+    <p>
+      Lo que se decide aquí es <strong>cómo baja de tono y de tamaño</strong> sin
+      que un comentario escrito deje de leerse. Cuatro formas, con lo que gana y
+      lo que cuesta cada una, medidas sobre la hoja de estilos de verdad a 390
+      puntos de ancho.
+    </p>
+  </header>
+
+  <section class="parte">
+    <h2>Lo que hay hoy, y lo que cuesta</h2>
+
+    <div class="fila">
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="hoja-cabeza">
+            <span class="hoja-cabeza-emoji">🏇</span>
+            <div>
+              <p style="font-size:16px;color:var(--ink)">lunes 27 de Julio</p>
+              <p>18:00 · Entreno</p>
+            </div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Marta</span></div>
+          </div>
+          <div class="grupo" style="outline:1px dashed var(--regalo);outline-offset:6px">
+            <p class="grupo-titulo">Comentarios (0)</p>
+            <div class="lista"></div>
+            <div class="acciones">
+              <div class="campo"><input placeholder="Escribe un comentario"></div>
+              <button class="boton" type="button">Enviar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col" style="max-width:520px">
+        <div class="nota pega">
+          <p>
+            <strong>Un cuarto de la hoja, sin que nadie haya escrito nada.</strong>
+            El detalle de ese evento mide <span class="cifra">331</span> puntos de
+            contenido y el bloque de comentarios se lleva
+            <span class="cifra">87</span>: el 26 %. La sección de <em>Quién va</em>,
+            que sí dice algo, ocupa 49.
+          </p>
+          <p>
+            Con dos comentarios el bloque sube a <span class="cifra">215</span>
+            puntos y la hoja se va más allá de lo que cabe en la pantalla, de modo
+            que hay que desplazar dentro de la hoja para ver el final.
+          </p>
+        </div>
+        <div class="nota">
+          <p>
+            <strong>Lo que hay que conservar.</strong> Un comentario escrito tiene
+            que verse sin buscarlo: alguien apuntó ahí que lleva él a las niñas, y
+            esconderlo detrás de un toque es peor que no tener comentarios. Bajar
+            el tono no puede convertirse en ocultarlos.
+          </p>
+          <p>
+            Y hay que poder escribir sin pensarlo mucho, aunque el campo esté
+            recogido: dos toques para dejar una frase todavía es barato; cuatro, ya
+            no se hace.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>A · El campo se pliega tras un verbo</h2>
+    <p>
+      La lista se queda tal cual y lo que desaparece es el aparato de escribir: en
+      su lugar, una línea discreta en la tinta de la aplicación —«Comentar»— que
+      al tocarla despliega el campo. Sin ningún comentario, eso es lo único que
+      queda del bloque.
+    </p>
+
+    <div class="fila">
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Marta</span></div>
+          </div>
+          <div class="grupo" style="outline:1px dashed var(--tinta);outline-offset:6px">
+            <button class="desbordamiento" type="button">Añadir un comentario</button>
+          </div>
+        </div>
+        <p class="rotulo">Sin comentarios · 26 pt</p>
+      </div>
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="grupo" style="outline:1px dashed var(--tinta);outline-offset:6px">
+            <p class="grupo-titulo">Comentarios (2)</p>
+            <div class="lista">
+              <div class="comentario">
+                <p class="comentario-meta">Ana · 2026-07-24</p>
+                <p>Llevo yo a Marta y vuelvo a por Lucía sobre las siete.</p>
+              </div>
+              <div class="comentario">
+                <p class="comentario-meta">Óscar · 2026-07-25</p>
+                <p>Vale. Yo salgo antes ese día.</p>
+              </div>
+            </div>
+            <button class="desbordamiento" type="button">Comentar</button>
+          </div>
+        </div>
+        <p class="rotulo">Con dos · 191 pt</p>
+      </div>
+    </div>
+
+    <div class="fila">
+      <div class="col" style="max-width:100%">
+        <div class="pros">
+          <div class="si"><span>+</span><span>El caso frecuente —nadie ha comentado nunca— pasa de 87 puntos a 26. Es la mayor parte del problema resuelta con lo más barato.</span></div>
+          <div class="si"><span>+</span><span>No estrena nada: esa línea es el mismo <code>.desbordamiento</code> del «y 2 más» de la semana.</span></div>
+          <div class="si"><span>+</span><span>Los comentarios escritos se siguen viendo enteros y sin tocar nada.</span></div>
+          <div class="no"><span>−</span><span>Con conversación sigue pesando 191 puntos: el rótulo, la barra de cada comentario y la fecha en formato de base de datos se quedan como están.</span></div>
+          <div class="no"><span>−</span><span>Escribir cuesta un toque más que ahora.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>B · Todo dentro de un plegable</h2>
+    <p>
+      El bloque entero pasa a ser un apartado plegado, como los de Ajustes:
+      «Comentarios (2)» con su galón, y dentro la lista y el campo. Cerrado
+      siempre, tanto si hay dos como si no hay ninguno.
+    </p>
+
+    <div class="fila">
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Marta</span></div>
+          </div>
+          <details class="acordeon" style="outline:1px dashed var(--aviso);outline-offset:6px">
+            <summary>Comentarios (2)</summary>
+          </details>
+        </div>
+        <p class="rotulo">Igual con dos que con ninguno · 46 pt</p>
+      </div>
+
+      <div class="col" style="max-width:520px">
+        <div class="pros">
+          <div class="si"><span>+</span><span>El tamaño deja de depender de la conversación: 46 puntos siempre, haya lo que haya dentro.</span></div>
+          <div class="si"><span>+</span><span>La pieza ya existe y se comporta igual que en Ajustes, así que no hay nada que aprender.</span></div>
+          <div class="no"><span>−</span><span><strong>Esconde lo que sí importa.</strong> Un comentario existe para que otro lo lea; detrás de un toque, quien abre la hoja para ver a qué hora es el entreno no se entera de que su madre ha escrito que lleva ella a las niñas.</span></div>
+          <div class="no"><span>−</span><span>El contador del rótulo no lo arregla: dice que hay algo, no qué.</span></div>
+          <div class="no"><span>−</span><span>Es la única que no ahorra nada en el caso frecuente respecto de A: 46 contra 26.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>C · En voz baja, sin rótulo y sin caja <span class="elegida">elegida y construida</span></h2>
+    <p>
+      Nada se esconde: lo que cambia es el tono. Se va el rótulo —dos comentarios
+      escritos ya dicen que son comentarios—, se va la barra vertical de cada uno,
+      y el nombre, el texto y la fecha caben en un renglón corrido, en el gris de
+      lo secundario. El campo pierde su caja y su botón: es una línea con una raya
+      debajo, y el Enviar aparece al escribir.
+    </p>
+
+    <div class="fila">
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Marta</span></div>
+          </div>
+          <div class="grupo" style="outline:1px dashed var(--tinta);outline-offset:6px">
+            <div class="c-campo"><input placeholder="Escribe un comentario…"></div>
+          </div>
+        </div>
+        <p class="rotulo">Sin comentarios · 34 pt</p>
+      </div>
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Marta</span></div>
+          </div>
+          <div class="grupo" style="outline:1px dashed var(--tinta);outline-offset:6px">
+            <div class="c-lista">
+              <p class="c-comentario"><b>Ana</b> Llevo yo a Marta y vuelvo a por Lucía sobre las siete. <i>24 jul</i></p>
+              <p class="c-comentario"><b>Óscar</b> Vale. Yo salgo antes ese día. <i>25 jul</i></p>
+            </div>
+            <div class="c-campo"><input placeholder="Responder…"></div>
+          </div>
+        </div>
+        <p class="rotulo">Con dos · 106 pt</p>
+      </div>
+    </div>
+
+    <div class="fila">
+      <div class="col" style="max-width:100%">
+        <div class="pros">
+          <div class="si"><span>+</span><span><strong>Es la única que baja las dos cosas a la vez</strong>: 87 → 34 sin comentarios, y 215 → 106 con dos. La mitad, y sin esconder una palabra.</span></div>
+          <div class="si"><span>+</span><span>El tono dice lo que hay que decir: gris, cuerpo pequeño y sin caja es exactamente cómo se lee un extra.</span></div>
+          <div class="si"><span>+</span><span>Escribir sigue costando un solo toque, sobre una línea que se ve siempre.</span></div>
+          <div class="si"><span>+</span><span>De paso arregla la fecha, que hoy sale como <code>2026-07-24</code> —el formato de la base de datos— y pasa a «24 jul».</span></div>
+          <div class="no"><span>−</span><span>Un comentario largo, de tres o cuatro renglones, se lee peor de corrido que con su nombre en una línea aparte.</span></div>
+          <div class="no"><span>−</span><span>El campo sin caja se parece menos a un campo. Se compensa con la raya de debajo y con que el Enviar aparezca al escribir, pero es lo que hay que mirar de cerca.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>D · Una línea que abre su propia hoja</h2>
+    <p>
+      El mínimo posible: al pie del detalle, un renglón que dice cuántos hay y que
+      abre una hoja dedicada, con la conversación entera y su campo.
+    </p>
+
+    <div class="fila">
+      <div class="col">
+        <div class="hoja">
+          <div class="hoja-asa"></div>
+          <h3>Entreno de hípica</h3>
+          <div class="grupo">
+            <p class="grupo-titulo">Quién va</p>
+            <div><span class="etiqueta">Marta</span></div>
+          </div>
+          <div class="grupo" style="outline:1px dashed var(--aviso);outline-offset:6px">
+            <button class="d-linea" type="button">💬 2 comentarios</button>
+          </div>
+        </div>
+        <p class="rotulo">Igual con dos que con ninguno · 26 pt</p>
+      </div>
+
+      <div class="col" style="max-width:520px">
+        <div class="pros">
+          <div class="si"><span>+</span><span>El más pequeño de los cuatro, y constante: 26 puntos pase lo que pase.</span></div>
+          <div class="si"><span>+</span><span>Dentro de su propia hoja los comentarios pueden crecer sin estorbar a nada.</span></div>
+          <div class="no"><span>−</span><span>Esconde lo escrito, igual que B, y además cobra la salida: una hoja encima de otra hoja, y para volver hay que cerrarla.</span></div>
+          <div class="no"><span>−</span><span>Estrena una hoja sobre otra hoja, que no existe hoy en ninguna parte de la aplicación.</span></div>
+          <div class="no"><span>−</span><span>Escribir pasa a costar tres toques.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>Lo que ocupa cada una</h2>
+    <p>
+      Medido con la hoja de estilos de verdad, a 390 puntos de ancho y dentro de
+      una hoja. Para situarlo: el detalle de ese evento mide
+      <span class="cifra">331</span> puntos de contenido con el bloque de hoy
+      dentro, de modo que todo lo demás —título, fecha, quién va— son 244.
+    </p>
+    <div class="tabla-envoltorio">
+      <table>
+        <thead>
+          <tr><th>Forma</th><th>Sin comentarios</th><th>Con dos</th><th>Esconde lo escrito</th><th>Toques para escribir</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Hoy</td><td class="num">87 pt</td><td class="num">215 pt</td><td>no</td><td class="num">1</td></tr>
+          <tr><td>A · el campo plegado</td><td class="num">26 pt</td><td class="num">191 pt</td><td>no</td><td class="num">2</td></tr>
+          <tr><td>B · todo plegado</td><td class="num">46 pt</td><td class="num">46 pt</td><td><strong>sí</strong></td><td class="num">2</td></tr>
+          <tr class="gana"><td>C · en voz baja</td><td class="num">34 pt</td><td class="num">106 pt</td><td>no</td><td class="num">1</td></tr>
+          <tr><td>C + A · en voz baja y con el campo plegado</td><td class="num">26 pt</td><td class="num">98 pt</td><td>no</td><td class="num">2</td></tr>
+          <tr><td>D · una línea</td><td class="num">26 pt</td><td class="num">26 pt</td><td><strong>sí</strong></td><td class="num">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>Recomendación</h2>
+    <div class="nota">
+      <p class="rotulo">Decidido: C</p>
+      <p>
+        <strong>C.</strong> Es la única que cumple las dos cosas que se pidieron
+        —menos visible y más pequeño— sin pagar la tercera, que no se pidió pero
+        que se pierde en B y en D: que un comentario escrito se lea sin buscarlo.
+        Baja a la mitad con conversación y a poco más de un tercio sin ella, y lo
+        hace con tono y no con puertas.
+      </p>
+      <p>
+        <strong>Construida</strong>, y sobre la pieza que entretanto había crecido
+        en otra rama: conserva la raya de «sin leer», el verbo de borrar lo propio
+        y la fecha en palabras. Medido ya dentro de la aplicación: 34 puntos sin
+        comentarios y 110 con dos, contra los 87 y 215 de antes. Cayeron dos cosas
+        por el camino —la frase de «nadie ha dicho nada todavía», que costaba
+        cuarenta puntos por decir lo que el hueco ya decía, y el tinte de la barra
+        de cada comentario nuevo, porque la raya ya dice dónde empieza lo que
+        falta por leer—.
+      </p>
+      <p>
+        <strong>Y si aun así ocupa demasiado, se le puede sumar A</strong>: la
+        línea de escribir también recogida detrás de «Comentar». Medido, eso deja
+        el caso frecuente en <span class="cifra">26</span> puntos y la
+        conversación de dos en <span class="cifra">98</span>, que es lo más
+        pequeño a lo que se puede llegar sin esconder nada. Lo dejo fuera de la
+        recomendación porque cobra un toque a lo único que hace que un hilo de
+        comentarios exista, que es escribir en él; pero es un cambio de una línea
+        si al verlo prefieres eso.
+      </p>
+      <p>
+        B y D las descarto por lo mismo: un comentario existe para que otro lo
+        lea, y quien abre la hoja para ver a qué hora es el entreno no va a tocar
+        un plegable por si acaso. Si el problema fuera que sobran comentarios, la
+        respuesta sería quitarlos, no esconderlos.
+      </p>
+    </div>
+  </section>
+
+</div>

@@ -1271,19 +1271,43 @@ body.con-hoja .avisos { bottom: calc(15px + env(safe-area-inset-bottom)); }
 /* Un dato de una persona se escribe de corrido y puede traer saltos de línea
    dentro, así que se respetan tal cual. */
 .dato { white-space: pre-wrap; overflow-wrap: anywhere; }
-.comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
-/* Lo que ha llegado desde la última vez que se miró, en la tinta de la
-   aplicación. Tiñe la raya de la izquierda y nada más: el texto de un
-   comentario nuevo se lee igual que el de uno viejo, y lo único que hace falta
-   es saber dónde empieza lo que falta por leer. */
-.comentario[data-nuevo="si"] { border-left-color: var(--tinta); }
-.comentario-cabeza { display: flex; align-items: center; gap: 8px; min-height: 22px; }
-.comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+/* El hilo, en voz baja.
+
+   Es un extra y se dibuja como tal: sin rótulo de sección —dos comentarios
+   escritos ya dicen que son comentarios—, sin la barra vertical que cada uno
+   llevaba al margen, y con el nombre, el texto y el cuándo de corrido en un
+   renglón, que es como se escriben. En dos renglones, con la ficha del autor
+   arriba, una conversación de frases cortas ocupaba el doble.
+
+   Lo que baja el tono es el cuerpo pequeño y el gris; lo que no se toca es que
+   sigan viéndose sin desplegar nada, porque un comentario existe para que otro
+   lo lea. Las cuatro formas que se estudiaron, y sus medidas, están en
+   `specs/prototipo-comentarios.html`. */
+.comentarios { display: flex; flex-direction: column; gap: 7px; }
+.comentario { display: flex; align-items: flex-start; gap: 6px; }
+.comentario-texto { flex: 1 1 auto; min-width: 0; font-size: 13.5px; color: var(--ink-soft); }
+.comentario-texto b { font-weight: 500; color: var(--ink); }
+.comentario-cuando { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); white-space: nowrap; }
 /* El verbo de borrar lo propio, pequeño y contra el borde: está para cuando
-   hace falta y no compite con lo que hay escrito. */
-.comentario-cabeza .icono-accion { margin-left: auto; width: 28px; height: 28px; }
-.comentario-cabeza .icono-accion .icono-svg svg { width: 16px; height: 16px; }
-.comentario p { font-size: 15px; }
+   hace falta y no compite con lo que hay escrito. Sin alto propio, para no
+   levantar el renglón que se acaba de bajar. */
+.comentario .icono-accion { flex: none; width: 24px; height: 20px; margin-top: -1px; }
+.comentario .icono-accion .icono-svg svg { width: 15px; height: 15px; }
+
+/* El campo, sin caja: una raya debajo y nada más. El «Enviar» aparece al
+   escribir la primera letra —con el campo vacío no tenía nada que hacer, y era
+   la mitad del peso del bloque—, y va en el botón corto para no volver a
+   levantar la altura que se acaba de quitar. */
+.comentario-nuevo { display: flex; align-items: center; gap: 9px; }
+.comentario-campo {
+  flex: 1 1 auto; min-width: 0; min-height: 34px;
+  background: transparent; border: 0; border-bottom: 1px solid var(--hueco-linea);
+  border-radius: 0; padding: 4px 0;
+  font-size: 16.5px; /* de 16 para arriba, o iOS hace zoom al enfocar */
+  color: var(--ink);
+}
+.comentario-campo::placeholder { color: var(--ink-faint); }
+.comentario-campo:focus { outline: none; border-bottom-color: var(--tinta); }
 
 /* La raya de por dónde iba la conversación. Se lee como un renglón partido: el
    rótulo a la izquierda y la línea ocupando lo que sobra, que es lo que la hace
