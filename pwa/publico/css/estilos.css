@@ -333,7 +333,7 @@ button { background: none; border: 0; cursor: pointer; }
    desplazamiento del documento. */
 .tabbar {
   flex: none; z-index: 30;
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-top: 1px solid var(--line);
@@ -415,6 +415,31 @@ button { background: none; border: 0; cursor: pointer; }
 .boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
 
 .empujar { margin-left: auto; }
+
+/* ------------------------------------------------------------------ Hoy -- */
+
+/* El saludo ocupa la línea del título, así que aquí abajo solo queda qué día es
+   hoy: es lo que sitúa la lista que viene debajo, y el saludo no lo dice. */
+.hoy-fecha { font-size: 14.5px; color: var(--ink-soft); }
+
+/* Columna, para que el pie se pueda ir al fondo. */
+.pantalla-hoy { display: flex; flex-direction: column; }
+
+/* La versión se va abajo del todo y a la derecha, y se queda ahí aunque el día
+   esté vacío: es un pie de pantalla, no la última línea de la lista. */
+.pie-version { margin-top: auto; padding-top: 28px; display: flex; justify-content: flex-end; }
+.version {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--ink-faint); text-align: right;
+  /* El relleno lo hace tocable y el margen negativo lo devuelve al borde: sin
+     los dos, o no se acierta con el dedo o queda separado de la esquina. */
+  padding: 8px 10px; margin: -8px -10px; border-radius: 8px;
+}
+.version:hover, .version:focus-visible { color: var(--ink-soft); background: var(--paper-2); }
+/* Mientras cuenta por dónde va, la línea se lee más que en reposo; si algo
+   falla, se lee del color con el que esta aplicación dice que algo va mal. */
+.version[data-estado="curso"] { color: var(--ink-soft); }
+.version[data-estado="fallo"] { color: var(--regalo); }
 
 /* -------------------------------------------------------- Vista de semana -- */
 

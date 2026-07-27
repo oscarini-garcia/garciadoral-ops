@@ -49,7 +49,7 @@ AREAS = [
     ("scripts", "Los dos procesos programados y su transporte"),
     ("api/src", "Worker de Cloudflare: filtra antes de transmitir"),
     ("pwa/publico/js", "La aplicación"),
-    ("pwa/publico/js/vistas", "Las cuatro secciones de la aplicación"),
+    ("pwa/publico/js/vistas", "Las cinco secciones de la aplicación"),
     ("herramientas", "Utilidades de desarrollo"),
 ]
 

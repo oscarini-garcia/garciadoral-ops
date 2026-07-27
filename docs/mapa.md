@@ -98,13 +98,17 @@ tener que recorrer la aplicación entera cada vez.
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
   cerrarHoja · hayHojaAbierta · …y 10 más
+- **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
+  VERSION_APP
 
-### `pwa/publico/js/vistas/` · Las cuatro secciones de la aplicación
+### `pwa/publico/js/vistas/` · Las cinco secciones de la aplicación
 
 - **buscar.js** — Búsqueda global sobre Ideas y Ocasiones, que es el alcance de la primera versión (spec…
   reiniciarBusqueda · pintarBuscar
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
+- **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
+  reiniciarHoy · tituloDeHoy · pintarHoy
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · marcaDeSeleccionada
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
@@ -183,6 +187,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/semana.js` §8, §10.2
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/ui.js` §1, §3
   `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
+  `pwa/publico/js/vistas/hoy.js` §6.5, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
   `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/modelo.py` §7.1
   `scripts/agenda/semana.py` §10.2
@@ -206,7 +211,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**183** en total.
+**184** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -215,6 +220,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_plan_semanal.py` — 11
 - `tests/test_semana.py` — 13
 - `tests/test_service_worker.py` — 2
+- `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
 - `api/test/redaccion.test.js` — 54
