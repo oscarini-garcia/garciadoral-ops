@@ -143,6 +143,10 @@ export function abrirHoja(titulo, construir, acciones = []) {
 
   contenedor.hidden = false;
   scrim().hidden = false;
+  // Con una hoja abierta, las confirmaciones bajan al pie: ahí la banda de las
+  // pestañas está tapada y la hoja la deja libre a propósito, así que es el
+  // único sitio de la pantalla donde una pastilla no se pone encima de nada.
+  document.body.classList.add('con-hoja');
   cerrarActual = cerrarHoja;
   scrim().onclick = cerrarHoja;
   document.addEventListener('keydown', alPulsarEscape);
@@ -159,6 +163,7 @@ function alPulsarEscape(evento) {
 export function cerrarHoja() {
   hoja().hidden = true;
   scrim().hidden = true;
+  document.body.classList.remove('con-hoja');
   vaciar(hoja());
   document.removeEventListener('keydown', alPulsarEscape);
   cerrarActual = null;
