@@ -34,12 +34,32 @@ pendiente. El hook lo inyecta al final del mapa.
   **app de iPhone**. Los dos fallos se ven igual: el cambio está en el
   repositorio y en la pantalla sigue lo de antes. `pruebas.yml` comprueba las dos
   en cada PR.
+  **Y con la del OTA va pegada una tercera**, `VERSION_APP` en
+  `pwa/publico/js/version.js`, que es la copia que lee la pantalla de Hoy para
+  escribir qué versión hay instalada: aquí no hay empaquetador que la inyecte.
+  Esa no es un camino más —no hace que nada llegue ni deje de llegar—, solo tiene
+  que decir la verdad, y `tests/test_version.py` falla si deja de coincidir con
+  `pwa/package.json`.
   **Y súbelas por encima de lo que haya en `main` en ese momento, no de donde
   saliste.** Con dos ramas abiertas a la vez, las dos suben desde la misma base a
   la misma versión, git funde las dos líneas idénticas sin conflicto y la segunda
   en mergearse se encuentra la versión ocupada. Eso pasó con la 1.15.0. El
   workflow ya no lo deja pasar callando: si la versión tiene release y el empujón
   cambia el bundle, falla y dice qué se habría quedado sin publicar.
+- **La barra inferior tiene ahora cinco entradas y la primera es Hoy**, que es
+  con la que abre la aplicación. Es la síntesis que `specs/ux.md` §11 dejaba
+  apuntada y está descrita en §6.5: la semana no ha cambiado en nada, solo se ha
+  corrido a la segunda pestaña. De momento Hoy compone tres cosas —el saludo con
+  el nombre de quien mira, ocupando la línea del título; la lista del día, con
+  los cumpleaños dentro; y la versión instalada abajo a la derecha, que al
+  tocarla busca si hay una nueva y va contando por dónde va en esa misma línea—.
+  Queda abierto **qué bloques estacionales entran después y con qué umbrales**
+  —la ocasión abierta, el próximo cumpleaños, las últimas ideas—, que es la
+  cuestión 3 de §13, y **si Hoy debería tener botón flotante**; hoy no lo tiene.
+  Con la versión hay una atadura nueva: la cifra vive en `pwa/package.json` y la
+  web lleva su copia en `pwa/publico/js/version.js`, así que **al subir la
+  versión del OTA hay que subir también esa**. `tests/test_version.py` falla si
+  se separan.
 - **Queda una migración por aplicar: `0007_estado_regalo.sql`**, que convierte a
   «comprado» lo que estuviera «envuelto». Es corriente y no `.unavez` —se puede
   repetir sin consecuencias—, así que basta con marcar la casilla de las

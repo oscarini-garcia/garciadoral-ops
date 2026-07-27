@@ -1,10 +1,11 @@
 /**
  * Arranque y navegación.
  *
- * La arquitectura es la opción D de `specs/ux.md`: la semana abre la
- * aplicación, la coordinación de regalos vive en su propia pestaña —se visita
- * con intención, no de paso— y la ficha de persona de la opción C hace de
- * pantalla de detalle dentro de Gente.
+ * La arquitectura es la opción D de `specs/ux.md` con la síntesis que su §11
+ * dejaba apuntada: **Hoy abre la aplicación** y la semana queda justo detrás,
+ * en la pestaña siguiente, con su marco fijo intacto. La coordinación de
+ * regalos vive en su propia pestaña —se visita con intención, no de paso— y la
+ * ficha de persona de la opción C hace de pantalla de detalle dentro de Gente.
  *
  * El botón de crear pertenece a la pantalla y no a la aplicación: su acción
  * depende de dónde esté quien lo pulsa. Un botón genérico obligaría a elegir el
@@ -41,12 +42,18 @@ import {
   versionInstalada,
 } from './native.js';
 import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
 import { nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
 import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
 
 const PESTANAS = {
+  // Hoy tampoco repite su nombre arriba: allí va el saludo, que es lo que esta
+  // pantalla tiene que decir y no cabe en ningún otro sitio. Va sin botón
+  // flotante porque no es una pantalla en la que se cree nada: se abre, se mira
+  // y se entra a lo que haya.
+  hoy: { titulo: tituloDeHoy, pintar: pintarHoy, fab: null },
   // La agenda no repite su nombre en la cabecera: la vista en la que se está ya
   // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
   // único de esa pantalla que cambia. Por eso su título es una función: cambia
@@ -63,7 +70,7 @@ const PESTANAS = {
   buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
 };
 
-let pestana = 'semana';
+let pestana = 'hoy';
 let configuracion = {};
 let sesionActual = null;
 const ctx = { vista: null, refrescar };
@@ -362,6 +369,12 @@ function prepararInterfaz() {
   document.getElementById('aplicacion').hidden = false;
 
   for (const boton of document.querySelectorAll('.tab')) {
+    // Quien vuelve a entrar después de cerrar sesión lo hace por Hoy, y la
+    // barra tiene que estar de acuerdo con eso: el marcado la deja en Hoy, pero
+    // en memoria podía haber quedado otra de la sesión anterior.
+    if (boton.dataset.pestana === pestana) boton.setAttribute('aria-current', 'page');
+    else boton.removeAttribute('aria-current');
+
     boton.onclick = () => {
       pestana = boton.dataset.pestana;
       for (const otro of document.querySelectorAll('.tab')) otro.removeAttribute('aria-current');
@@ -440,7 +453,9 @@ function refrescar() {
   const definicion = PESTANAS[pestana];
 
   const titulo = document.getElementById('tituloPantalla');
-  titulo.textContent = typeof definicion.titulo === 'function' ? definicion.titulo() : definicion.titulo;
+  // Los títulos que son función reciben el contexto: el de Hoy saluda por el
+  // nombre de quien mira, y el de la agenda no necesita nada y lo ignora.
+  titulo.textContent = typeof definicion.titulo === 'function' ? definicion.titulo(ctx) : definicion.titulo;
   // El de la agenda es una fecha y no un nombre: se compone más largo y se
   // compone en cifras, así que se dibuja con su propio tamaño.
   titulo.dataset.pestana = pestana;
@@ -830,7 +845,8 @@ async function salir() {
   await olvidarTodo();
   borrarSesion();
   sesionActual = null;
-  reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda(); reiniciarFamilia();
+  pestana = 'hoy';
+  reiniciarHoy(); reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda(); reiniciarFamilia();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
 }

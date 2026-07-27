@@ -356,6 +356,24 @@ Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es que
 
 ---
 
+### 6.5 La pantalla de Hoy, como se construyó
+
+Lo que sigue no es una opción sino la decisión tomada, y es la síntesis que el §11 dejaba apuntada: **la pantalla compuesta de esta opción pasa a ser el inicio, y la semana queda inmediatamente detrás, en la segunda pestaña, con su marco fijo intacto.** No se renuncia a nada de la opción D —la semana sigue siendo el marco fijo de siete días y se sigue abriendo de un toque— y se gana el resumen del momento, que es lo que hace que la aplicación tenga algo que decir un martes de marzo.
+
+La barra pasa a cinco entradas —Hoy, Agenda, Regalos, Gente, Buscar—, que es el tope de lo que admite un iPhone y sigue dentro de la horquilla del §1.
+
+**Primera versión, dos cosas.** Un saludo y lo que hay para hoy. Se construye así a propósito: la debilidad conocida de esta opción es que una pantalla compuesta es difícil de acertar y fácil de dejar de leer, y la manera de no acertarla es decidir de golpe los cinco bloques y sus umbrales sin haber visto ninguno en pantalla. Los bloques estacionales del §6 —la ocasión abierta, el próximo cumpleaños, las últimas ideas— entran después, uno a uno, y su regla de composición sigue siendo la cuestión abierta 3 del §13.
+
+**El saludo ocupa la línea del título.** Es el mismo sitio que en la agenda ocupa el periodo: la pestaña en la que se está ya se lee en la barra de abajo, de modo que escribir «Hoy» arriba gastaría la única línea grande de la pantalla en repetir lo que se acaba de tocar. Debajo, en la subcabecera, qué día es hoy escrito entero, que es lo que sitúa la lista. El saludo es de los tres de siempre según la hora, con la madrugada contada como noche, y lleva el nombre de quien mira: es el único sitio de la aplicación donde a uno se le llama por su nombre, porque en todos los demás uno es «yo» y no hace falta nombrarlo.
+
+**Lo de hoy es la lista del día, con los cumpleaños dentro**, ordenada como en la agenda —lo de todo el día primero y el resto por su hora— y con las mismas tarjetas menos la fecha: aquí todas son del mismo día, y repetirla catorce veces sería escribir lo que ya dice la cabecera. Un día sin nada lo dice y no se disculpa: en esta familia habrá bastantes, y es la debilidad que el §8 ya le reconocía a la semana.
+
+**La versión va abajo del todo y a la derecha, y es a la vez el dato y el verbo.** Contesta la única pregunta que se hace de ella —«¿tengo lo último?»— y al tocarla busca si hay algo nuevo, contando por dónde va en esa misma línea: buscando, hay una nueva, descargando con su porcentaje, lista al volver a abrir. Un botón aparte que dijera «Buscar actualización» pediría sitio en la pantalla de inicio para algo que se hace tres veces al año; el mismo texto, tocable, no pide ninguno. En el navegador no hay bundle que descargar, así que lo que hace el toque es lo que allí significa actualizar: preguntar al service worker y recargar.
+
+El panel completo de Ajustes se queda donde estaba, con el relato de las fases apilado. Son dos lecturas distintas de lo mismo: aquí cabe una línea y va la de ahora, y allí se apilan y se leen como lo que ha ido pasando.
+
+---
+
 ## 7. Opción C — Las personas
 
 El eje organizador es la persona. La pantalla principal es la familia, y cada persona reúne todo lo que le concierne.
@@ -658,6 +676,8 @@ Es el punto donde la vista de semana se rompe. Si cada fila crece con su conteni
 **Dirección elegida: la opción D**, con la ficha de persona de la opción C como pantalla de detalle y el bloque estacional de la B incorporado dentro de la semana.
 
 La semana abre la aplicación. Es la unidad real de la vida familiar y el marco fijo hace que la lectura sea casi automática. La coordinación de regalos vive en su propia pestaña, que es donde debe estar: se visita con intención, no de paso.
+
+**Corrección posterior.** La síntesis que este mismo apartado propone más abajo —«conservar la pantalla compuesta como inicio y situar la semana inmediatamente detrás, en la primera pestaña»— es la que se ha construido, y está en §6.5. Quien abre la aplicación cae en Hoy; la semana sigue siendo la segunda pestaña y no ha cambiado en nada.
 
 Lo que sigue recoge el análisis previo a esa decisión.
 
