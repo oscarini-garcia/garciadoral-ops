@@ -14,8 +14,7 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, colorDePersona,
-  entrada, seleccion,
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
 } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
@@ -42,7 +41,7 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { INICIALES_DIA, NOMBRES_DIA, hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { NOMBRES_DIA, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana, turnosDe,
 } from './lio.js';
@@ -636,14 +635,23 @@ function abrirAjustes() {
 /**
  * Quién saca a Lio cada día, si nadie dice lo contrario.
  *
- * Catorce casillas —siete días por dos turnos— con la misma figura que un cuadro
- * de la nevera. De aquí se derivan los turnos de cualquier día que se mire, y
- * por eso cambiarlo cambia el futuro y no el pasado: en cuanto alguien marca un
- * turno o acuerda un cambio, ese día queda escrito y deja de mirar al cuadro.
+ * De aquí se derivan los turnos de cualquier día que se mire, y por eso
+ * cambiarlo cambia el futuro y no el pasado: en cuanto alguien marca un turno o
+ * acuerda un cambio, ese día queda escrito y deja de mirar al cuadro.
  *
- * **La casilla va pasando de una persona a la siguiente al tocarla**, y no abre
- * una lista. La lista tendría que ser otra hoja encima de esta, que es la que ya
- * ocupa Ajustes; y siendo cuatro personas, el recorrido entero son cinco toques.
+ * **Una línea por día, con el nombre escrito entero.** Empezó siendo una rejilla
+ * de catorce casillas, que es la figura de un cuadro de la nevera y ocupaba un
+ * tercio del alto; se cambió porque pedía descifrar. Una casilla decía *cuándo*
+ * por dónde estaba y *quién* por dos letras que se parecen entre sí, de modo que
+ * lo único que separaba de verdad a una persona de otra era su color, y ese
+ * color salía de una cuenta sobre el identificador: cuatro tintes cualesquiera
+ * en una pantalla de papel con una sola tinta. Escribiendo «Marta» no hay nada
+ * que descifrar y el color deja de tener trabajo. De paso, el blanco del dedo
+ * pasa de 30 × 30 puntos a 135 × 34, medidos en la hoja de estilos de verdad.
+ *
+ * **El turno va pasando de una persona a la siguiente al tocarlo**, y no abre
+ * una lista: la lista tendría que ser otra hoja encima de esta, que es la que ya
+ * ocupa Ajustes. Se estudió en `specs/prototipo-cuadro-de-lio.html`.
  */
 function cuadroDeLio(seccion) {
   const casa = genteDeCasa(ctx.vista);
@@ -657,36 +665,40 @@ function cuadroDeLio(seccion) {
   // y sin ella habría que dejar puesto a alguien que no lo va a sacar.
   const vueltas = [null, ...casa.map((p) => p.id)];
 
-  const rejilla = el('div', { class: 'lio-cuadro' });
-  rejilla.append(el('span', {}));
-  for (const inicial of INICIALES_DIA) {
-    rejilla.append(el('span', { class: 'lio-cuadro-cabecera', texto: inicial }));
-  }
-
-  for (const turno of TURNOS) {
-    rejilla.append(el('span', { class: 'lio-cuadro-rotulo', texto: turno.emoji, title: turno.nombre }));
-    for (let dia = 0; dia < 7; dia += 1) rejilla.append(casillaDelCuadro(cuadro, turno, dia, casa, vueltas));
+  const dias = el('div', { class: 'lio-dias' });
+  for (let dia = 0; dia < 7; dia += 1) {
+    dias.append(el('div', { class: 'lio-dia' }, [
+      // Tres letras y no la inicial: lunes y martes empiezan igual, y aquí no
+      // hay una rejilla de siete columnas que sitúe cada día por su posición.
+      el('span', { class: 'lio-dia-rotulo', texto: mayusculaInicial(NOMBRES_DIA[dia].slice(0, 3)) }),
+      ...TURNOS.map((turno) => turnoDelCuadro(cuadro, turno, dia, casa, vueltas)),
+    ]));
   }
 
   seccion.append(
-    el('p', { class: 'pista', texto: 'Toca una casilla para pasar a la siguiente persona.' }),
-    rejilla,
-    el('p', { class: 'pista', texto: casa.map((p) => `${inicialesDe(p)} · ${p.nombre}`).join('   ') }),
+    el('p', { class: 'pista', texto: 'Toca un turno para pasar a la siguiente persona.' }),
+    dias,
+    // La leyenda se queda aunque aquí ya no haga falta: en la semana no cabe un
+    // nombre y cada uno sale con sus dos primeras letras, así que este es el
+    // único sitio donde se puede aprender cuál es cuál.
+    el('p', { class: 'pista', texto: `En la semana: ${casa.map((p) => `${inicialesDe(p)} ${p.nombre}`).join(' · ')}` }),
   );
 }
 
-function casillaDelCuadro(cuadro, turno, dia, casa, vueltas) {
-  const boton = el('button', { class: 'lio-cuadro-casilla', type: 'button' });
+const mayusculaInicial = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
+function turnoDelCuadro(cuadro, turno, dia, casa, vueltas) {
+  const boton = el('button', { class: 'lio-dia-turno', type: 'button' });
+  const nombre = el('span', { class: 'lio-dia-nombre' });
+  boton.append(el('span', { class: 'lio-dia-emoji', 'aria-hidden': 'true', texto: turno.emoji }), nombre);
 
   const pintar = () => {
-    const id = cuadro[turno.id][dia];
-    const persona = casa.find((p) => p.id === id) || null;
-    boton.textContent = persona ? inicialesDe(persona) : '·';
-    boton.dataset.vacia = persona ? 'no' : 'si';
-    boton.style.setProperty('--color-lio', persona ? colorDePersona(persona.id) : 'transparent');
+    const persona = casa.find((p) => p.id === cuadro[turno.id][dia]) || null;
+    nombre.textContent = persona ? persona.nombre : 'Nadie';
+    boton.dataset.vacio = persona ? 'no' : 'si';
     boton.setAttribute(
       'aria-label',
-      `${NOMBRES_DIA[dia]} por la ${turno.nombre.toLowerCase()}: ${persona ? persona.nombre : 'nadie'}`,
+      `${NOMBRES_DIA[dia]} por la ${turno.nombre.toLowerCase()}: ${persona ? persona.nombre : 'nadie'}. Cambiar.`,
     );
   };
 
