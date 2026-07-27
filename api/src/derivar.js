@@ -12,7 +12,19 @@
  * transición dispara cada mutación concreta.
  */
 
+import { caducarTratos } from './lio.js';
+
 export async function derivarEstados(db) {
+  // 0. Propuestas de paseo que ya no pueden aceptarse.
+  //
+  //    Es lo único de Lio que se deriva aquí. Aceptar un cambio o confirmar una
+  //    corrección lo escribe el dispositivo —la propuesta resuelta y la fila del
+  //    paseo van en el mismo lote—, porque el trato es una convención entre
+  //    cuatro personas de la misma casa y no una frontera que haya que blindar:
+  //    el Worker ya comprueba lo único que sí lo es, que quien contesta sea a
+  //    quien se le preguntó. Caducar, en cambio, no lo puede hacer nadie a mano.
+  await caducarTratos(db);
+
   // 1. Idea promovida a una ocasión -> en curso; entregada -> cerrada.
   //    Cerrada es terminal: para reutilizar la idea se emplea el duplicado.
   //

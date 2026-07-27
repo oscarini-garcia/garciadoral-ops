@@ -26,6 +26,8 @@ const PLURAL = {
   ocasion: 'ocasiones',
   regalo: 'regalos',
   comentario: 'comentarios',
+  paseo: 'paseos',
+  trato_paseo: 'tratos_paseo',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -139,6 +141,13 @@ export function retirar(tipo, id) {
 
 function aplicarEnLocal(cambio) {
   const clave = PLURAL[cambio.tipo];
+
+  // El cuadro de Lio no es una fila de una lista sino un dato suelto de la
+  // instantánea, así que se sustituye entero.
+  if (cambio.tipo === 'lio_cuadro') {
+    instantaneaActual.lio_cuadro = cambio.campos.cuadro;
+    return;
+  }
 
   if (cambio.tipo === 'presupuesto') {
     const ocasion = instantaneaActual.ocasiones.find((o) => o.id === cambio.campos.ocasion_id);

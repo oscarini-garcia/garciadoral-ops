@@ -60,6 +60,9 @@ export function componerDemo(registro, observadorId) {
 
   const ids = { evento: new Set(eventos.map((e) => e.id)), idea: new Set(ideas.map((i) => i.id)), regalo: new Set(regalos.map((r) => r.id)) };
   const esAdministrador = observador.rol === 'administrador';
+  // Lio es de la casa, también en la demostración: mirando con los ojos de la
+  // abuela no aparece, igual que no aparecería de verdad.
+  const deLaCasa = observador.circulo === 'familia' && observador.tiene_cuenta;
 
   return {
     ...registro,
@@ -75,5 +78,8 @@ export function componerDemo(registro, observadorId) {
     regalos,
     ocasiones: registro.ocasiones.map((o) => ({ ...o, presupuestos: esAdministrador ? o.presupuestos : [] })),
     comentarios: (registro.comentarios || []).filter((c) => ids[c.objeto_tipo]?.has(c.objeto_id)),
+    lio_cuadro: deLaCasa ? registro.lio_cuadro : null,
+    paseos: deLaCasa ? registro.paseos || [] : [],
+    tratos_paseo: deLaCasa ? registro.tratos_paseo || [] : [],
   };
 }

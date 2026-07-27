@@ -15,7 +15,7 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
-  deslizarHorizontal, dobleToque, botonIcono,
+  colorDePersona, deslizarHorizontal, dobleToque, botonIcono,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
@@ -28,6 +28,10 @@ import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento
 import { bloqueDeComentarios } from '../comentarios.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
+import {
+  TURNOS, desmarcar, genteDeCasa, hayLio, inicialesDe, marcarHecho, pedirCambio,
+  resolverPropuesta, retirarPropuesta, turnoDe,
+} from '../lio.js';
 
 let modo = 'semana';
 let ancla = hoy();
@@ -380,8 +384,222 @@ function vistaSemana(ctx) {
     }
     marco.append(fila);
   }
-  return marco;
+
+  // El carril de Lio va encima de la rejilla y no dentro de cada día: es un
+  // instrumento aparte, se lee de un vistazo y gasta el alto una sola vez en
+  // lugar de siete (specs/ux.md §10.3).
+  const carril = carrilDeLio(dias, ctx);
+  return carril ? el('div', { class: 'agenda-semana' }, [carril, marco]) : marco;
 }
+
+// ----------------------------------------------------------------- Lio --
+
+/**
+ * La semana de Lio en dos renglones: siete columnas, mañana arriba y noche
+ * abajo, con las dos primeras letras de quien tiene cada turno.
+ *
+ * Solo en la vista de semana. En el mes no hay siete columnas donde ponerlo y
+ * en la lista no hay semana; allí Lio no se enseña, que es preferible a
+ * inventarle un segundo dibujo que diría lo mismo de otra manera.
+ *
+ * No aparece mientras nadie haya puesto el cuadro en Ajustes, ni para quien no
+ * vive en casa: a esa persona el servidor ni siquiera le manda los paseos.
+ */
+function carrilDeLio(dias, ctx) {
+  if (!hayLio(ctx.vista.datos)) return null;
+
+  const clavehoy = iso(hoy());
+  const carril = el('div', { class: 'lio-carril' });
+
+  carril.append(el('span', { class: 'lio-rotulo', texto: '🐾', 'aria-hidden': 'true' }));
+  for (const dia of dias) {
+    carril.append(el('span', {
+      class: 'lio-cabecera', 'aria-hidden': 'true',
+      'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
+      texto: INICIALES_DIA[(dia.getDay() + 6) % 7],
+    }));
+  }
+
+  for (const turno of TURNOS) {
+    carril.append(el('span', { class: 'lio-rotulo', texto: turno.emoji, title: turno.nombre }));
+    for (const dia of dias) carril.append(casillaDeLio(dia, turno, ctx));
+  }
+  return carril;
+}
+
+function casillaDeLio(dia, turno, ctx) {
+  const estado = turnoDe(ctx.vista.datos, dia, turno.id);
+  const persona = ctx.vista.persona(estado.asignadoId);
+  const hecho = ctx.vista.persona(estado.hechoPorId);
+
+  return el('button', {
+    class: 'lio-casilla', type: 'button',
+    'data-estado': estado.estado,
+    'data-mio': estado.mio ? 'si' : 'no',
+    'data-pedido': estado.trato ? 'si' : 'no',
+    'data-hoy': iso(dia) === iso(hoy()) ? 'si' : 'no',
+    'aria-label': `${formatearFechaLarga(dia)}, ${turno.nombre.toLowerCase()}: ${resumenDeTurno(estado, ctx)}`,
+    onclick: () => { toque(); abrirTurnoDeLio(dia, turno.id, ctx); },
+  }, [
+    el('span', {
+      class: 'lio-ini',
+      style: (hecho || persona) ? `--color-lio:${colorDePersona((hecho || persona).id)}` : null,
+      texto: (hecho || persona) ? inicialesDe(hecho || persona) : '·',
+    }),
+  ]);
+}
+
+/** La frase que describe un turno. La misma en la etiqueta de la casilla, en la
+ *  hoja del turno y en el bloque de Hoy: si se dijera de tres maneras habría que
+ *  aprender tres. */
+export function resumenDeTurno(estado, ctx) {
+  const nombre = (id) => (id === ctx.vista.yo.id ? 'tú' : ctx.vista.nombre(id));
+  if (estado.estado === 'hecho') {
+    const hora = estado.hechoEn ? new Date(estado.hechoEn) : null;
+    const cuando = hora && !Number.isNaN(hora.getTime())
+      ? ` a las ${String(hora.getHours()).padStart(2, '0')}:${String(hora.getMinutes()).padStart(2, '0')}`
+      : '';
+    return `lo sacó ${nombre(estado.hechoPorId)}${cuando}`;
+  }
+  if (estado.estado === 'sin-asignar') return 'sin nadie';
+  if (estado.estado === 'sin-marcar') return `le tocaba a ${nombre(estado.asignadoId)} y nadie marcó`;
+  return `le toca a ${nombre(estado.asignadoId)}`;
+}
+
+/**
+ * La hoja de un turno: en qué está y qué se puede hacer con él.
+ *
+ * Los verbos dependen de quién mira y de si la ventana ya pasó. Marcar el turno
+ * de otro no marca nada: propone una corrección, y hasta que ese otro la
+ * confirme el turno sigue como estaba.
+ */
+export function abrirTurnoDeLio(fecha, turnoId, ctx) {
+  const estado = turnoDe(ctx.vista.datos, fecha, turnoId);
+  const yo = ctx.vista.yo.id;
+
+  abrirHoja(`${estado.turno.emoji} ${estado.turno.nombre}`, (cuerpo) => {
+    cuerpo.append(el('p', { class: 'pista', texto: formatearFechaLarga(fecha) }));
+    cuerpo.append(el('p', { texto: mayuscula(resumenDeTurno(estado, ctx)) }));
+
+    if (estado.trato) cuerpo.append(bloqueDePropuesta(estado.trato, ctx));
+
+    // Con una propuesta viva no se ofrece marcar: primero se contesta lo que
+    // hay encima de la mesa, que puede cambiar de quién es el turno.
+    const acciones = el('div', { class: 'acciones' });
+    if (estado.trato) {
+      /* la propuesta ya está pintada arriba, con sus dos respuestas */
+    } else if (estado.estado !== 'hecho') {
+      acciones.append(el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async () => {
+          const resultado = await marcarHecho(ctx.vista.datos, estado);
+          cerrarHoja();
+          avisar(resultado?.marcado ? 'Marcado' : 'Se lo he preguntado a quien le tocaba');
+          ctx.refrescar();
+        },
+      }, [estado.mio || estado.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo']));
+    } else if (estado.hechoPorId === yo) {
+      acciones.append(el('button', {
+        class: 'boton', type: 'button',
+        onclick: async () => {
+          await desmarcar(estado);
+          cerrarHoja();
+          ctx.refrescar();
+        },
+      }, ['Deshacer']));
+    }
+    if (acciones.childElementCount) cuerpo.append(acciones);
+
+    // Pedir el cambio solo tiene sentido sobre lo que uno tiene por delante: un
+    // turno vencido ya no lo puede sacar nadie.
+    if (estado.mio && estado.estado === 'previsto' && !estado.trato) {
+      cuerpo.append(selectorDeRelevo(estado, ctx));
+    }
+  });
+}
+
+/** A quién pedírselo: los de casa menos uno mismo, en botones. Son tres
+ *  personas; una lista desplegable para elegir entre tres es un paso de más. */
+function selectorDeRelevo(estado, ctx) {
+  const otros = genteDeCasa(ctx.vista).filter((p) => p.id !== ctx.vista.yo.id);
+  if (!otros.length) return el('p', { class: 'pista', texto: 'No hay nadie más en casa a quien pedírselo.' });
+
+  return el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: '¿Que lo saque otro?' }),
+    el('div', { class: 'lio-relevo' }, otros.map((persona) => el('button', {
+      class: 'boton', type: 'button',
+      onclick: async () => {
+        await pedirCambio(ctx.vista.datos, estado, persona.id);
+        cerrarHoja();
+        avisar(`Se lo he pedido a ${persona.nombre}`);
+        ctx.refrescar();
+      },
+    }, [persona.nombre]))),
+  ]);
+}
+
+/**
+ * Una propuesta pendiente, dentro de la hoja del turno.
+ *
+ * Quien tiene que contestarla la contesta aquí mismo; quien la hizo solo puede
+ * retirarla. Las dos respuestas van escritas enteras y con el mismo peso:
+ * decir que no tiene que costar lo mismo que decir que sí.
+ */
+export function bloqueDePropuesta(trato, ctx) {
+  const yo = ctx.vista.yo.id;
+  const mia = trato.proponente_id === yo;
+  const bloque = el('div', { class: 'lio-propuesta' }, [
+    el('p', { texto: textoDePropuesta(trato, ctx) }),
+  ]);
+
+  if (mia) {
+    bloque.append(el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton', type: 'button',
+        onclick: async () => { await retirarPropuesta(trato); cerrarHoja(); ctx.refrescar(); },
+      }, ['Retirar']),
+    ]));
+    return bloque;
+  }
+
+  bloque.append(el('div', { class: 'acciones' }, [
+    el('button', {
+      class: 'boton crecer', type: 'button',
+      onclick: async () => {
+        await resolverPropuesta(trato, true);
+        cerrarHoja();
+        avisar(trato.clase === 'cambio' ? 'Hecho: ese turno es tuyo' : 'Confirmado');
+        ctx.refrescar();
+      },
+    }, [trato.clase === 'cambio' ? 'Acepto' : 'Es verdad']),
+    el('button', {
+      class: 'boton', type: 'button',
+      onclick: async () => {
+        await resolverPropuesta(trato, false);
+        cerrarHoja();
+        avisar('Se queda como estaba');
+        ctx.refrescar();
+      },
+    }, [trato.clase === 'cambio' ? 'No puedo' : 'No fue así']),
+  ]));
+  return bloque;
+}
+
+/** Qué se está pidiendo, contado desde el lado de quien lee. */
+export function textoDePropuesta(trato, ctx) {
+  const yo = ctx.vista.yo.id;
+  const quien = trato.proponente_id === yo ? 'Tú' : ctx.vista.nombre(trato.proponente_id);
+  const aQuien = trato.destinatario_id === yo ? 'ti' : ctx.vista.nombre(trato.destinatario_id);
+  const cuando = `el ${formatearFechaLarga(parsearMomento(trato.fecha))}`;
+  const turno = (TURNOS.find((t) => t.id === trato.turno) || {}).nombre?.toLowerCase() || trato.turno;
+
+  if (trato.clase === 'cambio') {
+    return `${quien} pide a ${aQuien} que saque a Lio ${cuando} por la ${turno}.`;
+  }
+  return `${quien} dice que sacó a Lio ${cuando} por la ${turno}, y ese turno era de ${aQuien}.`;
+}
+
+const mayuscula = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
 
 function lineaDeEvento(aparicion, ctx) {
   const hora = horaDe(aparicion);

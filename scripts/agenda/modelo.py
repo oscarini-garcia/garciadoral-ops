@@ -23,6 +23,8 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Iterator
 
+from .lio import IDS_TURNO, cuadro_normalizado
+
 REGLAS_VISIBILIDAD = ("publica", "restringida", "privada")
 ROLES = ("administrador", "miembro")
 CIRCULOS = ("familia", "extendida", "amigos")
@@ -247,6 +249,24 @@ class Regalo:
 
 
 @dataclass(frozen=True)
+class Paseo:
+    """Un turno de Lio que ya no se deriva del cuadro.
+
+    Existe cuando alguien marcó que lo sacó o cuando se acordó un cambio para
+    ese día. Desde entonces manda sobre el cuadro semanal, que es lo que hace
+    que cambiar el reparto no reescriba el pasado.
+    """
+
+    id: str
+    fecha: date
+    turno: str
+    asignado_id: str | None = None
+    hecho_por_id: str | None = None
+    hecho_en: datetime | None = None
+    activo: bool = True
+
+
+@dataclass(frozen=True)
 class Comentario:
     """Lista plana sobre idea, regalo o evento (§2.3)."""
 
@@ -283,6 +303,12 @@ class Agenda:
     regalos: dict[str, Regalo] = field(default_factory=dict)
     comentarios: list[Comentario] = field(default_factory=list)
     emojis_permitidos: tuple[str, ...] = ()
+    #: Lio: el cuadro semanal —catorce casillas, el lunes en 0— y las
+    #: excepciones ya escritas, indexadas por su identificador compuesto.
+    cuadro_lio: dict[str, list[str | None]] = field(
+        default_factory=lambda: {turno: [None] * 7 for turno in IDS_TURNO}
+    )
+    paseos: dict[str, Paseo] = field(default_factory=dict)
 
     # -- consultas ---------------------------------------------------------- #
 
@@ -541,6 +567,22 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             )
         )
 
+    agenda.cuadro_lio = cuadro_normalizado(datos.get("lio_cuadro"))
+    for bruto in datos.get("paseos", []):
+        if not bool(bruto.get("activo", True)):
+            continue
+        fecha = _fecha(bruto["fecha"])
+        assert fecha is not None
+        agenda.paseos[bruto["id"]] = Paseo(
+            id=bruto["id"],
+            fecha=fecha,
+            turno=bruto["turno"],
+            asignado_id=bruto.get("asignado_id"),
+            hecho_por_id=bruto.get("hecho_por_id"),
+            hecho_en=_momento(bruto.get("hecho_en")),
+            activo=True,
+        )
+
     _normalizar(agenda)
     problemas = validar(agenda)
     if problemas:
@@ -742,5 +784,29 @@ def validar(agenda: Agenda) -> list[str]:
         autor = agenda.persona(comentario.autor_id)
         if autor is None or not autor.tiene_cuenta:
             problemas.append(f"comentario {comentario.id}: autor sin cuenta o inexistente")
+
+    # A Lio lo saca quien vive en casa, tanto en el cuadro como en las filas ya
+    # escritas. La pantalla no ofrece a nadie más; esto es la red de debajo,
+    # igual que con el tamaño del círculo.
+    def _de_casa(persona_id: str | None, donde: str) -> None:
+        if persona_id is None:
+            return
+        persona = agenda.persona(persona_id)
+        if persona is None:
+            problemas.append(f"{donde}: persona inexistente «{persona_id}»")
+        elif persona.circulo != "familia":
+            problemas.append(f"{donde}: {persona.nombre} no está en el círculo de casa")
+
+    for turno, fila in agenda.cuadro_lio.items():
+        if turno not in IDS_TURNO:
+            problemas.append(f"cuadro de Lio: turno inválido «{turno}»")
+        for dia, persona_id in enumerate(fila):
+            _de_casa(persona_id, f"cuadro de Lio ({turno}, día {dia})")
+
+    for paseo in agenda.paseos.values():
+        if paseo.turno not in IDS_TURNO:
+            problemas.append(f"paseo {paseo.id}: turno inválido «{paseo.turno}»")
+        _de_casa(paseo.asignado_id, f"paseo {paseo.id}")
+        _de_casa(paseo.hecho_por_id, f"paseo {paseo.id}")
 
     return problemas

@@ -19,11 +19,14 @@
  * se hace tres veces al año; el mismo texto, tocable, no pide ninguno.
  */
 
-import { el, vaciar } from '../ui.js';
-import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia } from '../semana.js';
+import { el, vaciar, abrirHoja, avisar } from '../ui.js';
+import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia, sumarDias } from '../semana.js';
 import { comprobarActualizacion, esNativo, toque, versionInstalada } from '../native.js';
 import { VERSION_APP } from '../version.js';
-import { abrirDetalleEvento } from './semana.js';
+import {
+  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, resumenDeTurno, textoDePropuesta,
+} from './semana.js';
+import { hayLio, marcarHecho, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
 
 /** El bundle OTA que está aplicado, si se ha llegado a preguntar. Se guarda
  *  aquí para que volver a la pestaña no vuelva a enseñar la de origen mientras
@@ -74,7 +77,135 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
 
   vaciar(pantalla);
   pantalla.classList.add('pantalla-hoy');
-  pantalla.append(bloqueDelDia(dia, ctx), pieDeVersion());
+  // Lo que hay que contestar va lo primero, porque es lo único de esta pantalla
+  // que espera a alguien; los turnos de Lio, justo detrás, porque marcar es el
+  // gesto que se hace dos veces al día. Después ya viene lo que se venía a leer.
+  pantalla.append(
+    ...bandaDePeticiones(ctx),
+    ...bloqueDeLio(dia, ctx),
+    bloqueDelDia(dia, ctx),
+    pieDeVersion(),
+  );
+}
+
+// ---------------------------------------------------------------- Lio --
+
+/**
+ * Cuántas peticiones se enseñan de golpe.
+ *
+ * Con dos, lo excepcional grita cuando toca sin quitarle el sitio a la lista del
+ * día; a partir de ahí se cuentan y se abren aparte. Sin tope, una tarde de
+ * cambios dejaría «Para hoy» por debajo del pliegue, que es justo lo que se
+ * viene a leer.
+ */
+const TOPE_PETICIONES = 2;
+
+function bandaDePeticiones(ctx) {
+  const pendientes = tratosParaMi(ctx.vista.datos);
+  if (!pendientes.length) return [];
+
+  const banda = el('div', { class: 'lio-banda' });
+  for (const trato of pendientes.slice(0, TOPE_PETICIONES)) {
+    banda.append(tarjetaDePeticion(trato, ctx));
+  }
+
+  const restantes = pendientes.length - TOPE_PETICIONES;
+  if (restantes > 0) {
+    banda.append(el('button', {
+      class: 'desbordamiento', type: 'button',
+      onclick: () => abrirHoja('Por contestar', (cuerpo) => {
+        for (const trato of pendientes) cuerpo.append(bloqueDePropuesta(trato, ctx));
+      }),
+    }, [`y ${restantes} más`]));
+  }
+  return [banda];
+}
+
+/** Una petición, con sus dos respuestas escritas enteras y del mismo tamaño. */
+function tarjetaDePeticion(trato, ctx) {
+  const responder = async (acepta) => {
+    toque();
+    await resolverPropuesta(trato, acepta);
+    avisar(acepta ? 'Contestado' : 'Se queda como estaba');
+    ctx.refrescar();
+  };
+
+  return el('div', { class: 'lio-peticion' }, [
+    el('p', { texto: textoDePropuesta(trato, ctx) }),
+    el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton crecer', type: 'button', onclick: () => responder(true) },
+        [trato.clase === 'cambio' ? 'Acepto' : 'Es verdad']),
+      el('button', { class: 'boton', type: 'button', onclick: () => responder(false) },
+        [trato.clase === 'cambio' ? 'No puedo' : 'No fue así']),
+    ]),
+  ]);
+}
+
+/**
+ * Los dos turnos de hoy, y el de ayer que se quedó sin marcar.
+ *
+ * Lo de ayer sube una sola vez, al día siguiente, y con la pregunta puesta
+ * —«¿la sacaste?»— en lugar de la afirmación. Arrastrarlo más días convertiría
+ * Hoy en una lista de reproches, y afirmar que el perro no salió sería casi
+ * siempre falso: lo que faltó fue el gesto en el teléfono.
+ *
+ * Está en `specs/ux.md` §6.5 y §10.3.
+ */
+function bloqueDeLio(dia, ctx) {
+  if (!hayLio(ctx.vista.datos)) return [];
+
+  const grupo = el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: '🐾 Lio' }),
+  ]);
+
+  for (const turno of turnosDe(ctx.vista.datos, dia)) grupo.append(filaDeTurno(turno, ctx));
+
+  const ayer = sumarDias(dia, -1);
+  for (const turno of turnosDe(ctx.vista.datos, ayer)) {
+    if (turno.estado !== 'sin-marcar' || turno.trato) continue;
+    grupo.append(filaDeTurno(turno, ctx, { rezagado: true }));
+  }
+
+  return [grupo];
+}
+
+function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
+  const puedeMarcar = turno.estado !== 'hecho' && !turno.trato;
+  const rotulo = rezagado
+    ? `Ayer por la ${turno.turno.nombre.toLowerCase()}`
+    : turno.turno.nombre;
+
+  const fila = el('div', {
+    class: 'lio-fila', 'data-estado': turno.estado, 'data-rezagado': rezagado ? 'si' : 'no',
+  }, [
+    el('span', { class: 'lio-fila-emoji', 'aria-hidden': 'true', texto: turno.turno.emoji }),
+    el('button', {
+      class: 'lio-fila-texto', type: 'button',
+      'aria-label': `${rotulo}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
+      onclick: () => { toque(); abrirTurnoDeLio(turno.fecha, turno.turno.id, ctx); },
+    }, [
+      el('span', { class: 'lio-fila-titulo', texto: rotulo }),
+      el('span', {
+        class: 'lio-fila-pista',
+        texto: rezagado && turno.estado === 'sin-marcar'
+          ? `${resumenDeTurno(turno, ctx)}. ¿La sacaste?`
+          : resumenDeTurno(turno, ctx),
+      }),
+    ]),
+  ]);
+
+  if (puedeMarcar) {
+    fila.append(el('button', {
+      class: 'boton empujar', type: 'button',
+      onclick: async () => {
+        toque();
+        const resultado = await marcarHecho(ctx.vista.datos, turno);
+        avisar(resultado?.marcado ? 'Marcado' : 'Se lo he preguntado a quien le tocaba');
+        ctx.refrescar();
+      },
+    }, [turno.mio || turno.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo']));
+  }
+  return fila;
 }
 
 // ------------------------------------------------------------ Lo de hoy --

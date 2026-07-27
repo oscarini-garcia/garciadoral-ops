@@ -106,6 +106,12 @@ def registro_de_demostracion() -> dict:
         "regalos": agenda.get("regalos", []),
         "comentarios": agenda.get("comentarios", []),
         "conflictos": [],
+        # Lio: el cuadro basta para que la demostración enseñe el carril de la
+        # semana y los turnos de Hoy. Sin filas de paseo, todos salen previstos,
+        # que es como se ve una semana que aún no ha empezado.
+        "lio_cuadro": agenda.get("lio_cuadro"),
+        "paseos": agenda.get("paseos", []),
+        "tratos_paseo": [],
     }
 
     # La API sirve siempre las filas completas, porque los valores por defecto

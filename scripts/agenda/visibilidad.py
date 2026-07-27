@@ -127,3 +127,19 @@ def comentarios_visibles(agenda: Agenda, elemento: object, observador: Persona |
         for c in agenda.comentarios
         if c.activo and c.objeto_tipo == tipo and c.objeto_id == objeto_id
     ]
+
+
+def es_de_la_casa(persona: Persona | None) -> bool:
+    """¿Vive en casa quien mira?
+
+    Espejo de `esDeLaCasa` en `api/src/lio.js`. Acota a los cuatro del círculo
+    cerrado lo que solo les concierne a ellos —hoy, los turnos de Lio—, y no pasa
+    por `visible` porque no es la misma pregunta: aquella oculta una cosa a su
+    destinatario, y esta acota un módulo entero a un círculo.
+
+    A diferencia del resto de la función de visibilidad, aquí no se exige tener
+    cuenta: el plan semanal se lo manda por WhatsApp a quien vive en casa aunque
+    no entre en la aplicación, y saber quién saca al perro es justamente lo que
+    esa persona necesita.
+    """
+    return persona is not None and persona.circulo == "familia" and persona.activa

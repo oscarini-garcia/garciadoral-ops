@@ -441,6 +441,87 @@ button { background: none; border: 0; cursor: pointer; }
 .version[data-estado="curso"] { color: var(--ink-soft); }
 .version[data-estado="fallo"] { color: var(--regalo); }
 
+/* ------------------------------------------------------------------- Lio -- */
+
+/* El carril y la rejilla son la misma figura —siete columnas de días y una de
+   rótulos— en dos sitios: encima de la semana y dentro de Ajustes. Comparten
+   las medidas para que el cuadro que se edita se reconozca al verlo pintado. */
+.lio-carril, .lio-cuadro {
+  display: grid;
+  grid-template-columns: 22px repeat(7, 1fr);
+  gap: 4px 2px;
+  align-items: center; justify-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 7px 8px;
+}
+.lio-rotulo, .lio-cuadro-rotulo { font-size: 13px; }
+.lio-cabecera, .lio-cuadro-cabecera {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--ink-faint);
+}
+.lio-cabecera[data-hoy="si"] { color: var(--tinta); }
+
+/* En el carril, la casilla es la superficie tocable y la pastilla de dentro es
+   lo que se ve: así el blanco es holgado sin que la marca engorde. En el cuadro
+   de Ajustes no hace falta esa separación —la casilla es la pastilla— porque
+   allí no compite con nada por el espacio. */
+.lio-casilla {
+  display: grid; place-items: center;
+  width: 100%; min-height: 30px; padding: 3px 0;
+  background: none; border: 0; cursor: pointer;
+}
+.lio-ini, .lio-cuadro-casilla {
+  display: grid; place-items: center;
+  min-width: 24px; min-height: 21px; padding: 2px 5px;
+  border-radius: 999px; border: 0; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
+  background: var(--paper-3); color: var(--ink-soft);
+}
+.lio-cuadro-casilla { min-height: 30px; width: 100%; }
+
+/* Hecho es lo único que se rellena: al recorrer la semana, lo que salta a la
+   vista es lo que ya está resuelto y lo que se quedó sin marcar. */
+.lio-casilla[data-estado="hecho"] .lio-ini { background: var(--color-lio, var(--tinta)); color: var(--paper); }
+.lio-casilla[data-estado="sin-marcar"] .lio-ini {
+  background: transparent; border: 1px dashed var(--aviso); color: var(--aviso);
+}
+.lio-casilla[data-estado="sin-asignar"] .lio-ini { background: transparent; color: var(--ink-faint); }
+.lio-casilla[data-mio="si"] .lio-ini { box-shadow: 0 0 0 1.5px var(--tinta); }
+.lio-casilla[data-pedido="si"] .lio-ini { border: 1px dashed var(--regalo); color: var(--regalo); }
+.lio-casilla[data-hoy="si"] { background: var(--tinta-suave); border-radius: 8px; }
+
+.lio-cuadro-casilla[data-vacia="no"] { background: var(--color-lio); color: var(--paper); }
+.lio-cuadro-casilla[data-vacia="si"] { background: transparent; color: var(--ink-faint); }
+.lio-cuadro { margin: 8px 0; }
+
+.agenda-semana { display: flex; flex-direction: column; gap: 10px; }
+
+/* Lo de Lio en Hoy: la banda de lo que hay que contestar y las filas de turno. */
+.lio-banda { display: flex; flex-direction: column; gap: 9px; margin-bottom: 4px; }
+.lio-peticion, .lio-propuesta {
+  display: flex; flex-direction: column; gap: 9px;
+  border: 1px solid var(--regalo); border-radius: 12px;
+  background: color-mix(in srgb, var(--regalo) 8%, var(--paper));
+  padding: 11px 13px;
+}
+.lio-peticion p, .lio-propuesta p { font-size: 14.5px; }
+
+.lio-fila {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--paper-2); padding: 9px 12px;
+}
+.lio-fila[data-estado="hecho"] { background: var(--tinta-suave); border-color: transparent; }
+.lio-fila[data-rezagado="si"] { border-color: var(--aviso); background: transparent; }
+.lio-fila-emoji { flex: none; font-size: 16px; }
+.lio-fila-texto {
+  display: flex; flex-direction: column; gap: 1px;
+  flex: 1 1 auto; min-width: 0; text-align: left;
+}
+.lio-fila-titulo { font-size: 15px; }
+.lio-fila-pista { font-size: 12.5px; color: var(--ink-soft); }
+.lio-relevo { display: flex; gap: 8px; flex-wrap: wrap; }
+
 /* -------------------------------------------------------- Vista de semana -- */
 
 .semana { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
