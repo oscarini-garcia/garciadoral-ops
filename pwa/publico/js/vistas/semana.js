@@ -20,8 +20,8 @@ import {
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
 import {
-  INICIALES_DIA, MESES_LARGOS, TECHO_EVENTOS_DIA,
-  diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, instanciasEn, iso,
+  INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
+  diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
   isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
@@ -860,7 +860,7 @@ function vistaMes(ctx) {
   const turnos = hayLio(ctx.vista.datos) ? turnosDe(ctx.vista.datos, ancla) : [];
 
   if (!delDia.length && !turnos.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
-  for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx));
+  for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx, { conFecha: false }));
   for (const turno of turnos) detalle.append(filaDeTurno(turno, ctx));
 
   // El día del mes que no tiene ningún evento se llena igual que la fila vacía
@@ -920,6 +920,7 @@ function vistaLista(ctx) {
     pintar: () => tarjetaDeEvento(
       { instancia, evento: instancia.evento, dia: soloFecha(instancia.inicio), continuacion: false },
       ctx,
+      { conFecha: false },
     ),
   }));
 
@@ -951,15 +952,32 @@ function vistaLista(ctx) {
 
   const visibles = cosas.slice(0, TECHO_LISTA);
   let grupoActual = null;
+  let diaActual = null;
+  let mesEscrito = null;
   let nodo = null;
 
   for (const cosa of visibles) {
     const grupo = nombreDeGrupo(cosa.dia, desde);
     if (grupo !== grupoActual) {
       grupoActual = grupo;
+      diaActual = null;
       nodo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: grupo })]);
       contenedor.append(nodo);
     }
+
+    // El separador de día solo tiene sentido dentro de un grupo que abarque
+    // varios: «Hoy» y «Mañana» son ya un día, y escribirlo debajo sería decir dos
+    // veces lo mismo en dos renglones seguidos.
+    const clave = iso(cosa.dia);
+    if (grupoAbarcaVariosDias(grupo) && clave !== diaActual) {
+      diaActual = clave;
+      const conMes = cosa.dia.getMonth() !== mesEscrito;
+      mesEscrito = cosa.dia.getMonth();
+      nodo.append(el('p', { class: 'lista-dia' }, [
+        el('span', { texto: rotuloDeDia(cosa.dia, conMes) }),
+      ]));
+    }
+
     nodo.append(cosa.pintar());
   }
 
@@ -987,10 +1005,44 @@ function nombreDeGrupo(momento, referencia) {
   return `${MESES_LARGOS[momento.getMonth()]} de ${momento.getFullYear()}`;
 }
 
-function tarjetaDeEvento(aparicion, ctx) {
+/** Los dos primeros grupos son de un solo día y no llevan separador dentro. */
+const grupoAbarcaVariosDias = (grupo) => grupo !== 'Hoy' && grupo !== 'Mañana';
+
+/**
+ * «Miércoles 29», y con el mes cuando el mes cambia.
+ *
+ * Escribirlo siempre alargaría veinte rótulos para repetir un dato que solo
+ * cambia una vez al mes; no escribirlo nunca dejaría «Lunes 3» sin saber de qué
+ * mes dentro de un grupo que cruza de julio a agosto. Se escribe en el primer
+ * día de cada mes, y a partir de ahí se hereda leyendo hacia arriba.
+ */
+function rotuloDeDia(dia, conMes) {
+  const nombre = NOMBRES_DIA[indiceDia(dia)];
+  const cabeza = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  return conMes
+    ? `${cabeza} ${dia.getDate()} de ${MESES_LARGOS[dia.getMonth()]}`
+    : `${cabeza} ${dia.getDate()}`;
+}
+
+/**
+ * La tarjeta de un evento en el mes y en la lista.
+ *
+ * **La fecha solo se escribe si no la dice ya el rótulo de encima.** En la lista
+ * la dice el separador del día y en el mes, el título del detalle; repetirla
+ * dentro de cada tarjeta era leer «miércoles 29 de julio» tantas veces como
+ * cosas hubiera ese día, en el sitio donde debería estar lo que las distingue.
+ * Es lo que ya hacía la lista de Hoy.
+ */
+function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
   const hora = horaDe(aparicion);
   const cara = ctx.vista.caraDe(aparicion.evento);
   const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
+  const pie = [
+    conFecha ? formatearFechaLarga(aparicion.dia) : null,
+    aparicion.evento.ubicacion,
+    participantes.length ? participantes.join(', ') : null,
+  ].filter(Boolean).join(' · ');
+
   return el('button', {
     class: 'tarjeta', type: 'button',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
@@ -1000,13 +1052,7 @@ function tarjetaDeEvento(aparicion, ctx) {
       el('h3', { texto: cara.titulo }),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
     ]),
-    el('p', {
-      texto: [
-        formatearFechaLarga(aparicion.dia),
-        aparicion.evento.ubicacion,
-        participantes.length ? participantes.join(', ') : null,
-      ].filter(Boolean).join(' · '),
-    }),
+    pie ? el('p', { texto: pie }) : null,
   ]);
 }
 

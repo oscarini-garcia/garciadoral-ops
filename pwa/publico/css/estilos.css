@@ -658,6 +658,29 @@ button { background: none; border: 0; cursor: pointer; }
   text-transform: uppercase; color: var(--ink-faint);
 }
 
+/* Los dos niveles de la vista de lista.
+
+   El rótulo de proximidad —«Esta semana»— sube a cuerpo de título en serifa, y
+   el separador de día se queda con la versalita diminuta que aquel llevaba. Solo
+   con eso, grupo y día quedarían pegados al empezar cada grupo y lo único que
+   los separaría sería el cuerpo de la letra; por eso el día lleva además una
+   raya fina que llega al margen. Lo que dice esa raya es «de aquí para abajo»,
+   que es exactamente lo que un separador de día quiere decir, y de paso lo
+   coloca por debajo del grupo sin discutir. Las cuatro formas que se estudiaron
+   están en `specs/prototipo-separadores-de-lista.html`. */
+.cuerpo-agenda .grupo-titulo {
+  font-family: var(--serif); font-size: 18px; font-weight: 500;
+  letter-spacing: -.01em; text-transform: none; color: var(--ink);
+}
+.lista-dia {
+  display: flex; align-items: center; gap: 10px; margin-top: 4px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.lista-dia::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--line); }
+/* El primero del grupo va pegado a su rótulo: el aire ya lo pone el grupo. */
+.grupo > .lista-dia:first-of-type { margin-top: 0; }
+
 /* La cabecera de una persona dentro de una fecha señalada. No es un rótulo de
    sección como los de arriba —diminutos, en versalitas— porque aquí el nombre es
    lo que organiza la pantalla y pesaba menos que el título de sus regalos. Va

@@ -81,9 +81,11 @@ pendiente. El hook lo inyecta al final del mapa.
   vuelve al trato** y lo confirma quien lo tenía, porque ya no es cargar con un
   recado sino escribir la memoria de otro. Y «Cancelar» va al final de cada hoja
   y a la derecha, en su propio renglón.
-  Queda abierto **cómo se separan los días dentro de la vista de lista** —hay
-  cuatro formas sobre la mesa en `specs/prototipo-separadores-de-lista.html`, sin
-  elegir—; queda abierto **si el rezagado de ayer debería
+  **La lista tiene ahora dos niveles de separador**: el grupo de proximidad en
+  serifa y el día en versalita con una raya hasta el margen, elegido entre las
+  cuatro formas de `specs/prototipo-separadores-de-lista.html`; y en cuanto hay
+  separador de día, la fecha sale de dentro de la tarjeta, también en el detalle
+  del mes. Queda abierto **si el rezagado de ayer debería
   poder marcarse más de un día después** —hoy sube una vez y desaparece— y **qué
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
   turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
