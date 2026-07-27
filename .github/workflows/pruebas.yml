@@ -37,9 +37,15 @@ jobs:
       # dos líneas idénticas sin conflicto, y el segundo en mergearse publica su
       # trabajo bajo una versión que el primero ya quemó. Pasó con la 1.15.0 y
       # volvió a pasar con la 1.27.0, que es la que se llevó Sitios por delante.
+      #
+      # El refspec explícito no es adorno: `git fetch origin main` a secas deja la
+      # punta en `FETCH_HEAD` y **no toca** `refs/remotes/origin/main`, de modo
+      # que lo de abajo estaría comparando contra el ref que dejó `checkout` y no
+      # contra lo que este paso acaba de traer. Funcionaría casi siempre —hay
+      # segundos entre uno y otro— y sería una casualidad, no una regla.
       - name: Traer la punta de main
         if: github.event_name == 'pull_request'
-        run: git fetch --no-tags origin main
+        run: git fetch --no-tags --force origin main:refs/remotes/origin/main
 
       # Los módulos y los estilos se sirven de la caché del service worker antes
       # que de la red, de modo que un cambio en ellos no llega a quien ya tiene

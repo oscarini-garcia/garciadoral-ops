@@ -258,7 +258,7 @@ Lo que ejecuta la integración continua:
 
 ```bash
 python3 -m unittest discover -s tests -v
-git fetch --no-tags origin main
+git fetch --no-tags --force origin main:refs/remotes/origin/main
 python3 herramientas/mapa.py --verificar
 python3 scripts/plan_semanal.py --simulacro --fecha 2026-07-26
 node --test 'test/*.test.js'
