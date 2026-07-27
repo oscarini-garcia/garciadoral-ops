@@ -104,9 +104,17 @@ pendiente. El hook lo inyecta al final del mapa.
   **Y súbelas por encima de lo que haya en `main` en ese momento, no de donde
   saliste.** Con dos ramas abiertas a la vez, las dos suben desde la misma base a
   la misma versión, git funde las dos líneas idénticas sin conflicto y la segunda
-  en mergearse se encuentra la versión ocupada. Eso pasó con la 1.15.0. El
-  workflow ya no lo deja pasar callando: si la versión tiene release y el empujón
-  cambia el bundle, falla y dice qué se habría quedado sin publicar.
+  en mergearse publica su trabajo bajo una versión que la primera ya quemó. Pasó
+  con la 1.15.0 y volvió a pasar con la 1.27.0, que se llevó Sitios por delante:
+  la web servía lo nuevo y los teléfonos seguían con lo anterior.
+  **La red está ahora en el PR y no después del merge.** `ota.yml` sabía
+  distinguir el caso desde la 1.15.0, pero avisa cuando el trabajo ya está en
+  `main` y arreglarlo es otro PR. Y la comprobación de `pruebas.yml` no lo veía:
+  miraba `pull_request.base.sha` —la `main` de cuando se abrió el PR—, y desde esa
+  base las dos ramas ven un salto correcto. Ahora compara contra **la punta de
+  `main` en el momento de correr**, comprueba que la versión sube y no baja, y
+  pregunta además si esa versión ya tiene release publicada. Si vuelve a pasar,
+  falla antes de mergear, que es cuando todavía se puede escribir otra cifra.
 - **La barra inferior tiene ahora cinco entradas y la primera es Hoy**, que es
   con la que abre la aplicación. Es la síntesis que `specs/ux.md` §11 dejaba
   apuntada y está descrita en §6.5: la semana no ha cambiado en nada, solo se ha
