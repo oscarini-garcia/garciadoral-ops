@@ -441,9 +441,9 @@ button { background: none; border: 0; cursor: pointer; }
 .version[data-estado="curso"] { color: var(--ink-soft); }
 .version[data-estado="fallo"] { color: var(--regalo); }
 
-/* ------------------------------------------------------------------- Lio -- */
+/* ------------------------------------------------------------------- Lío -- */
 
-/* Lio como columna de la fila del día: día, Lio y evento.
+/* Lío como columna de la fila del día: día, Lío y evento.
 
    Empezó siendo una banda de siete columnas encima de la rejilla y se metió
    dentro de la fila, que es donde se lee mejor: el jueves se cuenta entero de un
@@ -477,7 +477,7 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* La columna entera es el blanco, y las pastillas de dentro son lo que se ve:
    cada una mide unos 40 × 18 puntos, la mitad de lo que pide un dedo, así que
-   tocar un turno suelto sería apuntar. Abre el día de Lio con los dos. */
+   tocar un turno suelto sería apuntar. Abre el día de Lío con los dos. */
 .lio-col {
   display: flex; flex-direction: column; gap: 3px; justify-content: center;
   background: none; border: 0; padding: 0; cursor: pointer;
@@ -531,7 +531,7 @@ button { background: none; border: 0; cursor: pointer; }
 .agenda-semana { display: flex; flex-direction: column; }
 .agenda-semana .semana { border-top: 0; }
 
-/* Lo de Lio en Hoy: la banda de lo que hay que contestar y las filas de turno. */
+/* Lo de Lío en Hoy: la banda de lo que hay que contestar y las filas de turno. */
 .lio-banda { display: flex; flex-direction: column; gap: 9px; margin-bottom: 4px; }
 .lio-peticion, .lio-propuesta {
   display: flex; flex-direction: column; gap: 9px;

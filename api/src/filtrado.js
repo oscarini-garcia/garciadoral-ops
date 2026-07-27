@@ -31,7 +31,7 @@ function categoriasVisibles(registro, observador) {
 
 export function componerInstantanea(registro, observador) {
   const esAdministrador = observador.rol === 'administrador';
-  // Lio es de la casa. Para quien no vive en ella el módulo no existe: no
+  // Lío es de la casa. Para quien no vive en ella el módulo no existe: no
   // recibe el cuadro, ni los paseos, ni las propuestas, y su aplicación no
   // dibuja el carril porque no tiene con qué.
   const deLaCasa = esDeLaCasa(observador);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Los turnos de paseo de Lio, derivados del cuadro semanal.
+"""Los turnos de paseo de Lío, derivados del cuadro semanal.
 
 Espejo de `pwa/publico/js/lio.js` y de `api/src/lio.js`. Aquí solo hace falta la
 mitad de lo que hay allí: el plan semanal cuenta lo que viene, de modo que no
@@ -87,7 +87,7 @@ def turnos_de(agenda, fecha: date) -> list[TurnoLio]:
 
 
 def hay_lio(agenda) -> bool:
-    """¿Está puesto el cuadro? Mientras no lo esté, Lio no sale por ninguna
+    """¿Está puesto el cuadro? Mientras no lo esté, Lío no sale por ninguna
     parte: ni en la aplicación ni en el mensaje de los domingos."""
     if any(any(fila) for fila in agenda.cuadro_lio.values()):
         return True

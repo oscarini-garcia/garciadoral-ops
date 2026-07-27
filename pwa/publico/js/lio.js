@@ -1,5 +1,5 @@
 /**
- * Lio: los turnos de paseo, sus estados y el trato que los cambia de dueño.
+ * Lío: los turnos de paseo, sus estados y el trato que los cambia de dueño.
  *
  * Espejo de `api/src/lio.js` y de `scripts/agenda/lio.py`. Aquí vive todo lo que
  * hay que saber sobre un turno sin dibujar nada: quién lo tiene, si está hecho,
@@ -68,7 +68,7 @@ export function cuadroDe(instantanea) {
 }
 
 /**
- * ¿Hay Lio en esta casa?
+ * ¿Hay Lío en esta casa?
  *
  * Mientras nadie haya puesto el cuadro no se dibuja nada: ni carril en la
  * semana, ni bloque en Hoy. Un módulo vacío ocupando sitio todos los días es
@@ -191,24 +191,21 @@ export function misPeticiones(instantanea) {
 // ------------------------------------------------------------- Escrituras --
 
 /**
- * «Ya está»: se marca que el turno lo sacó quien lo dice.
+ * «Ya está» y «Lo saqué yo»: queda escrito que el turno lo sacó quien lo dice.
  *
- * Si es el suyo, se escribe y punto. Si era de otro, no se escribe nada todavía:
- * sale una propuesta de corrección para que ese otro la confirme, porque la
- * marca cuenta quién sacó al perro y eso no lo puede decidir un tercero solo.
- * El turno de nadie —una casilla vacía del cuadro— lo puede coger cualquiera sin
- * pedir permiso: no hay a quién pedírselo.
+ * **Coger trabajo no necesita permiso.** Aunque el turno fuera de otro se
+ * escribe en el acto, sin preguntarle nada a nadie: quien dice que ha sacado al
+ * perro no le está imponiendo nada a la persona que lo tenía —le está quitando
+ * un recado de encima—, y hacerle confirmar algo que solo le beneficia era
+ * ponerle un trámite a una buena noticia. Lo que sí sigue necesitando un sí es
+ * lo contrario: soltar el turno propio para que lo saque otro.
+ *
+ * El asignado no se toca. La fila conserva de quién era el turno y añade quién
+ * lo sacó, que es lo que hace que el histórico siga contando lo que pasó de
+ * verdad y no lo que estaba previsto.
  */
 export async function marcarHecho(instantanea, turno) {
   const yo = instantanea.yo.id;
-  if (turno.asignadoId && turno.asignadoId !== yo) {
-    return proponer(turno, {
-      clase: 'correccion',
-      proponente_id: yo,
-      destinatario_id: turno.asignadoId,
-      asignado_previo_id: turno.asignadoId,
-    });
-  }
   await guardar('paseo', idPaseo(turno.fechaIso, turno.turno.id), {
     fecha: turno.fechaIso,
     turno: turno.turno.id,
@@ -244,21 +241,18 @@ export function pedirCambio(instantanea, turno, aQuienId) {
 }
 
 /**
- * «Lo saco yo»: el cambio en el otro sentido, cuando uno se ofrece a sacar el
- * turno de otro.
+ * «Cógele el turno»: el turno de otro pasa a ser mío, sin preguntar.
  *
- * Es la misma propuesta y la misma tabla; lo que cambia es hacia dónde va el
- * turno si la aceptan. **No hace falta guardarlo:** se deduce de quién propone.
- * Si quien propone es el que ya lo tenía, está pidiendo que se lo cubran; si no
- * lo tenía, se está ofreciendo. En los dos casos, el que acaba sacándolo es el
- * que no lo tenía antes.
+ * Por la misma razón que marcar: nadie necesita permiso para cargar con un
+ * recado ajeno. Quien lo tenía se entera al mirar la semana y se encuentra un
+ * turno menos, que es exactamente lo que quería quien se lo quitó.
  */
-export function reclamarTurno(instantanea, turno) {
-  return proponer(turno, {
-    clase: 'cambio',
-    proponente_id: instantanea.yo.id,
-    destinatario_id: turno.asignadoId,
-    asignado_previo_id: turno.asignadoId,
+export function cogerTurno(instantanea, turno) {
+  return guardar('paseo', idPaseo(turno.fechaIso, turno.turno.id), {
+    fecha: turno.fechaIso,
+    turno: turno.turno.id,
+    asignado_id: instantanea.yo.id,
+    activo: 1,
   });
 }
 

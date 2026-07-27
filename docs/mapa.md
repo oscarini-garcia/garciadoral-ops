@@ -14,7 +14,7 @@ tener que recorrer la aplicación entera cada vez.
 - **__init__.py** — Agenda Familiar — implementación del modelo, la visibilidad y el plan semanal.
 - **fuente.py** — Lectura del registro canónico de la agenda.
   FuenteNoDisponible · leer_agenda
-- **lio.py** — Los turnos de paseo de Lio, derivados del cuadro semanal.
+- **lio.py** — Los turnos de paseo de Lío, derivados del cuadro semanal.
   TurnoLio · id_paseo · cuadro_normalizado · turno_de · turnos_de · hay_lio
 - **mensaje.py** — Composición del texto del plan semanal para WhatsApp.
   formatear_dia · formatear_rango · formatear_lio · formatear_evento · Plan · componer
@@ -48,7 +48,7 @@ tener que recorrer la aplicación entera cada vez.
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
-- **lio.js** — Lio: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
+- **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · leerCuadro
   guardarCuadro · esDeLaCasa · DIAS_DE_GRACIA_CORRECCION · caducarTratos
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
@@ -84,7 +84,7 @@ tener que recorrer la aplicación entera cada vez.
   cargarRegistroDemo · componerDemo
 - **gente.js** — El campo con el que se elige gente, en todas las pantallas que lo piden.
   campoDeGente
-- **lio.js** — Lio: los turnos de paseo, sus estados y el trato que los cambia de dueño.
+- **lio.js** — Lío: los turnos de paseo, sus estados y el trato que los cambia de dueño.
   TURNOS · IDS_TURNO · turnoPorId · idPaseo · cuadroVacio · cuadroDe · hayLio · genteDeCasa
   inicialesDe · finDeVentana · …y 13 más
 - **modelo.js** — Consultas sobre la instantánea local.

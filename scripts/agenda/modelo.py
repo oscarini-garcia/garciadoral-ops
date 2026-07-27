@@ -250,7 +250,7 @@ class Regalo:
 
 @dataclass(frozen=True)
 class Paseo:
-    """Un turno de Lio que ya no se deriva del cuadro.
+    """Un turno de Lío que ya no se deriva del cuadro.
 
     Existe cuando alguien marcó que lo sacó o cuando se acordó un cambio para
     ese día. Desde entonces manda sobre el cuadro semanal, que es lo que hace
@@ -303,7 +303,7 @@ class Agenda:
     regalos: dict[str, Regalo] = field(default_factory=dict)
     comentarios: list[Comentario] = field(default_factory=list)
     emojis_permitidos: tuple[str, ...] = ()
-    #: Lio: el cuadro semanal —catorce casillas, el lunes en 0— y las
+    #: Lío: el cuadro semanal —catorce casillas, el lunes en 0— y las
     #: excepciones ya escritas, indexadas por su identificador compuesto.
     cuadro_lio: dict[str, list[str | None]] = field(
         default_factory=lambda: {turno: [None] * 7 for turno in IDS_TURNO}
@@ -785,7 +785,7 @@ def validar(agenda: Agenda) -> list[str]:
         if autor is None or not autor.tiene_cuenta:
             problemas.append(f"comentario {comentario.id}: autor sin cuenta o inexistente")
 
-    # A Lio lo saca quien vive en casa, tanto en el cuadro como en las filas ya
+    # A Lío lo saca quien vive en casa, tanto en el cuadro como en las filas ya
     # escritas. La pantalla no ofrece a nadie más; esto es la red de debajo,
     # igual que con el tamaño del círculo.
     def _de_casa(persona_id: str | None, donde: str) -> None:
@@ -799,9 +799,9 @@ def validar(agenda: Agenda) -> list[str]:
 
     for turno, fila in agenda.cuadro_lio.items():
         if turno not in IDS_TURNO:
-            problemas.append(f"cuadro de Lio: turno inválido «{turno}»")
+            problemas.append(f"cuadro de Lío: turno inválido «{turno}»")
         for dia, persona_id in enumerate(fila):
-            _de_casa(persona_id, f"cuadro de Lio ({turno}, día {dia})")
+            _de_casa(persona_id, f"cuadro de Lío ({turno}, día {dia})")
 
     for paseo in agenda.paseos.values():
         if paseo.turno not in IDS_TURNO:

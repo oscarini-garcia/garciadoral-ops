@@ -173,12 +173,12 @@ def componer_para(
 def turnos_de_la_semana(
     agenda: Agenda, semana: Semana, persona
 ) -> dict[date, list[TurnoLio]] | None:
-    """Los turnos de Lio, y solo para quien vive en casa.
+    """Los turnos de Lío, y solo para quien vive en casa.
 
     Se resuelve aquí y no en `mensaje.py` por la misma razón que el resto del
     filtrado: quien compone el texto no decide qué se puede contar. A quien no
     es de casa se le devuelve `None` y su plan sale exactamente como salía antes
-    de que Lio existiera.
+    de que Lío existiera.
     """
     if not es_de_la_casa(persona) or not hay_lio(agenda):
         return None

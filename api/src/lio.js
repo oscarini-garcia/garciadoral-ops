@@ -1,5 +1,5 @@
 /**
- * Lio: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
+ * Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
  *
  * Espejo de `pwa/publico/js/lio.js` y de `scripts/agenda/lio.py`. Lo que vive
  * aquí es lo que el Worker necesita saber por su cuenta: qué es un turno, dónde
