@@ -989,6 +989,11 @@ button { background: none; border: 0; cursor: pointer; }
   background: var(--paper); border: 1px solid var(--line); color: var(--ink);
 }
 .boton-mini[data-tono="principal"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+/* El mismo gris que `.boton[data-tono="discreto"]`, para que un «Cancelar» corto
+   —el de la línea de los nombres a quien pedirle el turno— no se vea de otro
+   color que los «Cancelar» de todas las demás hojas. Cambia el tamaño, no el
+   tono: eso es lo que dice que es la misma cosa. */
+.boton-mini[data-tono="discreto"] { background: var(--paper-3); border-color: transparent; color: var(--ink); }
 .boton-mini:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
 
