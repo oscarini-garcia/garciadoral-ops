@@ -27,13 +27,30 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- **Hay una propuesta sobre la mesa y sin construir: el módulo de Sitios**, en
-  `specs/propuesta-sitios.html`. Un lugar con apuntes de llevar, hacer o ir, con
-  voto e hilo de comentarios, en el hueco que deja Buscar en la barra de abajo.
-  Está pendiente de elegir **el nombre** —Sitios, Pistas o Guía— y de decidir
-  **si la marca de leído empieza siendo local o lleva tabla propia**. La parte que
-  importa aunque el módulo no se construya: **los comentarios están enchufados a
-  medias**. `pwa/publico/js/comentarios.js` es una pieza compartida de verdad,
+- **Hay una propuesta decidida y sin construir: el módulo de Sitios**, en
+  `specs/propuesta-sitios.html`. Un sitio con apuntes de **llevar, hacer, ir o
+  saber**, cada uno con descripción y hoja propia, con voto —un pulgar, con las
+  iniciales de quien votó en vez de un número— e hilo de comentarios; en el hueco
+  que deja Buscar en la barra de abajo, que se retira sin sustituto. **Borrar un
+  sitio exige vaciarlo antes.** Lleva dos cosas más: apuntes escritos por un
+  modelo, que es un encargo más de los que ya viven en Ajustes y un extremo más en
+  el Worker, y compartir el sitio entero como texto plano, sin votos ni
+  comentarios. Queda por decidir **dónde vive el verbo del modelo** y **si la
+  cuarta clase se llama «Saber»**.
+- **Y de ahí sale una pieza que no es de Sitios: `avisos.js`.** Lo que se acumula
+  arriba de Hoy ya es un módulo de avisos —hoy `vistas/hoy.js` importa
+  `tratosParaMi` de `lio.js` y dibuja sus peticiones, y con los comentarios esa
+  banda pasa a tener dos dueños—. Lo decidido es **un registro derivado de la
+  instantánea**, no una tabla: cada módulo dice qué tiene pendiente para quien
+  mira, y Hoy lo pinta sin saber qué es un turno de perro. Son **dos grupos y no
+  uno** —«Por contestar», que espera respuesta, y «Nuevo desde ayer», que solo ha
+  pasado—, y **el punto va en la pestaña de Hoy y en ninguna otra**. La razón de
+  fondo es la de después: cuando llegue APNs, el servidor tendrá que contestar esa
+  misma pregunta, y si vive repartida por dentro de `hoy.js` habrá que escribirla
+  dos veces. La marca de leído empieza **local**, junto a la instantánea, y la
+  tabla llegará con las notificaciones remotas, no antes.
+- **Y la parte que importa aunque nada de eso se construya: los comentarios están
+  enchufados a medias.** `pwa/publico/js/comentarios.js` es una pieza compartida de verdad,
   pero solo se la llama con `'evento'` —`vistas/semana.js` y `vistas/regalos.js`,
   dos llamadas en toda la aplicación—, mientras que la tabla, el filtro del
   Worker, el modelo en Python y `especificacion.md` §5.3 admiten los tres tipos:
