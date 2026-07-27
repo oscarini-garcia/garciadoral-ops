@@ -207,7 +207,7 @@ test('una propuesta ya contestada no se vuelve a contestar', async () => {
 
 // ------------------------------------------------------------ La caducidad --
 
-test('el cambio caduca al cerrarse la ventana de su turno, y la corrección a la semana', async () => {
+test('el cambio caduca al cerrarse la ventana de su turno', async () => {
   const base = baseFalsa();
   await caducarTratos(base, new Date('2026-07-30T12:00:00Z'));
 
@@ -216,10 +216,20 @@ test('el cambio caduca al cerrarse la ventana de su turno, y la corrección a la
   // La noche se cierra a las 24:00 de su día, que ordena donde debe aunque no
   // sea una hora válida.
   assert.match(cambios[0].sql, /WHEN 'noche' THEN '24:00:00'/);
+});
+
+test('la corrección caduca a la semana de pedirse, no a la semana del turno', async () => {
+  // Es la diferencia que arregla el caso que fallaba callando: marcar el turno
+  // ajeno de hace un mes creaba una propuesta ya caducada, que moría en la
+  // sincronización siguiente sin que nadie pudiera aceptarla.
+  const base = baseFalsa();
+  await caducarTratos(base, new Date('2026-07-30T12:00:00Z'));
 
   const correcciones = sql(base, "clase = 'correccion'");
   assert.equal(correcciones.length, 1);
-  assert.equal(correcciones[0].args[2], '2026-07-23');
+  assert.match(correcciones[0].sql, /creado_en < \?/);
+  assert.doesNotMatch(correcciones[0].sql, /fecha < \?/);
+  assert.equal(correcciones[0].args[2], '2026-07-23T12:00:00.000Z');
 });
 
 // ------------------------------------------- Antes de aplicar la migración --
