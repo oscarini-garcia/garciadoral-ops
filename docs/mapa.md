@@ -43,6 +43,8 @@ tener que recorrer la aplicación entera cada vez.
 
 - **apple.js** — Verificación del token de identidad de Sign in with Apple.
   base64urlADatos · verificarTokenDeApple
+- **comentables.js** — Qué cosas admiten comentario, en un solo sitio.
+  COMENTABLES · esComentable · comentariosVisibles
 - **derivar.js** — Estados que nadie mantiene a mano.
   derivarEstados
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
@@ -53,9 +55,9 @@ tener que recorrer la aplicación entera cada vez.
   guardarCuadro · esDeLaCasa · DIAS_DE_GRACIA_CORRECCION · caducarTratos
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
-  INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO · leerConfiguracion
-  configuracionPublica · guardarConfiguracion · cadenaDeModelos · modelosDisponibles
-  …y 8 más
+  INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
+  INSTRUCCION_APUNTE_POR_DEFECTO · leerConfiguracion · configuracionPublica
+  guardarConfiguracion · cadenaDeModelos · …y 10 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -78,6 +80,9 @@ tener que recorrer la aplicación entera cada vez.
   guardarDocumento · leerDocumento · guardarInstantanea · leerInstantanea · encolarCambio
   leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 3 más
 - **app.js** — Arranque y navegación.
+  TEXTO_SINCRONIZACION
+- **avisos.js** — Lo que espera a quien mira, venga del módulo que venga.
+  idVisto · marcarVisto · avisosDe · porContestar · novedades · hayAvisos
 - **comentarios.js** — El hilo de comentarios de cualquier cosa.
   bloqueDeComentarios
 - **demo.js** — Modo demostración.
@@ -96,13 +101,16 @@ tener que recorrer la aplicación entera cada vez.
   HORIZONTE_RECORDATORIOS_DIAS · …y 1 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
-  soloFecha · iso · isoConHora · sumarDias · …y 14 más
+  soloFecha · iso · isoConHora · sumarDias · …y 15 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 7 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 8 más
+- **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
+  CLASES · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios · lugaresDe
+  lugarPorId · apuntesDe · votantesDe · …y 6 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
   cerrarHoja · hayHojaAbierta · …y 10 más
@@ -111,8 +119,6 @@ tener que recorrer la aplicación entera cada vez.
 
 ### `pwa/publico/js/vistas/` · Las cinco secciones de la aplicación
 
-- **buscar.js** — Búsqueda global sobre Ideas y Ocasiones, que es el alcance de la primera versión (spec…
-  reiniciarBusqueda · pintarBuscar
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
@@ -125,6 +131,8 @@ tener que recorrer la aplicación entera cada vez.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirLioDelDia · filaDeTurno
   resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta · abrirDia
   …y 3 más
+- **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
+  reiniciarSitios · tituloDeSitios · nuevoDesdeSitios · pintarSitios · abrirApunte
 
 ### `herramientas/` · Utilidades de desarrollo
 
@@ -150,6 +158,7 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
+- `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
@@ -176,15 +185,18 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `scripts/agenda/semana.py` §8 · `scripts/callmebot.py` §6 · `scripts/despachar.py`
   `tests/test_despachar.py` §5, §8
 - **`specs/especificacion.md`**
-  `pwa/publico/js/native.js` §3.5 · `scripts/agenda/modelo.py` §7
+  `api/src/comentables.js` §5.3 · `pwa/publico/js/native.js` §3.5
+  `scripts/agenda/modelo.py` §7
 - **`specs/modelo-datos.md`**
-  `api/src/filtrado.js` §7.3 · `api/src/lio.js` §2.6 · `api/src/repositorio.js` §4
-  `api/src/visibilidad.js` · `pwa/publico/js/lio.js` §2.6 · `pwa/publico/js/modelo.js` §4
+  `api/src/comentables.js` §2.3 · `api/src/filtrado.js` §7.3 · `api/src/lio.js` §2.6
+  `api/src/repositorio.js` §4 · `api/src/visibilidad.js` · `pwa/publico/js/avisos.js` §2.8
+  `pwa/publico/js/lio.js` §2.6 · `pwa/publico/js/modelo.js` §4
   `pwa/publico/js/semana.js` §7.4 · `pwa/publico/js/sincronizacion.js` §1
-  `pwa/publico/js/vistas/regalos.js` §5.2, §7.4 · `scripts/agenda/__init__.py` §2, §4, §6
-  `scripts/agenda/lio.py` §2.6 · `scripts/agenda/modelo.py` §4
-  `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
-  `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
+  `pwa/publico/js/sitios.js` §2.7 · `pwa/publico/js/vistas/regalos.js` §5.2, §7.4
+  `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/lio.py` §2.6
+  `scripts/agenda/modelo.py` §4 · `scripts/agenda/semana.py` §2.4, §7.4
+  `scripts/agenda/visibilidad.py` · `tests/test_modelo.py` §4
+  `tests/test_visibilidad.py` §6
 - **`specs/plan-semanal.md`**
   `api/src/index.js` §9 · `api/src/visibilidad.js` §5
   `scripts/agenda/__init__.py` §3, §4, §6 · `scripts/agenda/fuente.py` §12.1
@@ -194,12 +206,14 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
   `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
-  `pwa/publico/js/lio.js` §10.3 · `pwa/publico/js/modelo.js` §6.2, §7.1
-  `pwa/publico/js/semana.js` §8, §10.2 · `pwa/publico/js/sincronizacion.js` §1
+  `pwa/publico/js/avisos.js` §12.2 · `pwa/publico/js/lio.js` §10.3
+  `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/semana.js` §8, §10.2
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §12.1
   `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
-  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2, §10.3 · `scripts/agenda/lio.py` §10.3
+  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2, §10.3
+  `pwa/publico/js/vistas/sitios.js` §12.1 · `scripts/agenda/lio.py` §10.3
   `scripts/agenda/modelo.py` §7.1 · `scripts/agenda/semana.py` §10.2
 
 ## Variables de entorno
@@ -221,13 +235,13 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**219** en total.
+**225** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
 - `tests/test_lio.py` — 18
 - `tests/test_mensaje.py` — 12
-- `tests/test_modelo.py` — 24
+- `tests/test_modelo.py` — 25
 - `tests/test_plan_semanal.py` — 11
 - `tests/test_semana.py` — 13
 - `tests/test_service_worker.py` — 2
@@ -236,6 +250,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/cuenta.test.js` — 6
 - `api/test/lio.test.js` — 17
 - `api/test/redaccion.test.js` — 54
+- `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
 

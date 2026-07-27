@@ -14,6 +14,7 @@
  */
 
 import { visible } from './visibilidad.js';
+import { comentariosVisibles } from './comentables.js';
 import { cuadroVacio, esDeLaCasa } from './lio.js';
 
 /** Categorías que el observador puede ver. Las que no, no existen para él.
@@ -40,16 +41,23 @@ export function componerInstantanea(registro, observador) {
   const ideas = registro.ideas.filter((i) => visible(registro, i, 'idea', observador));
   const regalos = registro.regalos.filter((r) => visible(registro, r, 'regalo', observador));
 
-  const idsEventos = new Set(eventos.map((e) => e.id));
-  const idsIdeas = new Set(ideas.map((i) => i.id));
-  const idsRegalos = new Set(regalos.map((r) => r.id));
+  // Sitios es de la casa, como Lío, y por eso no se recorta elemento a elemento:
+  // se transmite entero o no se transmite. De ahí sale que el módulo no tenga
+  // que evaluar nunca la función de visibilidad, y que el voto pueda enseñar las
+  // iniciales de quien votó sin que eso delate nada a nadie.
+  const lugares = deLaCasa ? registro.lugares || [] : [];
+  const apuntes = deLaCasa ? registro.apuntes || [] : [];
+  const votos = deLaCasa ? registro.votos || [] : [];
 
-  // Los comentarios heredan la visibilidad del objeto al que pertenecen.
-  const comentarios = registro.comentarios.filter((c) => {
-    if (c.objeto_tipo === 'evento') return idsEventos.has(c.objeto_id);
-    if (c.objeto_tipo === 'idea') return idsIdeas.has(c.objeto_id);
-    if (c.objeto_tipo === 'regalo') return idsRegalos.has(c.objeto_id);
-    return false;
+  // Los comentarios heredan la visibilidad del objeto al que pertenecen, y qué
+  // objetos la admiten está declarado en `comentables.js` y en ningún otro
+  // sitio. Lo que aquí se compone es de qué identificadores se sabe ya que
+  // viajan; lo que no aparezca en este mapa no transmite sus comentarios.
+  const comentarios = comentariosVisibles(registro.comentarios, {
+    evento: new Set(eventos.map((e) => e.id)),
+    idea: new Set(ideas.map((i) => i.id)),
+    regalo: new Set(regalos.map((r) => r.id)),
+    apunte: new Set(apuntes.map((a) => a.id)),
   });
 
   // Las ocasiones son contenedores y se transmiten enteras; lo que se recorta
@@ -79,6 +87,13 @@ export function componerInstantanea(registro, observador) {
     ocasiones,
     regalos,
     comentarios,
+    lugares,
+    apuntes,
+    votos,
+    // Lo visto no se recorta por visibilidad sino por dueño: las filas de otra
+    // persona no le dicen nada a esta, y mandarlas contaría además qué ha
+    // mirado cada uno, que no es asunto de nadie.
+    vistos: (registro.vistos || []).filter((v) => v.persona_id === observador.id),
     lio_cuadro: deLaCasa ? registro.lio_cuadro || cuadroVacio() : cuadroVacio(),
     paseos: deLaCasa ? registro.paseos || [] : [],
     // Las propuestas llegan enteras y no solo las dirigidas al lector: quien

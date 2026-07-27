@@ -57,11 +57,26 @@
       <!-- Lo rellena cada pestaña al pintarse; la agenda lo deja vacío, y
            entonces se oculta. -->
       <h1 id="tituloPantalla" class="titulo-pantalla"></h1>
-      <!-- Solo el punto. El estado se lee en su color, y la palabra que había
-           aquí decía «al día» el 99 % del tiempo: ocupaba sitio para no contar
-           nada. Su texto sigue estando, en la etiqueta accesible y en el panel
-           que abre al tocarlo. -->
-      <button id="indicadorSync" class="sync" type="button"><i></i></button>
+      <!-- El sobre, que **solo existe cuando hay algo**. Por eso no lleva punto
+           encima ni número: que aparezca es el aviso. Y es un sobre y no una
+           campana porque esta aplicación no puede sonar —los avisos se
+           programan en el dispositivo y no hay APNs—, y un icono que promete un
+           ruido que nunca llega enseña a no fiarse de él.
+
+           Va a la izquierda de los ajustes, que llevan su esquina desde el
+           principio: lo nuevo se mete por dentro y no empuja lo que ya estaba.
+
+           Donde estaba el punto de la sincronización, que se fue a Ajustes: su
+           estado se mira cuando se sospecha de él, no cien veces al mes. Lo que
+           sí se asoma, y solo cuando pasa, es la pastilla de la demostración y
+           la línea de que algo lleva un rato sin subir. -->
+      <span id="pastillaDemo" class="pastilla-demo" hidden>Demostración</span>
+      <button id="botonAvisos" class="icono-cabecera" type="button" aria-label="Avisos" title="Avisos" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
+        </svg>
+      </button>
       <button id="botonAjustes" class="icono-cabecera" type="button" aria-label="Ajustes" title="Ajustes">
         <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none"
              stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -110,11 +125,11 @@
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.6"/>
         <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.4a4 4 0 0 1 0 7.2"/>
       </svg>Gente</button>
-    <button data-pestana="buscar"  class="tab">
+    <button data-pestana="sitios"  class="tab">
       <svg class="tab-icono" viewBox="0 0 24 24" aria-hidden="true" fill="none"
            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
-      </svg>Buscar</button>
+        <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+      </svg>Sitios</button>
   </nav>
 </div>
 

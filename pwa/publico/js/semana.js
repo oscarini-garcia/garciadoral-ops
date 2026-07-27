@@ -96,6 +96,36 @@ export function formatearFechaLarga(fecha) {
   return `${NOMBRES_DIA[indiceDia(fecha)]} ${fecha.getDate()} de ${MESES_LARGOS[fecha.getMonth()]}`;
 }
 
+/**
+ * Cuándo pasó algo, contado como se cuenta en voz alta.
+ *
+ * «hace un rato», «ayer», «el martes», «el 12 de julio». Lo escribe el hilo de
+ * comentarios y lo escribe el sobre de avisos, que son los dos sitios donde la
+ * fecha no es un dato que se consulte sino el orden en que ocurrieron las
+ * cosas: ahí «2026-07-14» obliga a hacer una resta mental para saber si eso es
+ * de antes o de después de lo que se acaba de leer.
+ *
+ * A partir de la semana se escribe la fecha, porque «hace nueve días» ya no
+ * sitúa nada: nadie sabe qué día fue eso sin contar. Y del año pasado en
+ * adelante se añade el año, que es cuando empieza a hacer falta.
+ */
+export function formatearHace(momento, ahora = new Date()) {
+  const cuando = momento instanceof Date ? momento : parsearMomento(momento);
+  if (!cuando || Number.isNaN(cuando.getTime())) return '';
+
+  const minutos = Math.round((ahora - cuando) / 60000);
+  if (minutos < 0) return 'ahora mismo';
+  if (minutos < 60) return minutos < 5 ? 'hace un rato' : `hace ${minutos} min`;
+
+  const dias = Math.round((soloFecha(ahora) - soloFecha(cuando)) / 86400000);
+  if (dias === 0) return `hoy a las ${formatearHora(cuando)}`;
+  if (dias === 1) return `ayer a las ${formatearHora(cuando)}`;
+  if (dias < 7) return `el ${NOMBRES_DIA[indiceDia(cuando)]}`;
+
+  const fecha = `el ${cuando.getDate()} de ${MESES_LARGOS[cuando.getMonth()]}`;
+  return cuando.getFullYear() === ahora.getFullYear() ? fecha : `${fecha} de ${cuando.getFullYear()}`;
+}
+
 // ------------------------------------------------------- Eventos derivados --
 
 /**

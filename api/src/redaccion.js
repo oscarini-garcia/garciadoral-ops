@@ -82,6 +82,30 @@ export const INSTRUCCION_FELICITACION_POR_DEFECTO = [
   'felicitación entera, sin comillas y sin explicar nada.',
 ].join(' ');
 
+/**
+ * El encargo de los apuntes de un sitio, que es el cuarto y el más acotado.
+ *
+ * Se le dice qué sitio, de qué clase se le pide y **lo que ya está apuntado
+ * ahí**, que es lo que lo hace útil: sin eso, la primera propuesta de «llevar» a
+ * una playa es siempre la crema solar, que ya está escrita desde el primer día,
+ * y la tanda se gasta en repetir lo que uno ya sabe.
+ *
+ * Se le pide el porqué en la misma línea porque el porqué es el apunte: «crema
+ * solar» no vale nada; «allí el viento engaña y se quema todo el mundo el primer
+ * día» es la razón por la que este módulo existe.
+ */
+export const INSTRUCCION_APUNTE_POR_DEFECTO = [
+  'Apuntas lo que conviene saber de un sitio al que va una familia. Te doy el',
+  'sitio, de qué va lo que te pido —cosas que LLEVAR, cosas que HACER, sitios a',
+  'los que IR o cosas que SABER— y lo que ya hay apuntado ahí.',
+  'Propón CINCO cosas de esa clase, concretas y distintas entre sí, que no',
+  'repitan ninguna de las que ya hay ni sean variantes suyas.',
+  'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada una con esta',
+  'forma: «la cosa en menos de ocho palabras — una frase corta que diga por qué o',
+  'qué hay que saber».',
+  'En español de España, sin emojis, sin viñetas y sin comillas.',
+].join(' ');
+
 const MAXIMO_EVENTOS = 20;
 // Un periodo da para más, pero no para todo: un mes cargado son cuarenta o
 // cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
@@ -116,6 +140,7 @@ const CLAVES = {
   instruccion: 'ia.instruccion',
   regalo: 'ia.regalo',
   felicitacion: 'ia.felicitacion',
+  apunte: 'ia.apunte',
 };
 
 export async function leerConfiguracion(db) {
@@ -132,6 +157,7 @@ export async function leerConfiguracion(db) {
     instruccion: filas.get(CLAVES.instruccion)?.valor || INSTRUCCION_POR_DEFECTO,
     regalo: filas.get(CLAVES.regalo)?.valor || INSTRUCCION_REGALO_POR_DEFECTO,
     felicitacion: filas.get(CLAVES.felicitacion)?.valor || INSTRUCCION_FELICITACION_POR_DEFECTO,
+    apunte: filas.get(CLAVES.apunte)?.valor || INSTRUCCION_APUNTE_POR_DEFECTO,
   };
 }
 
@@ -151,6 +177,7 @@ export function configuracionPublica(configuracion) {
     instruccion: configuracion.instruccion,
     regalo: configuracion.regalo,
     felicitacion: configuracion.felicitacion,
+    apunte: configuracion.apunte,
   };
 }
 
@@ -482,6 +509,66 @@ function edadDe(persona, hoy) {
     anios -= 1;
   }
   return anios >= 0 && anios < 130 ? `${anios} años` : null;
+}
+
+/**
+ * Lo que se le cuenta al modelo para apuntar cosas de un sitio.
+ *
+ * Cuatro cosas: qué sitio, de qué clase se pide, **lo que ya hay apuntado ahí**
+ * y quiénes son de casa. Lo tercero es lo que hace que sirva —sin ello repite lo
+ * que ya está escrito—; lo cuarto no es para adivinar gustos, que sería
+ * inventar, sino para el tono y para la edad de la casa: «llevar» cambia
+ * bastante si el modelo sabe que en el viaje va una niña.
+ *
+ * Sale entero de la instantánea filtrada de quien pide, como los otros tres, así
+ * que aquí no puede asomar nada que quien pregunta no pudiera ver ya.
+ */
+export function componerMaterialDeApunte(
+  instantanea,
+  { lugarId, clase = 'saber', descartadas = [] } = {},
+) {
+  const lugar = (instantanea.lugares || []).find((l) => l.id === lugarId);
+  if (!lugar) return { titulo: '', lineas: [] };
+
+  const COMO_SE_PIDE = {
+    llevar: 'cosas que LLEVAR',
+    hacer: 'cosas que HACER',
+    ir: 'sitios a los que IR',
+    saber: 'cosas que SABER',
+  };
+
+  const lineas = [
+    `Sitio: ${lugar.nombre}`,
+    `Te pido: ${COMO_SE_PIDE[clase] || COMO_SE_PIDE.saber}`,
+  ];
+
+  const bloque = (titulo, valores) => {
+    const utiles = valores.filter(Boolean).slice(0, MAXIMO_POR_LISTA);
+    if (utiles.length) lineas.push(`${titulo}:`, ...utiles.map((valor) => `  ${valor}`));
+  };
+
+  const suyos = (instantanea.apuntes || []).filter((a) => a.lugar_id === lugarId);
+  bloque('Ya está apuntado ahí, de esta misma clase', suyos
+    .filter((a) => (a.clase || 'saber') === clase)
+    .map((a) => a.titulo));
+  bloque('Y esto de otras clases, para que te hagas una idea del sitio', suyos
+    .filter((a) => (a.clase || 'saber') !== clase)
+    .map((a) => a.titulo));
+
+  bloque('En casa son', (instantanea.personas || [])
+    .filter((p) => (p.circulo || 'extendida') === 'familia')
+    .map((p) => [p.nombre, p.parentesco, edadDe(p)].filter(Boolean).join(', ')));
+
+  const yaDichas = descartadas
+    .map((titulo) => String(titulo || '').trim())
+    .filter(Boolean)
+    .slice(0, MAXIMO_DESCARTADAS);
+  if (yaDichas.length) {
+    lineas.push('Ya has propuesto esto, no lo repitas ni propongas variantes suyas:');
+    lineas.push(...yaDichas.map((titulo) => `  ${titulo}`));
+  }
+
+  return { titulo: `Apuntes para ${lugar.nombre}`, lineas };
 }
 
 /**

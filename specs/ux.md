@@ -360,9 +360,9 @@ Sobre un deseo propio no se cuentan regalos. No es que no pueda haberlos: es que
 
 Lo que sigue no es una opción sino la decisión tomada, y es la síntesis que el §11 dejaba apuntada: **la pantalla compuesta de esta opción pasa a ser el inicio, y la semana queda inmediatamente detrás, en la segunda pestaña, con su marco fijo intacto.** No se renuncia a nada de la opción D —la semana sigue siendo el marco fijo de siete días y se sigue abriendo de un toque— y se gana el resumen del momento, que es lo que hace que la aplicación tenga algo que decir un martes de marzo.
 
-La barra pasa a cinco entradas —Hoy, Agenda, Regalos, Gente, Buscar—, que es el tope de lo que admite un iPhone y sigue dentro de la horquilla del §1.
+La barra pasa a cinco entradas —Hoy, Agenda, Regalos, Gente, Sitios—, que es el tope de lo que admite un iPhone y sigue dentro de la horquilla del §1. La quinta fue **Buscar** hasta que se retiró: de las tres colecciones que su búsqueda global cubría, solo el banco de ideas acumula volumen de verdad, y gastar uno de los cinco huecos en eso era el peor reparto posible. Lo que la sustituye está en el §12; qué hacer el día que encontrar una idea vieja duela —una lupa en la cabecera de Regalos, que filtra esa pantalla y no abre una pestaña— está en `specs/propuesta-sitios.html`.
 
-**Primera versión, dos cosas.** Un saludo y lo que hay para hoy. Se construye así a propósito: la debilidad conocida de esta opción es que una pantalla compuesta es difícil de acertar y fácil de dejar de leer, y la manera de no acertarla es decidir de golpe los cinco bloques y sus umbrales sin haber visto ninguno en pantalla. Los bloques estacionales del §6 —la ocasión abierta, el próximo cumpleaños, las últimas ideas— entran después, uno a uno, y su regla de composición sigue siendo la cuestión abierta 3 del §13.
+**Primera versión, dos cosas.** Un saludo y lo que hay para hoy. Se construye así a propósito: la debilidad conocida de esta opción es que una pantalla compuesta es difícil de acertar y fácil de dejar de leer, y la manera de no acertarla es decidir de golpe los cinco bloques y sus umbrales sin haber visto ninguno en pantalla. Los bloques estacionales del §6 —la ocasión abierta, el próximo cumpleaños, las últimas ideas— entran después, uno a uno, y su regla de composición sigue siendo la cuestión abierta 3 del §14.
 
 **El saludo ocupa la línea del título.** Es el mismo sitio que en la agenda ocupa el periodo: la pestaña en la que se está ya se lee en la barra de abajo, de modo que escribir «Hoy» arriba gastaría la única línea grande de la pantalla en repetir lo que se acaba de tocar. Debajo, en la subcabecera, qué día es hoy escrito entero, que es lo que sitúa la lista. El saludo es de los tres de siempre según la hora, con la madrugada contada como noche, y lleva el nombre de quien mira: es el único sitio de la aplicación donde a uno se le llama por su nombre, porque en todos los demás uno es «yo» y no hace falta nombrarlo.
 
@@ -761,7 +761,67 @@ Si se prefiere reducir el riesgo, la opción A es una primera versión legítima
 
 ---
 
-## 12. Fuentes
+## 12. Sitios, y el sobre de los avisos
+
+Dos módulos que nacieron a la vez porque el segundo salió del primero. El análisis completo, con las opciones que se descartaron en cada decisión, está en `specs/propuesta-sitios.html`; aquí queda lo que se construyó.
+
+### 12.1 Sitios
+
+Lo que una casa sabe de un lugar y se le olvida cada año: qué llevar a la playa, qué hacer en el pueblo, dónde está el súper que abre los domingos. Ocupa el quinto hueco de la barra con una chincheta por icono, dibujada sobre la misma rejilla de 24 y con el mismo trazo que las otras cuatro.
+
+**El sitio es la carpeta y los apuntes cuelgan de él**, en dos alturas dentro de la misma pestaña. Es la única forma en la que la pantalla de entrada sigue siendo legible dentro de tres años —los sitios son cinco o seis para siempre y los apuntes se multiplican— y la que le da al voto y al comentario una cosa pequeña de la que colgar. De rebote, el botón flotante tiene sus dos significados sin inventarse nada: en la lista crea un sitio, dentro de uno crea un apunte allí.
+
+**Cuatro clases, y las cuatro son verbos: Llevar, Hacer, Ir y Saber.** Verbos porque es como se dicen en voz alta, y porque así «Sitios» puede ser el nombre de la pestaña sin chocar con «sitios donde ir». «Saber» es el cuarto verbo y no un cajón de sastre: nombra un contenido concreto —el súper cierra a las dos, el aparcamiento se llena a las once— en lugar de nombrar la ausencia de los otros tres, que es lo que hace que un «Otros» se trague la mitad de las filas en dos veranos. Va en el orden del viaje —se prepara, se planea, se llega— con Saber al final, porque es lo que se consulta y no lo que se recorre, y **es la que va puesta de origen**: quien no quiera clasificar no tiene que hacerlo.
+
+**Los grupos vacíos no se dibujan** y no hay apartados plegables: son cuatro grupos de cinco líneas, y plegarlos costaría tres toques para ver lo que ya cabía.
+
+**El ciclo de vida es creado y borrado, y nada más.** Sin estados, sin fechas y sin archivar. «Subir a la duna» no se agota al subir —el año que viene sigue siendo el mejor plan de allí— y un visto convertiría la guía en una lista de tareas de un solo verano, que es lo contrario de lo que se quiere guardar. Un apunte lo borra quien lo escribió; editarlo puede cualquiera de casa, porque corregir una hora es cuidar la guía y no apropiársela.
+
+**Borrar un sitio exige vaciarlo antes**, y el verbo no se esconde ni se desactiva: al tocarlo dice qué falta —«Bolonia tiene 7 apuntes. Bórralos antes de borrar el sitio»—. Un botón apagado sin explicación es la manera segura de que alguien crea que la aplicación está rota. El Worker comprueba lo mismo, porque la pantalla decide con la instantánea que tenga y otra persona puede haber apuntado algo desde entonces.
+
+**El voto es un pulgar que se pone y se quita, y enseña las iniciales de quien votó en vez de un número.** En una casa de cuatro, «MA·OS» contesta la pregunta que de verdad se hace —si esto le apetece a alguien más— y un «2» no. Es la misma regla del carril de Lío: el color dice el estado y las letras dicen quién. **Y ordena su grupo**, porque un voto que no ordena nada es un adorno; ordenando, la sombrilla sube sola al primer renglón de la lista que se lee antes de salir. En la hoja del apunte, donde hay sitio, se escribe entero: «A Marta y a ti os apetece».
+
+**La línea de la lista tiene dos blancos**: la línea entera abre el apunte y la pastilla del voto se traga su propio toque. Votar es el gesto barato y tiene que costar un toque desde la lista; abrir es lo que se hace cuando hay algo que decir.
+
+**El apunte se abre y lleva sus tres verbos arriba, junto al título**: editar, compartir y borrar, este último en el color de los regalos, que es el que la aplicación reserva para lo que no tiene vuelta. **Aquí se rompe a propósito una regla del evento**, donde borrar vive dentro del formulario «porque es una operación de edición». Un evento tiene invitados, regalos colgando y un hilo; un apunte es una línea con una descripción cuyo formulario son dos campos, y mandar a alguien a abrir un formulario para tirar una línea es abrir un formulario para nada.
+
+**Compartir va a dos alturas y con dos contenidos distintos.** El sitio entero sale en texto plano y **sin votos, sin comentarios y sin quién apuntó cada cosa**: eso es lo de dentro de casa, y lo que se manda a un amigo que se va a Bolonia es la lista. Un apunte suelto sale **con** su descripción y su hilo entero, con los nombres, porque compartir un sitio es mandar una guía y compartir un apunte es mandar una conversación. Es la primera vez que un comentario sale del círculo de casa, así que la aplicación lo dice antes de enviar: «Con su descripción y los 3 comentarios». Ninguno de los dos pasa por el modelo: el contenido ya son frases escritas por personas, y meter un modelo entre medias solo introduciría la posibilidad de que cambie lo que alguien escribió.
+
+**Apuntar con un modelo es el cuarto encargo** y no estrena maquinaria: comparte clave, modelo y pastilla de cinco propuestas con los otros tres, y se apaga solo si no hay clave puesta. Se le dice qué sitio, de qué clase se le pide, quiénes son de casa y **lo que ya está apuntado ahí**, que es lo que lo hace útil: sin eso, la primera propuesta de «llevar» a una playa es siempre la crema solar, que ya está escrita. Cada propuesta llega con su porqué y el porqué se guarda como el detalle del apunte, que es lo que separa una lista de obviedades de algo que aporta. **El verbo vive dentro del formulario de apunte nuevo** y no en la pantalla del sitio: es una acción de tres veces al año, y ahí arriba competiría con lo que se viene a leer. Y se apunta de uno en uno: un botón de «apuntar las cinco» llenaría el sitio de cosas que nadie ha leído.
+
+**Sitios es de la casa, como Lío.** Quien no vive en ella no lo recibe en su instantánea y su aplicación enseña la pestaña vacía porque no tiene con qué. De ahí sale, gratis, que el módulo **nunca evalúe la función de visibilidad** —se ve entero o no se ve nada—, que es también lo que permite que el voto enseñe iniciales sin delatar nada.
+
+### 12.2 El sobre de los avisos
+
+Lo que se acumulaba arriba de Hoy ya era un módulo: `hoy.js` importaba las peticiones de Lío y las dibujaba, y en cuanto los comentarios pasaron a avisar, esa banda tuvo dos dueños. Con dos, tendría cinco.
+
+**Un aviso es una función de la instantánea, no una fila.** No hay tabla de avisos y no debe haberla: si un aviso fuera algo escrito por el servidor, contestar un trato desde la agenda dejaría su fila ahí mintiendo, y habría que ir a borrarla. Derivado, la petición contestada desaparece porque ya no hay nada que pedir. Y esa es la razón de escribirlo aparte aunque hoy quepa en dos funciones: cuando lleguen las notificaciones remotas, el servidor tendrá que contestar esta misma pregunta para saber qué empujar, y se reescribirá con la misma forma, como ya están espejados Lío y la visibilidad.
+
+**Vive en un sobre en la cabecera que solo existe cuando hay algo.** Por eso no lleva punto encima ni número: que aparezca *es* el aviso. Es un sobre y no una campana porque esta aplicación no puede sonar —los avisos se programan en el dispositivo y no hay APNs—, y un icono que promete un ruido que nunca llega enseña a no fiarse de él. Va a la izquierda de los ajustes, que llevan su esquina desde el principio.
+
+**Dos grupos, y solo uno se descarta.** «Por contestar» no lleva aspa: descartar una petición de turno dejaría a quien la hizo esperando una respuesta que ya nadie va a dar, y sin rastro de que existió. Lo que espera a otra persona se contesta o se queda. «Nuevo» sí, con un aspa por fila y un «Vaciar» al pie para quien vuelve de una semana fuera.
+
+**Descartar es «ya lo he visto», no «no me avises más».** Si después llega un comentario nuevo en ese mismo hilo, el aviso vuelve, y tiene que volver: descartar una vez no puede dejarte fuera de esa conversación para siempre sin haberlo pedido. Abrir el aviso lo descarta también, porque ir a leerlo es la manera larga de decir lo mismo.
+
+**Un aspa y no un deslizamiento**, aunque el gesto ya exista: `deslizarHorizontal` significa hoy «llévame al siguiente» en la agenda, y darle en otra pantalla el significado de «destruye esto» es como se consigue que un gesto deje de ser fiable.
+
+**Y Hoy conserva su banda de lo que espera respuesta.** Contestar desde ahí cuesta un toque, sin abrir nada, en lo único de la aplicación donde otra persona está esperando. El sobre no le quita nada: las novedades ya no pasan por esa pantalla.
+
+**En contexto, la marca.** Que a uno le hayan comentado se ve además donde están las cosas: un punto en la tarjeta del sitio, la cuenta de comentarios en tinta en la línea del apunte, y la raya de «sin leer» dentro del propio hilo, que desaparece al salir y no antes —si se borrara al pintar, bastaría un repintado por sincronización para perder la referencia mientras se lee—.
+
+### 12.3 La cabecera, sin el punto de sincronización
+
+El punto que llevaba el estado de la sincronización se retira de la esquina: decía «al día» el 99 % del tiempo y ocupaba, para no contar nada, la esquina que peor alcanza el pulgar. Su contenido pasa a **Ajustes, en apartado propio** —no dentro de «La aplicación», que es de la instalación; esto es de los datos, y es lo que uno viene a mirar cuando sospecha que algo que escribió no ha llegado—.
+
+Allí **la línea es a la vez el dato y el verbo**, igual que la de la versión: se lee cuándo fue la última correcta, escrita en palabras —«hoy a las 14:03»—, y al tocarla sincroniza contando por dónde va.
+
+**Lo que había que no perder al quitarlo** es que alguien pueda pasarse dos días escribiendo en un dispositivo que no sube nada. Se resuelve con nada mientras va bien y una línea en la subcabecera de Hoy cuando lleva un rato fallando, que desaparece sola al arreglarse. **No va al sobre**: el sobre es de personas y sus renglones se descartan, y un fallo de sincronización no lo manda nadie ni se arregla descartándolo.
+
+**La demostración es caso aparte y conserva marca permanente**, porque es lo único que cambia el significado de todo lo que se ve: quien no sepa que está en ella creerá que ha borrado un regalo de verdad. En demostración, y solo en demostración, la cabecera lleva su pastilla escrita donde estaba el punto.
+
+---
+
+## 13. Fuentes
 
 - Apple, *Human Interface Guidelines*: barras de pestañas, navegación y presentación modal.
 - Nielsen Norman Group: las diez heurísticas de usabilidad, divulgación progresiva y reconocimiento frente a memoria.
@@ -769,7 +829,7 @@ Si se prefiere reducir el riesgo, la opción A es una primera versión legítima
 
 ---
 
-## 13. Cuestiones abiertas
+## 14. Cuestiones abiertas
 
 1. Confirmar la opción de arquitectura antes de detallar pantallas.
 2. Decidir si el botón de captura reside en la capa global inferior o en cada sección.

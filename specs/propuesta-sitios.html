@@ -1,0 +1,1182 @@
+<meta charset="utf-8">
+<title>Sitios: el módulo, el sobre de avisos y la cabecera</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css, para que lo que se mide
+     aquí sean las medidas de la aplicación y no las de una maqueta parecida. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --radio: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+    --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 66ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.veredicto { border-left-color: var(--ink); background: var(--paper-3); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 7px; max-width: 68ch; }
+  .lista-seca strong { color: var(--ink); }
+
+  .par { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 820px) { .par { grid-template-columns: 360px 1fr; } }
+  .par > div { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  .opcion { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 66ch; }
+  .opcion.elegida .letra { background: var(--tinta); color: var(--paper); }
+
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio div span:last-child { color: var(--ink-soft); }
+  .juicio strong { color: var(--ink); }
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .tabla-envoltorio { overflow-x: auto; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); }
+  .comparativa .ojo { color: var(--aviso); }
+  .comparativa .bien { color: var(--tinta); }
+  .comparativa .decidido td:first-child { white-space: nowrap; }
+
+  /* ------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 360px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--sombra); overflow: hidden; padding: 4px 14px 0;
+  }
+  .tel-rot {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 9px 0 6px;
+  }
+  .tel-titulo { font-family: var(--serif); font-size: 23px; padding: 2px 0 4px; }
+  .tel-sub { font-size: 14.5px; color: var(--ink-soft); padding-bottom: 8px; }
+  .tel-cuerpo { display: flex; flex-direction: column; padding-bottom: 12px; }
+
+  .grupo { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .grupo:first-child { margin-top: 4px; }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px;
+    text-align: left; width: 100%;
+  }
+  .tarjeta h3 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+  .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
+  .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
+
+  /* La cabecera de la aplicación: título, y los mandos contra el borde. */
+  .cabecera-maqueta { display: flex; align-items: center; gap: 8px; padding: 6px 0 0; }
+  .titulo-maqueta { font-family: var(--serif); font-size: 21px; flex: 1; min-width: 0; }
+  .icono-cabecera {
+    width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+    color: var(--ink-soft); flex: none; position: relative;
+  }
+  .icono-cabecera svg { width: 20px; height: 20px; }
+  .icono-cabecera[data-lleno="si"] { color: var(--tinta); }
+  .globo-icono {
+    position: absolute; top: 3px; right: 3px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--tinta); border: 1.5px solid var(--paper);
+  }
+  .punto-sync { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
+
+  .hoja-cabeza { display: flex; align-items: flex-start; gap: 10px; padding: 2px 0 4px; }
+  .hoja-cabeza .tel-titulo { flex: 1; min-width: 0; }
+  .hoja-verbos { display: flex; gap: 6px; flex: none; padding-top: 4px; }
+  .icono-accion {
+    width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; flex: none;
+    background: var(--tinta-suave); color: var(--tinta);
+  }
+  .icono-accion svg { width: 19px; height: 19px; }
+  .icono-accion[data-tono="discreto"] { color: var(--ink-soft); background: var(--paper-2); }
+  .icono-accion[data-tono="peligro"] { color: var(--regalo); background: transparent; }
+
+  .apunte {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--line); min-height: 44px;
+  }
+  .apunte:last-child { border-bottom: 0; }
+  .apunte-texto { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .apunte-texto > span { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .apunte-detalle { font-size: 13.5px; color: var(--ink-soft); }
+  .apunte-pie { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .04em; }
+
+  .voto {
+    display: inline-flex; align-items: center; gap: 5px; flex: none;
+    min-height: 30px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2);
+    font-family: var(--mono); font-size: 11px; color: var(--ink-soft); letter-spacing: .06em;
+  }
+  .voto[data-mio="si"] { background: var(--tinta-suave); border-color: var(--tinta); color: var(--tinta); }
+  .voto[data-vacio="si"] { color: var(--ink-faint); }
+  .voto .pulgar { font-size: 12px; }
+
+  .cuenta-com { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); display: inline-flex; align-items: center; gap: 4px; }
+  .cuenta-com[data-sin-leer="si"] { color: var(--tinta); }
+  .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); display: inline-block; }
+
+  .tabbar {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid var(--line); margin: 0 -14px; padding: 0 2px; background: var(--paper);
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
+    padding: 8px 4px; min-height: 52px; position: relative;
+  }
+  .tab svg { width: 22px; height: 22px; display: block; }
+  .tab[data-actual="si"] { color: var(--tinta); }
+  .tab .globo {
+    position: absolute; top: 6px; right: calc(50% - 16px);
+    width: 8px; height: 8px; border-radius: 50%; background: var(--tinta);
+    border: 1.5px solid var(--paper);
+  }
+
+  .comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
+  .comentario.nuevo { border-left-color: var(--tinta); }
+  .comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+  .comentario p { font-size: 15px; }
+  .lista { display: flex; flex-direction: column; gap: 9px; }
+
+  .raya-sin-leer {
+    display: flex; align-items: center; gap: 9px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--tinta);
+  }
+  .raya-sin-leer::after { content: ""; flex: 1; height: 1px; background: var(--tinta); opacity: .45; }
+
+  .banda { background: var(--tinta-suave); border-radius: var(--radio); padding: 11px 13px; display: flex; flex-direction: column; gap: 6px; }
+  .banda .rot { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--tinta); }
+  .banda p { font-size: 15px; }
+  .banda .acciones { display: flex; gap: 8px; padding-top: 2px; }
+  .banda .acciones span {
+    flex: 1; text-align: center; font-size: 14px; padding: 6px 8px; border-radius: 9px;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+  }
+  .aviso-fila {
+    display: grid; grid-template-columns: 20px 1fr auto; gap: 9px; align-items: baseline;
+    padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 15px;
+  }
+  .descartar {
+    font-size: 17px; line-height: 1; color: var(--ink-faint);
+    width: 30px; height: 30px; display: grid; place-items: center; flex: none;
+    border-radius: 8px; align-self: center;
+  }
+  .vaciar {
+    font-size: 14px; color: var(--ink-soft); text-align: center;
+    padding-top: 4px; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .progreso { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .progreso li {
+    display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: baseline;
+    font-size: 14px; color: var(--ink-soft);
+  }
+  .progreso .marca { font-family: var(--mono); font-size: 12px; color: var(--tinta); }
+  .progreso .marca.curso { color: var(--ink-faint); }
+  .aviso-fila:last-child { border-bottom: 0; }
+  .aviso-fila .de-donde { font-size: 15px; }
+  .aviso-fila em { font-style: normal; color: var(--ink-soft); }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--paper-2); }
+  .seg span { flex: 1; text-align: center; font-size: 13px; padding: 6px 6px; color: var(--ink-soft); }
+  .seg span[data-sel="si"] { background: var(--tinta); color: var(--paper); }
+
+  .propuesta {
+    border: 1px solid var(--line); background: var(--paper-2); border-radius: var(--radio);
+    padding: 12px 13px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .propuesta-cuerpo { display: grid; grid-template-columns: 22px 1fr 22px; gap: 8px; align-items: center; }
+  .propuesta-flecha { text-align: center; color: var(--ink-faint); font-size: 17px; }
+  .propuesta-texto { font-size: 15px; }
+  .propuesta-texto small { display: block; color: var(--ink-soft); font-size: 13px; padding-top: 2px; }
+  .propuesta-pie { display: flex; align-items: center; gap: 8px; }
+  .boton-mini {
+    font-size: 13px; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  }
+  .boton-mini[data-tono="principal"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .propuesta-cuenta { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+  .codigo {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--ink-soft);
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 13px 15px; overflow-x: auto; white-space: pre;
+  }
+  .codigo b { color: var(--ink); font-weight: 600; }
+  .codigo i { color: var(--aviso); font-style: normal; }
+
+  .pie { border-top: 1px solid var(--line); padding-top: 18px; color: var(--ink-faint); font-size: 14px; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Propuesta · julio de 2026 · cuarta vuelta</p>
+    <h1>Sitios: el módulo, y los avisos como pieza común</h1>
+    <p>
+      El nombre está elegido, la forma también, y en esta tercera vuelta quedan cerradas
+      las clases, la hoja del apunte con sus tres verbos arriba, el modelo que propone
+      apuntes, qué se comparte de un sitio y qué de un apunte, y Buscar, que se va sin
+      sustituto.
+    </p>
+    <p>
+      Y los avisos dejan de ser una cuestión abierta: <strong>van en un sobre en la
+      cabecera que solo existe cuando hay algo</strong>, y llevan las dos cosas —lo que hay
+      que contestar y lo que solo ha pasado—, con la segunda descartable una a una. Eso
+      arrastra dos consecuencias que esta vuelta desarrolla: una tabla pequeña para lo
+      visto, porque un descarte que se deshace al abrir el iPad no es un descarte; y el
+      sitio que deja libre en la cabecera el punto de sincronización, que se va a Ajustes.
+    </p>
+    <p>
+      <strong>Con la parte 10, el documento queda cerrado y no hay nada pendiente de
+      decidir.</strong> Allí está también el orden en que se construye.
+    </p>
+  </header>
+
+  <!-- ============================================================ Decidido -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 1</p>
+    <h2>Lo que queda cerrado</h2>
+
+    <div class="tabla-envoltorio">
+      <table class="comparativa">
+        <tbody>
+          <tr class="decidido">
+            <td><strong>El nombre</strong></td>
+            <td><strong>Sitios</strong>, en el quinto hueco de la barra, con la chincheta por icono. Dentro, un sitio tiene <strong>apuntes</strong>. En el código, las tablas son <code>lugar</code> y <code>apunte</code>.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>La forma</strong></td>
+            <td>El sitio es la carpeta: la pestaña lista sitios, dentro están sus apuntes agrupados por verbo.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Las clases</strong></td>
+            <td><strong>Llevar · Hacer · Ir · Saber</strong>, y «Saber» es la que va puesta de origen.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>El apunte</strong></td>
+            <td>Con descripción, y se abre. En su hoja, tres verbos arriba junto al título: <strong>editar, compartir y borrar</strong>.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Compartir</strong></td>
+            <td>El sitio entero, sin votos ni comentarios. Y el apunte suelto, ese <strong>sí con la descripción y el hilo</strong>.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>El voto</strong></td>
+            <td>Un pulgar positivo que se pone y se quita, con las iniciales de quien votó en vez de un número, y que ordena su grupo.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Borrar un sitio</strong></td>
+            <td><strong>Exige vaciarlo antes.</strong> No arrastra a sus apuntes: cambia respecto de la primera vuelta.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Los comentarios</strong></td>
+            <td>Opción B: un registro de «cosas que admiten comentario», el <code>CHECK</code> fuera, e idea y regalo enchufados de paso.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Los avisos</strong></td>
+            <td>Un <strong>sobre en la cabecera que solo existe cuando hay algo</strong>, con dos grupos: lo que hay que contestar y lo que solo ha pasado. Lo segundo se descarta con una ×; lo primero, no. Derivados de la instantánea, con una tabla <code>visto</code> para lo descartado. Las remotas van aparte y después.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>La cabecera</strong></td>
+            <td>El punto de sincronización <strong>se retira</strong> y pasa a Ajustes, en apartado propio, con la fecha de la última correcta y la línea que además es el verbo.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Buscar</strong></td>
+            <td>Se retira sin sustituto. Si algún día duele, una lupa en la cabecera de Regalos; nunca otra vez un hueco de la barra.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota pega">
+      <p>
+        <strong>Lo que cuesta borrar por partes, dicho antes de construirlo.</strong>
+        Exigir el sitio vacío es lo correcto —nadie borra sin querer siete cosas que
+        escribieron cuatro personas—, pero deja un camino feo: vaciar Bolonia son siete
+        borrados de dos toques cada uno. Se propone tapar ese agujero con una sola cosa:
+        el verbo de borrar el sitio <strong>no se esconde ni se desactiva</strong>, sino que
+        al tocarlo dice qué falta —«Bolonia tiene 7 apuntes. Bórralos antes de borrar el
+        sitio»— y ofrece volver a la lista. Un botón desactivado sin explicación es la
+        manera segura de que alguien crea que la aplicación está rota.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================ El apunte -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 2</p>
+    <h2>El apunte: la cuarta clase, y su hoja</h2>
+
+    <h3>Cómo se llama la clase general</h3>
+    <p>
+      Las tres primeras son verbos —Llevar, Hacer, Ir— y eso no es casual: son lo que se
+      dice en voz alta. La cuarta tiene que caber en esa misma gramática o el conjunto se
+      rompe.
+    </p>
+
+    <div class="tabla-envoltorio">
+      <table class="comparativa">
+        <thead><tr><th>Nombre</th><th>Qué le pasa con el uso</th><th></th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Otros</td>
+            <td>Es el cajón de sastre canónico. En dos veranos se traga la mitad de las filas, porque clasificar cuesta y «Otros» nunca se equivoca.</td>
+            <td class="ojo">No</td>
+          </tr>
+          <tr>
+            <td>Notas</td>
+            <td>Funciona, pero rompe la gramática: tres verbos y un sustantivo. Y choca con el detalle del apunte, que también es una nota.</td>
+            <td class="ojo">Casi</td>
+          </tr>
+          <tr>
+            <td><strong>Saber</strong></td>
+            <td>Cuarto verbo: «cosas que saber». Nombra un contenido concreto —el súper cierra a las dos, se paga en efectivo, el aparcamiento se llena a las once— en vez de nombrar la ausencia de los otros tres.</td>
+            <td class="bien">Sí</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>Llevar · Hacer · Ir · Saber</strong>, en ese orden, que es el del viaje:
+        se prepara, se planea, se llega y, mientras tanto, hay cosas que conviene saber.
+        Saber va el último porque es lo que se consulta, no lo que se recorre.
+        <strong>Por defecto se propone «Saber» y no «Hacer»</strong> —cambia respecto de la
+        primera vuelta—: ahora que existe un cajón sin filo, ponerlo de origen hace que
+        quien no quiera clasificar no tenga que hacerlo, y quien sí quiera lo mueve de un
+        toque en el conmutador de cuatro.
+      </p>
+    </div>
+
+    <h3 style="padding-top: 8px;">La hoja del apunte</h3>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">Apunte abierto</p>
+          <div class="hoja-cabeza">
+            <p class="tel-titulo" style="padding-bottom: 0;">Subir a la duna al atardecer</p>
+            <div class="hoja-verbos">
+              <span class="icono-accion" title="Editar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+              </span>
+              <span class="icono-accion" data-tono="discreto" title="Compartir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg>
+              </span>
+              <span class="icono-accion" data-tono="peligro" title="Borrar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+              </span>
+            </div>
+          </div>
+          <p class="tel-sub">Bolonia · Hacer · lo apuntó Marta</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p style="font-size: 15.5px; color: var(--ink-soft);">
+                Se tarda como media hora y hay que ir con zapatillas, la arena quema hasta
+                las ocho. Merece la pena llegar arriba antes de que se ponga el sol.
+              </p>
+              <div style="display: flex; align-items: center; gap: 10px; padding-top: 4px;">
+                <span class="voto" data-mio="si"><span class="pulgar">👍</span>MA·OS</span>
+                <span style="font-size: 13.5px; color: var(--ink-soft);">A Marta y a ti os apetece</span>
+              </div>
+            </div>
+
+            <div class="grupo">
+              <p class="grupo-titulo">Comentarios (3)</p>
+              <div class="lista">
+                <div class="comentario">
+                  <p class="comentario-meta">Óscar · el martes</p>
+                  <p>¿Se puede subir con el carro?</p>
+                </div>
+                <p class="raya-sin-leer">Sin leer</p>
+                <div class="comentario nuevo">
+                  <p class="comentario-meta">Marta · ayer</p>
+                  <p>Ni de broma, es todo arena. La llevamos en brazos.</p>
+                </div>
+                <div class="comentario nuevo">
+                  <p class="comentario-meta">Julia · hace 2 horas</p>
+                  <p>Yo me apunto pero el sábado no, que llego tarde</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Un apunte se abre, y por eso puede llevar descripción.</strong> La línea
+            de la lista enseña el título y, si la hay, la primera línea del detalle en gris;
+            lo demás vive dentro. Es la misma división que ya hacen la idea y el regalo, y es
+            lo que permite que un apunte sea a la vez una línea de lista de la compra
+            —«Sombrilla»— y un párrafo de guía.
+          </p>
+          <p>
+            <strong>La cabecera dice las tres cosas que sitúan el apunte</strong>: de qué
+            sitio es, de qué clase y quién lo apuntó. El sitio es tocable y devuelve allí,
+            que es cómo se sale de un apunte al que se ha llegado desde un aviso y no desde
+            su lista.
+          </p>
+          <p>
+            <strong>Y los verbos van arriba, junto al título</strong>, con los iconos y los
+            tonos que ya usa el detalle del evento: editar en tinta, compartir en gris y
+            <strong>borrar en el color de los regalos</strong>, que es el que la aplicación
+            reserva para lo que no tiene vuelta. Son tres, y el evento tiene dos.
+          </p>
+          <p>
+            <strong>La diferencia con el evento es a propósito y conviene dejarla escrita</strong>,
+            porque rompe una regla que hay escrita en el código: allí borrar no vive en la
+            cabecera sino dentro del formulario, «porque es una operación de edición y está
+            donde se edita». Un evento tiene invitados, regalos colgando y un hilo; un
+            apunte es una línea con una descripción, y su formulario son dos campos.
+            Mandar a alguien a abrir un formulario para tirar una línea es abrir un
+            formulario para nada. <strong>Cuando lo que se borra es del tamaño de lo que se
+            escribe, el verbo puede estar a la vista.</strong>
+          </p>
+          <p>
+            <strong>El voto se escribe en letra debajo de la pastilla</strong> —«A Marta y a
+            ti os apetece»—. En la lista, con cinco líneas seguidas, las iniciales son lo
+            único que cabe; en la hoja hay sitio para decirlo entero, y una hoja abierta es
+            donde uno decide si se apunta.
+          </p>
+          <p>
+            <strong>La raya de «sin leer» va dentro del hilo</strong>, no al principio de la
+            hoja: lo que se busca al abrir un aviso es por dónde iba la conversación.
+            Desaparece al salir, y no antes: si se borrara al pintar, bastaría un
+            repintado por sincronización para perder la referencia mientras se lee.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ IA -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 3</p>
+    <h2>Apuntar con un modelo</h2>
+    <p>
+      La aplicación ya le pide tres cosas escritas a un modelo —contar los días antes de
+      compartirlos, proponer un regalo y felicitar un cumpleaños—, y las tres comparten
+      clave, modelo y una instrucción editable en Ajustes que se puede reescribir. Esta es
+      la cuarta y no estrena maquinaria: <strong>una instrucción más en la misma pantalla y
+      un extremo más en el Worker</strong>, con la misma pastilla de cinco propuestas que
+      ya se pasan en el cumpleaños y en el regalo.
+    </p>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">Sitio abierto · con el modelo</p>
+          <p class="tel-titulo">🏖 Bolonia</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <div class="seg">
+                <span data-sel="si">Llevar</span><span>Hacer</span><span>Ir</span><span>Saber</span>
+              </div>
+              <div class="propuesta">
+                <div class="propuesta-cuerpo">
+                  <span class="propuesta-flecha">‹</span>
+                  <div class="propuesta-texto">
+                    Crema solar y after sun
+                    <small>Allí el viento engaña y se quema todo el mundo el primer día.</small>
+                  </div>
+                  <span class="propuesta-flecha">›</span>
+                </div>
+                <div class="propuesta-pie">
+                  <span class="boton-mini" data-tono="principal">Apuntar</span>
+                  <span class="boton-mini">Otras cinco</span>
+                  <span class="propuesta-cuenta">2 / 5</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Se le dice qué sitio, qué clase y quién pregunta</strong>, que es
+            exactamente lo que se pidió, y una cosa más que hace falta para que sirva:
+            <strong>lo que ya está apuntado ahí</strong>. Sin eso, la primera propuesta de
+            «Llevar» en una playa es siempre la crema solar, que ya está escrita desde el
+            primer día, y la pastilla se gasta en repetir lo que uno ya sabe.
+          </p>
+          <p>
+            <strong>Quién pregunta importa menos de lo que parece, pero importa:</strong>
+            no para adivinar gustos —eso sería inventar—, sino para el tono y para la edad
+            de la casa. La familia son cuatro y una de ellas es una niña; «llevar» cambia
+            bastante si el modelo sabe que en el viaje va un carro.
+          </p>
+          <p>
+            <strong>Cada propuesta llega con su porqué</strong>, en la segunda línea, y el
+            porqué se guarda como el detalle del apunte. Es lo que separa una lista de
+            obviedades de algo que aporta: «crema solar» no vale nada; «allí el viento
+            engaña y se quema todo el mundo el primer día» es la razón por la que existiría
+            este módulo.
+          </p>
+          <p>
+            <strong>Se apunta de uno en uno.</strong> Un botón de «apuntar las cinco» sería
+            un toque más cómodo y llenaría el sitio de cosas que nadie ha leído: la guía
+            valdría exactamente lo que valen las notas que nadie escribió.
+          </p>
+        </div>
+
+        <div class="nota pega">
+          <p>
+            <strong>Dónde vive el verbo, que es la única duda de esta parte.</strong> No
+            puede ser un botón permanente en la pantalla del sitio: es una acción de tres
+            veces al año, y ahí arriba compite con lo que se viene a leer. Se propone que
+            viva <strong>dentro del formulario de apunte nuevo</strong>, debajo del campo del
+            título —«¿Ideas para llevar a Bolonia?»—, que es el único momento en que uno
+            está pensando justo eso. La alternativa es un renglón al final de cada grupo,
+            «Pedir ideas de llevar», que se lee mejor pero mete cuatro botones de modelo en
+            una pantalla que tiene cuatro grupos.
+          </p>
+          <p>
+            <strong>Y se apaga solo si no hay clave puesta</strong>, como la felicitación:
+            sin clave de Anthropic el bloque no existe, no falla.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="codigo">POST /api/sitio/apuntar          <i>// junto a /api/regalo/sugerir y /api/cumple/felicitar</i>
+  { lugar_id, clase, descartadas: [] }
+  → { propuestas: [{ titulo, porque }], modelo }
+
+material que compone el Worker · <b>el sitio</b> (nombre y sus apuntes de esa clase)
+                                 <b>la clase</b> · <b>quién pregunta</b> y quiénes son de casa
+instrucción                    · <b>configuracion.apunte</b>, editable en Ajustes</div>
+  </section>
+
+  <!-- ========================================================== Compartir -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 4</p>
+    <h2>Compartir un sitio</h2>
+    <p>
+      La hoja nativa ya está montada y en uso en dos sitios —el plan de la semana y la
+      ficha de una persona—, así que esto es decidir <em>qué</em> se comparte, no cómo.
+    </p>
+
+    <div class="par">
+      <div>
+        <div class="codigo">🏖 <b>Bolonia</b>
+
+<b>Llevar</b>
+· Sombrilla — allí no hay
+  ni una sombra
+· Monedas para el
+  parquímetro
+· Zapatillas para subir
+  a la duna
+
+<b>Hacer</b>
+· Subir a la duna al
+  atardecer
+· Las ruinas romanas, por
+  la mañana temprano
+
+<b>Ir</b>
+· Súper del pueblo —
+  cierra a las 14 los
+  domingos
+· Chiringuito de las
+  tortillitas</div>
+      </div>
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Se comparte el sitio entero, en texto plano y compuesto en el
+            dispositivo.</strong> Sin enlace: no hay a dónde apuntar —quien lo recibe casi
+            nunca tiene la aplicación— y una guía es justamente lo que se lee de un WhatsApp
+            sin abrir nada.
+          </p>
+          <p>
+            <strong>Y sale sin votos, sin comentarios y sin quién apuntó cada cosa.</strong>
+            Eso es lo de dentro de la casa; lo que se manda a un amigo que se va a Bolonia
+            es la lista. También evita de un plumazo la pregunta incómoda: un sitio se
+            comparte hacia fuera del círculo, y ahí no puede viajar quién dijo qué.
+          </p>
+          <p>
+            <strong>No pasa por el modelo.</strong> El plan de la semana sí lo hace, porque
+            allí hay que convertir filas en un párrafo que se lea. Aquí el contenido ya son
+            frases escritas por personas, y meter un modelo entre medias solo introduciría
+            la posibilidad de que cambie lo que alguien escribió.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="padding-top: 10px;">Y un apunte suelto, con todo</h3>
+
+    <div class="par">
+      <div>
+        <div class="codigo">📍 <b>Subir a la duna al
+   atardecer</b>
+🏖 Bolonia
+
+Se tarda como media hora y
+hay que ir con zapatillas,
+la arena quema hasta las
+ocho. Merece la pena llegar
+arriba antes de que se
+ponga el sol.
+
+<b>Óscar</b> · ¿Se puede subir
+con el carro?
+<b>Marta</b> · Ni de broma, es
+todo arena. La llevamos en
+brazos.
+<b>Julia</b> · Yo me apunto pero
+el sábado no, que llego
+tarde</div>
+      </div>
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Desde su hoja, con el mismo icono, y aquí sí va todo:</strong> el
+            detalle entero y el hilo de comentarios con los nombres. Es lo contrario de lo
+            que hace el sitio completo, y la diferencia no es un descuido: compartir un
+            sitio es mandar una guía, y compartir un apunte es mandar
+            <em>una conversación</em> —«mira lo que dice Marta de subir con el carro»—. Sin
+            los comentarios sería la mitad del mensaje, y sin los nombres no se entendería
+            quién contesta a quién.
+          </p>
+          <p>
+            <strong>Lo que hay que saber de eso, en una línea:</strong> es la primera vez
+            que un comentario sale del círculo de casa. No hay nada que impedir —lo comparte
+            una persona a mano, sabiendo lo que manda—, pero sí conviene que la hoja de
+            compartir lo diga antes, como ya lo dice la del evento con su pista debajo:
+            <strong>«Con su descripción y los 3 comentarios»</strong>. Nadie tiene que
+            descubrir después lo que acaba de enviar.
+          </p>
+          <p>
+            <strong>Un apunte sin comentarios se comparte igual</strong>, y entonces la
+            pista dice solo «Con su descripción». La frase se compone con lo que hay, que es
+            lo que la hace fiable.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= Avisos -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 5</p>
+    <h2>El sobre</h2>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>Decidido: el sobre, y de la forma B —solo existe cuando hay algo—.</strong>
+        Y con un motivo que cambia lo que lleva dentro: <strong>ahí van las
+        notificaciones, no solo lo que hay que contestar</strong>. Vuelve, por tanto, el
+        segundo grupo, y con él la pieza que la vuelta anterior no necesitaba:
+        <strong>una notificación se puede descartar</strong>.
+      </p>
+      <p>
+        Un icono que aparece <em>es</em> el aviso, así que no lleva punto encima ni número:
+        el aviso es que esté. Va <strong>a la izquierda de los ajustes</strong>, que llevan
+        su esquina desde el principio y no se mueven. Y lo que se propone es que
+        <strong>Hoy conserve su banda</strong> de lo que espera respuesta: no la ensucia
+        nadie —eso es lo que ahora vive en el sobre— y contestar desde ahí sigue costando un
+        toque. Si prefieres Hoy sin banda ninguna, es una línea menos y el sobre lo lleva
+        todo; queda apuntado en la parte 10.
+      </p>
+    </div>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">El sobre abierto</p>
+          <div class="cabecera-maqueta">
+            <span class="titulo-maqueta">Avisos</span>
+            <span class="icono-cabecera" data-lleno="si">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </span>
+          </div>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Por contestar</p>
+              <div class="banda">
+                <p>Marta te pide el turno de mañana del jueves</p>
+                <div class="acciones"><span>Sí, lo saco</span><span>No puedo</span></div>
+              </div>
+            </div>
+            <div class="grupo">
+              <p class="grupo-titulo">Nuevo</p>
+              <div>
+                <div class="aviso-fila">
+                  <span class="de-donde">📍</span>
+                  <span>Marta y Julia, en <em>«Subir a la duna al atardecer»</em><br><span class="apunte-pie">hace 2 horas</span></span>
+                  <span class="descartar" title="Descartar">×</span>
+                </div>
+                <div class="aviso-fila">
+                  <span class="de-donde">🎁</span>
+                  <span>Óscar, en <em>«la bici de Julia»</em><br><span class="apunte-pie">ayer</span></span>
+                  <span class="descartar" title="Descartar">×</span>
+                </div>
+                <div class="aviso-fila">
+                  <span class="de-donde">📅</span>
+                  <span>Marta, en <em>«Comida en casa de los abuelos»</em><br><span class="apunte-pie">el martes</span></span>
+                  <span class="descartar" title="Descartar">×</span>
+                </div>
+              </div>
+              <p class="vaciar">Vaciar</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Dos grupos, y solo uno se descarta.</strong> «Por contestar» no lleva ×
+            a propósito: descartar una petición de turno dejaría a Marta esperando una
+            respuesta que ya nadie va a dar, y sin rastro de que existió. Lo que espera a
+            otra persona <strong>se contesta o se queda</strong>. Lo de abajo, en cambio,
+            solo ha pasado: descartarlo no le quita nada a nadie.
+          </p>
+          <p>
+            <strong>Descartar es «ya lo he visto», no «no me avises más».</strong> Si
+            después llega un comentario nuevo en ese mismo hilo, el aviso vuelve — y tiene
+            que volver, o descartar una vez sería quedarse fuera de esa conversación para
+            siempre sin haberlo pedido. Silenciar un hilo entero es otra cosa, y se deja
+            apuntada sin construir: hasta que alguien no se queje de un hilo concreto, es
+            un ajuste para un problema que no ha pasado.
+          </p>
+          <p>
+            <strong>Y abrir el aviso también lo descarta</strong>, porque ir a leerlo es la
+            manera larga de decir lo mismo. La × está para lo que no hace falta abrir:
+            ya se sabe qué dice con leer el renglón.
+          </p>
+        </div>
+
+        <div class="nota">
+          <p>
+            <strong>Una × y no un deslizamiento, aunque el gesto ya exista.</strong>
+            <code>deslizarHorizontal</code> está escrito en <code>ui.js</code> y lo usa la
+            agenda para pasar de semana y de mes. Ese gesto significa hoy
+            <em>«llévame al siguiente»</em>, y darle en otra pantalla el significado de
+            <em>«destruye esto»</em> es como se consigue que un gesto deje de ser fiable.
+            Una × se ve, se explica sola y no compite con nada.
+          </p>
+          <p>
+            <strong>«Vaciar» al pie</strong>, que marca como visto todo el grupo de abajo y
+            no toca el de arriba. Es el verbo de quien vuelve de una semana fuera, y sin él
+            la única salida sería ir tocando × siete veces.
+          </p>
+          <p>
+            <strong>Y el sobre no tiene estado vacío</strong>, que es el regalo de la forma
+            B: si no hay nada, el icono no está. La única costura es descartar el último con
+            la hoja abierta —el icono desaparecería debajo—, y se resuelve dejando la hoja
+            puesta, diciendo «Nada más», hasta que uno la cierre. Cerrarse sola en la cara
+            de quien acaba de tocar es peor que una línea de más.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="nota pega">
+      <p>
+        <strong>Lo que esto cambia respecto de la vuelta anterior, y hay que decirlo
+        claro: la marca de leído deja de ser local y pasa a viajar.</strong> Antes se
+        propuso guardarla en el dispositivo, con dos costuras aceptadas —un móvil nuevo
+        enseña todo como sin leer, y leer en el iPad no apaga el punto del iPhone—. Eso valía
+        cuando la marca era pasiva. <strong>Un descarte no es pasivo: es un acto</strong>, y
+        un acto que se deshace solo al abrir el otro aparato no es un acto, es una sugerencia.
+        Se descarta el aviso en el iPhone, se coge el iPad y está ahí otra vez: la bandeja
+        deja de ser de fiar a la segunda vez que pasa.
+      </p>
+      <p>
+        <strong>Así que entra una tabla pequeña, <code>visto</code></strong>: persona, tipo
+        y objeto, y hasta qué momento se ha visto. Una fila por persona e hilo, que solo
+        viaja a su dueño en la instantánea. Escribe al abrir el hilo, al tocar la × y al
+        vaciar, que son las tres formas de decir lo mismo. <strong>Y es la que va a hacer
+        falta igualmente cuando llegue APNs</strong>: el servidor no puede empujar lo que ya
+        has visto, y para saberlo tiene que tenerlo escrito en algún sitio que no sea tu
+        teléfono.
+      </p>
+    </div>
+
+    <h3 style="padding-top: 6px;">Lo que no cambia: el registro sigue siendo la pieza</h3>
+    <p>
+      Quien reúne todo esto es <code>avisos.js</code>, derivado de la instantánea. Ahora sí
+      tiene sus dos fuentes desde el primer día, y cada una declara lo mismo:
+      <strong>de dónde viene</strong> —emoji y a dónde lleva—, <strong>si espera respuesta o
+      solo ha pasado</strong>, y <strong>desde cuándo</strong>. Lo que se descarta se
+      descuenta comparando con <code>visto</code>, que es una condición más de la misma
+      función y no una pieza aparte.
+    </p>
+    <p>
+      La razón de fondo de que sea una función y no una tabla de avisos sigue siendo la
+      misma, y ahora se ve mejor: si un aviso fuera una fila escrita por el Worker, contestar
+      un trato desde la agenda dejaría su fila ahí mintiendo, y habría que ir a borrarla.
+      Derivado, la petición contestada desaparece porque ya no hay nada que pedir. Y cuando
+      llegue APNs, el servidor tendrá que contestar esa misma pregunta —«¿qué tiene pendiente
+      esta persona, y qué no ha visto todavía?»—, que se reescribe con la misma forma como ya
+      están espejados Lío y la visibilidad.
+    </p>
+
+    <div class="codigo">// avisos.js — las dos fuentes, y el descarte como condición de la misma función
+const FUENTES = [
+  { de: 'lio',        emoji: '🐾', clase: <b>'contestar'</b>, buscar: tratosParaMi },
+  { de: 'comentario', emoji: null, clase: <b>'nuevo'</b>,     buscar: hilosConRespuesta },
+];
+
+<i>// 'contestar' no se descarta: se contesta o se queda.</i>
+const descartable = (aviso) =&gt; aviso.clase === 'nuevo';</div>
+  </section>
+
+  <!-- ========================================================== Cabecera -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 6</p>
+    <h2>La cabecera: el punto de sincronización se va a Ajustes</h2>
+    <p>
+      Hoy la esquina de arriba lleva dos mandos: el punto de sincronización y los ajustes.
+      El punto se retira y su contenido pasa a Ajustes, en un apartado propio, con la fecha
+      de la última correcta y con la misma forma que tiene la versión: <strong>la línea es a
+      la vez el dato y el verbo</strong>, y al tocarla cuenta por dónde va sin abrir nada.
+      Con eso, y con el sobre de la parte 5, la cabecera acaba teniendo los mismos dos
+      mandos que tenía —pero uno de ellos solo cuando hace falta.
+    </p>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">Ajustes · apartado nuevo</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Sincronización</p>
+              <p style="font-size: 15px;">Última actualización: hoy a las 14:03.</p>
+              <ul class="progreso">
+                <li><span class="marca">✓</span>Enviado lo que había sin subir</li>
+                <li><span class="marca">✓</span>Traída la última copia</li>
+                <li><span class="marca curso">·</span>Guardando…</li>
+              </ul>
+            </div>
+            <div class="grupo">
+              <p class="grupo-titulo">La aplicación</p>
+              <p style="font-size: 15px; color: var(--ink-soft);">Versión instalada: 1.16.0.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Apartado propio y no dentro de «La aplicación».</strong> Ahí viven la
+            versión y lo legal, que son de la instalación; la sincronización es de los datos,
+            y es lo que uno viene a mirar cuando sospecha que algo que escribió no ha llegado.
+            Mezclarlas obligaría a abrir un apartado que se llama otra cosa.
+          </p>
+          <p>
+            <strong>La fecha se escribe entera y en palabras</strong> —«hoy a las 14:03»,
+            «ayer a las 21:40», «el 12 de julio»—, no en una marca de tiempo. Es un dato que
+            se lee para tranquilizarse, y «hoy» tranquiliza en un golpe de vista; una fecha
+            completa hay que descifrarla para llegar a la misma conclusión.
+          </p>
+          <p>
+            <strong>Y el relato de pasos es el de la versión</strong>, que ya está escrito y
+            probado: cada fase cierra la anterior y la lista se lee de arriba abajo como lo
+            que ha ido pasando, no como una promesa. Sincronizar tiene además tres pasos
+            reales que contar —subir lo pendiente, traer la copia, guardarla—, así que el
+            relato no es adorno: dice en cuál de los tres se quedó cuando falla.
+          </p>
+        </div>
+
+        <div class="nota pega">
+          <p>
+            <strong>Lo que se pierde al quitar el punto, que es lo único delicado de esta
+            parte.</strong> Ese punto era el único sitio de la aplicación donde se veían
+            <strong>tres estados</strong>: sin conexión, sin sincronizar y
+            <strong>demostración</strong>. Con él fuera, alguien puede pasarse dos días
+            escribiendo en un dispositivo que no sube nada y enterarse cuando abra Ajustes,
+            que es un sitio al que no se va.
+          </p>
+          <p>
+            <strong>Lo que se propone: nada mientras va bien, y una línea cuando no.</strong>
+            En la subcabecera de Hoy —debajo del saludo, donde va la fecha— aparece
+            «Sin conexión» o «Sin sincronizar desde ayer» <em>solo</em> cuando lleva un rato
+            fallando, y desaparece sola al arreglarse. El 99 % de los días no hay nada que
+            enseñar, que era el argumento por el que el punto perdió su palabra; la diferencia
+            es que el 1 % restante ahora se lee en vez de leerse en un color.
+          </p>
+          <p>
+            <strong>Y no va al sobre</strong>, aunque tenga sitio: el sobre es de personas
+            —alguien te pide algo, alguien te ha contestado— y sus renglones se descartan.
+            Un fallo de sincronización no lo manda nadie y descartarlo no lo arregla. Meterlo
+            ahí sería enseñar a descartar lo único que no se debe.
+          </p>
+        </div>
+
+        <div class="nota">
+          <p>
+            <strong>La demostración es caso aparte y necesita su marca permanente.</strong>
+            Es lo único que cambia el significado de todo lo que se ve: quien no sepa que
+            está en la demostración creerá que ha borrado un regalo de verdad. Se propone que
+            <strong>en demostración, y solo en demostración</strong>, la cabecera lleve su
+            pastilla escrita —«Demostración»— donde estaba el punto. Para quien tiene cuenta,
+            la esquina queda limpia; para quien está mirando datos inventados, lo pone por
+            escrito y no en un color que hay que aprenderse.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================= Comentarios -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 7</p>
+    <h2>Los comentarios, tal como quedan</h2>
+    <p>
+      Se confirma la opción B de la primera vuelta. Recordado en corto, porque es lo que
+      hay que construir: hoy la pieza está compartida de verdad
+      —<code>pwa/publico/js/comentarios.js</code>— pero <strong>solo se la llama con
+      <code>'evento'</code></strong>, en dos sitios, mientras la tabla, el Worker, el modelo
+      en Python y <code>especificacion.md</code> §5.3 admiten tres tipos. Una idea o un
+      regalo pueden tener hilo y ninguna pantalla lo enseña.
+    </p>
+    <ul class="lista-seca">
+      <li><strong>Un registro por lado</strong> —Worker, Python y webapp— que diga para cada tipo dónde está su colección. Los <code>if</code> desaparecen; dar de alta el apunte es una línea.</li>
+      <li><strong>El <code>CHECK</code> de SQL se retira</strong>, en una migración de las de una vez que rehace la tabla. Repetir en SQLite una regla que ya viven dos capas cuesta una migración por módulo nuevo, y un <code>CHECK</code> no se altera.</li>
+      <li><strong>Idea y regalo se enchufan en el mismo viaje</strong>: una línea en cada hoja de detalle. Dejarlo a medias es peor que las dos alternativas.</li>
+      <li><strong>Y la pieza crece lo justo</strong>: fecha relativa, borrar el comentario propio —el Worker ya lo permite y la pantalla no lo ofrece—, una frase cuando el hilo está vacío, y la raya de «sin leer» que necesita la parte 5.</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================ Buscar -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 8</p>
+    <h2>Buscar: lo que se propone, sin convencimiento</h2>
+    <p>
+      La duda está justificada, así que conviene mirar el dato antes que la propuesta. La
+      búsqueda que se retira son 119 líneas que cubren tres colecciones —ideas, ocasiones y
+      regalos— y exigen dos letras para empezar. De esas tres, solo una acumula volumen de
+      verdad: el banco de ideas. Ni las ocasiones —una docena al año, ordenadas por fecha—
+      ni los sitios —cinco tarjetas— tienen un problema que una búsqueda resuelva.
+    </p>
+
+    <div class="opcion elegida">
+      <div class="opcion-cabeza">
+        <div class="opcion-titulo"><span class="letra">A</span><h3>Nada ahora, y una lupa en Regalos cuando duela</h3></div>
+        <p>
+          Se retira Buscar y no se sustituye. El día que el banco de ideas pase de las
+          cincuenta y encontrar una cueste, entra una lupa <strong>en la cabecera de
+          Regalos</strong>: se toca, el título se convierte en un campo y filtra <em>esa</em>
+          pantalla. Ni pestaña, ni índice global, ni pantalla propia.
+        </p>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Filtrar donde estás es más útil que un buscador global: al buscar «bici» uno está en Regalos, no en abstracto.</span></div>
+        <div class="si"><span>+</span><span>No gasta un hueco de la barra, que es el recurso escaso, y se construye en su día en un rato.</span></div>
+        <div class="no"><span>−</span><span>Deja un hueco real: no habrá manera de encontrar una ocasión de hace dos años sin recorrer la lista.</span></div>
+      </div>
+    </div>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>La recomendación es no construir nada de esto ahora</strong>, y de hecho no
+        construirlo hasta que alguien se queje. Este apartado existe para dejar escrito qué
+        se hará si eso pasa, y sobre todo para dejar escrito lo contrario de lo que suele
+        hacerse: <strong>que el hueco de la barra no vuelva a gastarse en una búsqueda</strong>.
+      </p>
+      <p>
+        <strong>Y hay una salida a la que no hay que dejarse llevar:</strong> poner el
+        buscador dentro de Hoy. Hoy es la pantalla que se abre cien veces al mes para mirar
+        qué hay; meterle un campo de texto arriba la convierte en un portal, y el saludo y
+        la lista del día pasarían a compartir sitio con algo que se usa tres veces al año.
+      </p>
+    </div>
+  </section>
+
+  <!-- =============================================================== Datos -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 9</p>
+    <h2>Lo que hay que escribir</h2>
+
+    <div class="codigo">lugar   id · nombre · emoji · <i>evento_id?</i> · autor_id · activo
+apunte  id · lugar_id · <b>clase</b> (llevar|hacer|ir|<b>saber</b>) · titulo · <b>detalle</b> · autor_id · activo
+voto    id (<b>voto:&lt;apunte&gt;:&lt;persona&gt;</b>) · apunte_id · persona_id · activo
+<b>visto</b>   id (<b>visto:&lt;tipo&gt;:&lt;objeto&gt;:&lt;persona&gt;</b>) · persona_id · objeto_tipo · objeto_id · hasta
+
+<i>0009</i>  comentario, rehecho <b>sin CHECK</b>  · de las de una vez, copia filas
+<i>0010</i>  las tres tablas de Sitios          · corriente, se puede repetir
+<i>0011</i>  visto, la marca de los avisos      · corriente, se puede repetir
+
+configuracion.apunte   la instrucción del modelo, editable en Ajustes
+POST /api/sitio/apuntar   cinco propuestas para un sitio y una clase</div>
+
+    <div class="nota">
+      <p>
+        <strong>Alcance: del círculo <code>familia</code>, como Lío.</strong> Quien no vive
+        en casa no recibe nada de esto y su aplicación no dibuja la pestaña porque no tiene
+        con qué. <code>esDeLaCasa</code> ya está escrita en <code>api/src/lio.js</code>: son
+        tres líneas en <code>filtrado.js</code>. Y con eso el módulo <strong>nunca evalúa la
+        función de visibilidad</strong> —se ve entero o no se ve nada—, que es también lo que
+        permite que el voto enseñe iniciales sin delatar nada.
+      </p>
+      <p>
+        <strong><code>visto</code> es la única tabla de esta propuesta que no es de
+        Sitios</strong>, y solo viaja a su dueño: la instantánea de cada uno lleva sus
+        filas y las de nadie más. Su identificador se compone —<code>visto:comentario:a-17:p-oscar</code>—
+        por la misma razón que el del voto y el del paseo: se escribe desde el dispositivo
+        antes de haber visto ninguna fila. Guarda un momento y no un booleano, que es lo
+        que permite que un aviso descartado <strong>vuelva</strong> cuando llega un
+        comentario posterior.
+      </p>
+      <p>
+        <strong>Y hereda la visibilidad sin hacer nada</strong>: una fila de
+        <code>visto</code> apunta a un objeto que su dueño ya podía ver, porque es él quien
+        la escribió al mirarlo. No hay caso en que delate nada.
+      </p>
+      <p>
+        <strong>Y hay dos cosas que no se tocan:</strong> el plan de los domingos, donde un
+        sitio no pinta nada porque no cae en un día; y las versiones, que no suben con este
+        documento porque aquí no hay una línea de <code>pwa/publico/</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================= Abierto -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 10</p>
+    <h2>Las cinco últimas, cerradas</h2>
+    <p>
+      No queda nada abierto. Las cuatro que iban a votación se resolvieron como estaban
+      propuestas, y la quinta no necesitaba a nadie.
+    </p>
+    <ul class="lista-seca">
+      <li><strong>Hoy conserva su banda de «Por contestar».</strong> Contestar sigue costando un toque en lo único de la aplicación donde otra persona espera, y el sobre no le quita nada: las notificaciones ya no pasan por ahí. En la práctica, esta pantalla no cambia.</li>
+      <li><strong>El verbo del modelo vive dentro del formulario de apunte nuevo</strong>, debajo del campo del título. Ni un botón fijo en la cabecera del sitio ni cuatro renglones al pie de los cuatro grupos: se pide justo cuando uno ya está pensando qué escribir.</li>
+      <li><strong>Un sitio no sale del círculo de casa.</strong> Como Lío. Y de ahí sale, gratis, que el módulo <strong>nunca evalúe la función de visibilidad</strong> —se ve entero o no se ve nada—, que es lo que permite que el voto enseñe iniciales sin delatar a nadie. Hacia fuera ya se comparte por WhatsApp, que es donde tiene sentido.</li>
+      <li><strong>Un hilo no se silencia, todavía.</strong> Descartar resuelve el caso normal y el aviso vuelve solo si llega algo nuevo. Silenciar es un ajuste para un problema que aún no ha pasado, y hasta que un hilo concreto moleste de verdad no se sabe ni cómo tendría que comportarse —si el punto en contexto debería seguir apareciendo o no—.</li>
+      <li><strong>Y <code>ux.md</code> §7.3 se queda escrito como historia</strong> cuando Buscar se retire, con una línea que diga por qué se fue. Borrarlo dejaría el documento contando una aplicación que nunca tuvo búsqueda, y el porqué de haberla quitado vale más que el apartado.</li>
+    </ul>
+
+    <div class="nota veredicto">
+      <p><strong>Y el orden en que se construye</strong>, que es lo único que queda por escribir aquí:</p>
+      <p>
+        <strong>1.</strong> La migración <code>0009</code> y el registro de comentables, con
+        idea y regalo enchufados. Es lo que arregla algo que ya está mal, y no depende de
+        nada. · <strong>2.</strong> Las tablas de Sitios y el módulo entero sin voto ni
+        comentarios: sitios, apuntes, las cuatro clases, la hoja con sus tres verbos, y la
+        pestaña en el hueco de Buscar. · <strong>3.</strong> El voto y el hilo. ·
+        <strong>4.</strong> <code>avisos.js</code>, la tabla <code>visto</code>, el sobre y
+        el descarte. · <strong>5.</strong> El apartado de sincronización en Ajustes y la
+        retirada del punto de la cabecera. · <strong>6.</strong> Los apuntes del modelo, que
+        es lo único que se puede quedar sin hacer sin que el módulo cojee.
+      </p>
+      <p>
+        Los pasos 2 y 3 tocan <code>pwa/publico/</code>, así que <strong>cada uno sube las
+        tres versiones</strong> —la del service worker, la del <code>package.json</code> y la
+        copia de <code>version.js</code>— y por encima de lo que haya en <code>main</code> en
+        ese momento, no de donde salga la rama.
+      </p>
+    </div>
+    <p class="pie">
+      Fuentes: <code>ux.md</code> §6.5, §7.3 y §10.3 · <code>modelo-datos.md</code> §2.5 y §2.6 ·
+      <code>especificacion.md</code> §3.5 y §5.3 · <code>autenticacion.md</code> §377 ·
+      <code>propuesta-lio.html</code> · y el código de <code>comentarios.js</code>,
+      <code>vistas/hoy.js</code>, <code>lio.js</code>, <code>ui.js</code>,
+      <code>native.js</code>, <code>filtrado.js</code>, <code>index.js</code> y
+      <code>vistas/buscar.js</code>.
+    </p>
+  </section>
+
+</div>

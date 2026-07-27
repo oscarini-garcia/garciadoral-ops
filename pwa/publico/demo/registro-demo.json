@@ -663,6 +663,24 @@
       "autor_id": "p-oscar",
       "texto": "Confirmada la talla con la tienda.",
       "fecha": "2026-07-20T19:12:00"
+    },
+    {
+      "id": "c-duna-1",
+      "objeto_tipo": "apunte",
+      "objeto_id": "ap-duna",
+      "autor_id": "p-oscar",
+      "texto": "¿Se puede subir con el carro?",
+      "activo": true,
+      "creado_en": "2026-07-25T18:00:00Z"
+    },
+    {
+      "id": "c-duna-2",
+      "objeto_tipo": "apunte",
+      "objeto_id": "ap-duna",
+      "autor_id": "p-marta",
+      "texto": "Ni de broma, es todo arena. La llevamos en brazos.",
+      "activo": true,
+      "creado_en": "2026-07-26T09:30:00Z"
     }
   ],
   "conflictos": [],
@@ -687,5 +705,126 @@
     ]
   },
   "paseos": [],
-  "tratos_paseo": []
+  "tratos_paseo": [],
+  "lugares": [
+    {
+      "id": "lu-bolonia",
+      "nombre": "Bolonia",
+      "emoji": "🏖",
+      "autor_id": "p-marta",
+      "activo": true
+    },
+    {
+      "id": "lu-pueblo",
+      "nombre": "El pueblo",
+      "emoji": "🏡",
+      "autor_id": "p-oscar",
+      "activo": true
+    }
+  ],
+  "apuntes": [
+    {
+      "id": "ap-sombrilla",
+      "lugar_id": "lu-bolonia",
+      "clase": "llevar",
+      "titulo": "Sombrilla",
+      "detalle": "Allí no hay ni una sombra",
+      "autor_id": "p-marta",
+      "activo": true,
+      "creado_en": "2026-07-20T10:00:00Z"
+    },
+    {
+      "id": "ap-monedas",
+      "lugar_id": "lu-bolonia",
+      "clase": "llevar",
+      "titulo": "Monedas para el parquímetro",
+      "detalle": null,
+      "autor_id": "p-oscar",
+      "activo": true,
+      "creado_en": "2026-07-21T10:00:00Z"
+    },
+    {
+      "id": "ap-duna",
+      "lugar_id": "lu-bolonia",
+      "clase": "hacer",
+      "titulo": "Subir a la duna al atardecer",
+      "detalle": "Se tarda media hora y hay que ir con zapatillas: la arena quema hasta las ocho.",
+      "autor_id": "p-marta",
+      "activo": true,
+      "creado_en": "2026-07-22T10:00:00Z"
+    },
+    {
+      "id": "ap-ruinas",
+      "lugar_id": "lu-bolonia",
+      "clase": "hacer",
+      "titulo": "Las ruinas romanas, temprano",
+      "detalle": null,
+      "autor_id": "p-ana",
+      "activo": true,
+      "creado_en": "2026-07-22T11:00:00Z"
+    },
+    {
+      "id": "ap-chiringuito",
+      "lugar_id": "lu-bolonia",
+      "clase": "ir",
+      "titulo": "El chiringuito de las tortillitas",
+      "detalle": null,
+      "autor_id": "p-oscar",
+      "activo": true,
+      "creado_en": "2026-07-23T10:00:00Z"
+    },
+    {
+      "id": "ap-super",
+      "lugar_id": "lu-bolonia",
+      "clase": "saber",
+      "titulo": "El súper cierra a las dos los domingos",
+      "detalle": null,
+      "autor_id": "p-ana",
+      "activo": true,
+      "creado_en": "2026-07-24T10:00:00Z"
+    },
+    {
+      "id": "ap-lena",
+      "lugar_id": "lu-pueblo",
+      "clase": "llevar",
+      "titulo": "Leña para la chimenea",
+      "detalle": null,
+      "autor_id": "p-oscar",
+      "activo": true,
+      "creado_en": "2026-07-19T10:00:00Z"
+    }
+  ],
+  "votos": [
+    {
+      "id": "voto:ap-sombrilla:p-marta",
+      "apunte_id": "ap-sombrilla",
+      "persona_id": "p-marta",
+      "activo": true
+    },
+    {
+      "id": "voto:ap-sombrilla:p-oscar",
+      "apunte_id": "ap-sombrilla",
+      "persona_id": "p-oscar",
+      "activo": true
+    },
+    {
+      "id": "voto:ap-sombrilla:p-lucia",
+      "apunte_id": "ap-sombrilla",
+      "persona_id": "p-lucia",
+      "activo": true
+    },
+    {
+      "id": "voto:ap-duna:p-marta",
+      "apunte_id": "ap-duna",
+      "persona_id": "p-marta",
+      "activo": true
+    },
+    {
+      "id": "voto:ap-chiringuito:p-oscar",
+      "apunte_id": "ap-chiringuito",
+      "persona_id": "p-oscar",
+      "activo": true
+    }
+  ],
+  "vistos": []
 }

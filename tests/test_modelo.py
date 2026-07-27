@@ -250,7 +250,7 @@ class Integridad(unittest.TestCase):
             ],
         )
 
-    def test_el_comentario_solo_referencia_idea_regalo_o_evento(self):
+    def test_el_comentario_solo_referencia_lo_que_admite_comentario(self):
         self._falla(
             "tipo de objeto inválido",
             comentarios=[
@@ -263,6 +263,22 @@ class Integridad(unittest.TestCase):
                 }
             ],
         )
+
+    def test_el_apunte_admite_comentario_aunque_este_modelo_no_lo_indexe(self):
+        """Los apuntes de Sitios no entran en el plan semanal, y aun así su hilo
+        tiene que pasar por aquí: el registro es uno solo (§5.3)."""
+        agenda = agenda_minima(
+            comentarios=[
+                {
+                    "id": "c1",
+                    "objeto_tipo": "apunte",
+                    "objeto_id": "ap-1",
+                    "autor_id": "p-ana",
+                    "texto": "Allí no hay ni una sombra",
+                }
+            ],
+        )
+        self.assertEqual(len(agenda.comentarios), 1)
 
 
 class Derivaciones(unittest.TestCase):

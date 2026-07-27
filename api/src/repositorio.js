@@ -38,6 +38,10 @@ const CAMPOS = {
     'fecha', 'turno', 'clase', 'proponente_id', 'destinatario_id',
     'asignado_previo_id', 'estado', 'resuelto_en', 'activo',
   ],
+  lugar: ['nombre', 'emoji', 'evento_id', 'autor_id', 'activo'],
+  apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'autor_id', 'activo'],
+  voto: ['apunte_id', 'persona_id', 'activo'],
+  visto: ['persona_id', 'objeto_tipo', 'objeto_id', 'hasta'],
 };
 
 /** Campos cuyo conflicto se conserva para revisión en lugar de descartarse en
@@ -86,6 +90,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     ocasiones, participantesOcasion, presupuestos,
     regalos, codestinatarios, comentarios, conflictos,
     paseos, tratos, cuadroLio,
+    lugares, apuntes, votos, vistos,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -113,6 +118,14 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
       `SELECT * FROM trato_paseo WHERE estado = 'pendiente' ${soloActivos ? 'AND activo = 1' : ''}`,
     ),
     leerCuadro(db),
+    // Sitios llega por `filasSiLaTablaEsta` como Lío: desplegar el Worker y
+    // aplicar las migraciones son dos pasos, y entre uno y otro hay una ventana
+    // en la que estas tablas no existen todavía. Sin esto, esa ventana es una
+    // caída de la sincronización entera.
+    filasSiLaTablaEsta(db, `SELECT * FROM lugar ${activo('activo')} ORDER BY nombre`),
+    filasSiLaTablaEsta(db, `SELECT * FROM apunte ${activo('activo')} ORDER BY creado_en`),
+    filasSiLaTablaEsta(db, `SELECT * FROM voto ${activo('activo')}`),
+    filasSiLaTablaEsta(db, 'SELECT * FROM visto'),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -184,6 +197,13 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     lio_cuadro: cuadroLio,
     paseos: paseos.map((p) => ({ ...p, activo: bool(p.activo) })),
     tratos_paseo: tratos.map((t) => ({ ...t, activo: bool(t.activo) })),
+    // Sitios: la carpeta, lo que hay dentro y a quién le apetece cada cosa.
+    lugares: lugares.map((l) => ({ ...l, activo: bool(l.activo) })),
+    apuntes: apuntes.map((a) => ({ ...a, activo: bool(a.activo) })),
+    votos: votos.map((v) => ({ ...v, activo: bool(v.activo) })),
+    // Lo visto no se recorta por visibilidad sino por dueño, y eso lo hace
+    // `filtrado.js`: las filas de una persona no le sirven de nada a otra.
+    vistos,
     // Cuántas personas esperan a que alguien las apruebe. Va aquí y no en una
     // ruta propia para que llegue con la sincronización, sin una petición más;
     // `filtrado.js` decide a quién se le transmite, que es solo a los
@@ -302,6 +322,37 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
   // Cada comentario solo puede editarlo o eliminarlo quien lo escribió (§5.3).
   if (tipo === 'comentario' && anterior && anterior.autor_id !== actor.id) {
     throw new Rechazo('un comentario solo lo modifica quien lo escribió');
+  }
+
+  // Sitios es de la casa, igual que Lío: quien no está en el círculo cerrado no
+  // lo recibe (`filtrado.js`) y tampoco lo escribe.
+  if (['lugar', 'apunte', 'voto'].includes(tipo) && !esDeLaCasa(actor)) {
+    throw new Rechazo('los sitios son de quien vive en casa');
+  }
+
+  // Un apunte lo borra quien lo escribió, o un administrador. Es la misma regla
+  // que el comentario y por el mismo motivo: el único desperfecto que este
+  // módulo puede producir es que alguien encuentre borrado lo que escribió y no
+  // sepa quién fue. Editarlo sí puede cualquiera de casa —corregir una hora o
+  // añadir el detalle que falta es cuidar la guía, no apropiársela—.
+  if (tipo === 'apunte' && anterior && 'activo' in campos && !campos.activo) {
+    if (anterior.autor_id !== actor.id && actor.rol !== 'administrador') {
+      throw new Rechazo('un apunte lo borra quien lo escribió');
+    }
+  }
+
+  // El voto es de quien vota y de nadie más.
+  if (tipo === 'voto' && campos.persona_id && campos.persona_id !== actor.id) {
+    throw new Rechazo('un voto es de quien lo pone');
+  }
+  if (tipo === 'voto' && anterior && anterior.persona_id !== actor.id) {
+    throw new Rechazo('un voto es de quien lo pone');
+  }
+
+  // Y lo visto es de cada uno: no hay caso en que a alguien le interese escribir
+  // en el registro de lectura de otra persona.
+  if (tipo === 'visto' && (campos.persona_id || anterior?.persona_id) !== actor.id) {
+    throw new Rechazo('lo visto es de quien mira');
   }
 
   // De los tres orígenes solo el manual admite edición completa; en los otros
@@ -423,6 +474,24 @@ export async function aplicarCambio(db, actor, cambio) {
   if (!columnas) return { aplicado: false, motivo: `tipo desconocido: ${tipo}` };
 
   const anterior = await db.prepare(`SELECT * FROM ${tipo} WHERE id = ?`).bind(id).first();
+
+  // Un sitio se borra vacío, y esto se comprueba aquí y no solo en la pantalla
+  // porque la pantalla decide con la instantánea que tenga: si otra persona ha
+  // apuntado algo desde entonces, ese dispositivo cree que el sitio está vacío y
+  // no lo está. Lo que se protege son cosas que escribieron cuatro personas.
+  if (tipo === 'lugar' && anterior && 'activo' in campos && !campos.activo) {
+    const dentro = await db
+      .prepare('SELECT COUNT(*) AS cuantos FROM apunte WHERE lugar_id = ? AND activo = 1')
+      .bind(id)
+      .first();
+    const cuantos = Number(dentro?.cuantos || 0);
+    if (cuantos) {
+      return {
+        aplicado: false,
+        motivo: `«${anterior.nombre}» todavía tiene ${cuantos} apunte${cuantos === 1 ? '' : 's'}`,
+      };
+    }
+  }
 
   try {
     comprobarPermiso(tipo, actor, anterior, campos);

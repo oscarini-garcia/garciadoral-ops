@@ -230,8 +230,12 @@ button { background: none; border: 0; cursor: pointer; }
   border-bottom: 1px solid var(--line);
   padding: max(10px, env(safe-area-inset-top)) 20px 0;
 }
-.cabecera-fila { display: flex; align-items: baseline; gap: 12px; }
+/* El título empuja a los mandos contra el borde, y cuando no hay título
+   —la agenda no pone ninguno— empujan ellos solos. Antes lo hacía el punto
+   de la sincronización con su `margin-left: auto`, y se fue a Ajustes. */
+.cabecera-fila { display: flex; align-items: baseline; gap: 12px; justify-content: flex-end; }
 .titulo-pantalla {
+  margin-right: auto;
   font-family: var(--serif);
   font-weight: 500; font-size: 29px; letter-spacing: -.01em;
   min-width: 0; text-wrap: balance;
@@ -254,21 +258,21 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* Solo el punto, con sitio alrededor para que el dedo lo encuentre: sin la
    palabra, el blanco que la rodea es lo único que lo hace tocable. */
-.sync {
-  display: inline-flex; align-items: center; justify-content: center;
-  align-self: center;
-  margin-left: auto;
-  width: 28px; height: 28px; margin-right: -4px;
-  border-radius: 50%;
-  color: var(--ink-faint);
+/* Donde estaba el punto de la sincronización, que se fue a Ajustes. Lo que
+   queda en la cabecera solo aparece cuando hay algo: el sobre de los avisos y,
+   en demostración, su pastilla. El primero de los dos empuja contra el borde. */
+.pastilla-demo {
+  margin-left: auto; align-self: center;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--aviso); border: 1px solid var(--aviso); border-radius: 999px;
+  padding: 2px 8px;
 }
-.sync i { width: 9px; height: 9px; border-radius: 50%; background: var(--tinta); }
-.sync:hover { background: var(--paper-2); }
-.sync[data-estado="sincronizando"] i { background: var(--aviso); animation: latido 1.1s ease-in-out infinite; }
-.sync[data-estado="sin-conexion"] i { background: var(--ink-faint); }
-.sync[data-estado="error"] i { background: var(--regalo); }
-@keyframes latido { 50% { opacity: .3; } }
-@media (prefers-reduced-motion: reduce) { .sync[data-estado="sincronizando"] i { animation: none; } }
+.pastilla-demo[hidden] { display: none; }
+/* Sin punto ni número encima: el sobre **solo existe cuando hay algo**, así que
+   que esté ya es el aviso. */
+#botonAvisos { color: var(--tinta); }
+#botonAvisos[hidden] { display: none; }
+#botonAvisos { margin-right: 0; }
 
 .icono-cabecera {
   display: inline-flex; align-items: center; justify-content: center;
@@ -842,9 +846,9 @@ button { background: none; border: 0; cursor: pointer; }
 .anadir-persona:hover { border-color: var(--tinta); color: var(--tinta); background: var(--paper-2); }
 .anadir-signo { font-size: 19px; line-height: 1; }
 
-/* Buscar devuelve una tabla y no una rejilla: es donde hace falta el nombre
-   entero —lo que distingue a dos Marías—, de quién es y cuándo cumple, en tres
-   columnas que se leen hacia abajo de un vistazo. */
+/* El resultado de buscar una persona es una tabla y no una rejilla: es donde
+   hace falta el nombre entero —lo que distingue a dos Marías—, de quién es y
+   cuándo cumple, en tres columnas que se leen hacia abajo de un vistazo. */
 .tabla-personas { overflow-x: auto; }
 .tabla-personas table { border-collapse: collapse; width: 100%; }
 .tabla-personas th, .tabla-personas td {
@@ -1268,8 +1272,28 @@ body.con-hoja .avisos { bottom: calc(15px + env(safe-area-inset-bottom)); }
    dentro, así que se respetan tal cual. */
 .dato { white-space: pre-wrap; overflow-wrap: anywhere; }
 .comentario { border-left: 2px solid var(--line); padding: 2px 0 2px 11px; display: flex; flex-direction: column; gap: 2px; }
+/* Lo que ha llegado desde la última vez que se miró, en la tinta de la
+   aplicación. Tiñe la raya de la izquierda y nada más: el texto de un
+   comentario nuevo se lee igual que el de uno viejo, y lo único que hace falta
+   es saber dónde empieza lo que falta por leer. */
+.comentario[data-nuevo="si"] { border-left-color: var(--tinta); }
+.comentario-cabeza { display: flex; align-items: center; gap: 8px; min-height: 22px; }
 .comentario-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--ink-faint); }
+/* El verbo de borrar lo propio, pequeño y contra el borde: está para cuando
+   hace falta y no compite con lo que hay escrito. */
+.comentario-cabeza .icono-accion { margin-left: auto; width: 28px; height: 28px; }
+.comentario-cabeza .icono-accion .icono-svg svg { width: 16px; height: 16px; }
 .comentario p { font-size: 15px; }
+
+/* La raya de por dónde iba la conversación. Se lee como un renglón partido: el
+   rótulo a la izquierda y la línea ocupando lo que sobra, que es lo que la hace
+   una separación y no una etiqueta más. */
+.raya-sin-leer {
+  display: flex; align-items: center; gap: 9px; padding-top: 2px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--tinta);
+}
+.raya-sin-leer::after { content: ""; flex: 1; height: 1px; background: var(--tinta); opacity: .45; }
 
 .barra { height: 7px; border-radius: 999px; background: var(--paper-3); overflow: hidden; }
 .barra i { display: block; height: 100%; background: var(--tinta); }
@@ -1303,3 +1327,95 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .documento strong { color: var(--ink); font-weight: 500; }
 .documento a { color: var(--tinta); }
 .documento .fecha { color: var(--ink-faint); font-size: 13px; }
+
+
+/* ------------------------------------------------------------------ Sitios --
+
+   Un apunte es una fila con dos blancos: la línea entera abre, y la pastilla
+   del voto se traga su propio toque. Votar tiene que costar un toque desde la
+   lista —es el gesto barato— y abrir es lo que se hace cuando hay algo que
+   decir. */
+.apunte {
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+  border-bottom: 1px solid var(--line); min-height: 48px;
+}
+.apunte:last-child { border-bottom: 0; }
+.apunte-cuerpo {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  text-align: left; padding: 9px 0;
+}
+.apunte-titulo { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apunte-pie { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.apunte-detalle {
+  font-size: 13.5px; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.apunte-comentarios {
+  font-family: var(--mono); font-size: 11px; color: var(--ink-faint);
+  letter-spacing: .04em; flex: none;
+}
+/* Lo que ha llegado desde la última vez que se miró. Es la marca en contexto
+   que sustituye a una lista de novedades: el sobre cuenta que hay algo y aquí
+   se ve dónde. */
+.apunte-comentarios[data-sin-leer="si"] { color: var(--tinta); }
+.punto-nuevo {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--tinta);
+  display: inline-block; flex: none;
+}
+
+/* El voto: un pulgar con las iniciales de quien votó, no un número. Con cuatro
+   personas en casa «MA·OS» contesta la pregunta que de verdad se hace —si esto
+   le apetece a alguien más— y un «2» no. Es la misma regla del carril de Lío:
+   el color dice el estado y las letras dicen quién. */
+.voto {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  min-height: 32px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper-2);
+  font-family: var(--mono); font-size: 11px; color: var(--ink-soft); letter-spacing: .06em;
+}
+.voto[data-mio="si"] { background: var(--tinta-suave); border-color: var(--tinta); color: var(--tinta); }
+.voto[data-vacio="si"] { color: var(--ink-faint); }
+.voto-pulgar { font-size: 12px; }
+.voto-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.voto-dicho { font-size: 13.5px; color: var(--ink-soft); }
+
+/* La salida de un sitio abierto. Dentro de una pestaña no hay flecha del
+   sistema que devuelva a ninguna parte, así que se pone. */
+.volver { font-size: 15px; color: var(--tinta); padding: 2px 0; }
+.subcabecera-verbos { display: flex; gap: 6px; margin-left: auto; }
+
+/* ------------------------------------------------------------------ Avisos --
+
+   Dos grupos y una diferencia que no es de forma: lo de arriba se contesta y lo
+   de abajo se descarta. Por eso solo estas filas llevan aspa. */
+.aviso-fila {
+  display: grid; grid-template-columns: 20px 1fr auto; gap: 9px; align-items: center;
+  border-bottom: 1px solid var(--line); min-height: 48px;
+}
+.aviso-fila:last-child { border-bottom: 0; }
+.aviso-emoji { font-size: 15px; }
+.aviso-cuerpo { display: flex; flex-direction: column; gap: 1px; text-align: left; padding: 8px 0; min-width: 0; }
+.aviso-cuerpo > span:first-child { font-size: 15px; }
+.aviso-cuando { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .04em; }
+/* Un aspa y no un deslizamiento, aunque el gesto ya exista: `deslizarHorizontal`
+   significa hoy «llévame al siguiente» en la agenda, y darle en otra pantalla
+   el significado de «destruye esto» es como un gesto deja de ser fiable. */
+.aviso-descartar {
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  display: grid; place-items: center;
+  font-size: 18px; line-height: 1; color: var(--ink-faint);
+}
+.aviso-descartar:hover { background: var(--paper-2); color: var(--ink-soft); }
+
+/* La línea que es a la vez el dato y el verbo, como la de la versión: se lee
+   cuándo fue la última buena y, al tocarla, sincroniza contando por dónde va. */
+.linea-verbo {
+  font-size: 14.5px; color: var(--ink-soft); text-align: left;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line);
+  padding: 4px 0; min-height: var(--toque);
+}
+.linea-verbo:hover { color: var(--ink); }
+
+/* Y en Hoy, lo único que había que no perder al quitar el punto de la
+   cabecera. Solo aparece cuando pasa. */
+.hoy-sync { font-size: 13.5px; color: var(--aviso); }
