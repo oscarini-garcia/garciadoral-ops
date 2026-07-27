@@ -705,7 +705,9 @@ function selectorDeRelevo(estado, ctx) {
         },
       }, [persona.nombre])),
       el('span', { class: 'lio-relevo-salida' }, [
-        el('button', { class: 'boton-mini', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+        el('button', {
+          class: 'boton-mini', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja,
+        }, ['Cancelar']),
       ]),
     ]),
   ]);
