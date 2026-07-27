@@ -76,7 +76,7 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 
 **OrientaciónIdea.** Relación que expresa el "para quién". Cada fila referencia una persona o una etiqueta, nunca ambas. Una idea admite varias filas, que pueden mezclar los dos tipos.
 
-**Comentario.** Texto, autor y fecha, sobre un objeto referenciado mediante tipo y ubicación. Los tipos admitidos son idea, regalo y evento.
+**Comentario.** Texto, autor y fecha, sobre un objeto referenciado mediante tipo y ubicación. Los tipos admitidos son idea, regalo, evento y apunte, y **esa lista vive en el código** —`api/src/comentables.js`, con su espejo en `scripts/agenda/modelo.py`— y no en el esquema: la tabla llevaba un `CHECK`, y como un `CHECK` de SQLite no se altera, cada módulo nuevo que admitiera comentarios obligaba a rehacer la tabla entera. La migración `0009` la rehízo una vez, sin él.
 
 ### 2.4 Agenda
 
@@ -135,6 +135,26 @@ Los turnos de paseo del perro no son eventos y no viven en la tabla de eventos: 
 ### 2.6 Operación
 
 **Dispositivo.** Vinculado a una persona con cuenta, con marca de última sincronización. Es el destinatario del filtrado descrito en el apartado 7.3.
+
+### 2.7 Sitios
+
+Lo que una casa sabe de un lugar. No son eventos —no caen en un día— ni ideas —no se regalan—, y su ciclo de vida es el más corto de esta base: creado y borrado. La forma de la pantalla está en `ux.md` §12.1 y el porqué, en `propuesta-sitios.html`.
+
+**Lugar.** Nombre, emoji opcional y un vínculo opcional con un evento de la agenda mediante `evento_id`. El vínculo reside en el Lugar, no en el Evento, por la misma razón que el de la Ocasión (§2.5): así el evento sigue sin saber que este módulo existe. **Un lugar no se borra mientras tenga apuntes vivos**, y la comprobación está en el servidor y no solo en la pantalla: la pantalla decide con la instantánea que tenga, y otra persona puede haber apuntado algo desde entonces.
+
+**Apunte.** Cuelga de un lugar, con una clase —`llevar`, `hacer`, `ir` o `saber`—, un título y un detalle opcional. La clase no lleva `CHECK` en el esquema por lo mismo que no lo lleva ya el comentario: la lista vive en el código, y un `CHECK` de SQLite no se altera. `saber` es el valor por defecto.
+
+**Voto.** Una fila por persona y apunte, porque lo que la pantalla enseña no es un número sino las iniciales de quién. El identificador es compuesto y determinista —`voto:<apunte>:<persona>`—, como el del paseo, porque el dispositivo marca antes de haber visto ninguna fila. Quitar el voto apaga la bandera; no borra nada. Un voto solo lo escribe su dueño.
+
+**Alcance.** Los tres son del círculo `familia` y no salen de él, igual que Lío: quien no vive en casa no los recibe en su instantánea. De ahí se sigue que el módulo no evalúe nunca la función de visibilidad —se ve entero o no se ve nada—, que es lo que permite que el voto muestre iniciales sin delatar a nadie.
+
+### 2.8 Lo visto
+
+**Visto.** Por persona y objeto, con **el momento hasta el que se ha mirado**. Es lo que separa un comentario nuevo de uno ya leído, y de ahí salen la raya de «sin leer» dentro del hilo y el renglón del sobre de avisos (`ux.md` §12.2).
+
+Guarda un momento y no un indicador de sí o no, y esa es toda su gracia: **un aviso descartado vuelve** cuando llega un comentario posterior, porque descartar significa «ya lo he visto» y no «no me avises más de esto». El identificador es compuesto —`visto:<tipo>:<objeto>:<persona>`— por la misma razón que el del voto.
+
+Viaja, y no se queda en el dispositivo. Mientras la marca era pasiva —leer— guardarla en local era defendible; desde que el sobre permite **descartar** ya no lo es, porque un descarte es un acto y un acto que se deshace al abrir el otro aparato no es un acto. Solo llega a su dueño: qué ha mirado cada uno no es asunto de nadie, y una fila apunta siempre a algo que quien la escribió ya podía ver.
 
 ---
 
@@ -198,7 +218,7 @@ El círculo `familia` admite cuatro personas activas como máximo: es el hogar, 
 
 Un regalo en estado entregado no admite modificación de destinatario ni de ocasión.
 
-Un comentario solo puede referenciar una idea, un regalo o un evento, y hereda la visibilidad del objeto referenciado.
+Un comentario solo puede referenciar uno de los tipos declarados en `comentables.js`, y hereda la visibilidad del objeto referenciado.
 
 ---
 

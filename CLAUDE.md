@@ -127,7 +127,7 @@ pendiente. El hook lo inyecta al final del mapa.
   tocarla busca si hay una nueva y va contando por dónde va en esa misma línea—.
   Queda abierto **qué bloques estacionales entran después y con qué umbrales**
   —la ocasión abierta, el próximo cumpleaños, las últimas ideas—, que es la
-  cuestión 3 de §13, y **si Hoy debería tener botón flotante**; hoy no lo tiene.
+  cuestión 3 de §14, y **si Hoy debería tener botón flotante**; hoy no lo tiene.
   Con la versión hay una atadura nueva: la cifra vive en `pwa/package.json` y la
   web lleva su copia en `pwa/publico/js/version.js`, así que **al subir la
   versión del OTA hay que subir también esa**. `tests/test_version.py` falla si

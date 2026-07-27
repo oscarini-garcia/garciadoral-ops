@@ -11,7 +11,8 @@
  * El apunte sí es una hoja, porque a un apunte se entra a decir algo —votarlo,
  * leer lo que se ha hablado— y se vuelve enseguida a la lista.
  *
- * La forma y el porqué de todo esto están en `specs/propuesta-sitios.html`.
+ * La forma está en `specs/ux.md` §12.1 y el porqué, con las opciones que se
+ * descartaron en cada decisión, en `specs/propuesta-sitios.html`.
  */
 
 import {

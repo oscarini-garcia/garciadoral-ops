@@ -20,6 +20,9 @@
  * garantía de que un día dirán cosas distintas. Aquí se reescribe con la misma
  * forma, como ya están espejados Lío y la visibilidad.
  *
+ * La forma está en `specs/ux.md` §12.2 y la marca de lo visto, en
+ * `specs/modelo-datos.md` §2.8.
+ *
  * **Dos clases, y solo una se descarta.** Lo que espera respuesta se contesta o
  * se queda: descartar una petición de turno dejaría al otro esperando una
  * respuesta que ya nadie va a dar, y sin rastro de que existió. Lo que solo ha

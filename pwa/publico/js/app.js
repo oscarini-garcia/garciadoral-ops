@@ -419,7 +419,7 @@ function prepararInterfaz() {
       mostrarAcceso('La sesión ha caducado. Vuelve a entrar.');
       return;
     }
-    pintarIndicador(situacion);
+    pintarCabecera();
 
     // Lo que el servidor no ha aplicado se dice, y una sola vez por lote: se vio
     // guardado —la interfaz es optimista— y desaparece con esta instantánea. En

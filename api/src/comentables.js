@@ -8,6 +8,9 @@
  * un `CHECK` de SQLite no se altera. El `CHECK` se fue en la migración `0009` y
  * la regla vive aquí.
  *
+ * La regla que sostiene está en `specs/especificacion.md` §5.3 y la entidad, en
+ * `specs/modelo-datos.md` §2.3.
+ *
  * Cada entrada dice **dónde está la colección** a la que puede pertenecer un
  * comentario. Con eso basta para lo único que el Worker necesita hacer con
  * ella: un comentario hereda la visibilidad del objeto al que pertenece

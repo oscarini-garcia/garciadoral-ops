@@ -2,7 +2,8 @@
  * Sitios: las clases de un apunte, el voto y el orden en que se leen.
  *
  * Aquí vive todo lo que hay que saber de un sitio sin dibujar nada, igual que
- * `lio.js` con los turnos. La forma está en `specs/propuesta-sitios.html`.
+ * `lio.js` con los turnos. La forma está en `specs/ux.md` §12.1 y las entidades,
+ * en `specs/modelo-datos.md` §2.7; el porqué, en `specs/propuesta-sitios.html`.
  *
  * **Un sitio es la carpeta y los apuntes cuelgan de él.** Es la única forma en
  * la que la pantalla de entrada sigue siendo legible dentro de tres años: los
