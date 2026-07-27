@@ -5,6 +5,14 @@ name: bundle OTA
 # La regla de oro: **sube la versión y mergea** para un OTA; abre Xcode solo
 # cuando cambie algo nativo. Si la versión de pwa/package.json ya tiene release,
 # no se republica nada, de modo que un empujón normal a main es inofensivo.
+#
+# Salvo que ese empujón sí cambie el bundle, y entonces esto falla. Pasó: dos
+# ramas abiertas a la vez subieron las dos a la misma versión —ninguna sabía de
+# la otra, y git fundió las dos líneas idénticas sin conflicto—, la primera en
+# mergearse publicó su release y la segunda se encontró la versión ocupada. El
+# trabajo estaba en main, la web servía lo nuevo y los teléfonos seguían con lo
+# anterior, sin un solo aviso en ninguna parte. Un silencio así se descubre
+# mirando la pantalla y sin saber por dónde empezar.
 
 on:
   workflow_dispatch:
@@ -27,7 +35,11 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # El historial completo hace falta para saber qué trae este empujón: sin
+      # él, el `git diff` de más abajo no tiene con qué comparar.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -37,15 +49,41 @@ jobs:
         id: comprobar
         env:
           GH_TOKEN: ${{ github.token }}
+          ANTES: ${{ github.event.before }}
         run: |
           VERSION=$(node -p "require('./pwa/package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if gh release view "ota-v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "publicar=false" >> "$GITHUB_OUTPUT"
-            echo "La versión $VERSION ya está publicada. No se hace nada."
-          else
+
+          if ! gh release view "ota-v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "publicar=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          echo "publicar=false" >> "$GITHUB_OUTPUT"
+
+          # La versión ya está publicada. Eso es normal —un empujón a main que no
+          # toca el bundle— y es un desastre callado si este empujón sí lo toca:
+          # el trabajo queda en main y no llega a ningún teléfono. Se distingue
+          # una cosa de la otra mirando qué trae el empujón.
+          if [[ -z "$ANTES" || "$ANTES" == 0000000000000000000000000000000000000000 ]]; then
+            echo "La versión $VERSION ya está publicada. Sin empujón que comparar, no se hace nada."
+            exit 0
+          fi
+          if ! git cat-file -e "$ANTES^{commit}" 2>/dev/null; then
+            echo "La versión $VERSION ya está publicada, y $ANTES no está en el historial. No se hace nada."
+            exit 0
+          fi
+
+          CAMBIADO=$(git diff --name-only "$ANTES" "$GITHUB_SHA" -- pwa/publico)
+          if [[ -z "$CAMBIADO" ]]; then
+            echo "La versión $VERSION ya está publicada y el bundle no cambia. No se hace nada."
+            exit 0
+          fi
+
+          echo "::error file=pwa/package.json::La versión $VERSION ya tiene release y este empujón cambia el bundle, así que no llegaría a ningún teléfono. Suba la versión en pwa/package.json —y con ella VERSION en pwa/publico/sw.js— y vuelva a mergear."
+          echo "Lo que cambia y no se publicaría:"
+          echo "$CAMBIADO" | sed 's/^/  · /'
+          exit 1
 
       # Un bundle con los marcadores de ejemplo dejaría a todos los teléfonos
       # apuntando a una API que no existe, y encima se aplicaría solo. Mejor
