@@ -1286,6 +1286,19 @@ export function abrirDetalleIdea(ideaId, ctx) {
  * es siempre el mismo gesto —mirar quién es— y la segunda lleva escrito el
  * nombre de la fecha y cuánto falta, que no cabe en un icono.
  */
+/**
+ * El regalo, que es la pantalla donde se le da a un botón y ya está.
+ *
+ * Los dos campos que se tocan de verdad —cómo va y quién se encarga— eran
+ * desplegables, y un desplegable cuesta dos toques y una lista: abrirlo, buscar
+ * y elegir. Aquí las opciones caben a la vista, así que están a la vista: tres
+ * estados y los cuatro de casa, y marcar es un solo toque.
+ *
+ * Y se guarda al final, no campo a campo. Al pulsar un estado por error, antes
+ * ya estaba escrito; ahora hay un botón de Guardar y otro de Cancelar, como en
+ * el formulario de un evento o en el de una idea, y salir sin guardar no deja
+ * nada hecho.
+ */
 export function abrirDetalleRegalo(regaloId, ctx) {
   const regalo = ctx.vista.regalo(regaloId);
   if (!regalo) return;
@@ -1294,70 +1307,115 @@ export function abrirDetalleRegalo(regaloId, ctx) {
   const destinatario = ctx.vista.persona(regalo.destinatario_principal_id);
   const cumpleanero = ocasion ? deQuienEsElCumple(ocasion, ctx) : null;
 
-  abrirHoja(idea?.titulo || 'Regalo', (cuerpo) => {
-    cuerpo.append(el('p', { class: 'pista', texto: `Para ${ctx.vista.nombre(regalo.destinatario_principal_id)}` }));
+  const borrador = {
+    estado: estadoDeRegalo(regalo),
+    responsable_id: regalo.responsable_id || null,
+    coste_real: typeof regalo.coste_real === 'number' ? regalo.coste_real : null,
+  };
 
-    const estado = seleccion(ESTADOS_REGALO, estadoDeRegalo(regalo));
-    estado.addEventListener('change', async () => {
-      await guardar('regalo', regalo.id, { estado: estado.value });
+  // Adónde va, arriba y en un verbo: lleva al cumpleaños cuando la ocasión es
+  // uno, porque esa es la hoja donde de verdad se prepara —con los años, la
+  // felicitación y el resto de los regalos— y no la genérica.
+  const verLaOcasion = ocasion ? botonIcono('informacion', {
+    etiqueta: `Ver ${ocasion.nombre}`,
+    tono: 'discreto',
+    onclick: () => (cumpleanero ? abrirCumple(cumpleanero.id, ctx) : abrirOcasion(ocasion.id, ctx)),
+  }) : null;
+
+  // Quitar sube a la cabecera, junto al título, que es donde esta aplicación
+  // pone el borrado de todo lo que se edita.
+  const quitar = botonIcono('borrar', {
+    etiqueta: 'Quitar de la ocasión', tono: 'peligro',
+    onclick: async () => {
+      await retirar('regalo', regalo.id);
+      toque('media');
+      cerrarHoja();
+      // Se dice a dónde va, que es lo que no se veía: el regalo desaparece, pero
+      // la idea de la que salió vuelve al banco y se puede volver a coger. Sin
+      // decirlo, quitar un regalo parece perderlo todo.
+      avisar(idea ? 'Quitado. La idea vuelve a Disponibles.' : 'Regalo quitado');
       ctx.refrescar();
-      avisar('Estado actualizado');
-    });
-    cuerpo.append(campo('Cómo va', estado));
+    },
+  });
+
+  abrirHoja(idea?.titulo || 'Regalo', (cuerpo) => {
+    // Para quién, y de qué ocasión. El nombre lleva a su ficha: es lo que había
+    // en el icono de arriba antes de que este pasara a llevar a la ocasión, y se
+    // consulta lo bastante como para no perderlo.
+    cuerpo.append(el('p', { class: 'pista' }, [
+      'Para ',
+      destinatario
+        ? el('button', {
+            class: 'enlace-en-linea', type: 'button',
+            onclick: () => abrirFicha(destinatario.id, ctx),
+          }, [destinatario.nombre])
+        : '—',
+      ocasion ? ` · ${ocasion.nombre}, ${cuandoLaOcasion(ocasion.fecha)}` : null,
+    ]));
+
+    cuerpo.append(campo('Cómo va', pastillasDeEstado(borrador.estado, (valor) => {
+      borrador.estado = valor;
+    })));
 
     // La asignación de responsable resuelve el problema práctico de la
-    // duplicidad: es visible para quien coordina y opaca para el destinatario.
-    const responsables = [{ valor: '', texto: 'Nadie todavía' },
-      ...ctx.vista.personasConCuenta().map((p) => ({ valor: p.id, texto: p.nombre }))];
-    const responsable = seleccion(responsables, regalo.responsable_id || '');
-    responsable.addEventListener('change', async () => {
-      await guardar('regalo', regalo.id, { responsable_id: responsable.value || null });
-      ctx.refrescar();
-    });
-    cuerpo.append(campo('Quién se encarga', responsable, 'Ponerse aquí evita que otra persona lo compre por segunda vez.'));
+    // duplicidad: es visible para quien coordina y opaca para el destinatario. A
+    // quien lo recibe no se le ofrece, que no va a comprarse su propia sorpresa.
+    cuerpo.append(campoDeGente(ctx, {
+      etiqueta: 'Quién se encarga',
+      pista: 'Ponerse aquí evita que otra persona lo compre por segunda vez. Tocar de nuevo a quien esté puesto lo deja sin nadie.',
+      elegidos: borrador.responsable_id ? [borrador.responsable_id] : [],
+      unica: true,
+      memoria: 'responsable',
+      excluir: [regalo.destinatario_principal_id],
+      alCambiar: (ids) => { borrador.responsable_id = ids[0] || null; },
+    }));
 
-    const coste = entrada({ type: 'number', inputmode: 'decimal', step: '0.01', value: regalo.coste_real ?? '' });
-    coste.addEventListener('change', async () => {
-      const valor = coste.value.trim() === '' ? null : Number(coste.value);
-      await guardar('regalo', regalo.id, { coste_real: valor });
-      ctx.refrescar();
+    const coste = entrada({
+      type: 'number', inputmode: 'decimal', step: '0.01',
+      value: borrador.coste_real ?? '',
+    });
+    coste.addEventListener('input', () => {
+      borrador.coste_real = coste.value.trim() === '' ? null : Number(coste.value);
     });
     cuerpo.append(campo('Lo que costó', coste, 'Opcional. Es lo que permite saber después en qué se fue una ocasión.'));
 
-    // Adónde va: el enlace lleva al cumpleaños cuando la ocasión es uno, porque
-    // esa es la hoja donde de verdad se prepara —con los años, la felicitación y
-    // el resto de los regalos— y no la genérica. Va con su fecha escrita, que es
-    // media respuesta a por qué se ha entrado aquí.
-    if (ocasion) {
-      cuerpo.append(el('button', {
-        class: 'enlace-discreto', type: 'button',
-        onclick: () => (cumpleanero ? abrirCumple(cumpleanero.id, ctx) : abrirOcasion(ocasion.id, ctx)),
-      }, [`Ver ${ocasion.nombre} · ${cuandoLaOcasion(ocasion.fecha)}`]));
-    }
-
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
-        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+        class: 'boton crecer', type: 'button',
         onclick: async () => {
-          await retirar('regalo', regalo.id);
+          await guardar('regalo', regalo.id, {
+            estado: borrador.estado,
+            responsable_id: borrador.responsable_id,
+            coste_real: Number.isFinite(borrador.coste_real) ? borrador.coste_real : null,
+          });
+          if (borrador.responsable_id) recordarElegidos('responsable', [borrador.responsable_id]);
+          toque('media');
           cerrarHoja();
-          // Se dice a dónde va, que es lo que no se veía: el regalo desaparece,
-          // pero la idea de la que salió vuelve al banco y se puede volver a
-          // coger. Sin decirlo, quitar un regalo parece perderlo todo.
-          avisar(idea ? 'Quitado. La idea vuelve a Disponibles.' : 'Regalo quitado');
+          avisar('Regalo actualizado');
           ctx.refrescar();
         },
-      }, ['Quitar de la ocasión']),
+      }, ['Guardar']),
+      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
-  }, [
-    // A quién va, arriba y con los demás verbos, como en el cumpleaños: la ficha
-    // se consulta a menudo y no se busca al pie de la hoja.
-    destinatario ? botonIcono('informacion', {
-      etiqueta: `Ver la ficha de ${destinatario.nombre}`,
-      tono: 'discreto',
-      onclick: () => abrirFicha(destinatario.id, ctx),
-    }) : null,
-  ]);
+  }, [verLaOcasion, quitar]);
+}
+
+/** Los tres estados, a la vista y en una fila. Son pocos, cortos y excluyentes:
+ *  justo lo que no había que haber metido nunca en un desplegable. */
+function pastillasDeEstado(valor, alElegir) {
+  const fila = el('div', { class: 'opciones' });
+  for (const estado of ESTADOS_REGALO) {
+    fila.append(el('button', {
+      class: 'opcion', type: 'button',
+      'aria-pressed': estado.valor === valor ? 'true' : 'false',
+      onclick: () => {
+        alElegir(estado.valor);
+        for (const otro of fila.children) otro.setAttribute('aria-pressed', 'false');
+        fila.children[ESTADOS_REGALO.indexOf(estado)].setAttribute('aria-pressed', 'true');
+      },
+    }, [estado.texto]));
+  }
+  return fila;
 }
 
 // -------------------------------------------------------------- Promoción --
