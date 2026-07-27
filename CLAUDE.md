@@ -154,26 +154,21 @@ pendiente. El hook lo inyecta al final del mapa.
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
   turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
   empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
-- **Quedan cinco migraciones por aplicar, y van todas juntas en un solo fichero:
-  `todas-las-pendientes.unavez.sql`.** Al desplegar la API se escribe ese nombre en
-  la casilla de la migración de un solo uso y **no hace falta marcar la de las
-  corrientes**. Es la copia literal de las cinco pegadas en su orden —la `0007`,
-  que convierte a «comprado» lo que estuviera «envuelto»; la `0008`, las dos tablas
-  de Lío; la `0009`, que rehace `comentario` sin su `CHECK`; la `0010`, lugar,
-  apunte y voto; y la `0011`, la marca de lo visto—, y `tests/test_migraciones.py`
-  comprueba las dos cosas que pueden salir mal: que la copia siga diciendo lo mismo
-  que los originales, y que el conjunto, pasado por una base de verdad, deje el
-  esquema donde tiene que quedar sin llevarse por delante lo que ya había.
-  **Va por la casilla de un solo uso aunque cuatro de las cinco se puedan repetir**,
-  porque un paquete vale lo que su pieza más delicada: rehacer `comentario` es
-  copiar filas y tirar la tabla vieja, y hay un instante en el que los comentarios
-  existen en una sola copia. Sin ese fichero, un comentario sobre un apunte lo
-  rechaza la base, el módulo de Sitios aparece vacío y el cuadro de Lío no se puede
-  guardar. **Cuando esté aplicado, el paquete se borra** y con él su prueba; las
-  numeradas se quedan, que son las que cuentan la historia. Las dos `.unavez` viejas —los círculos (`0005`) y el
-  género (`0006`)— ya están puestas, y no se vuelven a pedir porque no se pueden
-  repetir: el `ALTER TABLE` falla si la columna ya está. La
-  pantalla de Gente está decidida y construida: tres círculos
+- **No queda ninguna migración por aplicar.** Las once están puestas, incluidas
+  las tres `.unavez` —los círculos (`0005`), el género (`0006`) y la `0009`, que
+  rehizo `comentario` para quitarle el `CHECK`—, que no se vuelven a pedir porque
+  no se pueden repetir: el `ALTER TABLE` falla si la columna ya está, y rehacer una
+  tabla dos veces es copiar y tirar sin motivo. El paquete que las llevó todas
+  juntas —`todas-las-pendientes.unavez.sql`, con su prueba— se borró al aplicarse,
+  que era lo previsto: valía para una sola noche y las numeradas son las que
+  cuentan la historia. **Al escribir una nueva**: corriente si se puede repetir
+  —`CREATE TABLE IF NOT EXISTS`, un `UPDATE` que la segunda vez no encuentre nada—
+  y entonces basta con marcar la casilla al desplegar; `.unavez` si lleva
+  `ALTER TABLE`, reparte datos o rehace una tabla, y entonces hay que escribir su
+  nombre en el campo de al lado. Y que **termine en una sentencia y no en
+  comentarios**: lo que quede detrás del último `;` se lo lleva `wrangler` a un
+  aviso que no avisa de nada.
+- **La pantalla de Gente está decidida y construida**: tres círculos
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con
   conmutador y sin avatares, el parentesco relativo a quien mira y el género
   para afinarlo. Está en `specs/ux.md` §7.1 a §7.3; el porqué de la elección se
