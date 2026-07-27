@@ -416,10 +416,11 @@
       "lugar_id": "lu-bolonia",
       "clase": "llevar",
       "titulo": "Sombrilla",
-      "detalle": "Allí no hay ni una sombra",
+      "detalle": null,
       "autor_id": "p-marta",
       "activo": true,
-      "creado_en": "2026-07-20T10:00:00Z"
+      "creado_en": "2026-07-20T10:00:00Z",
+      "hecho": false
     },
     {
       "id": "ap-monedas",
@@ -429,7 +430,8 @@
       "detalle": null,
       "autor_id": "p-oscar",
       "activo": true,
-      "creado_en": "2026-07-21T10:00:00Z"
+      "creado_en": "2026-07-21T10:00:00Z",
+      "hecho": true
     },
     {
       "id": "ap-duna",
@@ -479,7 +481,8 @@
       "detalle": null,
       "autor_id": "p-oscar",
       "activo": true,
-      "creado_en": "2026-07-19T10:00:00Z"
+      "creado_en": "2026-07-19T10:00:00Z",
+      "hecho": false
     }
   ],
   "votos": [

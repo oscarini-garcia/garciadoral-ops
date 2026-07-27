@@ -16,7 +16,8 @@
  */
 
 import { guardar, retirar } from './sincronizacion.js';
-import { estaActivo } from './modelo.js';
+import { emojiVisible, estaActivo } from './modelo.js';
+import { formatearHace } from './semana.js';
 
 /**
  * Las cuatro clases, por lo que se hace con cada apunte.
@@ -33,11 +34,19 @@ import { estaActivo } from './modelo.js';
  * porque es lo que se consulta y no lo que se recorre.
  */
 export const CLASES = [
-  { id: 'llevar', nombre: 'Llevar' },
+  // «Llevar» no es una clase más: es una lista de la compra, y por eso lleva
+  // `lista` puesto. Una línea, una casilla y un aspa; sin descripción, sin hilo
+  // y sin voto. Va la primera porque es lo único de un sitio que se mira **con
+  // prisa**, de pie y antes de salir por la puerta.
+  { id: 'llevar', nombre: 'Llevar', lista: true },
   { id: 'hacer', nombre: 'Hacer' },
   { id: 'ir', nombre: 'Ir' },
   { id: 'saber', nombre: 'Saber' },
 ];
+
+/** ¿Esta clase se lee como lista de la compra? Lo pregunta la pantalla para
+ *  saber si dibuja una fila con casilla o una tarjeta con voto y hilo. */
+export const esLista = (clase) => Boolean(clasePorId(clase).lista);
 
 /**
  * La que va puesta de origen.
@@ -63,6 +72,11 @@ export const haySitios = (instantanea) => Array.isArray(instantanea?.lugares);
 
 export const lugaresDe = (instantanea) =>
   (instantanea?.lugares || []).filter((l) => estaActivo(l));
+
+/** El nombre de un sitio tal como se escribe: con su emoji delante, y con el
+ *  emoji arreglado para que salga en color y no a trazo. */
+export const nombreDeLugar = (lugar) =>
+  [lugar?.emoji ? emojiVisible(lugar.emoji) : null, lugar?.nombre].filter(Boolean).join(' ');
 
 export const lugarPorId = (instantanea, id) =>
   lugaresDe(instantanea).find((l) => l.id === id) || null;
@@ -98,6 +112,13 @@ export function porClase(instantanea, lugarId) {
       apuntes: apuntes
         .filter((a) => (a.clase || CLASE_POR_DEFECTO) === clase.id)
         .sort((a, b) => {
+          // En la lista de la compra manda la casilla: lo tachado baja al final
+          // para que lo que falta quede arriba, y dentro de cada mitad se
+          // conserva el orden en que se escribió, que es como se apunta.
+          if (clase.lista) {
+            const diferencia = Number(estaHecho(a)) - Number(estaHecho(b));
+            return diferencia || String(a.creado_en || '').localeCompare(String(b.creado_en || ''));
+          }
           const diferencia = votantesDe(instantanea, b.id).length - votantesDe(instantanea, a.id).length;
           return diferencia || String(b.creado_en || '').localeCompare(String(a.creado_en || ''));
         }),
@@ -105,9 +126,50 @@ export function porClase(instantanea, lugarId) {
     .filter((grupo) => grupo.apuntes.length);
 }
 
-/** Cuántos apuntes vivos tiene un sitio. Es lo que decide si se puede borrar y
- *  lo que se escribe debajo de su nombre. */
+/** Cuántos apuntes vivos tiene un sitio. Es lo que decide si se puede borrar. */
 export const cuantosApuntes = (instantanea, lugarId) => apuntesDe(instantanea, lugarId).length;
+
+/**
+ * Lo que se escribe debajo del nombre en la lista: cuántos hay de cada verbo.
+ *
+ * «6 apuntes» no decía nada útil —seis puede ser una lista de la compra o seis
+ * playas— y la pregunta que se hace al mirar la lista es de qué va cada sitio.
+ * «3 llevar · 2 hacer · 1 ir» la contesta sin abrirlo.
+ *
+ * Los verbos sin nada no salen, que es la misma regla que dentro del sitio.
+ */
+export function resumenDeLugar(instantanea, lugarId) {
+  const apuntes = apuntesDe(instantanea, lugarId);
+  const trozos = CLASES
+    .map((clase) => {
+      const cuantos = apuntes.filter((a) => (a.clase || CLASE_POR_DEFECTO) === clase.id).length;
+      return cuantos ? `${cuantos} ${clase.nombre.toLowerCase()}` : null;
+    })
+    .filter(Boolean);
+  return trozos.length ? trozos.join(' · ') : 'Todavía sin nada';
+}
+
+/** ¿Está tachado? La casilla solo existe en las clases de lista. */
+export const estaHecho = (apunte) => Boolean(apunte?.hecho) && apunte.hecho !== 0 && apunte.hecho !== '0';
+
+/** Tachar y destachar, que es el gesto de esta lista y no tiene más ceremonia. */
+export const alternarHecho = (apunte) =>
+  guardar('apunte', apunte.id, { hecho: estaHecho(apunte) ? 0 : 1 });
+
+/**
+ * La firma de una línea de la lista: quién la puso y, si ya no es de hoy, cuándo.
+ *
+ * El cuándo solo aparece cuando aporta: recién escrito, el nombre basta y la
+ * fecha sería ruido; pasados unos días, saber que eso lleva ahí desde el martes
+ * es la mitad de lo que se quiere saber.
+ */
+export function firmaDeApunte(vista, apunte) {
+  const quien = apunte.autor_id ? vista.nombre(apunte.autor_id) : null;
+  if (!quien) return null;
+  const cuando = formatearHace(apunte.creado_en);
+  const deHoy = !cuando || cuando.startsWith('hoy') || cuando.startsWith('hace') || cuando === 'ahora mismo';
+  return deHoy ? `(${quien})` : `(${quien}, ${cuando})`;
+}
 
 /**
  * Pone o quita mi voto.
@@ -136,14 +198,35 @@ export function alternarVoto(instantanea, apunteId, personaId) {
  * posibilidad de que cambie lo que alguien escribió.
  */
 export function textoDelLugar(instantanea, lugar) {
-  const lineas = [[lugar.emoji, lugar.nombre].filter(Boolean).join(' ')];
-  for (const { clase, apuntes } of porClase(instantanea, lugar.id)) {
-    lineas.push('', clase.nombre);
-    for (const apunte of apuntes) {
-      lineas.push(`· ${apunte.titulo}${apunte.detalle ? ` — ${apunte.detalle}` : ''}`);
-    }
+  const lineas = [nombreDeLugar(lugar)];
+  for (const grupo of porClase(instantanea, lugar.id)) {
+    lineas.push('', grupo.clase.nombre);
+    lineas.push(...lineasDeGrupo(grupo));
   }
   return lineas.join('\n');
+}
+
+/** Las líneas de un grupo, tal como se mandan. En la lista de la compra lo
+ *  tachado va con su visto delante, que es como se lee de un vistazo qué falta;
+ *  en las demás clases va el detalle detrás de una raya. */
+function lineasDeGrupo({ clase, apuntes }) {
+  if (clase.lista) {
+    return apuntes.map((a) => `${estaHecho(a) ? '✔' : '·'} ${a.titulo}`);
+  }
+  return apuntes.map((a) => `· ${a.titulo}${a.detalle ? ` — ${a.detalle}` : ''}`);
+}
+
+/**
+ * Solo la lista de la compra, para mandarla suelta.
+ *
+ * Es el caso de verdad: «mándame lo que hay que llevar» se pide entero y sin lo
+ * demás, y quien lo recibe no quiere saber a qué playa se sube ni qué súper
+ * cierra los domingos.
+ */
+export function textoDeLaLista(instantanea, lugar, claseId) {
+  const grupo = porClase(instantanea, lugar.id).find((g) => g.clase.id === claseId);
+  if (!grupo) return nombreDeLugar(lugar);
+  return [`${grupo.clase.nombre} · ${nombreDeLugar(lugar)}`, '', ...lineasDeGrupo(grupo)].join('\n');
 }
 
 /**
@@ -159,7 +242,7 @@ export function textoDelLugar(instantanea, lugar) {
 export function textoDelApunte(vista, apunte) {
   const lugar = lugarPorId(vista.datos, apunte.lugar_id);
   const lineas = [`📍 ${apunte.titulo}`];
-  if (lugar) lineas.push([lugar.emoji, lugar.nombre].filter(Boolean).join(' '));
+  if (lugar) lineas.push(nombreDeLugar(lugar));
   if (apunte.detalle) lineas.push('', apunte.detalle);
 
   const comentarios = vista.comentariosDe('apunte', apunte.id);

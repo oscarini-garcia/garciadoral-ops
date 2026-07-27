@@ -93,8 +93,8 @@ tener que recorrer la aplicación entera cada vez.
   TURNOS · IDS_TURNO · turnoPorId · nombreDeTurno · rotuloDeTurno · idPaseo · cuadroVacio
   cuadroDe · hayLio · genteDeCasa · …y 15 más
 - **modelo.js** — Consultas sobre la instantánea local.
-  EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO
-  nombreCompleto · deQuien · GENEROS · estaActivo · redaccionDisponible · …y 9 más
+  EMOJI_POR_DEFECTO · emojiVisible · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS
+  PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · estaActivo · …y 10 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -109,8 +109,8 @@ tener que recorrer la aplicación entera cada vez.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
   listarSolicitudes · resolverSolicitud · redactarDia · …y 8 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
-  CLASES · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios · lugaresDe
-  lugarPorId · apuntesDe · votantesDe · …y 6 más
+  CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
+  lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
   cerrarHoja · hayHojaAbierta · …y 10 más

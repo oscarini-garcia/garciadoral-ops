@@ -39,7 +39,7 @@ const CAMPOS = {
     'asignado_previo_id', 'estado', 'resuelto_en', 'activo',
   ],
   lugar: ['nombre', 'emoji', 'evento_id', 'autor_id', 'activo'],
-  apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'autor_id', 'activo'],
+  apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'hecho', 'autor_id', 'activo'],
   voto: ['apunte_id', 'persona_id', 'activo'],
   visto: ['persona_id', 'objeto_tipo', 'objeto_id', 'hasta'],
 };
@@ -199,7 +199,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     tratos_paseo: tratos.map((t) => ({ ...t, activo: bool(t.activo) })),
     // Sitios: la carpeta, lo que hay dentro y a quién le apetece cada cosa.
     lugares: lugares.map((l) => ({ ...l, activo: bool(l.activo) })),
-    apuntes: apuntes.map((a) => ({ ...a, activo: bool(a.activo) })),
+    apuntes: apuntes.map((a) => ({ ...a, hecho: bool(a.hecho), activo: bool(a.activo) })),
     votos: votos.map((v) => ({ ...v, activo: bool(v.activo) })),
     // Lo visto no se recorta por visibilidad sino por dueño, y eso lo hace
     // `filtrado.js`: las filas de una persona no le sirven de nada a otra.

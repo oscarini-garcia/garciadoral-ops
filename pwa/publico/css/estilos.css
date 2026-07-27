@@ -1403,10 +1403,60 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .voto-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .voto-dicho { font-size: 13.5px; color: var(--ink-soft); }
 
-/* La salida de un sitio abierto. Dentro de una pestaña no hay flecha del
-   sistema que devuelva a ninguna parte, así que se pone. */
-.volver { font-size: 15px; color: var(--tinta); padding: 2px 0; }
 .subcabecera-verbos { display: flex; gap: 6px; margin-left: auto; }
+
+/* Las migas del título: «Sitios › Bolonia». Lo grande es dónde estás y lo
+   pequeño, por dónde has llegado; así se lee como un camino y no como dos
+   rótulos peleándose por la misma línea. Van con la línea base compartida, que
+   es lo que hace que el «›» caiga a la altura de las dos palabras. */
+.migas { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.miga {
+  font-family: var(--sans); font-size: 16px; color: var(--tinta);
+  padding: 0; min-height: 0;
+}
+.miga:hover { text-decoration: underline; text-underline-offset: 3px; }
+.miga-flecha { font-size: 16px; color: var(--ink-faint); }
+
+/* ------------------------------------------------ La lista de la compra --
+
+   «Llevar» no es una clase más: es la lista que se mira de pie y antes de salir
+   por la puerta. Una línea, una casilla y un aspa; nada que abrir, nada que
+   votar y nada que comentar. Tocar la línea entera tacha, porque es el gesto que
+   se repite doce veces seguidas y no puede pedir puntería. */
+.grupo-cabeza { display: flex; align-items: center; gap: 8px; }
+.grupo-cabeza .icono-accion { margin-left: auto; width: 30px; height: 30px; }
+.grupo-cabeza .icono-accion .icono-svg svg { width: 17px; height: 17px; }
+
+.llevar {
+  display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
+  border-bottom: 1px solid var(--line); min-height: 46px;
+}
+.llevar:last-child { border-bottom: 0; }
+.llevar-cuerpo {
+  display: flex; align-items: baseline; gap: 11px; min-width: 0;
+  text-align: left; padding: 10px 0;
+}
+.llevar-casilla {
+  flex: none; align-self: center;
+  width: 21px; height: 21px; border-radius: 6px;
+  border: 1.5px solid var(--line);
+  display: grid; place-items: center;
+  color: var(--paper); background: transparent;
+}
+.llevar[data-hecho="si"] .llevar-casilla { background: var(--tinta); border-color: var(--tinta); }
+.llevar-casilla .icono-svg svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.llevar-texto { display: flex; align-items: baseline; gap: 7px; min-width: 0; flex: 1; }
+/* El título es lo que se recorta y la firma se queda entera: es lo más corto de
+   los dos y lo que peor se adivina. */
+.llevar-titulo { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.llevar-firma { flex: none; font-size: 12.5px; color: var(--ink-faint); }
+.llevar[data-hecho="si"] .llevar-titulo { text-decoration: line-through; color: var(--ink-faint); }
+.llevar-quitar {
+  flex: none; width: 34px; height: 34px; border-radius: 9px;
+  display: grid; place-items: center;
+  font-size: 18px; line-height: 1; color: var(--ink-faint);
+}
+.llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
 
 /* ------------------------------------------------------------------ Avisos --
 
