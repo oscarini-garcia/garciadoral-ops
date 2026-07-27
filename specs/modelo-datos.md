@@ -92,6 +92,20 @@ El deseo no constituye una entidad separada, sino un valor del campo `tipo`. Su 
 
 **PreferenciaNotificación.** Por persona y evento o tipo de evento. Por defecto solo está activo el recordatorio previo; los avisos de modificación quedan desactivados, lo que además reduce la superficie de filtración descrita en el apartado 3.5 de la especificación funcional.
 
+### 2.6 Lio
+
+Los turnos de paseo del perro no son eventos y no viven en la tabla de eventos: tienen dueño, el dueño cambia con el consentimiento del otro, y no terminan al pasar la fecha sino cuando alguien dice que lo hizo. Nada de eso lo sabe expresar un Evento. La forma de la pantalla está en `ux.md` §10.3 y el porqué, en `propuesta-lio.html`.
+
+**CuadroLio.** Quién saca al perro cada día de la semana, por la mañana y por la noche: catorce casillas, con el lunes en primer lugar y la ausencia de encargado como valor admitido. No es una tabla sino una casilla de `configuracion`, bajo la clave `lio.cuadro`, porque es un único dato del hogar y no una colección. Solo lo escriben los administradores.
+
+**Paseo.** Un turno que ha dejado de derivarse del cuadro: fecha, turno —mañana o noche—, persona asignada, persona que lo sacó y cuándo lo marcó. La fila aparece cuando alguien marca el turno o cuando se acuerda un cambio para ese día, y desde entonces manda sobre el cuadro. Es la regla que permite cambiar el reparto sin reescribir el pasado. El identificador es compuesto y determinista —`lio:2026-07-27:manana`—, porque el dispositivo lo necesita antes de haber visto ninguna fila; el par fecha y turno es único.
+
+**TratoPaseo.** Una propuesta sobre un turno, que no surte efecto hasta que la acepta su destinatario. Dos clases, con el mismo mecanismo: `cambio`, cuando el asignado pide que lo saque otro, y `correccion`, cuando alguien dice que lo sacó y el turno era de otro. Guarda quién propone, a quién, a qué asignación se vuelve si la respuesta es que no, y en qué quedó —pendiente, aceptado, rechazado o caducado—. Mientras está pendiente no altera nada, de modo que rechazar es exactamente no haber propuesto. Solo el destinatario la resuelve; el proponente únicamente puede retirarla.
+
+**Ventanas de los turnos.** De 6 a 10 y de 20 a 24, fijas. Su única función es derivar el tercer estado de un turno —el que nadie marca—: un previsto cuya ventana terminó queda sin marcar. También caducan por ellas las propuestas de cambio sin contestar; las de corrección, que hablan del pasado, duran una semana.
+
+**Alcance.** Los tres elementos son del círculo `familia` y no salen de él: quien no vive en casa no los recibe en su instantánea ni figura en el cuadro.
+
 ### 2.5 Ocasiones y regalos
 
 **Ocasión.** Nombre, fecha, estado —abierta o cerrada— y vínculo opcional con un evento de la agenda mediante un `evento_id` opcional. El vínculo reside en la Ocasión, no en el Evento: así, la creación automática de la ocasión al asociar el primer regalo desde un evento no obliga a modificar el evento, que permanece ajeno a la maquinaria de regalos. No incorpora importe global: el total se obtiene por suma de los presupuestos individuales.

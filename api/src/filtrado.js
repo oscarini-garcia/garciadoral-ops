@@ -14,6 +14,7 @@
  */
 
 import { visible } from './visibilidad.js';
+import { cuadroVacio, esDeLaCasa } from './lio.js';
 
 /** Categorías que el observador puede ver. Las que no, no existen para él.
  *  No se muestra un contenedor bloqueado: la existencia misma de la categoría
@@ -30,6 +31,10 @@ function categoriasVisibles(registro, observador) {
 
 export function componerInstantanea(registro, observador) {
   const esAdministrador = observador.rol === 'administrador';
+  // Lio es de la casa. Para quien no vive en ella el módulo no existe: no
+  // recibe el cuadro, ni los paseos, ni las propuestas, y su aplicación no
+  // dibuja el carril porque no tiene con qué.
+  const deLaCasa = esDeLaCasa(observador);
 
   const eventos = registro.eventos.filter((e) => visible(registro, e, 'evento', observador));
   const ideas = registro.ideas.filter((i) => visible(registro, i, 'idea', observador));
@@ -74,6 +79,12 @@ export function componerInstantanea(registro, observador) {
     ocasiones,
     regalos,
     comentarios,
+    lio_cuadro: deLaCasa ? registro.lio_cuadro || cuadroVacio() : cuadroVacio(),
+    paseos: deLaCasa ? registro.paseos || [] : [],
+    // Las propuestas llegan enteras y no solo las dirigidas al lector: quien
+    // pidió un cambio tiene que ver que sigue sin contestar, y el carril de la
+    // semana marca el turno pedido para los dos.
+    tratos_paseo: deLaCasa ? registro.tratos_paseo || [] : [],
     // Los conflictos de coordinación solo interesan a quien coordina.
     conflictos: esAdministrador ? registro.conflictos || [] : [],
     // El recuento de quien espera en la puerta, solo para quien puede abrirla.

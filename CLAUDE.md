@@ -60,10 +60,30 @@ pendiente. El hook lo inyecta al final del mapa.
   web lleva su copia en `pwa/publico/js/version.js`, así que **al subir la
   versión del OTA hay que subir también esa**. `tests/test_version.py` falla si
   se separan.
-- **Queda una migración por aplicar: `0007_estado_regalo.sql`**, que convierte a
-  «comprado» lo que estuviera «envuelto». Es corriente y no `.unavez` —se puede
-  repetir sin consecuencias—, así que basta con marcar la casilla de las
-  migraciones al desplegar la API. Las dos `.unavez` —los círculos (`0005`) y el
+- **Lio está construido**, y es el primer módulo que no cuelga de la agenda.
+  Los turnos —mañana de 6 a 10, noche de 20 a 24— **se derivan de un cuadro de
+  catorce casillas** que vive en `configuracion` y que solo editan los
+  administradores desde Ajustes; **se escribe una fila de `paseo` cuando alguien
+  marca el turno o cuando se acuerda un cambio**, y desde entonces esa fila manda
+  sobre el cuadro. Eso es lo que hace que cambiar el reparto cambie el futuro y
+  no reescriba el pasado; si algún día se toca `lio.js`, esa es la regla que hay
+  que no romper —y está en los tres sitios a la vez: `pwa/publico/js/lio.js`,
+  `api/src/lio.js` y `scripts/agenda/lio.py`—. En la semana va como carril propio
+  encima de la rejilla, no como línea de día; en Hoy, la banda de lo que hay que
+  contestar y los dos turnos; y sale en el plan de WhatsApp en su propio renglón,
+  fuera del techo de tres. Está en `specs/ux.md` §10.3, las entidades en
+  `specs/modelo-datos.md` §2.6 y el porqué de la forma, en
+  `specs/propuesta-lio.html`. Queda abierto **si el rezagado de ayer debería
+  poder marcarse más de un día después** —hoy sube una vez y desaparece— y **qué
+  hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
+  turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
+  empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
+- **Quedan dos migraciones por aplicar: `0007_estado_regalo.sql`**, que convierte
+  a «comprado» lo que estuviera «envuelto», **y `0008_lio.sql`**, que crea las dos
+  tablas de Lio. Las dos son corrientes y no `.unavez` —se pueden repetir sin
+  consecuencias—, así que basta con marcar la casilla de las migraciones al
+  desplegar la API. Sin la de Lio, la aplicación no falla pero el módulo no
+  aparece: el cuadro no se puede guardar y no hay dónde escribir los paseos. Las dos `.unavez` —los círculos (`0005`) y el
   género (`0006`)— ya están puestas, y no se vuelven a pedir porque no se pueden
   repetir: el `ALTER TABLE` falla si la columna ya está. La
   pantalla de Gente está decidida y construida: tres círculos

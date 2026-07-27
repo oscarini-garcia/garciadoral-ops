@@ -317,7 +317,28 @@ function textoDelAviso(instancia) {
  *
  * Fuera de la cáscara no hace nada: la web no programa notificaciones.
  */
-export async function programarRecordatorios(instancias) {
+/**
+ * Los turnos de Lio que le tocan a quien mira, como aviso al empezar la ventana.
+ *
+ * Es lo único que Lio puede notificar hoy: la cáscara programa avisos locales a
+ * partir de lo que ya tiene, y no hay manera de que a otro le suene el teléfono
+ * porque uno acabe de pedirle un cambio. Un turno propio sí se sabe por
+ * adelantado, así que ese sí se avisa —y solo si sigue sin marcar cuando se
+ * programa, que es cuando el recordatorio significa algo.
+ */
+function avisoDeTurno(turno, ahora) {
+  if (!turno.mio || turno.estado === 'hecho' || turno.trato) return null;
+  const cuando = turno.inicio;
+  if (!cuando || cuando <= ahora) return null;
+  return {
+    id: idDeAviso(`lio:${turno.fechaIso}:${turno.turnoId}`),
+    title: `${turno.emoji} Te toca sacar a Lio`,
+    body: turno.nombre,
+    schedule: { at: cuando, allowWhileIdle: true },
+  };
+}
+
+export async function programarRecordatorios(instancias, turnosDeLio = []) {
   const notificaciones = plugin('LocalNotifications');
   if (!esNativo() || !notificaciones) return { estado: 'no-aplica' };
 
@@ -343,8 +364,13 @@ export async function programarRecordatorios(instancias) {
         schedule: { at: cuando, allowWhileIdle: true },
       }));
 
-    if (avisos.length) await notificaciones.schedule({ notifications: avisos });
-    return { estado: 'programados', cuantos: avisos.length };
+    // Los turnos van aparte del techo de los eventos: son dos al día como mucho
+    // y no compiten con la agenda por el mismo cupo.
+    const deLio = turnosDeLio.map((turno) => avisoDeTurno(turno, ahora)).filter(Boolean);
+
+    const todos = [...avisos, ...deLio];
+    if (todos.length) await notificaciones.schedule({ notifications: todos });
+    return { estado: 'programados', cuantos: todos.length };
   } catch (error) {
     return { estado: 'error', detalle: String(error?.message ?? error) };
   }

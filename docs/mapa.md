@@ -14,17 +14,19 @@ tener que recorrer la aplicación entera cada vez.
 - **__init__.py** — Agenda Familiar — implementación del modelo, la visibilidad y el plan semanal.
 - **fuente.py** — Lectura del registro canónico de la agenda.
   FuenteNoDisponible · leer_agenda
+- **lio.py** — Los turnos de paseo de Lio, derivados del cuadro semanal.
+  TurnoLio · id_paseo · cuadro_normalizado · turno_de · turnos_de · hay_lio
 - **mensaje.py** — Composición del texto del plan semanal para WhatsApp.
-  formatear_dia · formatear_rango · formatear_evento · Plan · componer
+  formatear_dia · formatear_rango · formatear_lio · formatear_evento · Plan · componer
 - **modelo.py** — Entidades y reglas de integridad de la Agenda Familiar.
   ErrorDeIntegridad · Persona · AtributoPersona · Categoria · Etiqueta · OrientacionIdea
-  Idea · TipoEvento · ParticipanteEvento · Evento · …y 9 más
+  Idea · TipoEvento · ParticipanteEvento · Evento · …y 10 más
 - **semana.py** — Selección de los eventos de la semana entrante.
   Semana · semana_entrante · Instancia · Aparicion · eventos_derivados · ocurrencias
   instancias_de_la_semana · repartir_por_dia
 - **visibilidad.py** — Función de visibilidad de la Agenda Familiar.
   destinatarios_de_idea · destinatarios_de_regalo · destinatarios_de_evento · visible
-  visible_publicamente · comentarios_visibles
+  visible_publicamente · comentarios_visibles · es_de_la_casa
 
 ### `scripts/` · Los dos procesos programados y su transporte
 
@@ -34,8 +36,8 @@ tener que recorrer la aplicación entera cada vez.
   parsear · siguiente · procesar · main
 - **plan_semanal.py** — Genera y envía el plan de la semana entrante, un mensaje por destinatario.
   DestinatarioInvalido · en_ventana · clave_de_semana · leer_estado · escribir_estado
-  destinatarios_del_plan · instancias_visibles · componer_para · enviar_plan
-  analizar_argumentos · …y 1 más
+  destinatarios_del_plan · instancias_visibles · componer_para · turnos_de_la_semana
+  enviar_plan · …y 2 más
 
 ### `api/src/` · Worker de Cloudflare: filtra antes de transmitir
 
@@ -46,6 +48,9 @@ tener que recorrer la aplicación entera cada vez.
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
+- **lio.js** — Lio: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
+  CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · leerCuadro
+  guardarCuadro · esDeLaCasa · DIAS_DE_GRACIA_CORRECCION · caducarTratos
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO · leerConfiguracion
@@ -79,6 +84,9 @@ tener que recorrer la aplicación entera cada vez.
   cargarRegistroDemo · componerDemo
 - **gente.js** — El campo con el que se elige gente, en todas las pantallas que lo piden.
   campoDeGente
+- **lio.js** — Lio: los turnos de paseo, sus estados y el trato que los cambia de dueño.
+  TURNOS · IDS_TURNO · turnoPorId · idPaseo · cuadroVacio · cuadroDe · hayLio · genteDeCasa
+  inicialesDe · finDeVentana · …y 11 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO
   nombreCompleto · deQuien · GENEROS · estaActivo · redaccionDisponible · …y 9 más
@@ -114,8 +122,9 @@ tener que recorrer la aplicación entera cada vez.
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
   …y 3 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
-  reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirDia · abrirDetalleEvento
-  abrirFormularioEvento · anclaActual
+  reiniciarAgenda · tituloDeAgenda · pintarAgenda · resumenDeTurno · abrirTurnoDeLio
+  bloqueDePropuesta · textoDePropuesta · abrirDia · abrirDetalleEvento
+  abrirFormularioEvento · …y 1 más
 
 ### `herramientas/` · Utilidades de desarrollo
 
@@ -169,10 +178,11 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
 - **`specs/especificacion.md`**
   `pwa/publico/js/native.js` §3.5 · `scripts/agenda/modelo.py` §7
 - **`specs/modelo-datos.md`**
-  `api/src/filtrado.js` §7.3 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
-  `pwa/publico/js/modelo.js` §4 · `pwa/publico/js/semana.js` §7.4
-  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/vistas/regalos.js` §5.2, §7.4
-  `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/modelo.py` §4
+  `api/src/filtrado.js` §7.3 · `api/src/lio.js` §2.6 · `api/src/repositorio.js` §4
+  `api/src/visibilidad.js` · `pwa/publico/js/lio.js` §2.6 · `pwa/publico/js/modelo.js` §4
+  `pwa/publico/js/semana.js` §7.4 · `pwa/publico/js/sincronizacion.js` §1
+  `pwa/publico/js/vistas/regalos.js` §5.2, §7.4 · `scripts/agenda/__init__.py` §2, §4, §6
+  `scripts/agenda/lio.py` §2.6 · `scripts/agenda/modelo.py` §4
   `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
   `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
 - **`specs/plan-semanal.md`**
@@ -184,13 +194,13 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
   `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
-  `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/semana.js` §8, §10.2
-  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/ui.js` §1, §3
-  `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
-  `pwa/publico/js/vistas/hoy.js` §6.5, §11
+  `pwa/publico/js/lio.js` §10.3 · `pwa/publico/js/modelo.js` §6.2, §7.1
+  `pwa/publico/js/semana.js` §8, §10.2 · `pwa/publico/js/sincronizacion.js` §1
+  `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
+  `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
-  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2 · `scripts/agenda/modelo.py` §7.1
-  `scripts/agenda/semana.py` §10.2
+  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2, §10.3 · `scripts/agenda/lio.py` §10.3
+  `scripts/agenda/modelo.py` §7.1 · `scripts/agenda/semana.py` §10.2
 
 ## Variables de entorno
 
@@ -211,10 +221,11 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**184** en total.
+**218** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
+- `tests/test_lio.py` — 18
 - `tests/test_mensaje.py` — 12
 - `tests/test_modelo.py` — 24
 - `tests/test_plan_semanal.py` — 11
@@ -223,6 +234,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
+- `api/test/lio.test.js` — 16
 - `api/test/redaccion.test.js` — 54
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11

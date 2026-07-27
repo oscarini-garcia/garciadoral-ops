@@ -38,6 +38,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from agenda.fuente import FuenteNoDisponible, leer_agenda
+from agenda.lio import TurnoLio, hay_lio, turnos_de
 from agenda.mensaje import Plan, componer
 from agenda.modelo import Agenda
 from agenda.semana import (
@@ -48,7 +49,7 @@ from agenda.semana import (
     repartir_por_dia,
     semana_entrante,
 )
-from agenda.visibilidad import visible, visible_publicamente
+from agenda.visibilidad import es_de_la_casa, visible, visible_publicamente
 from callmebot import cargar_destinatarios, enviar
 
 LOCAL = ZoneInfo("Europe/Madrid")
@@ -165,7 +166,23 @@ def componer_para(
         reparto,
         destinatario=clave,
         observador_id=observador_id,
+        lio=turnos_de_la_semana(agenda, semana, persona),
     )
+
+
+def turnos_de_la_semana(
+    agenda: Agenda, semana: Semana, persona
+) -> dict[date, list[TurnoLio]] | None:
+    """Los turnos de Lio, y solo para quien vive en casa.
+
+    Se resuelve aquí y no en `mensaje.py` por la misma razón que el resto del
+    filtrado: quien compone el texto no decide qué se puede contar. A quien no
+    es de casa se le devuelve `None` y su plan sale exactamente como salía antes
+    de que Lio existiera.
+    """
+    if not es_de_la_casa(persona) or not hay_lio(agenda):
+        return None
+    return {dia: turnos_de(agenda, dia) for dia in semana.dias()}
 
 
 def enviar_plan(plan: Plan, clave: str, datos: dict) -> None:

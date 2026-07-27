@@ -31,6 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, time
 
+from .lio import EMOJI_LIO, TurnoLio
 from .modelo import Agenda
 from .semana import Aparicion, Semana
 
@@ -131,6 +132,23 @@ def _acompanantes(agenda: Agenda, aparicion: Aparicion) -> str:
     return f" ({', '.join(nombres)})"
 
 
+def formatear_lio(agenda: Agenda, turnos: list[TurnoLio]) -> str:
+    """`🐾 ☀️ Óscar · 🌙 Marta`, o cadena vacía si ese día no lo saca nadie.
+
+    Va en su propio renglón, detrás de los eventos del día y fuera del techo de
+    tres: un turno de perro no es un evento y no puede desplazar a uno. Se
+    escribe solo el nombre de pila, que es el que se usa en casa, y el turno que
+    no tiene dueño se calla en lugar de escribir un guion.
+    """
+    partes = []
+    for turno in turnos:
+        persona = agenda.persona(turno.responsable_id)
+        if persona is None:
+            continue
+        partes.append(f"{turno.emoji} {persona.nombre}")
+    return f"{EMOJI_LIO} {' · '.join(partes)}" if partes else ""
+
+
 def formatear_evento(agenda: Agenda, aparicion: Aparicion, sangria: int) -> str:
     """Una línea: emoji, título recortado y hora si la tiene."""
     emoji = agenda.emoji_de(aparicion.evento)
@@ -172,17 +190,21 @@ def componer(
     *,
     destinatario: str,
     observador_id: str | None,
+    lio: dict[date, list[TurnoLio]] | None = None,
 ) -> Plan:
     """Construye el mensaje a partir de un reparto **ya filtrado**.
 
     El filtrado se produce en la generación, nunca aquí: este módulo se limita a
     dar forma a lo que recibe. Si llegara un evento que el destinatario no debe
-    ver, lo escribiría sin oponer resistencia.
+    ver, lo escribiría sin oponer resistencia. Lo mismo vale para `lio`, que solo
+    llega cuando el destinatario vive en casa.
     """
     lineas = [CABECERA, formatear_rango(semana), ""]
     total = sum(len(reparto.get(dia, [])) for dia in semana.dias())
+    turnos_por_dia = lio or {}
 
-    if total == 0:
+    # Una semana sin eventos pero con turnos de perro sí tiene algo que contar.
+    if total == 0 and not any(turnos_por_dia.values()):
         lineas.append(SIN_EVENTOS)
         return Plan(destinatario, observador_id, "\n".join(lineas), 0)
 
@@ -190,9 +212,12 @@ def componer(
         prefijo = formatear_dia(dia)
         sangria = len(prefijo) + 2
         apariciones = reparto.get(dia, [])
+        renglon_de_lio = formatear_lio(agenda, turnos_por_dia.get(dia, []))
 
         if not apariciones:
-            lineas.append(f"{prefijo}  {DIA_VACIO}")
+            # El día sin eventos pero con turno no está vacío: se escribe el
+            # turno en su sitio en lugar del guion.
+            lineas.append(f"{prefijo}  {renglon_de_lio or DIA_VACIO}")
             continue
 
         visibles = apariciones[:TECHO_EVENTOS_DIA]
@@ -206,5 +231,9 @@ def componer(
         restantes = len(apariciones) - len(visibles)
         if restantes > 0:
             lineas.append(f"{' ' * len(prefijo)}  y {restantes} más")
+
+        # Lio va el último y fuera del techo: no compite por las tres líneas.
+        if renglon_de_lio:
+            lineas.append(f"{' ' * len(prefijo)}  {renglon_de_lio}")
 
     return Plan(destinatario, observador_id, "\n".join(lineas), total)

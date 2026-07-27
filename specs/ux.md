@@ -372,6 +372,8 @@ La barra pasa a cinco entradas —Hoy, Agenda, Regalos, Gente, Buscar—, que es
 
 El panel completo de Ajustes se queda donde estaba, con el relato de las fases apilado. Son dos lecturas distintas de lo mismo: aquí cabe una línea y va la de ahora, y allí se apilan y se leen como lo que ha ido pasando.
 
+**Y por arriba, lo de Lio**: primero lo que espera respuesta y después los dos turnos del día. Es el primer bloque que se le añade a esta pantalla y no es estacional, sino de todos los días: marcar que se ha sacado al perro es el gesto que se repite dos veces cada día, y su sitio es donde abre la aplicación. Cómo funciona está en el §10.3.
+
 ---
 
 ## 7. Opción C — Las personas
@@ -658,6 +660,32 @@ Es el punto donde la vista de semana se rompe. Si cada fila crece con su conteni
 **Eventos de varios días con barra continua.** Un viaje o un torneo de dos jornadas se marca con una banda vertical en el margen izquierdo de cada día afectado, y las jornadas posteriores a la primera se señalan como continuación en lugar de repetir el evento como si fuera nuevo.
 
 **Consecuencia sobre los permisos.** El recuento del enlace de desbordamiento se calcula sobre los eventos visibles para quien mira. Si un evento pertenece a una categoría reservada, no cuenta. Un enlace que anuncie dos eventos más y muestre solo uno al abrirlo revela la existencia de lo que se pretendía ocultar, que es justamente el fallo que este diseño trata de impedir.
+
+### 10.3 El carril de Lio, como se construyó
+
+Quién saca al perro cae en un día y tiene hora, pero no es un evento: tiene dueño, el dueño puede cambiar con el permiso del otro, y no termina cuando pasa la fecha sino cuando alguien dice que lo hizo. Por eso no entra en las líneas del día ni cuenta para el techo de tres. El análisis y las cinco formas que se estudiaron están en `specs/propuesta-lio.html`; lo que se eligió es esto.
+
+**Una banda propia encima de la rejilla**, de siete columnas y dos filas —mañana y noche—, con las dos primeras letras de quien tiene cada turno. La semana entera de Lio en dos renglones. Gasta el alto una sola vez en lugar de siete, y se lee como lo que es: un instrumento aparte, que nadie confunde con un evento. Solo existe en la vista de semana: en el mes no hay siete columnas donde ponerlo y en la lista no hay semana, y allí es preferible que Lio no aparezca a inventarle un segundo dibujo que dijera lo mismo de otra manera.
+
+**El color dice el estado y no hace falta leer nada.** Relleno, hecho —y con las iniciales de quien lo sacó, que no siempre es quien lo tenía—. De trazo discontinuo naranja, la ventana que pasó sin que nadie marcara. Con un anillo, el turno propio. De trazo discontinuo en el color de los regalos, el que tiene una propuesta esperando respuesta. Tocar una casilla abre el turno con lo que se puede hacer con él.
+
+**Sin marcar no es una acusación.** Los estados de un turno son dos —previsto y hecho— y el tercero lo escribe el reloj: un previsto cuya ventana terminó. Nadie va a marcar nunca «no lo he sacado», y afirmar que el perro no salió sería casi siempre falso: lo que faltó fue el gesto en el teléfono. De ahí que lo que sube a Hoy sea una pregunta —«¿la sacaste?»— y solo el día siguiente, una vez. Arrastrarlo más días convertiría la pantalla de inicio en una lista de reproches.
+
+**Las dos ventanas son de 6 a 10 y de 20 a 24**, y no se configuran. Sirven para una sola cosa —decidir cuándo un turno deja de estar previsto— y una cifra ajustable más sería una pregunta más en una pantalla que ya hace catorce.
+
+**El cuadro por defecto vive en Ajustes y lo edita quien administra.** Catorce casillas, siete días por dos turnos, con la misma figura que un cuadro de la nevera; se toca una y va pasando a la siguiente persona de casa, con «nadie» como opción de pleno derecho. Es el reparto de una casa y no una preferencia de quien mira: cambiarlo reordena la semana de otras tres personas. Lo que sí puede hacer cualquiera de casa es cambiar **un día suelto**, y eso no pasa por Ajustes sino por el trato.
+
+**A Lio lo saca quien vive en casa.** El círculo `familia` ya estaba cerrado y ya era de cuatro (§7.1), así que no hace falta permiso nuevo: quien no está en él no ve el carril, porque el servidor no le manda ni el cuadro ni los paseos.
+
+**El trato: pedir el cambio y corregir el pasado son la misma pieza.** Una propuesta sobre un turno que no vale hasta que la contesta el otro. Si me toca y no puedo, se lo pido a alguien y el turno pasa a ser suyo ese día cuando acepta. Si marco un turno que no era mío —hoy o el martes pasado—, no se marca nada todavía: le llega la corrección a quien lo tenía, y la marca queda a mi nombre cuando la confirma. **Mientras hay algo pendiente, el turno sigue siendo de quien lo tenía**, de modo que un «no puedo» no deshace nada: vuelve exactamente a donde estaba. Y lo que nadie contesta caduca solo —el cambio al cerrarse la ventana de su turno, la corrección a la semana—, porque una bandeja de peticiones de días que ya pasaron no la lee nadie.
+
+**Un cambio aceptado vale para ese día y no para siempre.** El «a partir de ahora los martes los hago yo» se arregla en Ajustes, que es donde vive la regla.
+
+**Lo que se escribe y lo que se deriva.** Mientras nadie toca nada no hay ninguna fila: los turnos se derivan del cuadro, igual que los cumpleaños se derivan de una fecha de nacimiento (`modelo-datos.md` §7.4). Se escribe una fila cuando alguien marca el turno o cuando se acuerda un cambio, y desde ese momento esa fila manda sobre el cuadro para siempre. Es lo que hace que **cambiar el reparto cambie el futuro sin reescribir el pasado**, que es lo único que se le pide a un histórico.
+
+**En Hoy, y en este orden**: lo que hay que contestar, los dos turnos del día, y después la lista. Las peticiones van arriba del todo con sus dos respuestas escritas enteras y del mismo tamaño —decir que no tiene que costar lo mismo que decir que sí—, y como mucho dos a la vista; el resto se cuentan y se abren aparte, para que lo excepcional no le quite el sitio a lo de todos los días.
+
+**Y sale en el plan de los domingos**, en su propio renglón detrás de los eventos de cada día y fuera del techo de tres: un turno de perro no es un evento y no puede desplazar a uno. Solo lo recibe quien vive en casa. El único aviso que Lio puede empujar hoy es el del turno propio, programado en el dispositivo desde la instantánea; que a otro le suene el teléfono porque acabas de pedirle un cambio no está al alcance de la aplicación tal como está montada.
 
 ---
 

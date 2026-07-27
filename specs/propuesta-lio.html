@@ -1,0 +1,1238 @@
+<meta charset="utf-8">
+<title>Lio: quién lo saca, y cómo se dice</title>
+
+<style>
+  /* Las mismas fichas de color de la aplicación (pwa/publico/css/estilos.css).
+     La Newsreader no puede cargarse desde fuera, así que queda Georgia. */
+  :root {
+    color-scheme: light dark;
+
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --paper-alto: #FFFDFA;
+    --paper-alto-2:#F6F2EA;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --aviso-suave:#F6E7D2;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #10171A;
+      --paper-2:    #172025;
+      --paper-3:    #1F2A30;
+      --paper-alto: #1E282D;
+      --paper-alto-2:#253238;
+      --ink:        #E7EEF1;
+      --ink-soft:   #9CB0BA;
+      --ink-faint:  #6C818C;
+      --line:       #263238;
+      --tinta:      #55C9B4;
+      --tinta-suave:#12312E;
+      --regalo:     #E48FAE;
+      --regalo-suave:#33202A;
+      --aviso:      #E0A253;
+      --aviso-suave:#33260F;
+      --sombra:     0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B; --aviso-suave: #F6E7D2;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --paper-alto: #1E282D; --paper-alto-2: #253238;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253; --aviso-suave: #33260F;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 72px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p { color: var(--ink-soft); max-width: 62ch; }
+
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .parte p { color: var(--ink-soft); max-width: 62ch; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 62ch; }
+
+  .par { display: grid; gap: 22px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 340px 1fr; } }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+
+  /* ------------------------------------------------------------- La tabla -- */
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); }
+  .comparativa .ojo { color: var(--aviso); }
+  .comparativa .bien { color: var(--tinta); }
+  .desplazable { overflow-x: auto; }
+
+  /* --------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 340px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden; font-size: 14px;
+  }
+  .tel-cabecera { padding: 11px 14px 0; display: flex; align-items: baseline; gap: 10px; }
+  .tel-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 21px; }
+  .tel-cabecera .punto { width: 7px; height: 7px; border-radius: 50%; background: var(--tinta); margin-left: auto; }
+  .tel-fecha { padding: 2px 14px 0; font-size: 12.5px; color: var(--ink-soft); }
+  .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; margin: 9px 14px 0; }
+  .seg i { font-style: normal; padding: 5px 10px; border-radius: 7px; font-size: 12.5px; color: var(--ink-soft); }
+  .seg i.on { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
+  .tel-cuerpo { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 13px; }
+  .tel-pie {
+    border-top: 1px solid var(--line); display: flex; justify-content: space-around;
+    padding: 7px 0 9px; font-size: 10px; color: var(--ink-faint);
+  }
+  .tel-pie b { font-weight: 500; color: var(--tinta); }
+
+  /* ------------------------------------------------------------- La semana -- */
+
+  .semana { display: flex; flex-direction: column; }
+  .fila-dia {
+    display: grid; grid-template-columns: 34px 1fr; gap: 9px;
+    border-top: 1px solid var(--line); padding: 7px 0 6px; align-items: start;
+  }
+  .fila-dia:first-child { border-top: 0; }
+  .fila-dia[data-hoy="si"] .dia-numero { color: var(--tinta); font-weight: 600; }
+  .dia-cabeza { text-align: center; }
+  .dia-inicial { font-size: 10px; color: var(--ink-faint); font-family: var(--mono); }
+  .dia-numero { font-size: 17px; font-family: var(--serif); }
+  .dia-lineas { display: flex; flex-direction: column; gap: 4px; min-height: 20px; }
+  .linea { display: flex; align-items: baseline; gap: 6px; font-size: 13px; }
+  .linea .hora { margin-left: auto; font-size: 11.5px; color: var(--ink-faint); font-family: var(--mono); }
+  .linea .tit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .linea.tenue { color: var(--ink-faint); }
+
+  /* Las pastillas de turno, que es lo que se propone dibujar en la agenda. */
+  .cinta { display: flex; gap: 5px; align-items: center; margin-top: 3px; }
+  .turno {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; line-height: 1; padding: 3px 7px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .turno b { font-weight: 600; color: var(--ink); }
+  .turno.hecho { background: var(--tinta-suave); border-color: transparent; color: var(--tinta); }
+  .turno.hecho b { color: var(--tinta); }
+  .turno.falta { background: transparent; border-color: var(--aviso); color: var(--aviso); }
+  .turno.falta b { color: var(--aviso); }
+  .turno.mio { border-color: var(--tinta); }
+  .turno.pedido { border-style: dashed; color: var(--regalo); border-color: var(--regalo); }
+  .turno.pedido b { color: var(--regalo); }
+  .huella { font-size: 11px; opacity: .8; }
+
+  /* Iniciales redondas (opción B y el carril de la D). */
+  .ini {
+    width: 17px; height: 17px; border-radius: 50%; display: inline-grid; place-items: center;
+    font-size: 9.5px; font-family: var(--mono); background: var(--paper-3); color: var(--ink-soft);
+  }
+  .ini.hecho { background: var(--tinta); color: var(--paper); }
+  .ini.falta { background: transparent; border: 1px dashed var(--aviso); color: var(--aviso); }
+  .ini.mio { box-shadow: 0 0 0 1.5px var(--tinta); }
+  .dia-cabeza .par-ini { display: flex; gap: 3px; justify-content: center; margin-top: 3px; }
+
+  /* El carril de siete columnas (opción D). */
+  .carril {
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2);
+    padding: 8px 9px; display: grid; grid-template-columns: 26px repeat(7, 1fr); gap: 5px 3px;
+    align-items: center; text-align: center;
+  }
+  .carril .cab { font-size: 9.5px; font-family: var(--mono); color: var(--ink-faint); }
+  .carril .rot { font-size: 12px; text-align: left; }
+  .carril .celda { display: grid; place-items: center; }
+  .carril .hoy { box-shadow: 0 0 0 1.5px var(--tinta); border-radius: 50%; }
+
+  /* ---------------------------------------------------------------- Bloques -- */
+
+  .grupo-rot { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .tarjeta {
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2);
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
+  }
+  .tarjeta-fila { display: flex; align-items: baseline; gap: 8px; }
+  .tarjeta-fila h5 { margin: 0; font-size: 14px; font-weight: 500; }
+  .tarjeta-fila .hora { margin-left: auto; font-size: 11.5px; color: var(--ink-faint); font-family: var(--mono); }
+  .tarjeta p { font-size: 12px; color: var(--ink-soft); }
+
+  .bloque-lio { display: flex; flex-direction: column; gap: 6px; }
+  .fila-turno {
+    display: flex; align-items: center; gap: 9px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2); padding: 9px 11px;
+  }
+  .fila-turno .quien { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .fila-turno .quien b { font-size: 13.5px; font-weight: 500; }
+  .fila-turno .quien span { font-size: 11.5px; color: var(--ink-soft); }
+  .fila-turno.listo { background: var(--tinta-suave); border-color: transparent; }
+  .fila-turno.tarde { border-color: var(--aviso); }
+  .boton {
+    margin-left: auto; font-size: 12px; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--tinta); color: var(--tinta); background: var(--paper); white-space: nowrap;
+  }
+  .boton.plano { border-color: var(--line); color: var(--ink-soft); }
+  .boton.hecho { border-color: transparent; background: transparent; color: var(--tinta); }
+
+  .peticion {
+    border: 1px solid var(--regalo); border-radius: 12px; background: var(--regalo-suave);
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .peticion p { font-size: 12.5px; color: var(--ink); }
+  .peticion .acciones { display: flex; gap: 7px; }
+  .peticion .acciones span {
+    font-size: 12px; padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--tinta); color: var(--tinta); background: var(--paper);
+  }
+  .peticion .acciones span.no { border-color: var(--line); color: var(--ink-soft); }
+
+  .aviso-fila {
+    border: 1px solid var(--aviso); background: var(--aviso-suave); border-radius: 12px;
+    padding: 9px 11px; font-size: 12.5px; display: flex; align-items: center; gap: 9px;
+  }
+
+  .vacio { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 12px 0; }
+
+  /* --------------------------------------------------------------- Diagrama -- */
+
+  .ciclo {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px;
+  }
+  .paso { border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; background: var(--paper); font-size: 13.5px; }
+  .paso.acento { border-color: var(--tinta); color: var(--tinta); }
+  .paso.fin { border-style: dashed; color: var(--ink-faint); }
+  .paso.pega { border-color: var(--aviso); color: var(--aviso); }
+  .flecha { color: var(--ink-faint); font-family: var(--mono); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 64ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; }
+  .lista-seca strong { color: var(--ink); }
+
+  .fichas-par { display: flex; gap: 18px; flex-wrap: wrap; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Lio: quién lo saca, y cómo se dice</h1>
+    <p>
+      Un turno de perro no es un evento, aunque caiga en un día y tenga hora. Lo
+      que lo distingue es que <strong>tiene dueño y el dueño puede cambiar con el
+      consentimiento del otro</strong>, y que su final no es que pase la fecha
+      sino que alguien diga que lo hizo. Nada del modelo de hoy tiene esas dos
+      cosas. Debajo va el análisis, las cuatro decisiones que hay que tomar antes
+      de dibujar nada, y cinco maneras de enseñarlo en pantalla.
+    </p>
+    <div class="nota">
+      <p>
+        <strong>Decidido: D y 7.1</strong>, y ya construido. El carril de siete
+        columnas encima de la semana, con las <em>dos primeras</em> letras del
+        nombre en cada casilla; la banda de peticiones arriba de Hoy; el cuadro en
+        Ajustes y solo para administradores; dos turnos, de 6 a 10 y de 20 a 24;
+        el cambio vale para ese día y no para siempre; un «no puedo» devuelve el
+        turno a quien lo tenía; y Lio sale en el plan de WhatsApp. Un perro, no
+        varios: el módulo se llama Lio y en la pantalla pone Lio.
+      </p>
+      <p>
+        Lo que sigue se conserva tal cual se escribió, con las opciones que no se
+        eligieron: es el porqué de la elección. Cómo quedó está en
+        <code>specs/ux.md</code> §10.3 y las entidades, en
+        <code>specs/modelo-datos.md</code> §2.6.
+      </p>
+    </div>
+  </header>
+
+  <!-- ================================================== 1 · El análisis == -->
+
+  <div class="parte">
+    <p class="rotulo">1 · El análisis</p>
+    <h2>Por qué un paseo no cabe en la tabla de eventos</h2>
+    <p>
+      La tentación es evidente: hay un catálogo de tipos de evento, se añade
+      «lio» con su huella y listo. Cuatro cosas lo impiden, y conviene verlas
+      antes de elegir pantalla, porque tres de las cinco opciones de más abajo
+      dependen de resolverlas.
+    </p>
+  </div>
+
+  <div class="desplazable">
+    <table class="comparativa">
+      <thead>
+        <tr><th>Lo que pide Lio</th><th>Lo que hay en el modelo</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Dos turnos todos los días, para siempre.</td>
+          <td class="ojo">
+            Serían <strong>730 filas de <code>evento</code> al año</strong>, o dos filas
+            con <code>repeticion</code> diaria —que no existe: hoy son
+            <code>ninguna</code>, <code>semanal</code>, <code>mensual</code> y
+            <code>anual</code>—. Con repetición semanal harían falta catorce eventos
+            fijos, uno por día y turno, y ninguno podría llevar quién lo sacó,
+            porque el estado es de <em>cada</em> día y el evento es uno solo.
+          </td>
+        </tr>
+        <tr>
+          <td>Un encargado, y solo uno.</td>
+          <td class="ojo">
+            <code>participante_evento</code> tiene dos roles —protagonista y
+            asistente— y ninguno significa «este se encarga». Un participante no
+            puede aceptar ni rechazar nada: se pone y se quita.
+          </td>
+        </tr>
+        <tr>
+          <td>Un cambio que el otro tiene que aceptar.</td>
+          <td class="ojo">
+            <strong>No hay ninguna pieza así en toda la aplicación.</strong> Lo más
+            parecido son las solicitudes de entrada, que las resuelve un
+            administrador sobre un desconocido, y los conflictos, que solo dejan
+            constancia de lo ya ocurrido. Un trato entre dos iguales es material
+            nuevo.
+          </td>
+        </tr>
+        <tr>
+          <td>Si nadie marca, se sabe que no se hizo.</td>
+          <td class="ojo">
+            Un evento no se «incumple»: pasa y ya está. El vacío aquí es
+            información, y la agenda no sabe leer vacíos.
+          </td>
+        </tr>
+        <tr>
+          <td>Solo los cuatro de casa.</td>
+          <td class="bien">
+            Esto sí está: el círculo <code>familia</code> es cerrado y cabe en
+            <code>TAMANO_FAMILIA = 4</code> (<code>pwa/publico/js/modelo.js</code>).
+            No hay que inventar nada.
+          </td>
+        </tr>
+        <tr>
+          <td>Se ve todos los días, pequeño.</td>
+          <td class="ojo">
+            La semana enseña <code>TECHO_EVENTOS_DIA = 3</code> líneas por día y
+            luego «y N más». Dos paseos como líneas normales <strong>se comen dos
+            de las tres</strong> todos los días del año, y el jueves que hay
+            entreno, cita médica y cumpleaños, la agenda diría «y 3 más».
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="nota pega">
+    <p>
+      <strong>El precedente que sí sirve es el cumpleaños.</strong> No es una fila
+      de <code>evento</code>: se compone en el dispositivo a partir de la fecha de
+      nacimiento, con identificador <code>derivado:cumpleanos:&lt;persona&gt;</code>
+      (<code>pwa/publico/js/semana.js</code>). Lio puede hacer lo mismo —los turnos
+      se derivan de un cuadro semanal y no se guarda ninguna fila mientras nadie
+      se salga de él—, pero hay que pagar el peaje conocido: lo que se deriva en el
+      dispositivo hay que enseñárselo también a <code>api/src/redaccion.js</code>
+      (<code>visiblesDe</code>), o el Worker lo descarta al redactar y el plan sale
+      sin ello sin decir nada.
+    </p>
+  </div>
+
+  <!-- ============================================ 2 · Las cuatro decisiones == -->
+
+  <div class="parte">
+    <p class="rotulo">2 · Común a las cinco opciones</p>
+    <h2>Las cuatro decisiones de debajo</h2>
+    <p>
+      Esto no cambia con la pantalla que se elija: es lo que hay que fijar antes.
+      Van con una propuesta cada una, porque las cinco opciones de forma se
+      entienden mal si el fondo queda al aire.
+    </p>
+  </div>
+
+  <section class="opcion" style="border-top: 0; padding-top: 4px;">
+    <div class="opcion-cabeza">
+      <h3>2.1 · De dónde sale el turno: se deriva el cuadro, se guarda la excepción</h3>
+      <p>
+        El cuadro por defecto —catorce casillas, siete días por dos turnos— vive
+        entero en la tabla <code>configuracion</code>, bajo la clave
+        <code>lio.turnos</code>, igual que hoy vive ahí el encargo de la
+        felicitación. De ahí se derivan los turnos de cualquier día que se mire,
+        sin que exista ninguna fila.
+      </p>
+      <p>
+        <strong>Solo se escribe cuando pasa algo:</strong> cuando alguien marca
+        que lo sacó, cuando se acuerda un cambio o cuando se corrige el pasado.
+        Un año normal deja unas pocas centenas de filas de marca, no 730 de turno,
+        y el histórico de quién lo saca de verdad —que es el dato que interesa
+        cuando alguien dice que siempre le toca a él— queda escrito.
+      </p>
+    </div>
+    <div class="ciclo">
+      <span class="paso">Cuadro semanal en <code>configuracion</code></span>
+      <span class="flecha">→</span>
+      <span class="paso acento">turno derivado del día</span>
+      <span class="flecha">→</span>
+      <span class="paso">fila de <code>paseo</code> solo si se marca o se cambia</span>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h3>2.2 · Quién puede: el círculo de casa, y nadie más</h3>
+      <p>
+        Los cuatro de <code>familia</code>. No hace falta campo nuevo ni permiso
+        nuevo: el círculo ya está cerrado y ya es de cuatro. Los abuelos, que están
+        en Familia Extendida, no aparecen en el selector aunque saquen al perro
+        cuando vienen; si eso se convierte en un problema real, la salida no es
+        abrir el selector sino dejar poner un nombre suelto en la marca, y eso ya es
+        otra propuesta.
+      </p>
+      <p>
+        Queda una pregunta de permisos: <strong>el cuadro por defecto, ¿lo edita
+        cualquiera de casa o solo un administrador?</strong> Hoy la escritura de
+        <code>configuracion</code> es cosa de administradores. Cambiar el reparto de
+        un hogar por sorpresa no es lo mismo que cambiar una etiqueta, así que la
+        propuesta es dejarlo en administradores <em>y</em> que un cambio de un día
+        suelto —que es lo que se necesita a diario— no pase por ahí, sino por el
+        trato de 2.4.
+      </p>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h3>2.3 · Los estados de un turno son dos, y el tercero lo escribe el reloj</h3>
+      <p>
+        Nadie va a marcar nunca «no lo he sacado». Lo que hay es
+        <strong>previsto</strong> —alguien tiene el turno— y <strong>hecho</strong>
+        —alguien dice que lo sacó, y se guarda quién y cuándo—. El tercer estado no
+        se marca: es el previsto cuya ventana ya pasó, y eso lo decide la hora sin
+        que nadie toque nada.
+      </p>
+      <p>
+        Que se lea «sin marcar» y no «nadie lo sacó» importa: casi siempre el perro
+        salió y lo que faltó fue el gesto en el teléfono. La pantalla no debe acusar
+        a nadie; debe preguntar. De ahí que la fila de un turno vencido en Hoy sea
+        <em>«Anoche nadie marcó · ¿lo sacaste tú?»</em> y no <em>«Lio no salió»</em>.
+      </p>
+    </div>
+    <div class="ciclo">
+      <span class="paso acento">Previsto</span>
+      <span class="flecha">→</span>
+      <span class="paso acento">Hecho · quién y a qué hora</span>
+      <span class="flecha" style="margin: 0 8px">· y por el otro lado ·</span>
+      <span class="paso">Previsto</span>
+      <span class="flecha">+ pasa la ventana →</span>
+      <span class="paso pega">Sin marcar</span>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <h3>2.4 · El trato: pedir el cambio y corregir el pasado son la misma pieza</h3>
+      <p>
+        Lo pides como dos cosas —«que lo saque otro el jueves» y «lo saqué yo el
+        martes, no tú»— y en el modelo son una sola: <strong>una propuesta sobre un
+        turno que le cambia el dueño, y que no vale hasta que la acepta la otra
+        parte</strong>. Lo único que cambia es quién tiene que aceptar y qué se pide.
+      </p>
+    </div>
+    <div class="desplazable">
+      <table class="comparativa">
+        <thead>
+          <tr><th>Situación</th><th>Quién propone</th><th>Quién acepta</th><th>Si acepta</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Me toca el jueves y no puedo</td>
+            <td>El asignado</td>
+            <td>A quien se lo pide</td>
+            <td>El turno del jueves pasa a ser suyo</td>
+          </tr>
+          <tr>
+            <td>Le toca a otro y lo hago yo</td>
+            <td>El voluntario</td>
+            <td>El asignado</td>
+            <td>Igual, y de paso queda marcado</td>
+          </tr>
+          <tr>
+            <td>Ayer lo saqué yo, y no me tocaba</td>
+            <td>Quien lo sacó</td>
+            <td>El asignado de ayer</td>
+            <td>La marca queda a nombre de quien lo sacó</td>
+          </tr>
+          <tr>
+            <td>Me toca y lo saco yo</td>
+            <td>—</td>
+            <td class="bien">Nadie: no hay trato</td>
+            <td>Se marca y ya está</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nota pega">
+      <p>
+        <strong>Dos cosas que la propuesta tiene que resolver y que se olvidan
+        siempre.</strong> La primera: <em>qué pasa si el otro dice que no</em>. El
+        turno vuelve a quien lo tenía —no queda en el aire— y quien lo pidió se
+        entera; si no, uno se va tranquilo pensando que está resuelto. La segunda:
+        <em>qué pasa si nadie contesta</em>. Una petición de un turno que ya pasó no
+        puede quedarse viva en la bandeja para siempre: o caduca al pasar la ventana
+        del turno —y vuelve al dueño—, o se convierte en la pregunta de «sin marcar».
+      </p>
+      <p>
+        Y una advertencia de alcance: <strong>hoy no hay avisos empujados</strong>.
+        Las notificaciones que existen son locales, programadas en el propio
+        dispositivo a partir de la instantánea
+        (<code>programarRecordatorios</code>, <code>native.js</code>). El
+        recordatorio de <em>tu</em> turno sí se puede programar así; que a otro le
+        suene el teléfono porque acabas de pedirle un cambio, no. La petición se ve
+        al abrir la aplicación, y por eso el sitio donde caiga —el apartado 7— es
+        media propuesta.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==================================================== 3 · Los ajustes == -->
+
+  <div class="parte">
+    <p class="rotulo">3 · Una pantalla que no admite variantes</p>
+    <h2>El cuadro por defecto, en Ajustes</h2>
+    <p>
+      Esta sí la pides tal cual, y no se me ocurren cinco maneras razonables de
+      hacerla: catorce casillas se enseñan como catorce casillas. Va como un
+      apartado plegado más de Ajustes, entre «Aspecto» y «La aplicación», y con la
+      forma de la rejilla que ya sabes leer —los días en columnas, los dos turnos
+      en filas—. Se toca una casilla y se elige entre los cuatro de casa.
+    </p>
+  </div>
+
+  <div class="fichas-par">
+    <div class="tel">
+      <div class="tel-cabecera"><h4>Ajustes</h4></div>
+      <div class="tel-cuerpo">
+        <p style="font-size: 12px; color: var(--ink-soft);">Sesión iniciada como Óscar.</p>
+        <div class="tarjeta" style="padding: 9px 12px;"><div class="tarjeta-fila"><h5>Aspecto</h5><span class="hora">›</span></div></div>
+        <div class="tarjeta" style="gap: 9px;">
+          <div class="tarjeta-fila"><h5>🐾 Lio</h5><span class="hora">⌄</span></div>
+          <p>Quién lo saca cada día, si nadie dice lo contrario.</p>
+          <div class="carril">
+            <span></span>
+            <span class="cab">L</span><span class="cab">M</span><span class="cab">X</span>
+            <span class="cab">J</span><span class="cab">V</span><span class="cab">S</span><span class="cab">D</span>
+
+            <span class="rot">☀</span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">P</i></span>
+            <span class="celda"><i class="ini">P</i></span>
+
+            <span class="rot">🌙</span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+          </div>
+          <p style="font-size: 11.5px;">Toca una casilla para cambiarla. Ó · Óscar, M · Marta, P · Pablo, A · Ana.</p>
+        </div>
+        <div class="tarjeta" style="padding: 9px 12px;"><div class="tarjeta-fila"><h5>La aplicación</h5><span class="hora">›</span></div></div>
+        <div class="tarjeta" style="padding: 9px 12px;"><div class="tarjeta-fila"><h5>Tu cuenta</h5><span class="hora">›</span></div></div>
+      </div>
+    </div>
+    <div class="juicio" style="max-width: 42ch;">
+      <div class="si"><span>+</span><span>Catorce casillas en una pantalla de 340 puntos entran justas y se leen: la rejilla es la misma figura que el cuadro de la nevera.</span></div>
+      <div class="si"><span>+</span><span>No hay migración: <code>configuracion</code> ya existe y ya se escribe desde Ajustes.</span></div>
+      <div class="no"><span>−</span><span>Las iniciales se repiten cuando dos de casa empiezan por la misma letra. Con cuatro personas se resuelve con el color de cada una, que ya existe (<code>colorDePersona</code>).</span></div>
+      <div class="no"><span>−</span><span>Queda fuera la vacación, la semana rara y el «este mes lo hace Pablo». Eso lo absorbe el cambio del día, o no se absorbe.</span></div>
+    </div>
+  </div>
+
+  <!-- ===================================================== 4 · Las opciones == -->
+
+  <div class="parte">
+    <p class="rotulo">4 · Cinco maneras</p>
+    <h2>Cómo se ve en la agenda, y dónde se marca</h2>
+    <p>
+      Aquí está lo que de verdad se decide. Cada opción es un conjunto coherente
+      —cómo aparece en la semana, dónde se marca y dónde vive el cambio—, no una
+      pieza suelta que se pueda combinar con otra a capricho. La misma semana en
+      las cinco: lunes con entreno, martes con cumpleaños, miércoles vacío.
+    </p>
+  </div>
+
+  <!-- ---- A ---- -->
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>La cinta del día</h2></div>
+      <p>
+        Bajo las líneas de cada día, una cinta con dos pastillas pequeñas: sol y
+        luna, con la inicial de quien lo tiene. La pastilla verde es la que ya está
+        hecha; la de borde naranja, la que venció sin marcar; la de borde continuo,
+        la tuya. Se toca y se marca; se mantiene pulsada y salen los verbos.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Julio de 2026</h4><span class="punto"></span></div>
+        <div class="seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div>
+        <div class="tel-cuerpo">
+          <div class="semana">
+            <div class="fila-dia" data-hoy="si">
+              <div class="dia-cabeza"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🏃</span><span class="tit">Entreno de Pablo</span><span class="hora">18:00</span></div>
+                <div class="cinta">
+                  <span class="turno hecho"><span class="huella">☀</span><b>Ó</b> ✓</span>
+                  <span class="turno mio"><span class="huella">🌙</span><b>Óscar</b></span>
+                </div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🎂</span><span class="tit">Cumpleaños de Ana</span></div>
+                <div class="cinta">
+                  <span class="turno"><span class="huella">☀</span><b>M</b></span>
+                  <span class="turno pedido"><span class="huella">🌙</span><b>Ó → M</b></span>
+                </div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+              <div class="dia-lineas">
+                <div class="cinta">
+                  <span class="turno"><span class="huella">☀</span><b>Ó</b></span>
+                  <span class="turno"><span class="huella">🌙</span><b>M</b></span>
+                </div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🩺</span><span class="tit">Dentista</span><span class="hora">09:30</span></div>
+                <div class="cinta">
+                  <span class="turno"><span class="huella">☀</span><b>M</b></span>
+                  <span class="turno"><span class="huella">🌙</span><b>Ó</b></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tel-pie"><span>Hoy</span><b>Agenda</b><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Está todos los días y no gasta ninguna de las tres líneas del techo: la cinta va aparte, debajo.</span></div>
+        <div class="si"><span>+</span><span>Se marca desde la propia agenda, sin abrir nada. Un toque en la pastilla de tu turno y ya está hecho.</span></div>
+        <div class="si"><span>+</span><span>El color dice el estado sin escribir ni una palabra, y el borde naranja hace que un turno olvidado salte a la vista al recorrer la semana.</span></div>
+        <div class="no"><span>−</span><span>Añade ocho puntos de alto a cada uno de los siete días: unos 56 puntos de semana, que es más o menos un día. La semana entera en pantalla se aprieta.</span></div>
+        <div class="no"><span>−</span><span>Está también en los días vacíos, donde antes no había nada. La agenda deja de tener huecos, y los huecos también informan.</span></div>
+        <div class="no"><span>−</span><span>En la vista de mes no cabe: allí habría que conformarse con un punto, y el mes deja de contar la misma historia que la semana.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- B ---- -->
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Dos iniciales bajo el número del día</h2></div>
+      <p>
+        Lo mínimo que se puede dibujar. En la columna de la fecha, debajo del
+        número, dos círculos de nueve puntos con la inicial de cada turno: relleno
+        el hecho, punteado el que venció sin marcar. La columna ya existe y está
+        medio vacía. Ahí no se toca nada: marcar y cambiar viven en Hoy y en la
+        hoja del día.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Julio de 2026</h4><span class="punto"></span></div>
+        <div class="seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div>
+        <div class="tel-cuerpo">
+          <div class="semana">
+            <div class="fila-dia" data-hoy="si">
+              <div class="dia-cabeza">
+                <div class="dia-inicial">L</div><div class="dia-numero">27</div>
+                <div class="par-ini"><i class="ini hecho">Ó</i><i class="ini mio">Ó</i></div>
+              </div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🏃</span><span class="tit">Entreno de Pablo</span><span class="hora">18:00</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza">
+                <div class="dia-inicial">M</div><div class="dia-numero">28</div>
+                <div class="par-ini"><i class="ini">M</i><i class="ini">Ó</i></div>
+              </div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🎂</span><span class="tit">Cumpleaños de Ana</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza">
+                <div class="dia-inicial">X</div><div class="dia-numero">29</div>
+                <div class="par-ini"><i class="ini">Ó</i><i class="ini">M</i></div>
+              </div>
+              <div class="dia-lineas"></div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza">
+                <div class="dia-inicial">J</div><div class="dia-numero">30</div>
+                <div class="par-ini"><i class="ini">M</i><i class="ini">Ó</i></div>
+              </div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🩺</span><span class="tit">Dentista</span><span class="hora">09:30</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tel-pie"><span>Hoy</span><b>Agenda</b><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cuesta casi nada de alto: los círculos caben en la columna de la fecha, que hoy termina en el número y deja aire debajo.</span></div>
+        <div class="si"><span>+</span><span>Nunca compite con los eventos ni les quita sitio, porque vive en otra columna.</span></div>
+        <div class="si"><span>+</span><span>Sirve igual en el mes: dos puntitos en la celda, mismo lenguaje.</span></div>
+        <div class="no"><span>−</span><span>Es opaco. Dos letras sin sol ni luna no dicen cuál es la de la mañana, y hay que aprenderlo —o suponer que el de arriba es el primero.</span></div>
+        <div class="no"><span>−</span><span>No se puede tocar: nueve puntos es la mitad del blanco mínimo cómodo. Marcar exige irse a Hoy, que es un viaje para el gesto más frecuente del módulo.</span></div>
+        <div class="no"><span>−</span><span>La columna de la fecha es hoy el mando para abrir el día. Meterle dentro otra cosa tocable la convierte en dos botones pegados.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- C ---- -->
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>Lio no está en la agenda: está en Hoy</h2></div>
+      <p>
+        La agenda no enseña nada. Lio vive entero en la primera pestaña, que es la
+        que se abre al arrancar: los dos turnos de hoy arriba del todo, lo de ayer
+        si quedó sin marcar, y las peticiones. Para ver la semana de Lio se toca el
+        rótulo del bloque y se abre una hoja con los siete días.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Buenas tardes, Óscar</h4></div>
+        <div class="tel-fecha">lunes 27 de Julio</div>
+        <div class="tel-cuerpo">
+          <div class="bloque-lio">
+            <p class="grupo-rot">🐾 Lio · ver la semana ›</p>
+            <div class="fila-turno listo">
+              <span class="huella" style="font-size: 15px;">☀</span>
+              <div class="quien"><b>Mañana</b><span>La sacaste tú a las 8:10</span></div>
+              <span class="boton hecho">✓</span>
+            </div>
+            <div class="fila-turno">
+              <span class="huella" style="font-size: 15px;">🌙</span>
+              <div class="quien"><b>Noche · te toca a ti</b><span>Marta te la cambió el jueves</span></div>
+              <span class="boton">Ya está</span>
+            </div>
+          </div>
+          <div class="aviso-fila">
+            <span>🌙</span><span>Anoche nadie marcó. ¿La sacaste?</span>
+          </div>
+          <p class="grupo-rot">Para hoy</p>
+          <div class="tarjeta">
+            <div class="tarjeta-fila"><span>🏃</span><h5>Entreno de Pablo</h5><span class="hora">18:00</span></div>
+            <p>Polideportivo · Pablo</p>
+          </div>
+        </div>
+        <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>La agenda se queda exactamente como está: cero riesgo de estropear la vista que ya funciona, cero puntos de alto gastados.</span></div>
+        <div class="si"><span>+</span><span>El gesto frecuente —marcar— está donde abre la aplicación, sin ningún viaje.</span></div>
+        <div class="si"><span>+</span><span>Es lo más barato de construir con diferencia, y lo más fácil de retirar si el módulo no cuaja.</span></div>
+        <div class="no"><span>−</span><span>Rompe lo que pides: querías verlo cada día en la agenda. «¿Quién saca a Lio el sábado?» obliga a abrir una hoja aparte.</span></div>
+        <div class="no"><span>−</span><span>Hoy engorda por arriba. Con las peticiones y el rezagado de ayer, «Para hoy» —que es a lo que se viene— puede quedar por debajo del pliegue.</span></div>
+        <div class="no"><span>−</span><span>Deja a Lio fuera del plan semanal de WhatsApp, que se compone de lo que hay en la agenda.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- D ---- -->
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>El carril de Lio, encima de la semana</h2></div>
+      <p>
+        Ni en las líneas ni en la columna de la fecha: una banda propia sobre la
+        rejilla, de siete columnas y dos filas. La semana entera de Lio en dos
+        renglones, alineada con los días de abajo. Se toca una casilla y se abre lo
+        que se puede hacer con ese turno.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Julio de 2026</h4><span class="punto"></span></div>
+        <div class="seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div>
+        <div class="tel-cuerpo">
+          <div class="carril">
+            <span class="rot">🐾</span>
+            <span class="cab">L</span><span class="cab">M</span><span class="cab">X</span>
+            <span class="cab">J</span><span class="cab">V</span><span class="cab">S</span><span class="cab">D</span>
+
+            <span class="rot">☀</span>
+            <span class="celda hoy"><i class="ini hecho">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">P</i></span>
+            <span class="celda"><i class="ini">P</i></span>
+
+            <span class="rot">🌙</span>
+            <span class="celda hoy"><i class="ini mio">Ó</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+            <span class="celda"><i class="ini">Ó</i></span>
+            <span class="celda"><i class="ini">M</i></span>
+          </div>
+          <div class="semana">
+            <div class="fila-dia" data-hoy="si">
+              <div class="dia-cabeza"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🏃</span><span class="tit">Entreno de Pablo</span><span class="hora">18:00</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🎂</span><span class="tit">Cumpleaños de Ana</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+              <div class="dia-lineas"></div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🩺</span><span class="tit">Dentista</span><span class="hora">09:30</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tel-pie"><span>Hoy</span><b>Agenda</b><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>La pregunta real —«¿a quién le toca el finde?»— se contesta de un vistazo, sin recorrer siete filas.</span></div>
+        <div class="si"><span>+</span><span>Gasta el alto una sola vez, no siete: unos 60 puntos para toda la semana, contra los 56 de A repartidos día a día.</span></div>
+        <div class="si"><span>+</span><span>Es un instrumento aparte y se lee como tal: nadie lo confunde con un evento, que es justo lo que pides.</span></div>
+        <div class="no"><span>−</span><span>Solo existe en la vista de semana. En mes y en lista no hay siete columnas donde ponerlo, así que allí Lio desaparece o se dibuja de otra manera —dos lenguajes para lo mismo—.</span></div>
+        <div class="no"><span>−</span><span>El día y su turno dejan de estar juntos: hay que subir la vista para relacionar el jueves de arriba con el jueves de abajo.</span></div>
+        <div class="no"><span>−</span><span>Roba sitio fijo por arriba, y arriba es lo único que se ve sin desplazarse.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---- E ---- -->
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h2>Un evento de tipo «lio», comprimido en una línea</h2></div>
+      <p>
+        La opción conservadora: se añade <code>lio</code> al catálogo de tipos con
+        la huella 🐾 y los dos turnos se dibujan como una línea normal —una sola,
+        compartida—, sin título y sin hora, con las dos iniciales a la derecha. No
+        hay concepto nuevo: es un evento con una presentación distinta.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Julio de 2026</h4><span class="punto"></span></div>
+        <div class="seg"><i class="on">Semana</i><i>Mes</i><i>Lista</i></div>
+        <div class="tel-cuerpo">
+          <div class="semana">
+            <div class="fila-dia" data-hoy="si">
+              <div class="dia-cabeza"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🐾</span><span class="tit">Lio</span><span class="hora">Ó ✓ · Ó</span></div>
+                <div class="linea"><span>🏃</span><span class="tit">Entreno de Pablo</span><span class="hora">18:00</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🐾</span><span class="tit">Lio</span><span class="hora">M · Ó</span></div>
+                <div class="linea"><span>🎂</span><span class="tit">Cumpleaños de Ana</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🐾</span><span class="tit">Lio</span><span class="hora">Ó · M</span></div>
+              </div>
+            </div>
+            <div class="fila-dia">
+              <div class="dia-cabeza"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+              <div class="dia-lineas">
+                <div class="linea"><span>🐾</span><span class="tit">Lio</span><span class="hora">M · Ó</span></div>
+                <div class="linea"><span>🩺</span><span class="tit">Dentista</span><span class="hora">09:30</span></div>
+                <div class="linea tenue"><span>🎒</span><span class="tit">Reunión del cole</span><span class="hora">17:00</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tel-pie"><span>Hoy</span><b>Agenda</b><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Lo más barato en la agenda: no hay dibujo nuevo, solo una línea con la presentación recortada.</span></div>
+        <div class="si"><span>+</span><span>Entra sin esfuerzo en el mes, en la lista y en el plan semanal de WhatsApp, porque es un evento como los demás.</span></div>
+        <div class="no"><span>−</span><span>Gasta una de las tres líneas del techo <em>todos</em> los días. El jueves de arriba ya está al límite y se lleva por delante lo que venga después.</span></div>
+        <div class="no"><span>−</span><span>Es exactamente lo que pides que no sea: se lee como un evento, con su peso, entre los eventos de verdad.</span></div>
+        <div class="no"><span>−</span><span>Y por debajo no arregla nada: sigue haciendo falta el estado por día, el dueño y el trato entre dos, que la tabla de eventos no sabe guardar. Solo aplaza la decisión del apartado 1.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================== 5 · La comparativa == -->
+
+  <div class="parte">
+    <p class="rotulo">5 · De un vistazo</p>
+    <h2>Las cinco, en cinco preguntas</h2>
+  </div>
+
+  <div class="desplazable">
+    <table class="comparativa">
+      <thead>
+        <tr>
+          <th></th><th>A · Cinta</th><th>B · Iniciales</th><th>C · Solo Hoy</th><th>D · Carril</th><th>E · Evento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Se ve cada día en la agenda</td>
+          <td class="bien">Sí</td><td class="bien">Sí</td><td class="ojo">No</td>
+          <td class="bien">Sí, en bloque</td><td class="bien">Sí</td>
+        </tr>
+        <tr>
+          <td>Alto que gasta en la semana</td>
+          <td>≈ 56 pt (8 × 7)</td><td class="bien">≈ 0</td><td class="bien">0</td>
+          <td>≈ 60 pt, una vez</td><td class="ojo">Una línea de 3 al día</td>
+        </tr>
+        <tr>
+          <td>Se marca sin salir de la agenda</td>
+          <td class="bien">Sí</td><td class="ojo">No</td><td class="ojo">No aplica</td>
+          <td class="bien">Sí</td><td>Abriendo el evento</td>
+        </tr>
+        <tr>
+          <td>Sirve igual en mes y lista</td>
+          <td class="ojo">A medias</td><td class="bien">Sí</td><td class="bien">No aplica</td>
+          <td class="ojo">No</td><td class="bien">Sí</td>
+        </tr>
+        <tr>
+          <td>Se lee como algo que no es un evento</td>
+          <td class="bien">Sí</td><td class="bien">Sí</td><td class="bien">Sí</td>
+          <td class="bien">Sí, del todo</td><td class="ojo">No</td>
+        </tr>
+        <tr>
+          <td>Lo que cuesta construirlo</td>
+          <td>Medio</td><td>Bajo</td><td class="bien">Bajo</td>
+          <td>Medio</td><td>Bajo en pantalla, igual por debajo</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================================================== 6 · La marca en Hoy == -->
+
+  <div class="parte">
+    <p class="rotulo">6 · El gesto de todos los días</p>
+    <h2>Marcar, y el rezagado de ayer</h2>
+    <p>
+      Marcar es lo único que se hace dos veces al día durante años, así que su
+      coste manda sobre todo lo demás. Dice mucho a favor de A y de D, donde la
+      pastilla del turno propio es tocable ahí mismo, y en contra de B, que obliga
+      a viajar. En las cinco opciones el bloque de Hoy existe igual: es el sitio
+      donde el gesto no hay que buscarlo.
+    </p>
+    <p>
+      Lo de ayer merece regla propia. Un turno que venció sin marca <strong>no se
+      queda en el pasado esperando</strong>: sube a Hoy una sola vez, al día
+      siguiente, y con la pregunta puesta —«¿la sacaste?»—. Si nadie contesta,
+      desaparece y queda escrito que nadie marcó. Arrastrarlo más días convierte
+      Hoy en una lista de reproches.
+    </p>
+  </div>
+
+  <!-- ==================================================== 7 · Las peticiones == -->
+
+  <div class="parte">
+    <p class="rotulo">7 · La bandeja</p>
+    <h2>Dónde caen las peticiones, y con qué cara</h2>
+    <p>
+      Pides que estén en Hoy, y ahí estarán. Lo que hay que elegir es si son una
+      banda propia por encima de todo —que grita, y ese es su trabajo, pero
+      también empuja la lista del día hacia abajo cada vez que alguien pide algo—
+      o si viven dentro del bloque de Lio, junto al turno del que hablan.
+    </p>
+  </div>
+
+  <div class="fichas-par">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <p class="rotulo">7.1 · Banda por encima de todo</p>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Buenas tardes, Óscar</h4></div>
+        <div class="tel-fecha">lunes 27 de Julio</div>
+        <div class="tel-cuerpo">
+          <div class="peticion">
+            <p><b>Marta</b> te pide que saques a Lio el <b>jueves por la noche</b>.</p>
+            <div class="acciones"><span>Acepto</span><span class="no">No puedo</span></div>
+          </div>
+          <div class="peticion">
+            <p><b>Pablo</b> dice que sacó a Lio <b>ayer por la mañana</b>, y ese turno era tuyo.</p>
+            <div class="acciones"><span>Es verdad</span><span class="no">No fue así</span></div>
+          </div>
+          <div class="bloque-lio">
+            <p class="grupo-rot">🐾 Lio</p>
+            <div class="fila-turno listo">
+              <span class="huella" style="font-size: 15px;">☀</span>
+              <div class="quien"><b>Mañana</b><span>La sacaste tú a las 8:10</span></div>
+              <span class="boton hecho">✓</span>
+            </div>
+            <div class="fila-turno">
+              <span class="huella" style="font-size: 15px;">🌙</span>
+              <div class="quien"><b>Noche · te toca a ti</b></div>
+              <span class="boton">Ya está</span>
+            </div>
+          </div>
+          <p class="grupo-rot">Para hoy</p>
+          <div class="vacio">Hoy no hay nada apuntado.</div>
+        </div>
+        <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <p class="rotulo">7.2 · Dentro del bloque, pegada a su turno</p>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Buenas tardes, Óscar</h4></div>
+        <div class="tel-fecha">lunes 27 de Julio</div>
+        <div class="tel-cuerpo">
+          <div class="bloque-lio">
+            <p class="grupo-rot">🐾 Lio · 2 por contestar</p>
+            <div class="fila-turno listo">
+              <span class="huella" style="font-size: 15px;">☀</span>
+              <div class="quien"><b>Mañana</b><span>La sacaste tú a las 8:10</span></div>
+              <span class="boton hecho">✓</span>
+            </div>
+            <div class="fila-turno">
+              <span class="huella" style="font-size: 15px;">🌙</span>
+              <div class="quien"><b>Noche · te toca a ti</b></div>
+              <span class="boton">Ya está</span>
+            </div>
+            <div class="fila-turno tarde" style="border-style: dashed;">
+              <span class="huella" style="font-size: 15px;">🌙</span>
+              <div class="quien"><b>Jueves · Marta te lo pide</b><span>Le toca a ella y no puede</span></div>
+              <span class="boton">Acepto</span>
+            </div>
+            <div class="fila-turno tarde" style="border-style: dashed;">
+              <span class="huella" style="font-size: 15px;">☀</span>
+              <div class="quien"><b>Ayer · lo sacó Pablo</b><span>Ese turno era tuyo</span></div>
+              <span class="boton">Vale</span>
+            </div>
+          </div>
+          <p class="grupo-rot">Para hoy</p>
+          <div class="vacio">Hoy no hay nada apuntado.</div>
+        </div>
+        <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Gente</span><span>Regalos</span><span>Buscar</span></div>
+      </div>
+    </div>
+
+    <div class="juicio" style="max-width: 40ch;">
+      <div class="si"><span>7.1</span><span>Imposible de pasar por alto, y las dos respuestas están escritas enteras: «Acepto» y «No puedo» no se confunden.</span></div>
+      <div class="no"><span>7.1</span><span>Dos peticiones y la lista del día ya no se ve al abrir. Lo excepcional le gana el sitio a lo de todos los días.</span></div>
+      <div class="si"><span>7.2</span><span>Todo lo de Lio en un sitio, y cada petición pegada al turno del que habla, que es lo que hace falta para contestarla.</span></div>
+      <div class="no"><span>7.2</span><span>Un solo botón por fila obliga a esconder el «no» detrás de un toque más, y decir que no tiene que costar lo mismo que decir que sí.</span></div>
+      <div class="no"><span>7.2</span><span>Si el bloque se pliega —y con el tiempo pedirá plegarse—, la petición se pliega con él.</span></div>
+    </div>
+  </div>
+
+  <!-- =================================================== 8 · Recomendación == -->
+
+  <div class="parte">
+    <p class="rotulo">8 · Recomendación</p>
+    <h2>A en la agenda, el bloque en Hoy, y la bandeja de 7.1 recortada</h2>
+    <p>
+      <strong>A</strong>, la cinta del día, porque es la única que cumple entera la
+      frase con la que lo pides: pequeña, visible todos los días, evidentemente
+      distinta de un evento, y —lo que ninguna otra— <em>tocable donde se ve</em>.
+      El gesto de marcar es el que se hace setecientas veces al año; que cueste un
+      toque desde donde ya estás mirando vale más que cualquier ahorro de píxeles.
+    </p>
+    <p>
+      <strong>D</strong> es la segunda, y la que yo elegiría si al probar A la
+      semana se ve apretada: gasta el alto una vez en lugar de siete y contesta
+      mejor la pregunta del fin de semana. Su pega es real —desaparece en mes y en
+      lista—, pero se puede vivir con ella si en esas dos vistas Lio simplemente no
+      se enseña.
+    </p>
+    <p>
+      <strong>E queda descartada</strong>, y no por la pantalla sino por lo que
+      esconde: dibujarlo como evento no evita ninguna de las piezas nuevas del
+      apartado 1, y encima paga el techo de tres líneas todos los días del año.
+    </p>
+    <p>
+      Para la bandeja, <strong>7.1 con un tope</strong>: la banda arriba, con las
+      dos respuestas escritas, pero <em>como mucho dos peticiones a la vista</em> y
+      el resto detrás de «y N más». Así lo excepcional grita cuando toca y no le
+      quita el sitio a la lista del día cuando se acumula.
+    </p>
+  </div>
+
+  <!-- ================================================ 9 · Lo que cuesta == -->
+
+  <div class="parte">
+    <p class="rotulo">9 · El coste, sin adornos</p>
+    <h2>Qué hay que tocar para que esto exista</h2>
+    <p>
+      Con la recomendación puesta —A, el cuadro en Ajustes y el trato de 2.4—, esto
+      es lo que se mueve. No es un módulo pequeño: la parte de pantalla es la
+      barata.
+    </p>
+  </div>
+
+  <ul class="lista-seca">
+    <li>
+      <strong>Base de datos.</strong> Una migración corriente, <code>0008_lio.sql</code>:
+      la tabla <code>paseo</code> —día, turno, asignado, quién lo sacó, cuándo— y la
+      tabla del trato —turno, quién propone, a quién, qué pide, en qué quedó—. El
+      cuadro por defecto no necesita tabla: cabe en <code>configuracion</code>.
+    </li>
+    <li>
+      <strong>Worker.</strong> <code>repositorio.js</code> para leer y escribir los
+      dos tipos nuevos, con la regla de que <em>una propuesta solo la resuelve su
+      destinatario</em> —que es permiso nuevo, distinto de los que hay—;
+      <code>filtrado.js</code> para meterlos en la instantánea;
+      <code>visibilidad.js</code> para que solo los vean los del círculo de casa; y
+      <code>redaccion.js</code> (<code>visiblesDe</code>) si se quiere que Lio salga
+      en lo que redacta el modelo, o que al menos vuelva en <code>omitidos</code> en
+      lugar de desaparecer callando.
+    </li>
+    <li>
+      <strong>Aplicación.</strong> Derivar los turnos en <code>semana.js</code> junto
+      a los cumpleaños; la cinta en <code>vistas/semana.js</code>; el bloque y la
+      bandeja en <code>vistas/hoy.js</code>; el cuadro en el Ajustes de
+      <code>app.js</code>; los dos tipos nuevos en el <code>PLURAL</code> de
+      <code>sincronizacion.js</code> para que la cola optimista los sepa aplicar en
+      local.
+    </li>
+    <li>
+      <strong>Espejo en Python.</strong> Si Lio ha de aparecer en el plan semanal de
+      WhatsApp, <code>scripts/agenda/</code> tiene que saber derivarlo también: el
+      modelo, la semana y el mensaje. Si no, se dice explícitamente que el plan no
+      lo cuenta, y no se toca nada.
+    </li>
+    <li>
+      <strong>Pruebas y versiones.</strong> Las tres cifras de siempre —<code>sw.js</code>,
+      <code>package.json</code> y <code>version.js</code>— por encima de lo que haya
+      en <code>main</code>, y pruebas nuevas para la derivación de turnos, para la
+      caducidad de una propuesta sin contestar y para el permiso de quién puede
+      aceptar.
+    </li>
+  </ul>
+
+  <!-- ============================================= 10 · Cuestiones abiertas == -->
+
+  <div class="parte">
+    <p class="rotulo">10 · Lo que no me toca decidir</p>
+    <h2>Seis preguntas</h2>
+  </div>
+
+  <ol class="lista-seca">
+    <li>
+      <strong>¿Dos turnos, o tres?</strong> Todo lo de arriba supone mañana y noche
+      porque es lo que dices. Si algún día hay uno de mediodía, la cinta de A admite
+      tres pastillas y el carril de D admite tres filas; el cuadro de Ajustes pasa de
+      catorce casillas a veintiuna y sigue cabiendo.
+    </li>
+    <li>
+      <strong>¿A qué hora vence un turno?</strong> Hace falta un límite para que
+      «sin marcar» signifique algo: la mañana hasta las doce y la noche hasta las
+      doce de la noche es lo más simple, pero es una regla que hay que escribir.
+    </li>
+    <li>
+      <strong>¿El cuadro por defecto lo edita cualquiera o solo un administrador?</strong>
+      La propuesta dice administrador, y que el cambio de un día suelto no pase por
+      ahí. Es discutible.
+    </li>
+    <li>
+      <strong>¿Un cambio aceptado vale para siempre o para ese día?</strong> Para ese
+      día, en todo lo de arriba. El «a partir de ahora los martes los hago yo» se
+      arregla en Ajustes, no en la agenda.
+    </li>
+    <li>
+      <strong>¿Lio sale en el plan semanal de WhatsApp?</strong> Cambia si hay que
+      tocar los scripts de Python o no.
+    </li>
+    <li>
+      <strong>¿Hay más de un perro, alguna vez?</strong> Si la respuesta puede ser sí,
+      el módulo se llama «paseos» y el cuadro lleva una columna más desde el primer
+      día. Si es no, se llama Lio y se escribe Lio en la pantalla, que es más cálido
+      y más corto.
+    </li>
+  </ol>
+
+</div>

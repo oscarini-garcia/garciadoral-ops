@@ -8,6 +8,7 @@
  */
 
 import { contarPendientes } from './solicitudes.js';
+import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
 
 const CAMPOS = {
   persona: [
@@ -32,6 +33,11 @@ const CAMPOS = {
     'responsable_id', 'coste_real', 'estado', 'categoria_id', 'autor_id', 'activo',
   ],
   comentario: ['objeto_tipo', 'objeto_id', 'autor_id', 'texto', 'activo'],
+  paseo: ['fecha', 'turno', 'asignado_id', 'hecho_por_id', 'hecho_en', 'activo'],
+  trato_paseo: [
+    'fecha', 'turno', 'clase', 'proponente_id', 'destinatario_id',
+    'asignado_previo_id', 'estado', 'resuelto_en', 'activo',
+  ],
 };
 
 /** Campos cuyo conflicto se conserva para revisión en lugar de descartarse en
@@ -46,6 +52,28 @@ async function filas(db, sql, ...parametros) {
 }
 
 /**
+ * Lo mismo, pero para una tabla que puede no existir todavía.
+ *
+ * Desplegar y migrar son dos pasos distintos: el empujón a `main` sube el
+ * Worker solo, y las tablas nuevas se aplican marcando una casilla que alguien
+ * tiene que marcar. Entre una cosa y la otra hay una ventana, y sin esto la
+ * ventana es una caída: una consulta a una tabla que no está tumba
+ * `leerRegistro` entera, y con ella la sincronización de todos los dispositivos
+ * por una función que ninguno estaba usando.
+ *
+ * Solo se traga ese error y solo para las tablas que se le pasan. Cualquier otro
+ * fallo de la base sigue subiendo, que es lo que tiene que hacer.
+ */
+async function filasSiLaTablaEsta(db, sql, ...parametros) {
+  try {
+    return await filas(db, sql, ...parametros);
+  } catch (error) {
+    if (/no such table/i.test(String(error?.message || error))) return [];
+    throw error;
+  }
+}
+
+/**
  * Lee el registro completo. `soloActivos` deja fuera lo marcado como inactivo,
  * que es lo que quieren tanto la sincronización como el generador del plan.
  */
@@ -57,6 +85,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     eventos, participantesEvento, ideas, orientaciones,
     ocasiones, participantesOcasion, presupuestos,
     regalos, codestinatarios, comentarios, conflictos,
+    paseos, tratos, cuadroLio,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -75,6 +104,15 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filas(db, 'SELECT * FROM codestinatario_regalo'),
     filas(db, `SELECT * FROM comentario ${activo('activo')} ORDER BY creado_en`),
     filas(db, 'SELECT * FROM conflicto WHERE revisado = 0'),
+    filasSiLaTablaEsta(db, `SELECT * FROM paseo ${activo('activo')} ORDER BY fecha`),
+    // Las propuestas resueltas se quedan en la base pero no viajan: lo que la
+    // pantalla necesita es lo que hay que contestar, y una bandeja con el
+    // historial de todos los cambios del año no la lee nadie.
+    filasSiLaTablaEsta(
+      db,
+      `SELECT * FROM trato_paseo WHERE estado = 'pendiente' ${soloActivos ? 'AND activo = 1' : ''}`,
+    ),
+    leerCuadro(db),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -140,6 +178,12 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     })),
     comentarios: comentarios.map((c) => ({ ...c, activo: bool(c.activo) })),
     conflictos,
+    // Lio: el cuadro es la regla y los paseos son las excepciones escritas. Van
+    // los dos porque sin el cuadro un día sin fila no diría nada, y sin las
+    // filas el cuadro reescribiría el pasado cada vez que se cambia.
+    lio_cuadro: cuadroLio,
+    paseos: paseos.map((p) => ({ ...p, activo: bool(p.activo) })),
+    tratos_paseo: tratos.map((t) => ({ ...t, activo: bool(t.activo) })),
     // Cuántas personas esperan a que alguien las apruebe. Va aquí y no en una
     // ruta propia para que llegue con la sincronización, sin una petición más;
     // `filtrado.js` decide a quién se le transmite, que es solo a los
@@ -228,9 +272,31 @@ class Rechazo extends Error {}
 /** Quién puede tocar qué. La configuración del hogar es de los administradores;
  *  los contenidos, de cualquier miembro (spec funcional §2). */
 function comprobarPermiso(tipo, actor, anterior, campos) {
-  const soloAdministradores = ['persona', 'categoria', 'etiqueta', 'presupuesto'];
+  const soloAdministradores = ['persona', 'categoria', 'etiqueta', 'presupuesto', 'lio_cuadro'];
   if (soloAdministradores.includes(tipo) && actor.rol !== 'administrador') {
     throw new Rechazo(`solo un administrador puede modificar ${tipo}`);
+  }
+
+  // Los paseos son de la casa: quien no está en el círculo cerrado no los ve
+  // (`filtrado.js`) y tampoco los escribe.
+  if ((tipo === 'paseo' || tipo === 'trato_paseo') && !esDeLaCasa(actor)) {
+    throw new Rechazo('los paseos de Lio son de quien vive en casa');
+  }
+
+  // Una propuesta la resuelve **su destinatario y nadie más**, que es lo único
+  // que la convierte en un trato y no en una imposición. Quien la hizo puede
+  // retirarla —marcarla inactiva—, y ahí se acaba lo que puede hacer con ella.
+  if (tipo === 'trato_paseo' && anterior) {
+    const resuelve = 'estado' in campos && campos.estado !== anterior.estado;
+    if (resuelve && actor.id !== anterior.destinatario_id) {
+      throw new Rechazo('una propuesta la contesta la persona a la que se le hizo');
+    }
+    if (!resuelve && actor.id !== anterior.proponente_id && actor.id !== anterior.destinatario_id) {
+      throw new Rechazo('una propuesta solo la tocan las dos partes');
+    }
+    if (anterior.estado !== 'pendiente' && resuelve) {
+      throw new Rechazo(`esa propuesta ya está ${anterior.estado}`);
+    }
   }
 
   // Cada comentario solo puede editarlo o eliminarlo quien lo escribió (§5.3).
@@ -324,6 +390,20 @@ async function guardarRelaciones(db, tipo, id, campos) {
  */
 export async function aplicarCambio(db, actor, cambio) {
   const { tipo, id, campos = {}, actualizado_en: marca } = cambio;
+
+  // El cuadro de Lio no es una fila con identificador sino una casilla de
+  // `configuracion`, así que viaja por la cola como un tipo propio y se escribe
+  // entero de una vez: catorce casillas son un solo dato.
+  if (tipo === 'lio_cuadro') {
+    try {
+      comprobarPermiso(tipo, actor, null, campos);
+    } catch (error) {
+      if (error instanceof Rechazo) return { aplicado: false, motivo: error.message };
+      throw error;
+    }
+    await guardarCuadro(db, actor, campos.cuadro);
+    return { aplicado: true };
+  }
 
   if (tipo === 'presupuesto') {
     comprobarPermiso(tipo, actor, null, campos);

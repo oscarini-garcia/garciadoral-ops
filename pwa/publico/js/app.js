@@ -14,7 +14,8 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, colorDePersona,
+  entrada, seleccion,
 } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
@@ -41,7 +42,10 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { INICIALES_DIA, NOMBRES_DIA, hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import {
+  TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana, turnosDe,
+} from './lio.js';
 import { pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
 import { nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
@@ -440,7 +444,35 @@ function refrescarRecordatorios(datos) {
   if (!esNativo()) return;
   const desde = hoy();
   const instancias = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS));
-  programarRecordatorios(instancias);
+  programarRecordatorios(instancias, turnosPropios(datos, desde));
+}
+
+/**
+ * Los turnos de Lio que le tocan a quien mira en los próximos días, aplanados a
+ * lo que el aviso necesita saber.
+ *
+ * El horizonte es más corto que el de la agenda —una semana— porque el cuadro
+ * cambia y un aviso programado con un mes de antelación diría lo que decía el
+ * reparto de hace un mes.
+ */
+function turnosPropios(datos, desde) {
+  if (!hayLio(datos)) return [];
+  const turnos = [];
+  for (let dia = 0; dia < 7; dia += 1) {
+    for (const turno of turnosDe(datos, sumarDias(desde, dia))) {
+      turnos.push({
+        mio: turno.mio,
+        estado: turno.estado,
+        trato: turno.trato,
+        fechaIso: turno.fechaIso,
+        turnoId: turno.turno.id,
+        emoji: turno.turno.emoji,
+        nombre: turno.turno.nombre,
+        inicio: inicioDeVentana(turno.fecha, turno.turno.id),
+      });
+    }
+  }
+  return turnos;
 }
 
 // -------------------------------------------------------------- Pintado --
@@ -558,6 +590,14 @@ function abrirAjustes() {
       dentro.append(campo('Tema', tema));
     }));
 
+    // El cuadro de Lio es el reparto de la casa, no una preferencia de quien
+    // mira: cambiarlo por sorpresa reordena la semana de otras tres personas, y
+    // por eso lo edita quien administra. Un cambio de un día suelto no pasa por
+    // aquí, sino por el turno mismo, que se le pide al otro y él acepta.
+    if (ctx.vista?.esAdministrador() && !demostracion) {
+      cuerpo.append(acordeon('🐾 Lio', cuadroDeLio));
+    }
+
     if (ctx.vista?.esAdministrador() && !demostracion) {
       cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
     }
@@ -591,6 +631,75 @@ function abrirAjustes() {
     // dibujada.
     botonIcono('cerrar', { etiqueta: 'Cerrar los ajustes', tono: 'discreto', onclick: cerrarHoja }),
   ]);
+}
+
+/**
+ * Quién saca a Lio cada día, si nadie dice lo contrario.
+ *
+ * Catorce casillas —siete días por dos turnos— con la misma figura que un cuadro
+ * de la nevera. De aquí se derivan los turnos de cualquier día que se mire, y
+ * por eso cambiarlo cambia el futuro y no el pasado: en cuanto alguien marca un
+ * turno o acuerda un cambio, ese día queda escrito y deja de mirar al cuadro.
+ *
+ * **La casilla va pasando de una persona a la siguiente al tocarla**, y no abre
+ * una lista. La lista tendría que ser otra hoja encima de esta, que es la que ya
+ * ocupa Ajustes; y siendo cuatro personas, el recorrido entero son cinco toques.
+ */
+function cuadroDeLio(seccion) {
+  const casa = genteDeCasa(ctx.vista);
+  if (!casa.length) {
+    seccion.append(el('p', { class: 'pista', texto: 'Todavía no hay nadie en el círculo de casa.' }));
+    return;
+  }
+
+  const cuadro = cuadroDe(instantanea());
+  // «Nadie» es una opción de verdad y va la primera: hay días que no toca nadie,
+  // y sin ella habría que dejar puesto a alguien que no lo va a sacar.
+  const vueltas = [null, ...casa.map((p) => p.id)];
+
+  const rejilla = el('div', { class: 'lio-cuadro' });
+  rejilla.append(el('span', {}));
+  for (const inicial of INICIALES_DIA) {
+    rejilla.append(el('span', { class: 'lio-cuadro-cabecera', texto: inicial }));
+  }
+
+  for (const turno of TURNOS) {
+    rejilla.append(el('span', { class: 'lio-cuadro-rotulo', texto: turno.emoji, title: turno.nombre }));
+    for (let dia = 0; dia < 7; dia += 1) rejilla.append(casillaDelCuadro(cuadro, turno, dia, casa, vueltas));
+  }
+
+  seccion.append(
+    el('p', { class: 'pista', texto: 'Toca una casilla para pasar a la siguiente persona.' }),
+    rejilla,
+    el('p', { class: 'pista', texto: casa.map((p) => `${inicialesDe(p)} · ${p.nombre}`).join('   ') }),
+  );
+}
+
+function casillaDelCuadro(cuadro, turno, dia, casa, vueltas) {
+  const boton = el('button', { class: 'lio-cuadro-casilla', type: 'button' });
+
+  const pintar = () => {
+    const id = cuadro[turno.id][dia];
+    const persona = casa.find((p) => p.id === id) || null;
+    boton.textContent = persona ? inicialesDe(persona) : '·';
+    boton.dataset.vacia = persona ? 'no' : 'si';
+    boton.style.setProperty('--color-lio', persona ? colorDePersona(persona.id) : 'transparent');
+    boton.setAttribute(
+      'aria-label',
+      `${NOMBRES_DIA[dia]} por la ${turno.nombre.toLowerCase()}: ${persona ? persona.nombre : 'nadie'}`,
+    );
+  };
+
+  boton.onclick = async () => {
+    toque();
+    const actual = vueltas.indexOf(cuadro[turno.id][dia]);
+    cuadro[turno.id][dia] = vueltas[(actual + 1) % vueltas.length];
+    pintar();
+    await guardarCuadro(cuadro);
+  };
+
+  pintar();
+  return boton;
 }
 
 /**

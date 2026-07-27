@@ -354,5 +354,26 @@
       "texto": "Confirmada la talla con la tienda.",
       "fecha": "2026-07-20T19:12:00"
     }
-  ]
+  ],
+  "lio_cuadro": {
+    "manana": [
+      "p-oscar",
+      "p-ana",
+      "p-oscar",
+      "p-ana",
+      "p-oscar",
+      "p-marta",
+      "p-lucia"
+    ],
+    "noche": [
+      "p-ana",
+      "p-oscar",
+      "p-ana",
+      "p-oscar",
+      "p-ana",
+      "p-oscar",
+      "p-ana"
+    ]
+  },
+  "paseos": []
 }
