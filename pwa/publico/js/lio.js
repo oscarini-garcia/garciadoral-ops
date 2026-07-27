@@ -154,6 +154,11 @@ export function turnoDe(instantanea, fecha, turnoId, referencia = new Date()) {
     hechoEn: paseo?.hecho_en || null,
     estado,
     vencido,
+    // Si la ventana ha llegado a abrirse. Antes de que abra no se puede decir
+    // que el perro haya salido —son las cuatro de la tarde y el turno de noche
+    // empieza a las ocho—, así que lo único que cabe hacer con un turno por
+    // venir es cambiarle el dueño.
+    empezado: referencia >= inicioDeVentana(dia, turnoId),
     trato: tratoDe(instantanea, fechaIso, turnoId),
     mio: Boolean(asignadoId) && asignadoId === instantanea?.yo?.id,
   };
@@ -224,8 +229,11 @@ export function desmarcar(turno) {
   });
 }
 
-/** «No puedo»: se le pide a alguien que lo saque por uno. Hasta que conteste, el
- *  turno sigue siendo de quien lo pide. */
+/**
+ * «No puedo»: se le pide a alguien que lo saque por uno.
+ *
+ * Hasta que conteste, el turno sigue siendo de quien lo pide.
+ */
 export function pedirCambio(instantanea, turno, aQuienId) {
   return proponer(turno, {
     clase: 'cambio',
@@ -234,6 +242,31 @@ export function pedirCambio(instantanea, turno, aQuienId) {
     asignado_previo_id: turno.asignadoId,
   });
 }
+
+/**
+ * «Lo saco yo»: el cambio en el otro sentido, cuando uno se ofrece a sacar el
+ * turno de otro.
+ *
+ * Es la misma propuesta y la misma tabla; lo que cambia es hacia dónde va el
+ * turno si la aceptan. **No hace falta guardarlo:** se deduce de quién propone.
+ * Si quien propone es el que ya lo tenía, está pidiendo que se lo cubran; si no
+ * lo tenía, se está ofreciendo. En los dos casos, el que acaba sacándolo es el
+ * que no lo tenía antes.
+ */
+export function reclamarTurno(instantanea, turno) {
+  return proponer(turno, {
+    clase: 'cambio',
+    proponente_id: instantanea.yo.id,
+    destinatario_id: turno.asignadoId,
+    asignado_previo_id: turno.asignadoId,
+  });
+}
+
+/** Hacia quién va el turno si se acepta la propuesta: siempre el que no lo
+ *  tenía. */
+export const nuevoDuenoDe = (trato) => (
+  trato.proponente_id === trato.asignado_previo_id ? trato.destinatario_id : trato.proponente_id
+);
 
 function proponer(turno, campos) {
   return guardar('trato_paseo', nuevoId(), {
@@ -268,7 +301,7 @@ export async function resolverPropuesta(trato, acepta) {
   if (trato.clase === 'cambio') {
     await guardar('paseo', idPaseo(trato.fecha, trato.turno), {
       ...comun,
-      asignado_id: trato.destinatario_id,
+      asignado_id: nuevoDuenoDe(trato),
     });
     return;
   }

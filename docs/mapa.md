@@ -86,7 +86,7 @@ tener que recorrer la aplicación entera cada vez.
   campoDeGente
 - **lio.js** — Lio: los turnos de paseo, sus estados y el trato que los cambia de dueño.
   TURNOS · IDS_TURNO · turnoPorId · idPaseo · cuadroVacio · cuadroDe · hayLio · genteDeCasa
-  inicialesDe · finDeVentana · …y 11 más
+  inicialesDe · finDeVentana · …y 13 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO
   nombreCompleto · deQuien · GENEROS · estaActivo · redaccionDisponible · …y 9 más
