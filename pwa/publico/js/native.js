@@ -318,9 +318,9 @@ function textoDelAviso(instancia) {
  * Fuera de la cáscara no hace nada: la web no programa notificaciones.
  */
 /**
- * Los turnos de Lio que le tocan a quien mira, como aviso al empezar la ventana.
+ * Los turnos de Lío que le tocan a quien mira, como aviso al empezar la ventana.
  *
- * Es lo único que Lio puede notificar hoy: la cáscara programa avisos locales a
+ * Es lo único que Lío puede notificar hoy: la cáscara programa avisos locales a
  * partir de lo que ya tiene, y no hay manera de que a otro le suene el teléfono
  * porque uno acabe de pedirle un cambio. Un turno propio sí se sabe por
  * adelantado, así que ese sí se avisa —y solo si sigue sin marcar cuando se
@@ -332,8 +332,10 @@ function avisoDeTurno(turno, ahora) {
   if (!cuando || cuando <= ahora) return null;
   return {
     id: idDeAviso(`lio:${turno.fechaIso}:${turno.turnoId}`),
-    title: `${turno.emoji} Te toca sacar a Lio`,
-    body: turno.nombre,
+    // La huella y no el sol o la luna: el aviso es de Lío, y de qué turno se
+    // trata lo dice el renglón de debajo con todas sus palabras.
+    title: '🐾 Te toca sacar a Lío',
+    body: turno.rotulo,
     schedule: { at: cuando, allowWhileIdle: true },
   };
 }

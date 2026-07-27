@@ -43,6 +43,16 @@ export const IDS_TURNO = TURNOS.map((t) => t.id);
 
 export const turnoPorId = (id) => TURNOS.find((t) => t.id === id) || null;
 
+/**
+ * Cómo se llama un turno cuando hay sitio para escribirlo: «Por la mañana».
+ *
+ * El sol y la luna se quedan solo donde no cabe la frase —las pastillas del
+ * carril, de 38 puntos—. En todo lo demás va la palabra: un emoji al lado de su
+ * propio nombre no añadía nada, y un emoji en lugar del nombre obliga a
+ * traducirlo cada vez.
+ */
+export const nombreDeTurno = (turno) => `Por la ${String(turno?.nombre || '').toLowerCase()}`;
+
 /** El identificador de un paseo se compone, no se inventa: el dispositivo marca
  *  antes de haber visto ninguna fila y tiene que dar con la misma que el
  *  servidor. */
@@ -193,12 +203,20 @@ export function misPeticiones(instantanea) {
 /**
  * «Ya está» y «Lo saqué yo»: queda escrito que el turno lo sacó quien lo dice.
  *
- * **Coger trabajo no necesita permiso.** Aunque el turno fuera de otro se
- * escribe en el acto, sin preguntarle nada a nadie: quien dice que ha sacado al
- * perro no le está imponiendo nada a la persona que lo tenía —le está quitando
- * un recado de encima—, y hacerle confirmar algo que solo le beneficia era
- * ponerle un trámite a una buena noticia. Lo que sí sigue necesitando un sí es
- * lo contrario: soltar el turno propio para que lo saque otro.
+ * **Mientras el día está vivo, coger trabajo no necesita permiso.** Aunque el
+ * turno fuera de otro se escribe en el acto: quien dice que ha sacado al perro
+ * no le está imponiendo nada a la persona que lo tenía —le está quitando un
+ * recado de encima—, y hacerle confirmar algo que solo le beneficia era ponerle
+ * un trámite a una buena noticia.
+ *
+ * **Un turno ajeno que ya venció sin marcar es otra cosa**, y por eso es el
+ * único caso que vuelve a pasar por el trato. Ahí no se está cargando con un
+ * recado: se está escribiendo, un día después, qué pasó con el turno de otro. Y
+ * eso puede ser una corrección o puede ser un error, así que lo confirma quien
+ * lo tenía. Hasta que conteste, el turno se queda como estaba.
+ *
+ * Lo que sí sigue necesitando un sí en cualquier momento es lo contrario:
+ * soltar el turno propio para que lo saque otro.
  *
  * El asignado no se toca. La fila conserva de quién era el turno y añade quién
  * lo sacó, que es lo que hace que el histórico siga contando lo que pasó de
@@ -206,6 +224,17 @@ export function misPeticiones(instantanea) {
  */
 export async function marcarHecho(instantanea, turno) {
   const yo = instantanea.yo.id;
+
+  if (turno.asignadoId && turno.asignadoId !== yo && turno.estado === 'sin-marcar') {
+    await proponer(turno, {
+      clase: 'correccion',
+      proponente_id: yo,
+      destinatario_id: turno.asignadoId,
+      asignado_previo_id: turno.asignadoId,
+    });
+    return { marcado: false, pedidoA: turno.asignadoId };
+  }
+
   await guardar('paseo', idPaseo(turno.fechaIso, turno.turno.id), {
     fecha: turno.fechaIso,
     turno: turno.turno.id,

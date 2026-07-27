@@ -516,13 +516,21 @@ button { background: none; border: 0; cursor: pointer; }
   display: grid; grid-template-columns: 32px 1fr 1fr; gap: 6px; align-items: center;
   border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2); padding: 2px 8px;
 }
+/* Los dos rótulos de columna, escritos una sola vez arriba. Sin caja: no es una
+   línea del cuadro, es lo que dice qué es cada mitad. */
+.lio-dia-cabecera {
+  border: 0; background: transparent; padding: 0 8px; min-height: 0;
+}
+.lio-dia-cabecera span {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-faint); padding-left: 6px;
+}
 .lio-dia-rotulo { font-size: 13px; color: var(--ink-soft); }
 .lio-dia-turno {
   display: flex; align-items: center; gap: 6px;
   min-height: 34px; padding: 2px 6px; border-radius: 8px;
   font-size: 13.5px; text-align: left; min-width: 0;
 }
-.lio-dia-emoji { flex: none; font-size: 12px; }
 .lio-dia-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lio-dia-turno[data-vacio="si"] .lio-dia-nombre { color: var(--ink-faint); }
 
@@ -547,8 +555,12 @@ button { background: none; border: 0; cursor: pointer; }
   background: var(--paper-2); padding: 9px 12px;
 }
 .lio-fila[data-estado="hecho"] { background: var(--tinta-suave); border-color: transparent; }
-.lio-fila[data-rezagado="si"] { border-color: var(--aviso); background: transparent; }
-.lio-fila-emoji { flex: none; font-size: 16px; }
+
+/* Lo de ayer que se quedó sin marcar se distingue por lo que dice —«Ayer por la
+   mañana» y la pregunta debajo—, no por un recuadro de color. El borde de aviso
+   convertía en alarma lo que casi siempre es un olvido del gesto y no un perro
+   sin pasear, que es justo lo que §10.3 pedía no hacer. */
+.lio-fila[data-rezagado="si"] { background: transparent; }
 .lio-fila-texto {
   display: flex; flex-direction: column; gap: 1px;
   flex: 1 1 auto; min-width: 0; text-align: left;
@@ -902,6 +914,11 @@ button { background: none; border: 0; cursor: pointer; }
 .pista[data-tono="aviso"] { color: var(--aviso); }
 
 .acciones { display: flex; gap: 9px; margin-top: 4px; }
+
+/* La línea de Cancelar, que va sola y al final de la hoja. A la derecha porque
+   es donde acaba de leerse cada línea y donde el pulgar ya está; y en su propio
+   renglón para que no parezca una alternativa más de las de arriba. */
+.acciones-cierre { justify-content: flex-end; margin-top: 14px; }
 .boton {
   min-height: var(--toque); padding: 10px 18px; border-radius: 10px;
   font-size: 16px; font-weight: 500;
