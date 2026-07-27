@@ -1026,7 +1026,7 @@ export function abrirCumple(personaId, ctx, { dia = null, comentariosDe = null, 
       cuerpo.append(bloqueDeRegalosDelCumple(persona, ctx, reabrir));
     }
 
-    if (comentariosDe) cuerpo.append(bloqueDeComentarios('evento', comentariosDe, ctx));
+    if (comentariosDe) cuerpo.append(bloqueDeComentarios('evento', comentariosDe, ctx, { vistoHasta: ctx.vista.vistoHasta('evento', comentariosDe) }));
   }, [
     // Quién es va delante de qué se le cambia: primero se mira y luego se
     // corrige, que es el orden en que se usan. Antes esto era un enlace al pie
@@ -1247,6 +1247,12 @@ export function abrirDetalleIdea(ideaId, ctx) {
         }, ['Llevar a una fecha señalada']);
     if (verbo) cuerpo.append(el('div', { class: 'acciones' }, [verbo]));
 
+    // El hilo, que el modelo admitía desde el principio y ninguna pantalla
+    // enseñaba: la tabla, el filtro del Worker y `especificacion.md` §5.3
+    // hablaban de idea, regalo y evento, y solo los eventos lo dibujaban. Aquí
+    // es donde se acuerda si la talla es la 39 o la 40.
+    cuerpo.append(bloqueDeComentarios('idea', idea.id, ctx, { vistoHasta: ctx.vista.vistoHasta('idea', idea.id) }));
+
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
   }, [
     // Los dos verbos que se usan van arriba, junto al título, igual que en un
@@ -1397,6 +1403,11 @@ export function abrirDetalleRegalo(regaloId, ctx) {
       }, ['Guardar']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
+
+    // El hilo va debajo de los verbos y no encima: aquí se viene a marcar cómo
+    // va, y lo que se hable —quién lo compra al final, dónde estaba más barato—
+    // se lee después de haber hecho lo que se venía a hacer.
+    cuerpo.append(bloqueDeComentarios('regalo', regalo.id, ctx, { vistoHasta: ctx.vista.vistoHasta('regalo', regalo.id) }));
   }, [verLaOcasion, quitar]);
 }
 

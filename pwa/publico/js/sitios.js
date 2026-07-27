@@ -1,0 +1,185 @@
+/**
+ * Sitios: las clases de un apunte, el voto y el orden en que se leen.
+ *
+ * Aquí vive todo lo que hay que saber de un sitio sin dibujar nada, igual que
+ * `lio.js` con los turnos. La forma está en `specs/propuesta-sitios.html`.
+ *
+ * **Un sitio es la carpeta y los apuntes cuelgan de él.** Es la única forma en
+ * la que la pantalla de entrada sigue siendo legible dentro de tres años: los
+ * sitios son cinco o seis para siempre, mientras que los apuntes se multiplican.
+ * Y es la que le da al voto y al comentario una cosa pequeña de la que colgar.
+ *
+ * **El ciclo de vida es creado y borrado, y nada más.** Sin estados, sin fechas
+ * y sin archivar: «subir a la duna» no se agota al subir, y un visto convertiría
+ * la guía en una lista de tareas de un solo verano.
+ */
+
+import { guardar, retirar } from './sincronizacion.js';
+import { estaActivo } from './modelo.js';
+
+/**
+ * Las cuatro clases, por lo que se hace con cada apunte.
+ *
+ * Son verbos y no sustantivos porque es como se dicen en voz alta, y porque así
+ * «Sitios» puede ser el nombre de la pestaña sin chocar con «sitios donde ir».
+ *
+ * **«Saber» es el cuarto verbo y no un cajón de sastre.** Nombra un contenido
+ * concreto —el súper cierra a las dos, se paga en efectivo, el aparcamiento se
+ * llena a las once— en lugar de nombrar la ausencia de los otros tres, que es
+ * lo que hace que un «Otros» se trague la mitad de las filas en dos veranos.
+ *
+ * Van en el orden del viaje: se prepara, se planea, se llega. Saber cierra
+ * porque es lo que se consulta y no lo que se recorre.
+ */
+export const CLASES = [
+  { id: 'llevar', nombre: 'Llevar' },
+  { id: 'hacer', nombre: 'Hacer' },
+  { id: 'ir', nombre: 'Ir' },
+  { id: 'saber', nombre: 'Saber' },
+];
+
+/**
+ * La que va puesta de origen.
+ *
+ * «Saber» y no «Hacer»: ahora que existe una clase sin filo, ponerla por defecto
+ * hace que quien no quiera clasificar no tenga que hacerlo, y quien sí quiera la
+ * mueve de un toque en el conmutador de cuatro.
+ */
+export const CLASE_POR_DEFECTO = 'saber';
+
+export const IDS_CLASE = CLASES.map((c) => c.id);
+
+export const clasePorId = (id) => CLASES.find((c) => c.id === id) || CLASES[CLASES.length - 1];
+
+/** El identificador de un voto se compone, no se inventa: el dispositivo marca
+ *  antes de haber visto ninguna fila y tiene que dar con la misma que el
+ *  servidor. Es la misma regla que el paseo de Lío. */
+export const idVoto = (apunteId, personaId) => `voto:${apunteId}:${personaId}`;
+
+/** ¿Tiene esta casa el módulo? Sin la migración aplicada no llega nada, y la
+ *  pestaña tiene que poder decirlo en vez de enseñar una pantalla rota. */
+export const haySitios = (instantanea) => Array.isArray(instantanea?.lugares);
+
+export const lugaresDe = (instantanea) =>
+  (instantanea?.lugares || []).filter((l) => estaActivo(l));
+
+export const lugarPorId = (instantanea, id) =>
+  lugaresDe(instantanea).find((l) => l.id === id) || null;
+
+export const apuntesDe = (instantanea, lugarId) =>
+  (instantanea?.apuntes || []).filter((a) => a.lugar_id === lugarId && estaActivo(a));
+
+/** Quiénes han votado un apunte, en el orden en que están dadas de alta las
+ *  personas, para que las iniciales no bailen de un pintado a otro. */
+export function votantesDe(instantanea, apunteId) {
+  const votos = (instantanea?.votos || []).filter((v) => v.apunte_id === apunteId && estaActivo(v));
+  const orden = new Map((instantanea?.personas || []).map((p, indice) => [p.id, indice]));
+  return votos
+    .map((v) => v.persona_id)
+    .sort((a, b) => (orden.get(a) ?? 99) - (orden.get(b) ?? 99));
+}
+
+/**
+ * Los apuntes de un sitio repartidos por clase, y dentro de cada una por votos.
+ *
+ * El voto ordena porque si no ordenara nada sería un adorno; ordenando, la
+ * sombrilla sube sola al primer renglón de la lista que se lee antes de salir.
+ * A igualdad de votos, lo último escrito primero.
+ *
+ * Los grupos vacíos no salen: un sitio al que solo hay que ir no enseña tres
+ * rótulos huecos.
+ */
+export function porClase(instantanea, lugarId) {
+  const apuntes = apuntesDe(instantanea, lugarId);
+  return CLASES
+    .map((clase) => ({
+      clase,
+      apuntes: apuntes
+        .filter((a) => (a.clase || CLASE_POR_DEFECTO) === clase.id)
+        .sort((a, b) => {
+          const diferencia = votantesDe(instantanea, b.id).length - votantesDe(instantanea, a.id).length;
+          return diferencia || String(b.creado_en || '').localeCompare(String(a.creado_en || ''));
+        }),
+    }))
+    .filter((grupo) => grupo.apuntes.length);
+}
+
+/** Cuántos apuntes vivos tiene un sitio. Es lo que decide si se puede borrar y
+ *  lo que se escribe debajo de su nombre. */
+export const cuantosApuntes = (instantanea, lugarId) => apuntesDe(instantanea, lugarId).length;
+
+/**
+ * Pone o quita mi voto.
+ *
+ * No hay estado intermedio ni confirmación: es el gesto más barato de todo el
+ * módulo y se deshace tocando otra vez.
+ */
+export function alternarVoto(instantanea, apunteId, personaId) {
+  const id = idVoto(apunteId, personaId);
+  const existente = (instantanea?.votos || []).find((v) => v.id === id);
+  if (existente && estaActivo(existente)) return retirar('voto', id);
+  return guardar('voto', id, { apunte_id: apunteId, persona_id: personaId, activo: 1 });
+}
+
+/**
+ * El sitio entero como texto, para mandarlo por ahí.
+ *
+ * **Sin votos, sin comentarios y sin quién apuntó cada cosa.** Eso es lo de
+ * dentro de casa; lo que se manda a un amigo que se va a Bolonia es la lista. Y
+ * evita de un plumazo la pregunta incómoda: un sitio se comparte hacia fuera del
+ * círculo, y ahí no puede viajar quién dijo qué.
+ *
+ * No pasa por el modelo. El plan de la semana sí lo hace, porque allí hay que
+ * convertir filas en un párrafo que se lea; aquí el contenido ya son frases
+ * escritas por personas, y meter un modelo entre medias solo introduciría la
+ * posibilidad de que cambie lo que alguien escribió.
+ */
+export function textoDelLugar(instantanea, lugar) {
+  const lineas = [[lugar.emoji, lugar.nombre].filter(Boolean).join(' ')];
+  for (const { clase, apuntes } of porClase(instantanea, lugar.id)) {
+    lineas.push('', clase.nombre);
+    for (const apunte of apuntes) {
+      lineas.push(`· ${apunte.titulo}${apunte.detalle ? ` — ${apunte.detalle}` : ''}`);
+    }
+  }
+  return lineas.join('\n');
+}
+
+/**
+ * Un apunte suelto, y aquí sí va todo: el detalle entero y el hilo con los
+ * nombres.
+ *
+ * Es lo contrario de lo que hace el sitio completo, y la diferencia no es un
+ * descuido: compartir un sitio es mandar una guía, y compartir un apunte es
+ * mandar **una conversación** —«mira lo que dice Marta de subir con el carro»—.
+ * Sin los comentarios sería la mitad del mensaje, y sin los nombres no se
+ * entendería quién contesta a quién.
+ */
+export function textoDelApunte(vista, apunte) {
+  const lugar = lugarPorId(vista.datos, apunte.lugar_id);
+  const lineas = [`📍 ${apunte.titulo}`];
+  if (lugar) lineas.push([lugar.emoji, lugar.nombre].filter(Boolean).join(' '));
+  if (apunte.detalle) lineas.push('', apunte.detalle);
+
+  const comentarios = vista.comentariosDe('apunte', apunte.id);
+  if (comentarios.length) {
+    lineas.push('');
+    for (const comentario of comentarios) {
+      lineas.push(`${vista.nombre(comentario.autor_id)}: ${comentario.texto}`);
+    }
+  }
+  return lineas.join('\n');
+}
+
+/**
+ * Lo que la hoja de compartir dice antes de enviar, compuesto con lo que hay.
+ *
+ * Es la primera vez que un comentario sale del círculo de casa. No hay nada que
+ * impedir —lo comparte una persona a mano, sabiendo lo que manda—, pero nadie
+ * tiene que descubrir después lo que acaba de enviar.
+ */
+export function pistaDeCompartirApunte(vista, apunte) {
+  const cuantos = vista.comentariosDe('apunte', apunte.id).length;
+  if (!cuantos) return 'Con su descripción';
+  return `Con su descripción y ${cuantos === 1 ? 'el comentario' : `los ${cuantos} comentarios`}`;
+}

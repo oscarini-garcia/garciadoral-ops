@@ -41,15 +41,23 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { NOMBRES_DIA, hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { NOMBRES_DIA, formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana, turnosDe,
 } from './lio.js';
 import { pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
-import { abrirFormularioEvento, pintarAgenda, reiniciarAgenda, tituloDeAgenda } from './vistas/semana.js';
-import { nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos } from './vistas/regalos.js';
+import {
+  abrirDetalleEvento, abrirFormularioEvento, bloqueDePropuesta, pintarAgenda, reiniciarAgenda,
+  tituloDeAgenda,
+} from './vistas/semana.js';
+import {
+  abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
+} from './vistas/regalos.js';
 import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
-import { pintarBuscar, reiniciarBusqueda } from './vistas/buscar.js';
+import {
+  abrirApunte, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
+} from './vistas/sitios.js';
+import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
 
 const PESTANAS = {
   // Hoy tampoco repite su nombre arriba: allí va el saludo, que es lo que esta
@@ -69,8 +77,12 @@ const PESTANAS = {
   // cosa —apuntar una idea— dejaría dos signos iguales con dos significados a
   // la vez (specs/ux.md §7.1).
   familia: { titulo: 'Gente', pintar: pintarFamilia, fab: null },
-  // En las pantallas sin acción de creación el botón no aparece.
-  buscar: { titulo: 'Buscar', pintar: pintarBuscar, fab: null },
+  // Sitios ocupa el hueco que dejó Buscar, que se retiró: de las tres
+  // colecciones que cubría solo el banco de ideas acumula volumen, y gastar uno
+  // de los cinco huecos de la barra en una búsqueda global era el peor reparto
+  // posible. Su título es una función porque la pestaña tiene dos alturas: la
+  // lista de sitios y un sitio abierto, que escribe su nombre arriba.
+  sitios: { titulo: tituloDeSitios, pintar: pintarSitios, fab: (ctx) => nuevoDesdeSitios(ctx) },
 };
 
 let pestana = 'hoy';
@@ -394,7 +406,7 @@ function prepararInterfaz() {
     accion(ctx);
   };
 
-  document.getElementById('indicadorSync').onclick = abrirPanelDeSincronizacion;
+  document.getElementById('botonAvisos').onclick = abrirAvisos;
   document.getElementById('botonAjustes').onclick = abrirAjustes;
 
   let ultimaInstantanea = null;
@@ -502,10 +514,10 @@ function refrescar() {
     document.getElementById('subcabecera'),
     ctx,
   );
-  pintarIndicador(estado());
+  pintarCabecera();
 }
 
-const TEXTO_SINCRONIZACION = {
+export const TEXTO_SINCRONIZACION = {
   'al-dia': 'al día',
   sincronizando: 'sincronizando',
   'sin-conexion': 'sin conexión',
@@ -514,47 +526,110 @@ const TEXTO_SINCRONIZACION = {
 };
 
 /**
- * El punto de la sincronización. El estado va en su color y, escrito, en la
- * etiqueta: quien no ve el color lo oye igual, y quien lo ve no necesita leer
- * «al día» a todas horas para saber que todo va bien.
+ * Los dos mandos de la esquina, que casi siempre son uno.
+ *
+ * El sobre solo existe cuando hay algo que enseñar; la pastilla de la
+ * demostración, solo en demostración. El punto de la sincronización se retiró:
+ * su estado vive en Ajustes, que es donde se va a mirar cuando se sospecha de
+ * él, y lo único que había que no perder —que algo lleve un rato sin subir— lo
+ * dice Hoy con una línea, y solo cuando pasa.
+ *
+ * En demostración el sobre no aparece aunque haya avisos: allí no hay nadie
+ * esperando al otro lado, y una petición de turno inventada llevaría a contestar
+ * a nadie.
  */
-function pintarIndicador(situacion) {
-  const indicador = document.getElementById('indicadorSync');
-  const texto = TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
-  indicador.dataset.estado = situacion.estado;
-  indicador.setAttribute('aria-label', `Sincronización: ${texto}`);
-  indicador.setAttribute('title', texto);
+function pintarCabecera() {
+  const demostracion = estado().estado === 'demostracion';
+  document.getElementById('pastillaDemo').hidden = !demostracion;
+  document.getElementById('botonAvisos').hidden = demostracion || !ctx.vista || !hayAvisos(ctx);
 }
 
-// -------------------------------------------- Panel de estado y ajustes --
+// ------------------------------------------------------ El sobre de avisos --
 
-function abrirPanelDeSincronizacion() {
-  const situacion = estado();
-  abrirHoja('Estado', (cuerpo) => {
-    cuerpo.append(el('p', {
-      texto: situacion.estado === 'demostracion'
-        ? 'Estás viendo una demostración con datos inventados. Nada de lo que hagas sale de este navegador.'
-        : `Sincronización: ${TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado}.`,
-    }));
-    if (situacion.ultima) {
-      cuerpo.append(el('p', {
-        class: 'pista',
-        texto: `Última actualización correcta: ${new Date(situacion.ultima).toLocaleString('es-ES')}.`,
-      }));
+/**
+ * Lo que espera, en dos grupos y con una diferencia que no es de forma: lo de
+ * arriba se contesta y lo de abajo se descarta.
+ *
+ * Descartar una petición de turno dejaría a quien la hizo esperando una
+ * respuesta que ya nadie va a dar, y sin rastro de que existió. Por eso «Por
+ * contestar» no lleva aspa: se contesta o se queda.
+ */
+function abrirAvisos() {
+  const pendientes = porContestar(ctx);
+  const nuevos = novedades(ctx);
+
+  abrirHoja('Avisos', (cuerpo) => {
+    if (pendientes.length) {
+      cuerpo.append(el('div', { class: 'grupo' }, [
+        el('p', { class: 'grupo-titulo', texto: 'Por contestar' }),
+        ...pendientes.map((aviso) => bloqueDePropuesta(aviso.trato, ctx)),
+      ]));
     }
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      situacion.estado === 'demostracion' ? null : el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: async () => { await sincronizar(); avisar('Sincronizado'); },
-      }, ['Sincronizar ahora']),
-      situacion.estado === 'demostracion' ? el('button', {
-        class: 'boton', 'data-tono': 'peligro', type: 'button',
-        onclick: () => salir(),
-      }, ['Salir de la demostración']) : null,
-    ]));
+    if (nuevos.length) {
+      cuerpo.append(el('div', { class: 'grupo' }, [
+        el('p', { class: 'grupo-titulo', texto: 'Nuevo' }),
+        el('div', {}, nuevos.map((aviso) => filaDeAviso(aviso))),
+        // El verbo de quien vuelve de una semana fuera. Sin él, la única salida
+        // sería ir tocando el aspa siete veces.
+        nuevos.length > 1 ? el('button', {
+          class: 'enlace-discreto', type: 'button',
+          onclick: async () => {
+            for (const aviso of nuevos) await marcarVisto(ctx, aviso.tipo, aviso.objetoId);
+            ctx.refrescar();
+            abrirAvisos();
+          },
+        }, ['Vaciar']) : null,
+      ]));
+    }
+
+    // Descartar el último con la hoja abierta haría desaparecer el icono debajo,
+    // así que la hoja se queda puesta y lo dice. Cerrarse sola en la cara de
+    // quien acaba de tocar es peor que una línea de más.
+    if (!pendientes.length && !nuevos.length) {
+      cuerpo.append(el('p', { class: 'vacio', texto: 'Nada más.' }));
+    }
   });
 }
+
+function filaDeAviso(aviso) {
+  const ir = () => {
+    cerrarHoja();
+    abrirLoComentado(aviso);
+  };
+
+  return el('div', { class: 'aviso-fila' }, [
+    el('span', { class: 'aviso-emoji', 'aria-hidden': 'true', texto: aviso.emoji }),
+    el('button', { class: 'aviso-cuerpo', type: 'button', onclick: ir }, [
+      el('span', { texto: `${listaDeNombres(aviso.quienes)}, en «${aviso.donde}»` }),
+      el('span', { class: 'aviso-cuando', texto: formatearHace(aviso.cuando) }),
+    ]),
+    el('button', {
+      class: 'aviso-descartar', type: 'button', 'aria-label': 'Descartar',
+      onclick: async () => {
+        await marcarVisto(ctx, aviso.tipo, aviso.objetoId);
+        ctx.refrescar();
+        abrirAvisos();
+      },
+    }, ['×']),
+  ]);
+}
+
+const listaDeNombres = (nombres) => (nombres.length > 1
+  ? `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`
+  : nombres[0] || 'Alguien');
+
+/** Abrir el aviso lo descarta también, porque ir a leerlo es la manera larga de
+ *  decir lo mismo. Lo escribe la hoja de destino al abrirse. */
+function abrirLoComentado(aviso) {
+  if (aviso.tipo === 'apunte') return abrirApunte(aviso.objetoId, ctx);
+  if (aviso.tipo === 'idea') return abrirDetalleIdea(aviso.objetoId, ctx);
+  if (aviso.tipo === 'regalo') return abrirDetalleRegalo(aviso.objetoId, ctx);
+  if (aviso.tipo === 'evento') return abrirDetalleEvento(aviso.objetoId, ctx);
+  return null;
+}
+
+// -------------------------------------------------------------- Ajustes --
 
 /**
  * Ajustes: lo que es de esta instalación y de esta persona, no de la pantalla
@@ -600,6 +675,12 @@ function abrirAjustes() {
     if (ctx.vista?.esAdministrador() && !demostracion) {
       cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
     }
+
+    // Apartado propio y no dentro de «La aplicación»: ahí viven la versión y lo
+    // legal, que son de la instalación, y esto es de los datos. Es lo que uno
+    // viene a mirar cuando sospecha que algo que escribió no ha llegado, y
+    // mezclarlas obligaría a abrir un apartado que se llama otra cosa.
+    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion));
 
     cuerpo.append(acordeon('La aplicación', (dentro) => {
       dentro.append(bloqueDeVersion());
@@ -765,6 +846,9 @@ function formularioDeRedaccion(ajustes) {
   const felicitacion = el('textarea', { rows: '5', spellcheck: 'false' });
   felicitacion.value = ajustes.felicitacion;
 
+  const apunte = el('textarea', { rows: '5', spellcheck: 'false' });
+  apunte.value = ajustes.apunte || '';
+
   const traza = el('pre', { class: 'traza', hidden: true });
   const contar = (texto, clase = 'traza') => {
     traza.className = clase;
@@ -799,6 +883,7 @@ function formularioDeRedaccion(ajustes) {
         instruccion: instruccion.value.trim(),
         regalo: regalo.value.trim(),
         felicitacion: felicitacion.value.trim(),
+        apunte: apunte.value.trim(),
       });
       clave.value = '';
       clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
@@ -821,7 +906,7 @@ function formularioDeRedaccion(ajustes) {
   return [
     el('p', {
       class: 'pista',
-      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son tres, contar los días antes de compartirlos, proponer un regalo y felicitar un cumpleaños.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son cuatro, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños y apuntar cosas de un sitio.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
@@ -837,10 +922,13 @@ function formularioDeRedaccion(ajustes) {
     el('h4', { class: 'subtitulo-ajuste', texto: 'Felicitar un cumpleaños' }),
     campo('Instrucción', felicitacion, 'También en tandas de cinco, una por línea, y es el único encargo con emojis: el texto se copia y se pega en un WhatsApp. Se le dan el nombre, los años que cumple y lo que hay apuntado de esa persona; los regalos no, porque quien lo lea es quien cumple. Vacío, vuelve el encargo de origen.'),
 
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Apuntar cosas de un sitio' }),
+    campo('Instrucción', apunte, 'También en tandas de cinco, con el porqué detrás de la raya: el porqué es lo que se guarda como detalle del apunte, y es lo que separa una lista de obviedades de algo que aporta. Se le dan el sitio, de qué clase se le pide, lo que ya hay apuntado ahí y quiénes son de casa. Vacío, vuelve el encargo de origen.'),
+
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {
       class: 'pista',
-      texto: 'Guardar los guarda los tres. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+      texto: 'Guardar los guarda los cuatro. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
     }),
     traza,
   ];
@@ -967,9 +1055,67 @@ async function salir() {
   borrarSesion();
   sesionActual = null;
   pestana = 'hoy';
-  reiniciarHoy(); reiniciarAgenda(); reiniciarRegalos(); reiniciarBusqueda(); reiniciarFamilia();
+  reiniciarHoy(); reiniciarAgenda(); reiniciarRegalos(); reiniciarSitios(); reiniciarFamilia();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
+}
+
+/**
+ * El estado de la sincronización, que era un punto en la cabecera.
+ *
+ * El punto se retiró de arriba: llevaba el estado en su color y estaba «al día»
+ * el 99 % del tiempo, ocupando la esquina que peor alcanza el pulgar para no
+ * contar nada. Aquí abajo puede decirlo con todas sus palabras.
+ *
+ * **La línea es a la vez el dato y el verbo**, igual que la de la versión: se
+ * lee cuándo fue la última buena y, al tocarla, sincroniza contando por dónde
+ * va. Un botón aparte diciendo «Sincronizar ahora» pediría sitio para algo que
+ * la aplicación ya hace sola cada vez que se abre.
+ *
+ * Y la fecha va escrita en palabras —«hoy a las 14:03»— y no en cifras: es un
+ * dato que se lee para tranquilizarse, y «hoy» tranquiliza de un vistazo
+ * mientras que una fecha completa hay que descifrarla para llegar a lo mismo.
+ */
+function bloqueDeSincronizacion(dentro) {
+  const progreso = el('ul', { class: 'progreso' });
+
+  const paso = (texto, estadoPaso) => el('li', { 'data-estado': estadoPaso }, [
+    el('span', {
+      class: 'progreso-marca',
+      texto: { hecho: '✓', curso: '·', fallo: '×' }[estadoPaso] || '·',
+    }),
+    texto,
+  ]);
+
+  const linea = el('button', { class: 'linea-verbo', type: 'button' });
+
+  const escribirLinea = () => {
+    const situacion = estado();
+    linea.textContent = situacion.ultima
+      ? `Última actualización: ${formatearHace(situacion.ultima)}.`
+      : 'Todavía no se ha podido actualizar.';
+  };
+
+  linea.onclick = async () => {
+    vaciar(progreso).append(paso('Sincronizando…', 'curso'));
+    try {
+      await sincronizar();
+    } catch {
+      /* el estado lo cuenta abajo, con su motivo */
+    }
+    const situacion = estado();
+    vaciar(progreso);
+    if (situacion.estado === 'al-dia') {
+      progreso.append(paso('Subido lo que había pendiente', 'hecho'));
+      progreso.append(paso('Traída y guardada la última copia', 'hecho'));
+    } else {
+      progreso.append(paso(`No se ha podido: ${TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado}`, 'fallo'));
+    }
+    escribirLinea();
+  };
+
+  escribirLinea();
+  dentro.append(linea, progreso);
 }
 
 /**

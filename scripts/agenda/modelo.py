@@ -43,7 +43,19 @@ ESTADOS_REGALO = ("pendiente", "comprado", "entregado")
 ESTADOS_OCASION = ("abierta", "cerrada")
 ORIGENES_EVENTO = ("manual", "derivado", "importado")
 REPETICIONES = ("ninguna", "semanal", "mensual", "anual")
-TIPOS_COMENTARIO = ("idea", "regalo", "evento")
+#: Qué cosas admiten comentario. Espejo de `api/src/comentables.js`, que es
+#: donde vive la lista desde que la migración 0009 retiró el `CHECK` de la
+#: tabla: un `CHECK` de SQLite no se altera, así que repetir la regla en SQL
+#: costaba rehacer la tabla entera cada vez que nacía un módulo.
+TIPOS_COMENTARIO = ("idea", "regalo", "evento", "apunte")
+
+#: Y de cuáles sabe además este modelo dónde buscarlos. Es un subconjunto a
+#: propósito: los apuntes de Sitios no entran en el plan semanal —un sitio no
+#: cae en un día— y arrastrarlos hasta aquí sería cargar el generador del plan
+#: con dos entidades que nunca va a leer. Un comentario de un tipo admitido pero
+#: no indexado se da por bueno sin comprobar que su objeto exista, que es todo
+#: lo que se puede afirmar desde aquí sin mentir.
+TIPOS_COMENTARIO_INDEXADOS = ("idea", "regalo", "evento")
 
 EMOJI_POR_DEFECTO = "📌"
 
@@ -268,7 +280,7 @@ class Paseo:
 
 @dataclass(frozen=True)
 class Comentario:
-    """Lista plana sobre idea, regalo o evento (§2.3)."""
+    """Lista plana sobre cualquiera de los tipos de `TIPOS_COMENTARIO` (§2.3)."""
 
     id: str
     objeto_tipo: str
@@ -773,7 +785,7 @@ def validar(agenda: Agenda) -> list[str]:
                 f"comentario {comentario.id}: tipo de objeto inválido "
                 f"«{comentario.objeto_tipo}»"
             )
-        else:
+        elif comentario.objeto_tipo in TIPOS_COMENTARIO_INDEXADOS:
             indice = {
                 "idea": agenda.ideas,
                 "regalo": agenda.regalos,

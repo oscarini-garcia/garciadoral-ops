@@ -1124,7 +1124,7 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
     }
 
     cuerpo.append(bloqueDeRegalos(evento, ctx));
-    cuerpo.append(bloqueDeComentarios('evento', evento.id, ctx));
+    cuerpo.append(bloqueDeComentarios('evento', evento.id, ctx, { vistoHasta: ctx.vista.vistoHasta('evento', evento.id) }));
 
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
   }, [

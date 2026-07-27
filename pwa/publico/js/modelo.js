@@ -242,6 +242,18 @@ export function crearVista(instantanea) {
     comentariosDe: (tipo, id) =>
       (instantanea.comentarios || []).filter((c) => c.objeto_tipo === tipo && c.objeto_id === id && estaActivo(c)),
 
+    /**
+     * Hasta cuándo se ha mirado este objeto, o `null` si nunca.
+     *
+     * Es lo que separa un comentario nuevo de uno ya leído, y de ahí salen las
+     * dos cosas que lo dicen: la raya de «sin leer» dentro del hilo y el
+     * renglón del sobre. La instantánea solo trae las filas de quien mira —el
+     * Worker no manda las de nadie más—, así que aquí no hay a quién
+     * comparar: lo que esté, es mío.
+     */
+    vistoHasta: (tipo, id) =>
+      (instantanea.vistos || []).find((v) => v.objeto_tipo === tipo && v.objeto_id === id)?.hasta || null,
+
     /** Banco de ideas: lo activo y lo que está en curso, que permanece a la
      *  vista señalado con su ocasión para que nadie lo registre por su cuenta. */
     banco: () => (instantanea.ideas || []).filter(

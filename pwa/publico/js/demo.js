@@ -50,6 +50,10 @@ export async function cargarRegistroDemo() {
   return respuesta.json();
 }
 
+/** Lío y Sitios son de la casa, también aquí: mirando con los ojos de la abuela
+ *  no aparecen, igual que no aparecerían de verdad. */
+const deLaCasaDe = (persona) => persona.circulo === 'familia' && persona.tiene_cuenta;
+
 export function componerDemo(registro, observadorId) {
   const observador = registro.personas.find((p) => p.id === observadorId);
   if (!observador) throw new Error(`observador desconocido: ${observadorId}`);
@@ -58,11 +62,15 @@ export function componerDemo(registro, observadorId) {
   const ideas = registro.ideas.filter((i) => visible(registro, i, 'idea', observador));
   const regalos = registro.regalos.filter((r) => visible(registro, r, 'regalo', observador));
 
-  const ids = { evento: new Set(eventos.map((e) => e.id)), idea: new Set(ideas.map((i) => i.id)), regalo: new Set(regalos.map((r) => r.id)) };
+  const apuntes = deLaCasaDe(observador) ? registro.apuntes || [] : [];
+  const ids = {
+    evento: new Set(eventos.map((e) => e.id)),
+    idea: new Set(ideas.map((i) => i.id)),
+    regalo: new Set(regalos.map((r) => r.id)),
+    apunte: new Set(apuntes.map((a) => a.id)),
+  };
   const esAdministrador = observador.rol === 'administrador';
-  // Lío es de la casa, también en la demostración: mirando con los ojos de la
-  // abuela no aparece, igual que no aparecería de verdad.
-  const deLaCasa = observador.circulo === 'familia' && observador.tiene_cuenta;
+  const deLaCasa = deLaCasaDe(observador);
 
   return {
     ...registro,
@@ -81,5 +89,13 @@ export function componerDemo(registro, observadorId) {
     lio_cuadro: deLaCasa ? registro.lio_cuadro : null,
     paseos: deLaCasa ? registro.paseos || [] : [],
     tratos_paseo: deLaCasa ? registro.tratos_paseo || [] : [],
+    // Sitios es de la casa igual que Lío: con los ojos de la abuela la pestaña
+    // enseña que no hay nada, que es lo que enseñaría de verdad.
+    lugares: deLaCasa ? registro.lugares || [] : [],
+    apuntes,
+    votos: deLaCasa ? registro.votos || [] : [],
+    // Y nadie ha mirado nada: la demostración empieza siempre de cero, así que
+    // lo que haya de comentarios sale como nuevo, que es lo que hay que enseñar.
+    vistos: [],
   };
 }

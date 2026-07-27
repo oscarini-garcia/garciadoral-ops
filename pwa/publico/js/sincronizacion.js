@@ -28,6 +28,10 @@ const PLURAL = {
   comentario: 'comentarios',
   paseo: 'paseos',
   trato_paseo: 'tratos_paseo',
+  lugar: 'lugares',
+  apunte: 'apuntes',
+  voto: 'votos',
+  visto: 'vistos',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -312,6 +316,21 @@ export async function felicitarCumple(personaId, { descartadas = [] } = {}) {
     body: JSON.stringify({ persona_id: personaId, descartadas }),
   });
   return felicitaciones || [];
+}
+
+/**
+ * Cinco cosas que apuntar en un sitio, de la clase que se pida.
+ *
+ * Viajan el sitio, la clase y lo ya propuesto en esta misma sesión. Lo que se
+ * sabe del sitio —lo que ya hay apuntado ahí, que es lo que hace que la tanda no
+ * repita lo obvio— lo reúne el Worker con la instantánea filtrada de quien pide.
+ */
+export async function apuntarEnSitio(lugarId, { clase = 'saber', descartadas = [] } = {}) {
+  const { propuestas } = await peticion('/api/sitio/apuntar', {
+    method: 'POST',
+    body: JSON.stringify({ lugar_id: lugarId, clase, descartadas }),
+  });
+  return propuestas || [];
 }
 
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */

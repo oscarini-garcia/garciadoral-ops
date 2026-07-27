@@ -22,6 +22,7 @@
 import { el, vaciar, abrirHoja, avisar } from '../ui.js';
 import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia, sumarDias } from '../semana.js';
 import { comprobarActualizacion, esNativo, toque, versionInstalada } from '../native.js';
+import { estado } from '../sincronizacion.js';
 import { VERSION_APP } from '../version.js';
 import {
   abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDePropuesta,
@@ -61,6 +62,20 @@ export function tituloDeHoy(ctx) {
   return nombre ? `${saludo}, ${nombre}` : saludo;
 }
 
+/**
+ * Qué decir de la sincronización, o `null` si no hay nada que decir.
+ *
+ * «Sincronizando» no se cuenta: dura un segundo y aparecería y desaparecería
+ * sola en cada apertura, que es exactamente el parpadeo que hace que la gente
+ * deje de mirar un indicador.
+ */
+function avisoDeSincronizacion() {
+  const situacion = estado();
+  if (situacion.estado === 'sin-conexion') return 'Sin conexión · lo escrito se subirá solo';
+  if (situacion.estado === 'error') return 'Sin sincronizar · se reintenta solo';
+  return null;
+}
+
 /** Las tres franjas de siempre, con la madrugada contada como noche: a las tres
  *  de la mañana nadie da los buenos días. */
 function saludoDeLaHora(hora) {
@@ -74,6 +89,13 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
 
   // Qué día es hoy, escrito entero. Arriba está el saludo, que no lo dice.
   vaciar(subcabecera).append(el('p', { class: 'hoy-fecha', texto: formatearFechaLarga(dia) }));
+
+  // Y lo único que había que no perder al retirar el punto de la cabecera: que
+  // algo lleve un rato sin subir. Nada mientras va bien —que es el 99 % de los
+  // días, y era el argumento por el que el punto perdió su palabra—; cuando no,
+  // se lee en vez de leerse en un color. Desaparece sola al arreglarse.
+  const aviso = avisoDeSincronizacion();
+  if (aviso) subcabecera.append(el('p', { class: 'hoy-sync', texto: aviso }));
 
   vaciar(pantalla);
   pantalla.classList.add('pantalla-hoy');

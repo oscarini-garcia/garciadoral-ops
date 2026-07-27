@@ -23,6 +23,7 @@
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
  *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
+ *   POST   /api/sitio/apuntar · cinco apuntes para un sitio y una clase
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
@@ -62,6 +63,7 @@ import {
   cabeUnaMas,
   componerMaterial,
   componerMaterialDePeriodo,
+  componerMaterialDeApunte,
   componerMaterialDeFelicitacion,
   componerMaterialDeRegalo,
   configuracionPublica,
@@ -565,6 +567,55 @@ async function felicitarUnCumple(peticion, env) {
   return json({ felicitaciones, modelo: resultado.modelo });
 }
 
+/**
+ * Cinco cosas que apuntar en un sitio, de la clase que se pida.
+ *
+ * El cuarto encargo, y el que menos maquinaria estrena: mismo freno por minuto,
+ * misma cadena de modelos y el mismo formato de respuesta que la sugerencia de
+ * regalo. Lo único suyo es el material, que lo compone `componerMaterialDeApunte`
+ * con el sitio, la clase y **lo que ya hay apuntado ahí**.
+ *
+ * Como todo Sitios, es de la casa: quien no vive en ella no recibe los sitios en
+ * su instantánea, así que aquí no encontraría ninguno que pedir.
+ */
+async function apuntarEnUnSitio(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
+  }
+
+  const { lugar_id: lugarId, clase = 'saber', descartadas = [] } = await peticion.json().catch(() => ({}));
+  if (!lugarId) return json({ error: 'falta el sitio' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeApunte(componerInstantanea(registro, lector), {
+    lugarId, clase, descartadas,
+  });
+
+  if (!material.lineas.length) return json({ error: 'ese sitio no está' }, 404);
+
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.apunte, tope: 700,
+  });
+
+  const propuestas = interpretarPropuestas(resultado.texto);
+
+  if (!propuestas.length) {
+    console.warn('apuntes fallidos', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        propuestas: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ propuestas, modelo: resultado.modelo });
+}
+
 async function leerAjustesDeIa(peticion, env) {
   await administradorAutenticado(peticion, env);
   const configuracion = await leerConfiguracion(env.DB);
@@ -574,9 +625,11 @@ async function leerAjustesDeIa(peticion, env) {
 
 async function guardarAjustesDeIa(peticion, env) {
   const administrador = await administradorAutenticado(peticion, env);
-  const { clave, modelo, instruccion, regalo, felicitacion } = await peticion.json().catch(() => ({}));
+  const {
+    clave, modelo, instruccion, regalo, felicitacion, apunte,
+  } = await peticion.json().catch(() => ({}));
   const configuracion = await guardarConfiguracion(env.DB, administrador, {
-    clave, modelo, instruccion, regalo, felicitacion,
+    clave, modelo, instruccion, regalo, felicitacion, apunte,
   });
   return json(configuracionPublica(configuracion));
 }
@@ -633,6 +686,7 @@ const RUTAS = [
   ['GET', '/api/registro', registroCompleto],
   ['POST', '/api/redactar', contarElDia],
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
+  ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],
   ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],
