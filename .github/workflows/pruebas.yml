@@ -27,6 +27,20 @@ jobs:
       - name: Ejecutar las pruebas
         run: python3 -m unittest discover -s tests -v
 
+      # La punta de `main` **ahora**, que es contra lo que hay que comparar y no
+      # contra la base del PR.
+      #
+      # Las dos comprobaciones de abajo miraban `pull_request.base.sha`, o sea la
+      # `main` de cuando se abrió el PR. Con dos ramas abiertas a la vez eso no
+      # basta: las dos salen de la misma base, las dos suben a la misma versión, y
+      # desde su propia base las dos ven un salto correcto. Git funde después las
+      # dos líneas idénticas sin conflicto, y el segundo en mergearse publica su
+      # trabajo bajo una versión que el primero ya quemó. Pasó con la 1.15.0 y
+      # volvió a pasar con la 1.27.0, que es la que se llevó Sitios por delante.
+      - name: Traer la punta de main
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin main
+
       # Los módulos y los estilos se sirven de la caché del service worker antes
       # que de la red, de modo que un cambio en ellos no llega a quien ya tiene
       # la aplicación abierta hasta que sube `VERSION` en `sw.js`. Olvidarlo no
@@ -37,37 +51,61 @@ jobs:
       # una versión que aún no tiene release. Cambiar `pwa/publico/**` sin subir
       # esa versión hace que el workflow corra, no publique nada y no diga nada:
       # el cambio queda en la web y no llega al teléfono.
+      #
+      # `ota.yml` ya sabe distinguir ese caso, pero avisa **después del merge**,
+      # cuando el trabajo ya está en main y arreglarlo es otro PR. Aquí se mira
+      # antes, que es cuando todavía se puede escribir otra cifra.
       - name: Comprobar que el OTA sube de versión si cambia lo que empaqueta
         if: github.event_name == 'pull_request'
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if ! git diff --name-only "$BASE" HEAD | grep -q '^pwa/publico/'; then
+          if ! git diff --name-only origin/main HEAD | grep -q '^pwa/publico/'; then
             echo "No cambia nada de pwa/publico/; el OTA no tiene que moverse."
             exit 0
           fi
-          antes=$(git show "$BASE:pwa/package.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
+
+          antes=$(git show origin/main:pwa/package.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version")
           ahora=$(node -p "require('./pwa/package.json').version")
+
           if [ "$antes" = "$ahora" ]; then
-            echo "Cambia pwa/publico/ y la versión del OTA sigue en $ahora."
+            echo "::error file=pwa/package.json::Cambia pwa/publico/ y la versión del OTA sigue en $ahora, que es la que ya tiene main."
             echo ""
-            echo "Suba \"version\" en pwa/package.json: sin eso, ota.yml ve que"
-            echo "esa versión ya tiene release, no corta bundle nuevo, y la app"
-            echo "de iPhone se queda con lo anterior sin que nada lo diga."
+            echo "Suba \"version\" en pwa/package.json por encima de $antes: sin eso,"
+            echo "ota.yml ve que esa versión ya tiene release, no corta bundle nuevo,"
+            echo "y la app de iPhone se queda con lo anterior sin que nada lo diga."
             exit 1
           fi
+
+          # Y que sube, no que baja. `sort -V` ordena versiones, no cadenas: sin
+          # él, «1.9.0» quedaría por encima de «1.10.0».
+          if [ "$(printf '%s\n%s\n' "$antes" "$ahora" | sort -V | tail -1)" != "$ahora" ]; then
+            echo "::error file=pwa/package.json::La versión del OTA baja: main está en $antes y aquí pone $ahora."
+            exit 1
+          fi
+
+          # La comprobación definitiva, y la que no depende de que main tenga la
+          # cifra escrita: si ya hay release con ese número, ese OTA está
+          # publicado y este trabajo no llegaría a ningún teléfono.
+          #
+          # Se salta si no hay repositorio en el entorno —al correr esto a mano,
+          # fuera de Actions— en lugar de reventar por `set -u`. Lo que decide de
+          # verdad es la comparación de arriba; esto es el cinturón.
+          if [ -n "${GITHUB_REPOSITORY:-}" ] && gh release view "ota-v$ahora" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error file=pwa/package.json::La versión $ahora ya tiene un OTA publicado; elija una por encima."
+            exit 1
+          fi
+
           echo "OTA $antes → $ahora, correcto."
 
       - name: Comprobar que el service worker sube de versión si cambia lo que cachea
         if: github.event_name == 'pull_request'
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail
-          git diff --name-only "$BASE" HEAD > /tmp/cambiados.txt
+          git diff --name-only origin/main HEAD > /tmp/cambiados.txt
           python3 - <<'PY'
-          import os, re, subprocess, sys
+          import re, subprocess, sys
           from pathlib import Path
 
           sw = Path('pwa/publico/sw.js')
@@ -90,14 +128,27 @@ jobs:
               hallado = re.search(r"const VERSION = '([^']+)'", texto)
               return hallado.group(1) if hallado else None
 
-          antes, ahora = version(os.environ['BASE']), version('HEAD')
+          def cifra(valor):
+              """`agenda-v37` → 37. Lo que no siga esa forma no se ordena."""
+              hallado = re.search(r"(\d+)$", valor or "")
+              return int(hallado.group(1)) if hallado else None
+
+          antes, ahora = version('origin/main'), version('HEAD')
           if antes == ahora:
-              print('Cambia lo que cachea el service worker y VERSION sigue en', ahora)
+              print(f'::error file=pwa/publico/sw.js::Cambia lo que cachea el service '
+                    f'worker y VERSION sigue en {ahora}, que es la que ya tiene main.')
               for ruta in tocados:
                   print(' ·', ruta)
               print('\nSuba VERSION en pwa/publico/sw.js: sin eso, quien ya tenga')
               print('la aplicación abierta seguirá viendo la versión anterior.')
               sys.exit(1)
+
+          nueva, vieja = cifra(ahora), cifra(antes)
+          if nueva is not None and vieja is not None and nueva < vieja:
+              print(f'::error file=pwa/publico/sw.js::La versión del service worker baja: '
+                    f'main está en {antes} y aquí pone {ahora}.')
+              sys.exit(1)
+
           print(f'VERSION {antes} → {ahora}, correcto.')
           PY
 
