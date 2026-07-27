@@ -112,6 +112,15 @@ def registro_de_demostracion() -> dict:
         "lio_cuadro": agenda.get("lio_cuadro"),
         "paseos": agenda.get("paseos", []),
         "tratos_paseo": [],
+        # Sitios: un par de lugares con sus apuntes, sus votos y un hilo. Sin
+        # ellos la pestaña se enseña vacía a quien entra a mirar qué es esto, que
+        # es la peor manera de presentar un módulo entero.
+        "lugares": agenda.get("lugares", []),
+        "apuntes": agenda.get("apuntes", []),
+        "votos": agenda.get("votos", []),
+        # Nadie ha mirado nada: la demostración empieza siempre de cero, así que
+        # lo que haya de comentarios sale como nuevo.
+        "vistos": [],
     }
 
     # La API sirve siempre las filas completas, porque los valores por defecto
