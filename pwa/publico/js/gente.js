@@ -38,6 +38,10 @@ const CUANTOS = 4;
 const RESPALDO = {
   regalo: (vista) => vista.masRegaladas(),
   evento: (vista) => vista.masEnEventos(),
+  // Encargarse de un regalo lo hace quien usa la aplicación, así que el relleno
+  // de este son las cuentas y no a quien más se le regala, que es justo la otra
+  // punta de la misma pantalla.
+  responsable: (vista) => vista.personasConCuenta().map((persona) => persona.id),
 };
 
 export { recordarElegidos };

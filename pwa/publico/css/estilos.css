@@ -205,6 +205,18 @@ button { background: none; border: 0; cursor: pointer; }
   min-height: var(--toque);
 }
 
+/* Un enlace dentro de una frase, no debajo de ella: el nombre de la persona en
+   «Para Marta · Navidad 2026». Hereda el cuerpo del renglón —si no, rompería la
+   línea base de la frase que lo contiene— y no reserva el alto del toque, que
+   aquí abriría un hueco en mitad del párrafo. */
+.enlace-en-linea {
+  display: inline;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ------------------------------------------------------------ Estructura -- */
 
 /* Alto exacto y no mínimo: la ventana es el marco, y lo que crece es lo de
