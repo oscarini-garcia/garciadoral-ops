@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Sitios: el módulo, y los avisos como pieza común</title>
+<title>Sitios: el módulo, el sobre de avisos y la cabecera</title>
 
 <style>
   /* Los mismos valores de pwa/publico/css/estilos.css, para que lo que se mide
@@ -235,9 +235,25 @@
     background: var(--paper); border: 1px solid var(--line); color: var(--ink);
   }
   .aviso-fila {
-    display: grid; grid-template-columns: 20px 1fr; gap: 9px; align-items: baseline;
+    display: grid; grid-template-columns: 20px 1fr auto; gap: 9px; align-items: baseline;
     padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 15px;
   }
+  .descartar {
+    font-size: 17px; line-height: 1; color: var(--ink-faint);
+    width: 30px; height: 30px; display: grid; place-items: center; flex: none;
+    border-radius: 8px; align-self: center;
+  }
+  .vaciar {
+    font-size: 14px; color: var(--ink-soft); text-align: center;
+    padding-top: 4px; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .progreso { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .progreso li {
+    display: grid; grid-template-columns: 16px 1fr; gap: 8px; align-items: baseline;
+    font-size: 14px; color: var(--ink-soft);
+  }
+  .progreso .marca { font-family: var(--mono); font-size: 12px; color: var(--tinta); }
+  .progreso .marca.curso { color: var(--ink-faint); }
   .aviso-fila:last-child { border-bottom: 0; }
   .aviso-fila .de-donde { font-size: 15px; }
   .aviso-fila em { font-style: normal; color: var(--ink-soft); }
@@ -276,7 +292,7 @@
 <div class="doc">
 
   <header class="portada">
-    <p class="rotulo">Propuesta · julio de 2026 · tercera vuelta</p>
+    <p class="rotulo">Propuesta · julio de 2026 · cuarta vuelta</p>
     <h1>Sitios: el módulo, y los avisos como pieza común</h1>
     <p>
       El nombre está elegido, la forma también, y en esta tercera vuelta quedan cerradas
@@ -285,12 +301,12 @@
       sustituto.
     </p>
     <p>
-      Queda una sola decisión abierta, y es la que tiene la parte 5: <strong>dónde viven
-      los avisos</strong>. El módulo se ha quedado con lo que hay que contestar y nada más
-      —las novedades pasan a ser marcas dentro de cada pantalla—, y eso cambia la pregunta
-      del sobre en la cabecera: hay cuatro sitios posibles, medidos por lo que de verdad
-      los separa, que es cuántos toques cuesta contestar y cuántos días el dibujo no dice
-      nada.
+      Y los avisos dejan de ser una cuestión abierta: <strong>van en un sobre en la
+      cabecera que solo existe cuando hay algo</strong>, y llevan las dos cosas —lo que hay
+      que contestar y lo que solo ha pasado—, con la segunda descartable una a una. Eso
+      arrastra dos consecuencias que esta vuelta desarrolla: una tabla pequeña para lo
+      visto, porque un descarte que se deshace al abrir el iPad no es un descarte; y el
+      sitio que deja libre en la cabecera el punto de sincronización, que se va a Ajustes.
     </p>
   </header>
 
@@ -336,8 +352,12 @@
             <td>Opción B: un registro de «cosas que admiten comentario», el <code>CHECK</code> fuera, e idea y regalo enchufados de paso.</td>
           </tr>
           <tr class="decidido">
-            <td><strong>El aviso</strong></td>
-            <td>Dentro de la aplicación y derivado en el dispositivo, y <strong>de momento solo lo que hay que contestar</strong>. Lo demás, marcas en contexto. Las remotas van aparte y después.</td>
+            <td><strong>Los avisos</strong></td>
+            <td>Un <strong>sobre en la cabecera que solo existe cuando hay algo</strong>, con dos grupos: lo que hay que contestar y lo que solo ha pasado. Lo segundo se descarta con una ×; lo primero, no. Derivados de la instantánea, con una tabla <code>visto</code> para lo descartado. Las remotas van aparte y después.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>La cabecera</strong></td>
+            <td>El punto de sincronización <strong>se retira</strong> y pasa a Ajustes, en apartado propio, con la fecha de la última correcta y la línea que además es el verbo.</td>
           </tr>
           <tr class="decidido">
             <td><strong>Buscar</strong></td>
@@ -729,221 +749,273 @@ tarde</div>
 
   <section class="parte">
     <p class="rotulo">Parte 5</p>
-    <h2>Los avisos: qué llevan, y dónde viven</h2>
+    <h2>El sobre</h2>
 
     <div class="nota veredicto">
       <p>
-        <strong>Primero, lo que se acaba de decidir, porque cambia la pregunta siguiente:
-        el módulo de avisos lleva, de momento, solo lo que hay que contestar.</strong> Se
-        cae el segundo grupo, el de «Nuevo desde ayer». Un comentario nuevo se seguirá
-        sabiendo, pero <strong>en su sitio y no en una lista</strong>: el punto en la tarjeta
-        del sitio, el punto en la línea del apunte y la raya de «sin leer» dentro del hilo.
-        Enterarse mientras se recorre lo que se estaba mirando, en vez de leer un parte de
-        novedades.
+        <strong>Decidido: el sobre, y de la forma B —solo existe cuando hay algo—.</strong>
+        Y con un motivo que cambia lo que lleva dentro: <strong>ahí van las
+        notificaciones, no solo lo que hay que contestar</strong>. Vuelve, por tanto, el
+        segundo grupo, y con él la pieza que la vuelta anterior no necesitaba:
+        <strong>una notificación se puede descartar</strong>.
       </p>
       <p>
-        Esa decisión tiene una consecuencia inmediata sobre lo que viene después, y por eso
-        va aquí arriba: <strong>lo que queda en el módulo es poco, raro y urgente</strong>.
-        Hoy es una sola fuente —las peticiones de turno de Lío—, que aparecen unas pocas
-        veces por semana; y cuando aparecen, alguien está esperando para saber si el jueves
-        saca al perro.
+        Un icono que aparece <em>es</em> el aviso, así que no lleva punto encima ni número:
+        el aviso es que esté. Va <strong>a la izquierda de los ajustes</strong>, que llevan
+        su esquina desde el principio y no se mueven. Y lo que se propone es que
+        <strong>Hoy conserve su banda</strong> de lo que espera respuesta: no la ensucia
+        nadie —eso es lo que ahora vive en el sobre— y contestar desde ahí sigue costando un
+        toque. Si prefieres Hoy sin banda ninguna, es una línea menos y el sobre lo lleva
+        todo; queda apuntado en la parte 10.
       </p>
     </div>
-
-    <h3 style="padding-top: 6px;">Y ahora sí: ¿un sobre arriba, o la banda de Hoy?</h3>
-    <p>
-      Cuatro sitios donde puede vivir eso. Las dos medidas que los separan son
-      <strong>cuántos toques cuesta contestar</strong> y <strong>cuántos días al mes el
-      dibujo no dice nada</strong>; el resto son matices.
-    </p>
 
     <div class="par">
       <div>
         <div class="tel">
-          <p class="tel-rot">A · El sobre en la cabecera</p>
+          <p class="tel-rot">El sobre abierto</p>
           <div class="cabecera-maqueta">
-            <span class="titulo-maqueta">Buenas tardes, Óscar</span>
+            <span class="titulo-maqueta">Avisos</span>
             <span class="icono-cabecera" data-lleno="si">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-              <i class="globo-icono"></i>
-            </span>
-            <span class="punto-sync"></span>
-            <span class="icono-cabecera">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77 2 2 0 1 1-2.83 2.83 1.6 1.6 0 0 0-2.77 1.15 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.77-1.15 2 2 0 1 1-2.83-2.83A1.6 1.6 0 0 0 3.4 13a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.12-2.73 2 2 0 1 1 2.83-2.83A1.6 1.6 0 0 0 10 2.4a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.73 1.12 2 2 0 1 1 2.83 2.83A1.6 1.6 0 0 0 20.6 9a2 2 0 1 1 0 4 1.6 1.6 0 0 0-1.2 2z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
             </span>
           </div>
-          <p class="tel-sub" style="padding-top: 8px;">lunes, 27 de julio</p>
           <div class="tel-cuerpo">
             <div class="grupo">
-              <p class="grupo-titulo">Lío</p>
-              <div>
-                <div class="apunte" style="grid-template-columns: 1fr;">
-                  <span class="apunte-texto"><span>☀️ Mañana · Marta</span></span>
-                </div>
-                <div class="apunte" style="grid-template-columns: 1fr;">
-                  <span class="apunte-texto"><span>🌙 Noche · te toca</span></span>
-                </div>
+              <p class="grupo-titulo">Por contestar</p>
+              <div class="banda">
+                <p>Marta te pide el turno de mañana del jueves</p>
+                <div class="acciones"><span>Sí, lo saco</span><span>No puedo</span></div>
               </div>
             </div>
             <div class="grupo">
-              <p class="grupo-titulo">Hoy</p>
+              <p class="grupo-titulo">Nuevo</p>
               <div>
-                <div class="apunte" style="grid-template-columns: 1fr;">
-                  <span class="apunte-texto"><span>🎾 Pádel con Javi · 19:00</span></span>
+                <div class="aviso-fila">
+                  <span class="de-donde">📍</span>
+                  <span>Marta y Julia, en <em>«Subir a la duna al atardecer»</em><br><span class="apunte-pie">hace 2 horas</span></span>
+                  <span class="descartar" title="Descartar">×</span>
+                </div>
+                <div class="aviso-fila">
+                  <span class="de-donde">🎁</span>
+                  <span>Óscar, en <em>«la bici de Julia»</em><br><span class="apunte-pie">ayer</span></span>
+                  <span class="descartar" title="Descartar">×</span>
+                </div>
+                <div class="aviso-fila">
+                  <span class="de-donde">📅</span>
+                  <span>Marta, en <em>«Comida en casa de los abuelos»</em><br><span class="apunte-pie">el martes</span></span>
+                  <span class="descartar" title="Descartar">×</span>
                 </div>
               </div>
+              <p class="vaciar">Vaciar</p>
             </div>
           </div>
         </div>
-        <p style="font-size: 13px; color: var(--ink-faint); font-family: var(--mono); text-align: center;">
-          Hoy sin banda. La petición está detrás del sobre.
-        </p>
       </div>
 
       <div>
-        <div class="opcion">
-          <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">A</span><h3>El sobre siempre, y Hoy sin banda</h3></div>
-            <p>
-              Un tercer icono fijo en la cabecera, con su punto cuando hay algo. Al tocarlo
-              se abre una hoja con lo que espera. Hoy pierde la banda.
-            </p>
-          </div>
-          <div class="juicio">
-            <div class="si"><span>+</span><span><strong>Es el único de los cuatro que se alcanza desde las cinco pestañas.</strong> Si te piden el turno mientras miras Regalos, aquí te enteras; en los otros tres, no hasta que pases por Hoy. Es el argumento fuerte a su favor y conviene no despacharlo.</span></div>
-            <div class="si"><span>+</span><span>Un solo sitio para todo lo que reclame, ahora y cuando crezca. Hoy vuelve a ser solo qué hay hoy.</span></div>
-            <div class="no"><span>−</span><span><strong>Contestar pasa de un toque a tres:</strong> ver el punto, abrir el sobre, responder. Y es lo único de la aplicación donde hay alguien esperando.</span></div>
-            <div class="no"><span>−</span><span>El icono está mudo unos veinticinco días de cada treinta, y en la esquina superior derecha, que en un móvil es donde peor llega el pulgar.</span></div>
-            <div class="no"><span>−</span><span>Tres iconos seguidos arriba a la derecha, de tres naturalezas distintas: un estado que no se toca, una bandeja y un destino.</span></div>
-          </div>
+        <div class="nota">
+          <p>
+            <strong>Dos grupos, y solo uno se descarta.</strong> «Por contestar» no lleva ×
+            a propósito: descartar una petición de turno dejaría a Marta esperando una
+            respuesta que ya nadie va a dar, y sin rastro de que existió. Lo que espera a
+            otra persona <strong>se contesta o se queda</strong>. Lo de abajo, en cambio,
+            solo ha pasado: descartarlo no le quita nada a nadie.
+          </p>
+          <p>
+            <strong>Descartar es «ya lo he visto», no «no me avises más».</strong> Si
+            después llega un comentario nuevo en ese mismo hilo, el aviso vuelve — y tiene
+            que volver, o descartar una vez sería quedarse fuera de esa conversación para
+            siempre sin haberlo pedido. Silenciar un hilo entero es otra cosa, y se deja
+            apuntada sin construir: hasta que alguien no se queje de un hilo concreto, es
+            un ajuste para un problema que no ha pasado.
+          </p>
+          <p>
+            <strong>Y abrir el aviso también lo descarta</strong>, porque ir a leerlo es la
+            manera larga de decir lo mismo. La × está para lo que no hace falta abrir:
+            ya se sabe qué dice con leer el renglón.
+          </p>
         </div>
 
-        <div class="opcion">
-          <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">B</span><h3>El sobre solo cuando hay algo</h3></div>
-            <p>
-              Lo mismo, pero el icono no existe mientras no haya nada que contestar. La
-              cabecera de los otros veinticinco días es exactamente la de hoy.
-            </p>
-          </div>
-          <div class="juicio">
-            <div class="si"><span>+</span><span>Quita la pega del icono muerto, que es la más grande de A. Y aquí no hay motivo para dejarlo puesto en vacío: no se oculta nada a nadie —lo que espera respuesta lo ve la casa entera—, así que su ausencia no cuenta nada que no se sepa.</span></div>
-            <div class="si"><span>+</span><span>Un icono que aparece <em>es</em> el aviso. No hace falta ni el punto.</span></div>
-            <div class="no"><span>−</span><span>Aparece y desaparece, y al hacerlo mueve el punto de sincronización y los ajustes. Un mando que se mueve se toca mal.</span></div>
-            <div class="no"><span>−</span><span>Los tres toques para contestar siguen ahí.</span></div>
-          </div>
-        </div>
-
-        <div class="opcion elegida">
-          <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">C</span><h3>Nada nuevo: la banda de Hoy, como está</h3></div>
-            <p>
-              La banda ya <strong>solo aparece cuando hay algo</strong> —así está escrita
-              hoy—, y lleva las dos respuestas escritas enteras y del mismo tamaño. Los
-              veinticinco días sin peticiones, Hoy ya está limpio.
-            </p>
-          </div>
-          <div class="juicio">
-            <div class="si"><span>+</span><span><strong>Un toque para contestar</strong>, sin abrir nada. Es la diferencia entre responder de pasada y tener que ocuparse.</span></div>
-            <div class="si"><span>+</span><span>Cero piezas nuevas, cero iconos nuevos, y la cabecera se queda con dos mandos.</span></div>
-            <div class="si"><span>+</span><span>Está delante en la pantalla con la que abre la aplicación, que es donde de verdad se mira.</span></div>
-            <div class="no"><span>−</span><span>No se ve desde las otras cuatro pestañas.</span></div>
-            <div class="no"><span>−</span><span>Y el día que haya que enseñar algo que <em>no</em> se contesta, no cabe: eso ya no puede ir en la banda.</span></div>
-          </div>
-        </div>
-
-        <div class="opcion">
-          <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">D</span><h3>El punto en la pestaña de Hoy</h3></div>
-            <p>
-              Sin sobre y sin cambiar Hoy: un punto sobre el icono de la pestaña, que se ve
-              desde las otras cuatro y lleva al sitio donde ya está la banda.
-            </p>
-          </div>
-          <div class="juicio">
-            <div class="si"><span>+</span><span>Recupera lo único que le falta a C —enterarse desde otra pestaña— sin gastar un icono en la cabecera ni tocar la pantalla.</span></div>
-            <div class="si"><span>+</span><span>La barra de abajo está donde llega el pulgar, al revés que la esquina de arriba.</span></div>
-            <div class="no"><span>−</span><span>Un punto en una pestaña dice «hay algo», no dice qué. Sigue costando ir a mirar.</span></div>
-          </div>
+        <div class="nota">
+          <p>
+            <strong>Una × y no un deslizamiento, aunque el gesto ya exista.</strong>
+            <code>deslizarHorizontal</code> está escrito en <code>ui.js</code> y lo usa la
+            agenda para pasar de semana y de mes. Ese gesto significa hoy
+            <em>«llévame al siguiente»</em>, y darle en otra pantalla el significado de
+            <em>«destruye esto»</em> es como se consigue que un gesto deje de ser fiable.
+            Una × se ve, se explica sola y no compite con nada.
+          </p>
+          <p>
+            <strong>«Vaciar» al pie</strong>, que marca como visto todo el grupo de abajo y
+            no toca el de arriba. Es el verbo de quien vuelve de una semana fuera, y sin él
+            la única salida sería ir tocando × siete veces.
+          </p>
+          <p>
+            <strong>Y el sobre no tiene estado vacío</strong>, que es el regalo de la forma
+            B: si no hay nada, el icono no está. La única costura es descartar el último con
+            la hoja abierta —el icono desaparecería debajo—, y se resuelve dejando la hoja
+            puesta, diciendo «Nada más», hasta que uno la cierre. Cerrarse sola en la cara
+            de quien acaba de tocar es peor que una línea de más.
+          </p>
         </div>
       </div>
     </div>
 
-    <div class="nota veredicto">
+    <div class="nota pega">
       <p>
-        <strong>C ahora, y D encima si la falta se nota. El sobre queda diseñado y sin
-        construir.</strong> La razón es la decisión de arriba: al dejar en el módulo solo lo
-        que hay que contestar, <strong>lo que ensuciaba Hoy se ha ido por su propio pie</strong>.
-        Lo que quedaba —la lista de novedades— es justo lo que ahora vive como marcas dentro
-        de cada módulo. Y lo que queda en la banda no es adorno: es lo único de la aplicación
-        donde otra persona está esperando, y meterlo detrás de un sobre le añade dos toques y
-        lo manda a la esquina que peor se alcanza.
+        <strong>Lo que esto cambia respecto de la vuelta anterior, y hay que decirlo
+        claro: la marca de leído deja de ser local y pasa a viajar.</strong> Antes se
+        propuso guardarla en el dispositivo, con dos costuras aceptadas —un móvil nuevo
+        enseña todo como sin leer, y leer en el iPad no apaga el punto del iPhone—. Eso valía
+        cuando la marca era pasiva. <strong>Un descarte no es pasivo: es un acto</strong>, y
+        un acto que se deshace solo al abrir el otro aparato no es un acto, es una sugerencia.
+        Se descarta el aviso en el iPhone, se coge el iPad y está ahí otra vez: la bandeja
+        deja de ser de fiar a la segunda vez que pasa.
       </p>
       <p>
-        <strong>El sobre no es una mala idea: es una idea que aún no tiene inquilinos.</strong>
-        Cobra sentido el día que haya un segundo tipo de aviso —el que solo ha pasado— y no
-        quepa en una banda de dos botones. Ese día se construye <strong>B</strong>, con la
-        banda de Hoy quedándose lo que se contesta y el sobre llevando lo que solo se lee.
-        Que es, mirado con distancia, la misma división que esta propuesta acaba de hacer sin
-        icono ninguno.
-      </p>
-      <p>
-        <strong>Y si aun así se quiere el sobre ya</strong>, la recomendación entre las dos
-        formas es <strong>B sobre A</strong>: un icono que solo existe cuando hay algo dice
-        más que un icono permanente con un punto, y no deja veinticinco días de dibujo mudo.
-      </p>
-    </div>
-
-    <div class="nota">
-      <p>
-        <strong>Y tres cosas que se deciden ahora aunque el sobre no se construya</strong>,
-        para que el día que se construya no haya que volver a discutirlas:
-      </p>
-      <p>
-        <strong>Sobre y no campana.</strong> La campana es el icono estándar de las
-        notificaciones y aquí sería mentira: esta aplicación no puede sonar —los avisos se
-        programan en el dispositivo y no hay APNs—, y un icono que promete un ruido que
-        nunca llega enseña a no fiarse de él. Un sobre promete algo que se lee, que es
-        exactamente lo que hay.
-      </p>
-      <p>
-        <strong>Un punto, no un número.</strong> Es la regla que ya siguió el indicador de
-        sincronización: se le quitó la palabra porque decía «al día» el 99 % del tiempo. Un
-        número obliga además a decidir qué cuenta, y contar avisos es empezar a producirlos.
-      </p>
-      <p>
-        <strong>Y va a la izquierda del punto de sincronización</strong>, no a la derecha de
-        los ajustes: los ajustes son el borde, el sitio al que se va a configurar, y llevan
-        ahí desde el principio. Lo nuevo se mete por dentro, no empuja lo que ya tenía su
-        esquina.
+        <strong>Así que entra una tabla pequeña, <code>visto</code></strong>: persona, tipo
+        y objeto, y hasta qué momento se ha visto. Una fila por persona e hilo, que solo
+        viaja a su dueño en la instantánea. Escribe al abrir el hilo, al tocar la × y al
+        vaciar, que son las tres formas de decir lo mismo. <strong>Y es la que va a hacer
+        falta igualmente cuando llegue APNs</strong>: el servidor no puede empujar lo que ya
+        has visto, y para saberlo tiene que tenerlo escrito en algún sitio que no sea tu
+        teléfono.
       </p>
     </div>
 
     <h3 style="padding-top: 6px;">Lo que no cambia: el registro sigue siendo la pieza</h3>
     <p>
-      Elija la banda o el sobre, quien reúne lo que espera a alguien es
-      <code>avisos.js</code>, derivado de la instantánea y no de una tabla. Hoy tiene una
-      sola fuente y podría hacerse sin él —como está hecho ahora, con
-      <code>hoy.js</code> importando <code>tratosParaMi</code> de <code>lio.js</code>—, y la
-      razón de escribirlo igualmente es la de después: <strong>cuando llegue APNs, el
-      servidor tendrá que contestar la misma pregunta</strong>, «¿qué tiene pendiente esta
-      persona?», y si esa pregunta vive repartida por dentro de una vista habrá que
-      escribirla otra vez en el Worker. A partir de ahí serían dos, con la garantía de que un
-      día dirán cosas distintas. En una función que solo depende de la instantánea se
-      reescribe con la misma forma, como ya están espejados Lío y la visibilidad.
+      Quien reúne todo esto es <code>avisos.js</code>, derivado de la instantánea. Ahora sí
+      tiene sus dos fuentes desde el primer día, y cada una declara lo mismo:
+      <strong>de dónde viene</strong> —emoji y a dónde lleva—, <strong>si espera respuesta o
+      solo ha pasado</strong>, y <strong>desde cuándo</strong>. Lo que se descarta se
+      descuenta comparando con <code>visto</code>, que es una condición más de la misma
+      función y no una pieza aparte.
+    </p>
+    <p>
+      La razón de fondo de que sea una función y no una tabla de avisos sigue siendo la
+      misma, y ahora se ve mejor: si un aviso fuera una fila escrita por el Worker, contestar
+      un trato desde la agenda dejaría su fila ahí mintiendo, y habría que ir a borrarla.
+      Derivado, la petición contestada desaparece porque ya no hay nada que pedir. Y cuando
+      llegue APNs, el servidor tendrá que contestar esa misma pregunta —«¿qué tiene pendiente
+      esta persona, y qué no ha visto todavía?»—, que se reescribe con la misma forma como ya
+      están espejados Lío y la visibilidad.
     </p>
 
-    <div class="codigo">// avisos.js — con una fuente, y sitio hecho para las que vengan
+    <div class="codigo">// avisos.js — las dos fuentes, y el descarte como condición de la misma función
 const FUENTES = [
-  { de: 'lio', emoji: '🐾', clase: <b>'contestar'</b>, buscar: tratosParaMi },
-  <i>// 'nuevo' entra cuando haya dónde enseñarlo. Hoy no lo hay, y no se inventa.</i>
-];</div>
+  { de: 'lio',        emoji: '🐾', clase: <b>'contestar'</b>, buscar: tratosParaMi },
+  { de: 'comentario', emoji: null, clase: <b>'nuevo'</b>,     buscar: hilosConRespuesta },
+];
+
+<i>// 'contestar' no se descarta: se contesta o se queda.</i>
+const descartable = (aviso) =&gt; aviso.clase === 'nuevo';</div>
+  </section>
+
+  <!-- ========================================================== Cabecera -->
+
+  <section class="parte">
+    <p class="rotulo">Parte 6</p>
+    <h2>La cabecera: el punto de sincronización se va a Ajustes</h2>
+    <p>
+      Hoy la esquina de arriba lleva dos mandos: el punto de sincronización y los ajustes.
+      El punto se retira y su contenido pasa a Ajustes, en un apartado propio, con la fecha
+      de la última correcta y con la misma forma que tiene la versión: <strong>la línea es a
+      la vez el dato y el verbo</strong>, y al tocarla cuenta por dónde va sin abrir nada.
+      Con eso, y con el sobre de la parte 5, la cabecera acaba teniendo los mismos dos
+      mandos que tenía —pero uno de ellos solo cuando hace falta.
+    </p>
+
+    <div class="par">
+      <div>
+        <div class="tel">
+          <p class="tel-rot">Ajustes · apartado nuevo</p>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Sincronización</p>
+              <p style="font-size: 15px;">Última actualización: hoy a las 14:03.</p>
+              <ul class="progreso">
+                <li><span class="marca">✓</span>Enviado lo que había sin subir</li>
+                <li><span class="marca">✓</span>Traída la última copia</li>
+                <li><span class="marca curso">·</span>Guardando…</li>
+              </ul>
+            </div>
+            <div class="grupo">
+              <p class="grupo-titulo">La aplicación</p>
+              <p style="font-size: 15px; color: var(--ink-soft);">Versión instalada: 1.16.0.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Apartado propio y no dentro de «La aplicación».</strong> Ahí viven la
+            versión y lo legal, que son de la instalación; la sincronización es de los datos,
+            y es lo que uno viene a mirar cuando sospecha que algo que escribió no ha llegado.
+            Mezclarlas obligaría a abrir un apartado que se llama otra cosa.
+          </p>
+          <p>
+            <strong>La fecha se escribe entera y en palabras</strong> —«hoy a las 14:03»,
+            «ayer a las 21:40», «el 12 de julio»—, no en una marca de tiempo. Es un dato que
+            se lee para tranquilizarse, y «hoy» tranquiliza en un golpe de vista; una fecha
+            completa hay que descifrarla para llegar a la misma conclusión.
+          </p>
+          <p>
+            <strong>Y el relato de pasos es el de la versión</strong>, que ya está escrito y
+            probado: cada fase cierra la anterior y la lista se lee de arriba abajo como lo
+            que ha ido pasando, no como una promesa. Sincronizar tiene además tres pasos
+            reales que contar —subir lo pendiente, traer la copia, guardarla—, así que el
+            relato no es adorno: dice en cuál de los tres se quedó cuando falla.
+          </p>
+        </div>
+
+        <div class="nota pega">
+          <p>
+            <strong>Lo que se pierde al quitar el punto, que es lo único delicado de esta
+            parte.</strong> Ese punto era el único sitio de la aplicación donde se veían
+            <strong>tres estados</strong>: sin conexión, sin sincronizar y
+            <strong>demostración</strong>. Con él fuera, alguien puede pasarse dos días
+            escribiendo en un dispositivo que no sube nada y enterarse cuando abra Ajustes,
+            que es un sitio al que no se va.
+          </p>
+          <p>
+            <strong>Lo que se propone: nada mientras va bien, y una línea cuando no.</strong>
+            En la subcabecera de Hoy —debajo del saludo, donde va la fecha— aparece
+            «Sin conexión» o «Sin sincronizar desde ayer» <em>solo</em> cuando lleva un rato
+            fallando, y desaparece sola al arreglarse. El 99 % de los días no hay nada que
+            enseñar, que era el argumento por el que el punto perdió su palabra; la diferencia
+            es que el 1 % restante ahora se lee en vez de leerse en un color.
+          </p>
+          <p>
+            <strong>Y no va al sobre</strong>, aunque tenga sitio: el sobre es de personas
+            —alguien te pide algo, alguien te ha contestado— y sus renglones se descartan.
+            Un fallo de sincronización no lo manda nadie y descartarlo no lo arregla. Meterlo
+            ahí sería enseñar a descartar lo único que no se debe.
+          </p>
+        </div>
+
+        <div class="nota">
+          <p>
+            <strong>La demostración es caso aparte y necesita su marca permanente.</strong>
+            Es lo único que cambia el significado de todo lo que se ve: quien no sepa que
+            está en la demostración creerá que ha borrado un regalo de verdad. Se propone que
+            <strong>en demostración, y solo en demostración</strong>, la cabecera lleve su
+            pastilla escrita —«Demostración»— donde estaba el punto. Para quien tiene cuenta,
+            la esquina queda limpia; para quien está mirando datos inventados, lo pone por
+            escrito y no en un color que hay que aprenderse.
+          </p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ======================================================= Comentarios -->
 
   <section class="parte">
-    <p class="rotulo">Parte 6</p>
+    <p class="rotulo">Parte 7</p>
     <h2>Los comentarios, tal como quedan</h2>
     <p>
       Se confirma la opción B de la primera vuelta. Recordado en corto, porque es lo que
@@ -964,7 +1036,7 @@ const FUENTES = [
   <!-- ============================================================ Buscar -->
 
   <section class="parte">
-    <p class="rotulo">Parte 7</p>
+    <p class="rotulo">Parte 8</p>
     <h2>Buscar: lo que se propone, sin convencimiento</h2>
     <p>
       La duda está justificada, así que conviene mirar el dato antes que la propuesta. La
@@ -1010,15 +1082,17 @@ const FUENTES = [
   <!-- =============================================================== Datos -->
 
   <section class="parte">
-    <p class="rotulo">Parte 8</p>
+    <p class="rotulo">Parte 9</p>
     <h2>Lo que hay que escribir</h2>
 
     <div class="codigo">lugar   id · nombre · emoji · <i>evento_id?</i> · autor_id · activo
 apunte  id · lugar_id · <b>clase</b> (llevar|hacer|ir|<b>saber</b>) · titulo · <b>detalle</b> · autor_id · activo
 voto    id (<b>voto:&lt;apunte&gt;:&lt;persona&gt;</b>) · apunte_id · persona_id · activo
+<b>visto</b>   id (<b>visto:&lt;tipo&gt;:&lt;objeto&gt;:&lt;persona&gt;</b>) · persona_id · objeto_tipo · objeto_id · hasta
 
 <i>0009</i>  comentario, rehecho <b>sin CHECK</b>  · de las de una vez, copia filas
 <i>0010</i>  las tres tablas de Sitios          · corriente, se puede repetir
+<i>0011</i>  visto, la marca de los avisos      · corriente, se puede repetir
 
 configuracion.apunte   la instrucción del modelo, editable en Ajustes
 POST /api/sitio/apuntar   cinco propuestas para un sitio y una clase</div>
@@ -1033,12 +1107,18 @@ POST /api/sitio/apuntar   cinco propuestas para un sitio y una clase</div>
         permite que el voto enseñe iniciales sin delatar nada.
       </p>
       <p>
-        <strong>La marca de leído empieza siendo local</strong>, junto a la instantánea: un
-        hilo y la fecha del último comentario visto. Ni tabla ni migración, a cambio de dos
-        costuras conocidas —un móvil nuevo enseña todo como sin leer, y leer en el iPad no
-        apaga el punto del iPhone—. Cuando llegue APNs habrá que revisarlo de todas formas,
-        porque entonces el servidor necesitará saber qué has visto; ese es el momento de la
-        tabla, y no antes.
+        <strong><code>visto</code> es la única tabla de esta propuesta que no es de
+        Sitios</strong>, y solo viaja a su dueño: la instantánea de cada uno lleva sus
+        filas y las de nadie más. Su identificador se compone —<code>visto:comentario:a-17:p-oscar</code>—
+        por la misma razón que el del voto y el del paseo: se escribe desde el dispositivo
+        antes de haber visto ninguna fila. Guarda un momento y no un booleano, que es lo
+        que permite que un aviso descartado <strong>vuelva</strong> cuando llega un
+        comentario posterior.
+      </p>
+      <p>
+        <strong>Y hereda la visibilidad sin hacer nada</strong>: una fila de
+        <code>visto</code> apunta a un objeto que su dueño ya podía ver, porque es él quien
+        la escribió al mirarlo. No hay caso en que delate nada.
       </p>
       <p>
         <strong>Y hay dos cosas que no se tocan:</strong> el plan de los domingos, donde un
@@ -1051,11 +1131,12 @@ POST /api/sitio/apuntar   cinco propuestas para un sitio y una clase</div>
   <!-- ============================================================= Abierto -->
 
   <section class="parte">
-    <p class="rotulo">Parte 9</p>
+    <p class="rotulo">Parte 10</p>
     <h2>Lo que queda por decidir</h2>
     <ul class="lista-seca">
-      <li><strong>Dónde viven los avisos</strong>, que es la única grande que queda: la banda de Hoy como está (C), el punto en la pestaña (D) o el sobre en la cabecera (B). La propuesta es C ahora y el sobre diseñado y sin construir.</li>
+      <li><strong>Si Hoy conserva su banda de «Por contestar»</strong> o se queda sin ninguna y el sobre lo lleva todo. La propuesta es conservarla —se contesta de un toque y el sobre no le quita nada—, pero si lo que se busca es una pantalla de inicio sin bandas, es una línea menos.</li>
       <li><strong>Dónde vive el verbo del modelo</strong>: dentro del formulario de apunte nuevo, o como un renglón al final de cada grupo.</li>
+      <li><strong>Si un hilo se puede silenciar del todo</strong>, además de descartar sus avisos de uno en uno. Hoy se propone que no, hasta que un hilo concreto moleste.</li>
       <li><strong>Si un sitio debería poder salir del círculo de casa</strong> para enseñar la guía del pueblo a la familia extendida. Hoy se propone que no, y es lo más fácil de revertir.</li>
       <li><strong>Qué se hace con <code>ux.md</code> §7.3</strong> cuando Buscar se retire: se propone dejarlo escrito como historia, con una línea que diga por qué se fue, y no borrarlo.</li>
     </ul>

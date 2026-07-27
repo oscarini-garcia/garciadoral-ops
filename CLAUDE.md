@@ -50,16 +50,34 @@ pendiente. El hook lo inyecta al final del mapa.
   lo que hay que contestar**; que a uno le hayan comentado se sabe por **marcas en
   contexto** —punto en la tarjeta del sitio, punto en la línea del apunte, raya de
   «sin leer» dentro del hilo— y no por una lista de novedades. La razón de escribir
-  el registro aun con una sola fuente es la de después: cuando llegue APNs, el
-  servidor tendrá que contestar esa misma pregunta, y si vive repartida por dentro
-  de `hoy.js` habrá que escribirla dos veces. La marca de leído empieza **local**,
-  junto a la instantánea; la tabla llegará con las remotas, no antes.
-  Queda abierto **dónde se enseña eso**: la banda de Hoy como está hoy, un punto en
-  la pestaña de Hoy, o un sobre en la cabecera. La propuesta es dejarlo en la banda
-  —se contesta de un toque, y el sobre lo mandaría a la esquina que peor alcanza el
-  pulgar por tres— y construir el sobre el día que haya un aviso que no se conteste.
-  Si se construye, va **solo cuando hay algo**, con sobre y no campana —una campana
-  que no puede sonar es mentira— y con punto y no número.
+  el registro es la de después: cuando llegue APNs, el servidor tendrá que
+  contestar esa misma pregunta, y si vive repartida por dentro de `hoy.js` habrá
+  que escribirla dos veces. **Se enseña en un sobre en la cabecera que solo existe
+  cuando hay algo** —así el icono no está mudo veinticinco días de cada treinta, y
+  que aparezca *es* el aviso, sin punto ni número—; sobre y no campana, porque una
+  campana que no puede sonar enseña a no fiarse del icono. Dentro van dos grupos, y
+  **solo el de abajo se descarta**: descartar una petición de turno dejaría al otro
+  esperando una respuesta que ya nadie va a dar. Descartar significa «ya lo he
+  visto», así que un comentario posterior en ese hilo lo trae de vuelta. Y con una
+  × y no con un deslizamiento: `deslizarHorizontal` ya significa «llévame al
+  siguiente» en la agenda, y darle un segundo significado es como un gesto deja de
+  ser fiable.
+- **Y eso obliga a que la marca de lo visto viaje: entra la tabla `visto`.** Se
+  propuso local mientras era pasiva —leer—, pero **un descarte es un acto**, y un
+  acto que se deshace al abrir el iPad no es un acto. Guarda persona, tipo, objeto y
+  **hasta qué momento**, no un booleano: es lo que permite que el aviso vuelva
+  cuando llega algo posterior. Solo viaja a su dueño y hereda la visibilidad sola,
+  porque la escribe quien ya podía ver el objeto.
+- **La cabecera pierde el punto de sincronización.** Se va a Ajustes, a un apartado
+  propio —no dentro de «La aplicación», que es de la instalación—, con la fecha de
+  la última correcta escrita en palabras y con la misma forma que la versión: la
+  línea es a la vez el dato y el verbo, y al tocarla cuenta los tres pasos reales
+  —subir lo pendiente, traer la copia, guardarla—. **Lo que hay que no romper al
+  hacerlo:** ese punto era el único sitio donde se veían tres estados —sin conexión,
+  sin sincronizar y **demostración**—. Lo propuesto es nada mientras va bien y una
+  línea en la subcabecera de Hoy cuando lleva un rato fallando; y la demostración,
+  que cambia el significado de todo lo que se ve, se queda con **pastilla escrita
+  permanente en la cabecera**, solo en demostración.
 - **Y la parte que importa aunque nada de eso se construya: los comentarios están
   enchufados a medias.** `pwa/publico/js/comentarios.js` es una pieza compartida de verdad,
   pero solo se la llama con `'evento'` —`vistas/semana.js` y `vistas/regalos.js`,
