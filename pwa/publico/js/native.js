@@ -332,8 +332,9 @@ function avisoDeTurno(turno, ahora) {
   if (!cuando || cuando <= ahora) return null;
   return {
     id: idDeAviso(`lio:${turno.fechaIso}:${turno.turnoId}`),
-    // La huella y no el sol o la luna: el aviso es de Lío, y de qué turno se
-    // trata lo dice el renglón de debajo con todas sus palabras.
+    // La huella en el título, porque el aviso es de Lío; y de qué turno se trata
+    // lo dice el renglón de debajo, con su sol o su luna y con todas sus
+    // palabras: «☀️ Por la mañana».
     title: '🐾 Te toca sacar a Lío',
     body: turno.rotulo,
     schedule: { at: cuando, allowWhileIdle: true },

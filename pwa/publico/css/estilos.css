@@ -541,12 +541,22 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* Lo de Lío en Hoy: la banda de lo que hay que contestar y las filas de turno. */
 .lio-banda { display: flex; flex-direction: column; gap: 9px; margin-bottom: 4px; }
-.lio-peticion, .lio-propuesta {
+
+/* La petición de Hoy sí lleva caja: interrumpe a quien venía a mirar su día y
+   tiene que distinguirse de todo lo que hay debajo. */
+.lio-peticion {
   display: flex; flex-direction: column; gap: 9px;
   border: 1px solid var(--regalo); border-radius: 12px;
   background: color-mix(in srgb, var(--regalo) 8%, var(--paper));
   padding: 11px 13px;
 }
+
+/* La misma propuesta dentro de la hoja del turno, en cambio, va sin caja: ahí
+   no interrumpe nada, es la continuación de la frase de arriba —el turno está
+   así, y por esto—. Encerrada en un recuadro de color parecía un aviso pegado
+   encima de la hoja. */
+.lio-propuesta { display: flex; flex-direction: column; gap: 9px; }
+.lio-propuesta + .lio-propuesta { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 5px; }
 .lio-peticion p, .lio-propuesta p { font-size: 14.5px; }
 
 .lio-fila {
@@ -936,11 +946,14 @@ button { background: none; border: 0; cursor: pointer; }
 .pista { font-size: 14px; color: var(--ink-soft); }
 .pista[data-tono="aviso"] { color: var(--aviso); }
 
-.acciones { display: flex; gap: 9px; margin-top: 4px; }
+/* Los verbos de una hoja, en una línea, con «Cancelar» a la derecha del
+   principal: lo que se decide ahí es hacerlo o no hacerlo, y las dos mitades de
+   esa decisión tienen que verse juntas. Envuelve cuando no caben —tres verbos y
+   la salida en 360 puntos— en lugar de apretar el texto de los botones. */
+.acciones { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
 
-/* La línea de Cancelar, que va sola y al final de la hoja. A la derecha porque
-   es donde acaba de leerse cada línea y donde el pulgar ya está; y en su propio
-   renglón para que no parezca una alternativa más de las de arriba. */
+/* Y cuando Cancelar va solo, porque no hay ningún verbo que ofrecer: al final de
+   la hoja y a la derecha, que ahí no es la alternativa a nada sino la salida. */
 .acciones-cierre { justify-content: flex-end; margin-top: 14px; }
 .boton {
   min-height: var(--toque); padding: 10px 18px; border-radius: 10px;

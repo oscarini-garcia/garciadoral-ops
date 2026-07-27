@@ -46,12 +46,17 @@ export const turnoPorId = (id) => TURNOS.find((t) => t.id === id) || null;
 /**
  * Cómo se llama un turno cuando hay sitio para escribirlo: «Por la mañana».
  *
- * El sol y la luna se quedan solo donde no cabe la frase —las pastillas del
- * carril, de 38 puntos—. En todo lo demás va la palabra: un emoji al lado de su
- * propio nombre no añadía nada, y un emoji en lugar del nombre obliga a
- * traducirlo cada vez.
+ * El sol y la luna no desaparecen —siguen delante, y en el carril de la semana
+ * son lo único que hay, porque en una pastilla de 38 puntos no cabe una frase—.
+ * Lo que se retiró fue escribir solo el emoji, o el emoji con la palabra suelta
+ * «Mañana» detrás: la una obligaba a traducirlo cada vez y la otra decía a medias
+ * lo que la frase dice entera.
  */
 export const nombreDeTurno = (turno) => `Por la ${String(turno?.nombre || '').toLowerCase()}`;
+
+/** El mismo nombre con su sol o su luna delante, para los rótulos que lo llevan:
+ *  el título de la hoja del turno y las columnas del cuadro de Ajustes. */
+export const rotuloDeTurno = (turno) => `${turno?.emoji || ''} ${nombreDeTurno(turno)}`.trim();
 
 /** El identificador de un paseo se compone, no se inventa: el dispositivo marca
  *  antes de haber visto ninguna fila y tiene que dar con la misma que el

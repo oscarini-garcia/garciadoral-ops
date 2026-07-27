@@ -73,14 +73,17 @@ pendiente. El hook lo inyecta al final del mapa.
   contestar y los dos turnos; y sale en el plan de WhatsApp en su propio renglón,
   fuera del techo de tres. Está en `specs/ux.md` §10.3, las entidades en
   `specs/modelo-datos.md` §2.6 y el porqué de la forma, en
-  `specs/propuesta-lio.html`. **Y el sol y la luna solo viven en el carril**: en la hoja del turno, en las
-  filas de Hoy, en el cuadro de Ajustes y en el aviso del teléfono se escribe
-  «Por la mañana» y «Por la noche». La regla de quién puede escribir qué tiene
+  `specs/propuesta-lio.html`. **Y el sol y la luna van delante del nombre, no en su lugar**: «☀️ Por la
+  mañana», «🌙 Por la noche», en la hoja del turno, en las filas de Hoy, en las
+  columnas del cuadro de Ajustes y en el aviso del teléfono; en el carril de la
+  semana van solos, porque en 38 puntos no cabe la frase. La regla de quién puede escribir qué tiene
   ahora una frontera de reloj: dentro de la ventana, decir que has sacado a Lío
   se escribe en el acto aunque el turno fuera de otro; **pasada la ventana, eso
   vuelve al trato** y lo confirma quien lo tenía, porque ya no es cargar con un
-  recado sino escribir la memoria de otro. Y «Cancelar» va al final de cada hoja
-  y a la derecha, en su propio renglón.
+  recado sino escribir la memoria de otro. Y «Cancelar» va a la derecha del verbo y en
+  su misma línea, como en el formulario de evento; solo cuando no hay verbo
+  ninguno se va al final de la hoja. La propuesta pendiente dentro de la hoja del
+  turno va sin caja: el recuadro de color se queda para la banda de Hoy.
   **La lista tiene ahora dos niveles de separador**: el grupo de proximidad en
   serifa y el día en versalita con una raya hasta el margen, elegido entre las
   cuatro formas de `specs/prototipo-separadores-de-lista.html`; y en cuanto hay
