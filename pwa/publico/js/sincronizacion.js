@@ -142,7 +142,7 @@ export function retirar(tipo, id) {
 function aplicarEnLocal(cambio) {
   const clave = PLURAL[cambio.tipo];
 
-  // El cuadro de Lio no es una fila de una lista sino un dato suelto de la
+  // El cuadro de Lío no es una fila de una lista sino un dato suelto de la
   // instantánea, así que se sustituye entero.
   if (cambio.tipo === 'lio_cuadro') {
     instantaneaActual.lio_cuadro = cambio.campos.cuadro;

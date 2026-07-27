@@ -1,4 +1,4 @@
-"""Lio: de dónde sale cada turno y cómo se cuenta en el plan de los domingos.
+"""Lío: de dónde sale cada turno y cómo se cuenta en el plan de los domingos.
 
 Lo que se comprueba aquí es la regla que sostiene todo el módulo —**el cuadro
 dice quién saca al perro, y la fila escrita dice quién lo sacó ese día**— y su
@@ -200,7 +200,7 @@ class EnElMensaje(unittest.TestCase):
         siguiente = next(i for i, l in enumerate(lineas) if l.startswith("M 28"))
         del_lunes = lineas[arranque:siguiente]
 
-        # Tres eventos, el recuento de lo que no cabe, y Lio el último: el turno
+        # Tres eventos, el recuento de lo que no cabe, y Lío el último: el turno
         # no gasta ninguna de las tres líneas ni entra en el «y N más».
         self.assertEqual(len(del_lunes), 5)
         self.assertIn("y 1 más", del_lunes[3])
@@ -213,7 +213,7 @@ class EnElMensaje(unittest.TestCase):
         self.assertEqual(plan.eventos, 0)
 
     def test_para_quien_no_es_de_casa_el_plan_sale_como_antes(self):
-        """Sin Lio, una semana con solo turnos vuelve a ser una semana vacía."""
+        """Sin Lío, una semana con solo turnos vuelve a ser una semana vacía."""
         texto = self._plan(_casa(lio_cuadro=CUADRO), con_lio=False).texto
         self.assertNotIn("🐾", texto)
         self.assertIn("Sin nada en el calendario", texto)

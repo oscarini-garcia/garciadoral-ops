@@ -1,0 +1,601 @@
+<meta charset="utf-8">
+<title>Separadores de la vista de lista: dos niveles, cuatro maneras</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css. Las medidas citadas están
+     tomadas con esa hoja de verdad a 360 puntos de ancho, no calculadas a ojo. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --radio: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  /* El mismo reajuste que abre `estilos.css`. Sin él las maquetas salen unos
+     treinta puntos más anchas y quince más altas que la pantalla de verdad. */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 66ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .cifra { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--paper-3); padding: 1px 6px; border-radius: 5px; }
+
+  /* --------------------------------------------------------- Las maquetas -- */
+
+  .fila-opciones { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+
+  .opcion { display: flex; flex-direction: column; gap: 12px; flex: 1 1 300px; min-width: 300px; max-width: 420px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 4px; }
+  .opcion-cabeza p { color: var(--ink-soft); font-size: 14.5px; }
+
+  /* El teléfono: 360 puntos de ancho de contenido, que es el que se midió. */
+  .tel {
+    width: 360px; max-width: 100%;
+    border: 1px solid var(--line); border-radius: 22px;
+    background: var(--paper); box-shadow: var(--sombra);
+    overflow: hidden;
+  }
+  .tel-cabecera {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 12px 16px 9px; border-bottom: 1px solid var(--line);
+  }
+  .tel-cabecera h4 { margin: 0; font-family: var(--serif); font-size: 19px; font-weight: 500; }
+  .tel-cabecera span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .tel-cuerpo { padding: 12px 16px 18px; display: flex; flex-direction: column; }
+
+  /* Las piezas de la lista, calcadas de `estilos.css`. */
+  .grupo { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+  .grupo:first-child { margin-top: 6px; }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px; text-align: left; width: 100%;
+  }
+  .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
+  .tarjeta h3 { font-family: var(--sans); font-size: 17px; font-weight: 600; letter-spacing: -.005em; }
+  .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
+  .linea-emoji { flex: 0 0 auto; font-size: 16.5px; }
+  .linea-hora { flex: 0 0 auto; margin-left: auto; font-family: var(--mono); font-size: 13px; color: var(--ink-faint); }
+
+  .lio-fila {
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--paper-2); padding: 9px 12px;
+  }
+  .lio-fila[data-estado="hecho"] { background: var(--tinta-suave); border-color: transparent; }
+  .lio-fila-texto { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+  .lio-fila-titulo { font-size: 15px; }
+  .lio-fila-pista { font-size: 12.5px; color: var(--ink-soft); }
+  .lio-visto {
+    flex: none; display: grid; place-items: center; width: 34px; height: 34px;
+    border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--ink-faint);
+    font-size: 15px;
+  }
+  .lio-hecho { flex: none; display: grid; place-items: center; width: 34px; color: var(--tinta); font-size: 16px; }
+
+  /* ---- A · dos pesos ---- */
+  .a .grupo-titulo {
+    font-family: var(--serif); font-size: 18px; font-weight: 500; letter-spacing: -.01em;
+    text-transform: none; color: var(--ink);
+  }
+  .dia-titulo {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+    margin-top: 4px;
+  }
+  .grupo > .dia-titulo:first-of-type { margin-top: 0; }
+
+  /* ---- B · banda ---- */
+  .b .grupo-titulo {
+    font-family: var(--serif); font-size: 17px; font-weight: 500; letter-spacing: -.01em;
+    text-transform: none; color: var(--ink);
+    background: var(--paper-3); border-radius: 8px; padding: 5px 11px;
+    margin: 0 -4px;
+  }
+
+  /* ---- C · pegajosa ---- */
+  .c .tel-cuerpo { max-height: 430px; overflow-y: auto; }
+  .c .grupo-titulo {
+    font-family: var(--serif); font-size: 17px; font-weight: 500; letter-spacing: -.01em;
+    text-transform: none; color: var(--ink);
+    position: sticky; top: 0; z-index: 2;
+    background: var(--paper); padding: 7px 0 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .c .grupo { gap: 10px; }
+
+  /* ---- D · día con raya ---- */
+  .d .grupo-titulo {
+    font-family: var(--serif); font-size: 18px; font-weight: 500; letter-spacing: -.01em;
+    text-transform: none; color: var(--ink);
+  }
+  .d .dia-titulo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .d .dia-titulo::after {
+    content: ''; flex: 1 1 auto; height: 1px; background: var(--line);
+  }
+
+  .elegida {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--paper); background: var(--tinta); padding: 3px 9px; border-radius: 999px;
+    vertical-align: middle; margin-left: 8px;
+  }
+  .pros { display: flex; flex-direction: column; gap: 5px; font-size: 14.5px; }
+  .si, .no { display: flex; gap: 8px; align-items: flex-start; }
+  .si span:first-child { color: var(--tinta); font-weight: 700; }
+  .no span:first-child { color: var(--regalo); font-weight: 700; }
+  .si span:last-child, .no span:last-child { color: var(--ink-soft); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  .tabla-envoltorio { overflow-x: auto; }
+  th, td { text-align: left; padding: 7px 12px 7px 0; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 400; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>Separadores de la vista de lista: dos niveles, cuatro maneras</h1>
+    <p>
+      La lista agrupa por proximidad —Hoy, Mañana, Esta semana, La semana que
+      viene, Este mes, y después mes a mes— y dentro de cada grupo las cosas van
+      seguidas, sin decir de qué día es cada una salvo por la fecha escrita
+      dentro de cada tarjeta. Con los turnos de Lío dentro, un grupo de «Esta
+      semana» son ya doce o quince filas de cinco días distintos y todas se leen
+      igual.
+    </p>
+    <p>
+      Lo que se decide aquí es <strong>cómo se distinguen los dos niveles</strong>:
+      un separador de día nuevo, del tamaño del separador de ahora, y el de ahora
+      más grande y quizá con fondo. Cuatro formas, con lo que gana y lo que
+      cuesta cada una.
+    </p>
+  </header>
+
+  <section class="parte">
+    <h2>Lo que hay hoy</h2>
+    <p>
+      Un solo nivel: el rótulo de proximidad, en versalitas diminutas. Dentro,
+      todo seguido. La fecha de cada cosa está escrita en la segunda línea de su
+      tarjeta, en gris y detrás de nada.
+    </p>
+
+    <div class="fila-opciones">
+      <div class="opcion">
+        <div class="tel">
+          <div class="tel-cabecera"><h4>Agenda</h4><span>Lista · hoy</span></div>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Esta semana</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🩺</span><h3>Dentista</h3><span class="linea-hora">10:00</span></div>
+                <p>miércoles 29 de julio · Clínica Ruiz · Ana</p>
+              </div>
+              <div class="lio-fila" data-estado="hecho">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">lo sacó Marta a las 07:20</span></div>
+                <span class="lio-hecho">✓</span>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la noche</span><span class="lio-fila-pista">te toca a ti</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🏇</span><h3>Entreno de hípica</h3><span class="linea-hora">18:00</span></div>
+                <p>jueves 30 de julio · Lucía</p>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">le toca a Óscar</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="opcion" style="max-width: 520px">
+        <div class="nota pega">
+          <p>
+            <strong>El problema no es solo que no haya separador.</strong> Es que
+            la fecha va escrita once veces, una por fila, en el sitio donde
+            debería estar lo que distingue a esa fila de las demás. Al recorrer
+            la lista, «miércoles 29 de julio» se lee tantas veces como cosas hay
+            ese día.
+          </p>
+          <p>
+            Por eso las cuatro opciones de abajo hacen lo mismo con la tarjeta:
+            <strong>le quitan la fecha</strong> y dejan en esa línea el sitio y
+            la gente, que es lo que no se repite. Es exactamente lo que ya hace
+            la lista de Hoy, donde la fecha tampoco se escribe porque la dice la
+            cabecera.
+          </p>
+          <p>
+            <strong>No se hace por ganar alto</strong>, que es lo que yo daba por
+            supuesto antes de medirlo: quitar la fecha de las cincuenta tarjetas
+            ahorra <span class="cifra">42</span> puntos en toda la lista, porque
+            a 360 puntos de ancho esa línea casi nunca llegaba a partirse en dos.
+            Se hace para no leer once veces «miércoles 29 de julio» en el sitio
+            donde debería estar lo que cambia. Si prefieres conservarla, se
+            conserva y no cuesta prácticamente nada.
+          </p>
+        </div>
+        <div class="nota">
+          <p>
+            <strong>El separador de día empieza en «Esta semana».</strong> «Hoy»
+            y «Mañana» son ya un solo día: repetir debajo «lunes 27 de julio»
+            sería decir dos veces lo mismo en dos renglones seguidos.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>A · Dos pesos de la misma letra</h2>
+    <p>
+      El rótulo de proximidad pasa a serifa de 18 puntos en tinta plena —el
+      cuerpo de un título— y el día se queda con la versalita diminuta que
+      hasta ahora llevaba el grupo. Ninguna caja, ningún fondo: la jerarquía la
+      hace el tamaño y el color, que es como se hace en el resto de la
+      aplicación.
+    </p>
+
+    <div class="fila-opciones">
+      <div class="opcion a">
+        <div class="tel">
+          <div class="tel-cabecera"><h4>Agenda</h4><span>Lista · A</span></div>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Esta semana</p>
+              <p class="dia-titulo">Miércoles 29</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🩺</span><h3>Dentista</h3><span class="linea-hora">10:00</span></div>
+                <p>Clínica Ruiz · Ana</p>
+              </div>
+              <div class="lio-fila" data-estado="hecho">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">lo sacó Marta a las 07:20</span></div>
+                <span class="lio-hecho">✓</span>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la noche</span><span class="lio-fila-pista">te toca a ti</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+              <p class="dia-titulo">Jueves 30</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🏇</span><h3>Entreno de hípica</h3><span class="linea-hora">18:00</span></div>
+                <p>Lucía</p>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">le toca a Óscar</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="opcion" style="max-width: 520px">
+        <div class="pros">
+          <div class="si"><span>+</span><span>No estrena ninguna figura: los dos rótulos ya existen en la aplicación, uno como título y otro como versalita de sección.</span></div>
+          <div class="si"><span>+</span><span>Es la más barata de construir y la que menos puede envejecer mal.</span></div>
+          <div class="si"><span>+</span><span>El grupo en serifa hace juego con el título de la pantalla y con los nombres de la pestaña de Regalos.</span></div>
+          <div class="no"><span>−</span><span>Con la lista muy llena, «Esta semana» y «Miércoles 29» quedan a cuatro puntos uno de otro y el salto de tamaño es lo único que los separa.</span></div>
+          <div class="no"><span>−</span><span>Al desplazar deprisa no hay ninguna marca fuerte donde frenar: todo es papel.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>B · El grupo sobre una banda</h2>
+    <p>
+      Lo mismo que A, pero el rótulo de proximidad va dentro de una banda de
+      papel dos tonos más oscuro, de ancho completo y esquina corta. La banda es
+      la que corta la lista; el día, debajo, sigue siendo una versalita suelta.
+    </p>
+
+    <div class="fila-opciones">
+      <div class="opcion b">
+        <div class="tel">
+          <div class="tel-cabecera"><h4>Agenda</h4><span>Lista · B</span></div>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Esta semana</p>
+              <p class="dia-titulo">Miércoles 29</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🩺</span><h3>Dentista</h3><span class="linea-hora">10:00</span></div>
+                <p>Clínica Ruiz · Ana</p>
+              </div>
+              <div class="lio-fila" data-estado="hecho">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">lo sacó Marta a las 07:20</span></div>
+                <span class="lio-hecho">✓</span>
+              </div>
+              <p class="dia-titulo">Jueves 30</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🏇</span><h3>Entreno de hípica</h3><span class="linea-hora">18:00</span></div>
+                <p>Lucía</p>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">le toca a Óscar</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+            </div>
+            <div class="grupo">
+              <p class="grupo-titulo">La semana que viene</p>
+              <p class="dia-titulo">Lunes 3</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🍽️</span><h3>Comida con los abuelos</h3><span class="linea-hora">14:00</span></div>
+                <p>Casa de la abuela</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="opcion" style="max-width: 520px">
+        <div class="pros">
+          <div class="si"><span>+</span><span>Es la que más se ve al desplazar deprisa: la banda es un corte, no un cambio de tamaño.</span></div>
+          <div class="si"><span>+</span><span>Deja perfectamente claro cuál de los dos niveles manda, sin depender de que se note la diferencia de cuerpo.</span></div>
+          <div class="no"><span>−</span><span>Estrena un relleno de color en una pantalla donde hasta ahora solo tienen fondo las cosas que se tocan —tarjetas, botones, pastillas—. Una banda que no hace nada y parece tocable.</span></div>
+          <div class="no"><span>−</span><span>En modo oscuro, tres tonos de papel muy juntos hacen que la banda se vea o demasiado o nada.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>C · El grupo pegajoso</h2>
+    <p>
+      Como B pero sin fondo propio: la banda es del color del papel y se queda
+      pegada arriba mientras pasa su grupo, con una raya fina debajo. Al llegar
+      el grupo siguiente, empuja al anterior fuera. Desplaza la maqueta para
+      verlo.
+    </p>
+
+    <div class="fila-opciones">
+      <div class="opcion c">
+        <div class="tel">
+          <div class="tel-cabecera"><h4>Agenda</h4><span>Lista · C · desplaza</span></div>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Esta semana</p>
+              <p class="dia-titulo">Miércoles 29</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🩺</span><h3>Dentista</h3><span class="linea-hora">10:00</span></div>
+                <p>Clínica Ruiz · Ana</p>
+              </div>
+              <div class="lio-fila" data-estado="hecho">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">lo sacó Marta a las 07:20</span></div>
+                <span class="lio-hecho">✓</span>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la noche</span><span class="lio-fila-pista">te toca a ti</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+              <p class="dia-titulo">Jueves 30</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🏇</span><h3>Entreno de hípica</h3><span class="linea-hora">18:00</span></div>
+                <p>Lucía</p>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">le toca a Óscar</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+              <p class="dia-titulo">Viernes 31</p>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la noche</span><span class="lio-fila-pista">le toca a Marta</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+            </div>
+            <div class="grupo">
+              <p class="grupo-titulo">La semana que viene</p>
+              <p class="dia-titulo">Lunes 3</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🍽️</span><h3>Comida con los abuelos</h3><span class="linea-hora">14:00</span></div>
+                <p>Casa de la abuela</p>
+              </div>
+              <p class="dia-titulo">Miércoles 5</p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">✈️</span><h3>Vuelo a Palma</h3><span class="linea-hora">07:35</span></div>
+                <p>Óscar, Marta</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="opcion" style="max-width: 520px">
+        <div class="pros">
+          <div class="si"><span>+</span><span>Resuelve lo que ninguna otra resuelve: <strong>a mitad de lista siempre se sabe dónde se está</strong>, sin subir a buscarlo.</span></div>
+          <div class="si"><span>+</span><span>No estrena color ni relleno: solo papel y una raya, que ya es la de la cabecera de la semana.</span></div>
+          <div class="no"><span>−</span><span>Es la única con comportamiento, y por tanto la única que puede fallar: dentro de la cáscara de iOS el rebote del desplazamiento deja la banda flotando un instante sobre el vacío.</span></div>
+          <div class="no"><span>−</span><span>La aplicación no tiene hoy ningún elemento pegajoso. Sería el primero.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>D · El día con raya <span class="elegida">elegida y construida</span></h2>
+    <p>
+      El grupo, como en A. Y el día se estira: la versalita a la izquierda y una
+      raya fina que llega hasta el margen derecho. Lo que dice esa raya es que el
+      día es una división <em>dentro</em> de algo, no otro encabezado del mismo
+      rango.
+    </p>
+
+    <div class="fila-opciones">
+      <div class="opcion d">
+        <div class="tel">
+          <div class="tel-cabecera"><h4>Agenda</h4><span>Lista · D</span></div>
+          <div class="tel-cuerpo">
+            <div class="grupo">
+              <p class="grupo-titulo">Esta semana</p>
+              <p class="dia-titulo"><span>Miércoles 29</span></p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🩺</span><h3>Dentista</h3><span class="linea-hora">10:00</span></div>
+                <p>Clínica Ruiz · Ana</p>
+              </div>
+              <div class="lio-fila" data-estado="hecho">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">lo sacó Marta a las 07:20</span></div>
+                <span class="lio-hecho">✓</span>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la noche</span><span class="lio-fila-pista">te toca a ti</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+              <p class="dia-titulo"><span>Jueves 30</span></p>
+              <div class="tarjeta">
+                <div class="tarjeta-fila"><span class="linea-emoji">🏇</span><h3>Entreno de hípica</h3><span class="linea-hora">18:00</span></div>
+                <p>Lucía</p>
+              </div>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la mañana</span><span class="lio-fila-pista">le toca a Óscar</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+              <p class="dia-titulo"><span>Viernes 31</span></p>
+              <div class="lio-fila">
+                <div class="lio-fila-texto"><span class="lio-fila-titulo">Por la noche</span><span class="lio-fila-pista">le toca a Marta</span></div>
+                <span class="lio-visto">○</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="opcion" style="max-width: 520px">
+        <div class="pros">
+          <div class="si"><span>+</span><span>Los dos niveles no se pueden confundir aunque estén pegados: uno es texto y el otro es una línea que cruza la pantalla.</span></div>
+          <div class="si"><span>+</span><span>La raya se lee como «de aquí para abajo», que es exactamente lo que un separador de día quiere decir.</span></div>
+          <div class="si"><span>+</span><span>No estrena color, ni fondo, ni comportamiento. Solo un pelo de línea, que ya existe.</span></div>
+          <div class="no"><span>−</span><span>Con un día de una sola fila —un martes con solo un turno de Lío— la raya pesa más que lo que separa.</span></div>
+          <div class="no"><span>−</span><span>Cuatro o cinco rayas horizontales en una pantalla que hasta ahora casi no tenía ninguna.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>Lo que cuesta cada una</h2>
+    <p>
+      Medido sobre una lista de cincuenta cosas repartidas en veinte días, con la
+      hoja de estilos de verdad a 360 puntos de ancho. «Alto» es lo que hay que
+      desplazar para recorrerla entera.
+    </p>
+    <div class="tabla-envoltorio">
+      <table>
+        <thead>
+          <tr><th>Forma</th><th>Alto</th><th>Contra hoy</th><th>Estrena</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Hoy, sin separador de día</td><td class="num">3 826 pt</td><td class="num">—</td><td>—</td></tr>
+          <tr><td>A · dos pesos</td><td class="num">4 425 pt</td><td class="num">+599</td><td>nada</td></tr>
+          <tr><td>B · banda</td><td class="num">4 451 pt</td><td class="num">+625</td><td>un relleno de color</td></tr>
+          <tr><td>C · pegajosa</td><td class="num">4 463 pt</td><td class="num">+637</td><td>comportamiento al desplazar</td></tr>
+          <tr><td>D · día con raya</td><td class="num">4 425 pt</td><td class="num">+599</td><td>una raya fina</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nota pega">
+      <p>
+        <strong>Las cuatro salen más largas, y hay que decirlo.</strong> Unos
+        <span class="cifra">600</span> puntos más, un dieciséis por ciento, que
+        son treinta puntos por cada día que se separa. No se compensa con nada:
+        quitar la fecha de las tarjetas devuelve 42, y ahí se acaba.
+      </p>
+      <p>
+        Lo que se compra con esos seiscientos puntos es que la lista deje de ser
+        una tirada de veinte días indistinguibles. A y D cuestan lo mismo —la
+        raya de D no ocupa alto, va dentro del renglón del rótulo—; B y C piden
+        unos veinticinco puntos más por el relleno de la banda.
+      </p>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>Recomendación</h2>
+    <div class="nota">
+      <p class="rotulo">Decidido: D</p>
+      <p>
+        <strong>D.</strong> Es la única que separa los dos niveles sin apoyarse
+        en que se note un salto de tamaño, y lo hace con lo que la aplicación ya
+        tiene: una línea de un punto del color de las demás. B dice lo mismo pero
+        pone fondo a algo que no se toca, y en esta pantalla el fondo es la señal
+        de que algo es tocable. C es la mejor de las cuatro cuando la lista es
+        muy larga —saber dónde estás sin subir— y la única que puede portarse
+        raro dentro de la cáscara; si te importa más eso que la sobriedad, es la
+        que hay que elegir.
+      </p>
+      <p>
+        A es la respuesta segura: no estrena nada y no se equivoca. Es también la
+        que menos resuelve, porque cuando el grupo y el día quedan seguidos —y
+        quedan seguidos siempre, al empezar cada grupo— lo único que los
+        distingue es el cuerpo de la letra.
+      </p>
+    </div>
+  </section>
+
+</div>

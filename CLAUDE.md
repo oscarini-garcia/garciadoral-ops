@@ -73,14 +73,26 @@ pendiente. El hook lo inyecta al final del mapa.
   contestar y los dos turnos; y sale en el plan de WhatsApp en su propio renglón,
   fuera del techo de tres. Está en `specs/ux.md` §10.3, las entidades en
   `specs/modelo-datos.md` §2.6 y el porqué de la forma, en
-  `specs/propuesta-lio.html`. Queda abierto **si el rezagado de ayer debería
+  `specs/propuesta-lio.html`. **Y el sol y la luna solo viven en el carril**: en la hoja del turno, en las
+  filas de Hoy, en el cuadro de Ajustes y en el aviso del teléfono se escribe
+  «Por la mañana» y «Por la noche». La regla de quién puede escribir qué tiene
+  ahora una frontera de reloj: dentro de la ventana, decir que has sacado a Lío
+  se escribe en el acto aunque el turno fuera de otro; **pasada la ventana, eso
+  vuelve al trato** y lo confirma quien lo tenía, porque ya no es cargar con un
+  recado sino escribir la memoria de otro. Y «Cancelar» va al final de cada hoja
+  y a la derecha, en su propio renglón.
+  **La lista tiene ahora dos niveles de separador**: el grupo de proximidad en
+  serifa y el día en versalita con una raya hasta el margen, elegido entre las
+  cuatro formas de `specs/prototipo-separadores-de-lista.html`; y en cuanto hay
+  separador de día, la fecha sale de dentro de la tarjeta, también en el detalle
+  del mes. Queda abierto **si el rezagado de ayer debería
   poder marcarse más de un día después** —hoy sube una vez y desaparece— y **qué
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
   turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
   empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
 - **Quedan dos migraciones por aplicar: `0007_estado_regalo.sql`**, que convierte
   a «comprado» lo que estuviera «envuelto», **y `0008_lio.sql`**, que crea las dos
-  tablas de Lio. Las dos son corrientes y no `.unavez` —se pueden repetir sin
+  tablas de Lío. Las dos son corrientes y no `.unavez` —se pueden repetir sin
   consecuencias—, así que basta con marcar la casilla de las migraciones al
   desplegar la API. Sin la de Lío, la aplicación no falla pero el módulo no
   aparece: el cuadro no se puede guardar y no hay dónde escribir los paseos. Las dos `.unavez` —los círculos (`0005`) y el
