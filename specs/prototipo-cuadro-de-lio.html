@@ -1,0 +1,909 @@
+<meta charset="utf-8">
+<title>El cuadro de Lio en Ajustes: cinco formas y tres maneras de colorearlo</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css: la gracia de este
+     prototipo es ver la pantalla dentro de la paleta de la aplicación, no
+     inventarle una. La Newsreader no puede cargarse desde fuera, así que
+     queda Georgia. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte p { color: var(--ink-soft); max-width: 64ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 66ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 7px; max-width: 66ch; }
+  .lista-seca strong { color: var(--ink); }
+
+  /* ------------------------------------------------------- La barra de color -- */
+
+  .mando {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--paper); border-bottom: 1px solid var(--line);
+    margin: 0 -20px; padding: 11px 20px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  }
+  .mando .rotulo { flex: none; }
+  .seg { display: inline-flex; gap: 3px; padding: 3px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; }
+  .seg button {
+    font: inherit; font-size: 13px; padding: 5px 11px; border-radius: 7px;
+    border: 0; background: none; color: var(--ink-soft); cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
+  .mando .dicho { font-size: 13px; color: var(--ink-soft); }
+
+  /* --------------------------------------------------------------- Teléfono -- */
+
+  .par { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 800px) { .par { grid-template-columns: 344px 1fr; } }
+
+  .tel {
+    width: 344px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    box-shadow: var(--sombra); overflow: hidden;
+  }
+  .tel-cabecera {
+    padding: 12px 14px 10px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .tel-cabecera h4 { margin: 0; font-family: var(--serif); font-weight: 500; font-size: 20px; }
+  .tel-cabecera span { margin-left: auto; font-size: 12px; color: var(--ink-faint); }
+  .tel-cuerpo { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .pista { font-size: 12.5px; color: var(--ink-soft); }
+  .pista b { color: var(--ink); font-weight: 500; }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 64ch; }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio div span:last-child { color: var(--ink-soft); }
+  .juicio strong { color: var(--ink); }
+
+  /* ============================================================ Las piezas == */
+
+  /* Una sola definición de «pastilla de persona» para las cinco opciones. El
+     tratamiento de color se decide arriba y se hereda por [data-color]. */
+  .p {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em;
+    border-radius: 999px; padding: 3px 7px; min-width: 26px;
+    display: inline-grid; place-items: center;
+    border: 1px solid transparent; background: var(--paper-3); color: var(--ink-soft);
+  }
+  .p[data-quien="nadie"] { background: transparent; color: var(--ink-faint); border-color: var(--line); }
+
+  /* 1 · Sin color. Papel y tinta; a quién, lo dice la letra. */
+  [data-color="ninguno"] .p[data-quien]:not([data-quien="nadie"]) { background: var(--paper-3); color: var(--ink); }
+
+  /* 2 · Un solo acento: el de la aplicación. Lleno es «hay alguien». */
+  [data-color="acento"] .p[data-quien]:not([data-quien="nadie"]) { background: var(--tinta); color: var(--paper); }
+
+  /* 3 · Cuatro tonos del mismo palo, no cuatro tintes distintos. */
+  [data-color="escala"] .p[data-quien="oscar"] { background: var(--tinta); color: var(--paper); }
+  [data-color="escala"] .p[data-quien="ana"]   { background: color-mix(in srgb, var(--tinta) 62%, var(--paper)); color: var(--ink); }
+  [data-color="escala"] .p[data-quien="marta"] { background: color-mix(in srgb, var(--tinta) 34%, var(--paper)); color: var(--ink); }
+  [data-color="escala"] .p[data-quien="lucia"] { background: color-mix(in srgb, var(--tinta) 15%, var(--paper)); color: var(--ink); }
+
+  /* 4 · Lo de hoy, para comparar: cuatro tonos calculados del identificador. */
+  [data-color="hoy"] .p[data-quien="oscar"] { background: hsl(198 42% 38%); color: #fff; }
+  [data-color="hoy"] .p[data-quien="ana"]   { background: hsl(24 42% 38%);  color: #fff; }
+  [data-color="hoy"] .p[data-quien="marta"] { background: hsl(287 42% 38%); color: #fff; }
+  [data-color="hoy"] .p[data-quien="lucia"] { background: hsl(96 42% 38%);  color: #fff; }
+
+  button.casilla, button.linea, button.slot, button.persona {
+    font: inherit; border: 0; background: none; padding: 0; cursor: pointer; color: inherit;
+  }
+  button:focus-visible, .seg button:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 8px; }
+
+  /* -- A · rejilla de hoy -- */
+  .rejilla {
+    display: grid; grid-template-columns: 22px repeat(7, 1fr); gap: 5px 3px;
+    align-items: center; justify-items: center;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 9px;
+  }
+  .rejilla .cab { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+  .rejilla .rot { font-size: 13px; }
+  .rejilla button.casilla { width: 100%; min-height: 30px; display: grid; place-items: center; }
+
+  /* -- B · siete días, uno por línea -- */
+  .dias { display: flex; flex-direction: column; gap: 5px; }
+  .dia-fila {
+    display: grid; grid-template-columns: 34px 1fr 1fr; gap: 7px; align-items: center;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2); padding: 5px 8px;
+  }
+  .dia-fila > b { font-weight: 500; font-size: 13px; color: var(--ink-soft); }
+  .dia-fila button.linea {
+    display: flex; align-items: center; gap: 6px; justify-content: flex-start;
+    font-size: 13px; padding: 4px 6px; border-radius: 8px; min-height: 30px;
+  }
+  .dia-fila button.linea:hover { background: var(--paper-3); }
+  .dia-fila .emo { font-size: 12px; opacity: .85; flex: none; }
+  .dia-fila .nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dia-fila .nom[data-quien="nadie"] { color: var(--ink-faint); }
+
+  /* -- C · dos bloques, mañana y noche -- */
+  .bloque { border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2); overflow: hidden; }
+  .bloque > summary {
+    list-style: none; cursor: pointer; padding: 9px 12px;
+    display: flex; align-items: center; gap: 9px; font-size: 14.5px;
+  }
+  .bloque > summary::-webkit-details-marker { display: none; }
+  .bloque > summary .resumen { margin-left: auto; font-size: 11.5px; color: var(--ink-faint); font-family: var(--mono); }
+  .bloque .dentro { padding: 0 12px 11px; display: flex; flex-direction: column; gap: 4px; }
+  .bloque .dentro button.linea {
+    display: grid; grid-template-columns: 76px 1fr; align-items: center; gap: 8px;
+    padding: 6px 7px; border-radius: 8px; font-size: 13.5px; min-height: 32px; text-align: left;
+  }
+  .bloque .dentro button.linea:hover { background: var(--paper-3); }
+  .bloque .dentro .nom[data-quien="nadie"] { color: var(--ink-faint); }
+
+  /* -- D · persona primero -- */
+  .pinceles { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pinceles button.persona {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 5px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft);
+  }
+  .pinceles button.persona[aria-pressed="true"] { border-color: var(--tinta); color: var(--ink); background: var(--paper); box-shadow: var(--sombra); }
+  .pinceles button.persona[aria-pressed="true"] .punto { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px currentColor; }
+  .punto { width: 11px; height: 11px; border-radius: 50%; background: var(--paper-3); flex: none; }
+  [data-color="acento"] .punto[data-quien]:not([data-quien="nadie"]) { background: var(--tinta); }
+  [data-color="escala"] .punto[data-quien="oscar"] { background: var(--tinta); }
+  [data-color="escala"] .punto[data-quien="ana"]   { background: color-mix(in srgb, var(--tinta) 62%, var(--paper)); }
+  [data-color="escala"] .punto[data-quien="marta"] { background: color-mix(in srgb, var(--tinta) 34%, var(--paper)); }
+  [data-color="escala"] .punto[data-quien="lucia"] { background: color-mix(in srgb, var(--tinta) 15%, var(--paper)); }
+  [data-color="hoy"] .punto[data-quien="oscar"] { background: hsl(198 42% 38%); }
+  [data-color="hoy"] .punto[data-quien="ana"]   { background: hsl(24 42% 38%); }
+  [data-color="hoy"] .punto[data-quien="marta"] { background: hsl(287 42% 38%); }
+  [data-color="hoy"] .punto[data-quien="lucia"] { background: hsl(96 42% 38%); }
+  .punto[data-quien="nadie"] { background: transparent; border: 1px dashed var(--ink-faint); }
+
+  /* -- E · un renglón por persona -- */
+  .rota {
+    display: grid; grid-template-columns: 58px repeat(7, 1fr); gap: 4px 3px;
+    align-items: center; background: var(--paper-2);
+    border: 1px solid var(--line); border-radius: 12px; padding: 8px 9px;
+  }
+  .rota .cab { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); text-align: center; }
+  .rota .quien { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rota .celda { display: grid; grid-template-rows: 1fr 1fr; gap: 2px; }
+  .rota button.slot {
+    height: 15px; border-radius: 4px; background: var(--paper); border: 1px solid var(--line);
+    display: grid; place-items: center; font-size: 9px; color: transparent;
+  }
+  .rota button.slot[aria-pressed="true"] { background: var(--paper-3); border-color: transparent; color: var(--ink); }
+  [data-color="acento"] .rota button.slot[aria-pressed="true"],
+  [data-color="escala"] .rota button.slot[aria-pressed="true"],
+  [data-color="hoy"] .rota button.slot[aria-pressed="true"] { color: var(--paper); }
+  [data-color="acento"] .rota button.slot[aria-pressed="true"] { background: var(--tinta); }
+  [data-color="escala"] .rota .fila[data-quien="oscar"] button.slot[aria-pressed="true"] { background: var(--tinta); }
+  [data-color="escala"] .rota .fila[data-quien="ana"]   button.slot[aria-pressed="true"] { background: color-mix(in srgb, var(--tinta) 62%, var(--paper)); color: var(--ink); }
+  [data-color="escala"] .rota .fila[data-quien="marta"] button.slot[aria-pressed="true"] { background: color-mix(in srgb, var(--tinta) 34%, var(--paper)); color: var(--ink); }
+  [data-color="escala"] .rota .fila[data-quien="lucia"] button.slot[aria-pressed="true"] { background: color-mix(in srgb, var(--tinta) 15%, var(--paper)); color: var(--ink); }
+  [data-color="hoy"] .rota .fila[data-quien="oscar"] button.slot[aria-pressed="true"] { background: hsl(198 42% 38%); }
+  [data-color="hoy"] .rota .fila[data-quien="ana"]   button.slot[aria-pressed="true"] { background: hsl(24 42% 38%); }
+  [data-color="hoy"] .rota .fila[data-quien="marta"] button.slot[aria-pressed="true"] { background: hsl(287 42% 38%); }
+  [data-color="hoy"] .rota .fila[data-quien="lucia"] button.slot[aria-pressed="true"] { background: hsl(96 42% 38%); }
+  .rota .fila { display: contents; }
+
+  /* -- El carril de la semana, para ver qué le hace el color a la otra pantalla -- */
+  .carril {
+    display: grid; grid-template-columns: 22px repeat(7, 1fr); gap: 4px 3px;
+    align-items: center; justify-items: center;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 7px 8px;
+  }
+  .carril .cab { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+  .carril .rot { font-size: 13px; }
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); }
+  .comparativa .ojo { color: var(--aviso); }
+  .comparativa .bien { color: var(--tinta); }
+  .desplazable { overflow-x: auto; }
+</style>
+
+<div class="doc" id="doc" data-color="escala">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>El cuadro de Lio en Ajustes: cinco formas y tres maneras de colorearlo</h1>
+    <p>
+      Los cinco cuadros de abajo <strong>funcionan</strong>: se tocan y cambian.
+      Y el color se decide arriba, en la barra que se queda pegada al borde: al
+      cambiarlo cambian los cinco a la vez, de modo que se puede separar una
+      pregunta de la otra —qué forma tiene el cuadro, y de qué color va— en lugar
+      de juzgarlas juntas.
+    </p>
+  </header>
+
+  <div class="mando">
+    <span class="rotulo">Color</span>
+    <div class="seg" role="group" aria-label="Tratamiento de color">
+      <button type="button" data-c="ninguno">Ninguno</button>
+      <button type="button" data-c="acento">Un acento</button>
+      <button type="button" data-c="escala" aria-pressed="true">Escala</button>
+      <button type="button" data-c="hoy">Lo de hoy</button>
+    </div>
+    <span class="dicho" id="dicho"></span>
+  </div>
+
+  <!-- =========================================== El diagnóstico == -->
+
+  <div class="parte">
+    <p class="rotulo">Primero</p>
+    <h2>Qué es exactamente lo que hace lío</h2>
+    <p>
+      No es una cosa sino tres, y conviene separarlas porque cada opción de abajo
+      arregla unas y no otras.
+    </p>
+  </div>
+
+  <ol class="lista-seca">
+    <li>
+      <strong>Una casilla hace dos preguntas a la vez.</strong> Dice <em>cuándo</em>
+      por dónde está —fila y columna— y <em>quién</em> por lo que lleva escrito.
+      Para leer «los martes por la noche los hace Marta» hay que cruzar dos ejes
+      mentalmente, y son catorce cruces.
+    </li>
+    <li>
+      <strong>La vuelta no tiene marcha atrás.</strong> Tocar pasa a la siguiente
+      persona; si se pasa uno, hay que dar la vuelta entera. Con cinco valores
+      —nadie y los cuatro— eso son cuatro toques para corregir un error de uno.
+      Y no hay ninguna pista de cuál es «la siguiente».
+    </li>
+    <li>
+      <strong>El color es el único que distingue, y no es de la casa.</strong> Las
+      dos letras se parecen entre sí; lo que separa a una persona de otra es el
+      tono. Y ese tono sale de una cuenta sobre el identificador
+      (<code>colorDePersona</code>), así que son cuatro tintes cualesquiera
+      —azulón, teja, morado, verde— en una pantalla de papel con una sola tinta.
+      Pruébalo arriba con <em>Lo de hoy</em>.
+    </li>
+  </ol>
+
+  <div class="nota pega">
+    <p>
+      <strong>Una atadura antes de elegir color.</strong> El mismo tono se usa en
+      el carril de la semana, que es donde de verdad hay que reconocer a alguien
+      de un vistazo. Lo que se decida aquí le pasa también a esa pantalla, así que
+      debajo va el carril con el color puesto, para no arreglar Ajustes y
+      estropear la agenda.
+    </p>
+    <div class="carril" id="carril" aria-label="El carril de la semana con el color elegido"></div>
+  </div>
+
+  <!-- =========================================== El color == -->
+
+  <div class="parte">
+    <p class="rotulo">La barra de arriba, explicada</p>
+    <h2>Las tres maneras de colorear, y la de hoy</h2>
+  </div>
+
+  <ul class="lista-seca">
+    <li>
+      <strong>Ninguno.</strong> Papel, tinta y las letras. A quién le toca lo dice
+      lo que está escrito, no de qué color está. Es lo más tranquilo y lo más
+      fiel a la aplicación; a cambio, el carril de la semana deja de leerse de un
+      vistazo y hay que leerlo de verdad.
+    </li>
+    <li>
+      <strong>Un acento.</strong> El verde de la aplicación y nada más. El color
+      pasa a significar una sola cosa —«aquí hay alguien»— y la identidad la
+      lleva el texto. Es la que mejor se defiende con los ojos cansados y la
+      única que no empeora nada en modo oscuro.
+    </li>
+    <li>
+      <strong>Escala.</strong> Cuatro pasos del mismo verde, del lleno al casi
+      papel. Distingue a las cuatro personas sin meter un solo tinte nuevo en la
+      paleta. Su pega es real: el orden de los pasos no significa nada —nadie es
+      «más» que otro— y con la luz del sol los dos últimos se parecen.
+    </li>
+    <li>
+      <strong>Lo de hoy.</strong> Cuatro tonos calculados del identificador. Los
+      distingue bien y no se parecen entre sí; el problema es que tampoco se
+      parecen a nada de la aplicación, y cambian solos si alguien se da de alta
+      otra vez con otro identificador.
+    </li>
+  </ul>
+
+  <!-- =========================================== Las opciones == -->
+
+  <div class="parte">
+    <p class="rotulo">Cinco formas</p>
+    <h2>La misma pregunta, dibujada de cinco maneras</h2>
+    <p>Todas se tocan. La A es lo que hay hoy, para comparar con las mismas manos.</p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>La rejilla de hoy</h2></div>
+      <p>Catorce casillas, dos filas y siete columnas. Se toca y pasa a la siguiente persona.</p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>🐾 Lio</h4><span>Ajustes</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Toca una casilla para pasar a la siguiente persona.</p>
+          <div class="rejilla" id="rejilla"></div>
+          <p class="pista" id="leyendaA"></p>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cabe entero sin desplazar, y la figura es la de un cuadro de la nevera.</span></div>
+        <div class="si"><span>+</span><span>Se ve el reparto de la semana completo de un vistazo, que es para lo que se entra.</span></div>
+        <div class="no"><span>−</span><span>Las tres pegas del diagnóstico, las tres.</span></div>
+        <div class="no"><span>−</span><span>Catorce blancos de 30 puntos en 300 de ancho: se falla, y fallar cuesta cuatro toques.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Siete días, uno por línea</h2></div>
+      <p>
+        Una fila por día, con sus dos turnos y <strong>el nombre escrito entero</strong>.
+        Se toca el turno y pasa al siguiente; no hay que descifrar iniciales
+        porque no hay iniciales.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>🐾 Lio</h4><span>Ajustes</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Toca un turno para pasar a la siguiente persona.</p>
+          <div class="dias" id="dias"></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span><strong>Nada que descifrar.</strong> Pone «Marta», no «Ma», y el color deja de hacer falta para nada.</span></div>
+        <div class="si"><span>+</span><span>Los blancos pasan de 30 a 140 puntos de ancho: es muy difícil fallar el toque.</span></div>
+        <div class="si"><span>+</span><span>Se lee como una frase —«lunes: mañana Óscar, noche Marta»— en lugar de como una tabla.</span></div>
+        <div class="no"><span>−</span><span>Ocupa unos 260 puntos de alto contra los 90 de la rejilla. Dentro de un apartado plegado de Ajustes es asumible, pero hay que desplazar para ver el domingo.</span></div>
+        <div class="no"><span>−</span><span>Se pierde la lectura en columna: «¿quién hace las mañanas?» ya no se contesta de un vistazo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>Dos bloques: mañanas y noches</h2></div>
+      <p>
+        La semana partida por el turno, cada mitad plegable y con el reparto
+        escrito en el rótulo. Quien entra a cambiar las noches no ve las mañanas.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>🐾 Lio</h4><span>Ajustes</span></div>
+        <div class="tel-cuerpo" id="bloques"></div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Plegado ocupa dos líneas, y esas dos líneas ya cuentan el reparto entero.</span></div>
+        <div class="si"><span>+</span><span>Separa las dos preguntas que de verdad se hacen por separado: las mañanas son de días de colegio y las noches no.</span></div>
+        <div class="si"><span>+</span><span>Es la única que dice el reparto <em>sin abrir nada</em>.</span></div>
+        <div class="no"><span>−</span><span>Un apartado plegable dentro de otro apartado plegable. Ajustes ya es una lista de acordeones.</span></div>
+        <div class="no"><span>−</span><span>Comparar el lunes de mañana con el lunes de noche obliga a tener los dos abiertos.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>Primero la persona, después se pinta</h2></div>
+      <p>
+        Arriba, quién; debajo, la rejilla. Se elige a Marta y se tocan sus
+        casillas. El gesto deja de ser «adivinar la vuelta» y pasa a ser pintar,
+        que es lo que uno hace en un cuadro de papel con un rotulador.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>🐾 Lio</h4><span>Ajustes</span></div>
+        <div class="tel-cuerpo">
+          <div class="pinceles" id="pinceles"></div>
+          <p class="pista" id="pincelDicho"></p>
+          <div class="rejilla" id="rejillaD"></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span><strong>Se acabó la vuelta sin marcha atrás.</strong> Corregir es elegir a quien va y tocar; nunca cuesta más de dos toques.</span></div>
+        <div class="si"><span>+</span><span>Poner los cinco turnos de una persona es elegirla una vez y tocar cinco casillas: es el gesto que de verdad se hace.</span></div>
+        <div class="si"><span>+</span><span>Cabe en el mismo alto que la rejilla de hoy más una línea.</span></div>
+        <div class="no"><span>−</span><span>Tiene modo: hay un estado invisible —a quién estás pintando— y volver mañana obliga a mirar arriba antes de tocar.</span></div>
+        <div class="no"><span>−</span><span>Sigue habiendo catorce blancos pequeños, y las iniciales siguen ahí.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">E</span><h2>Un renglón por persona</h2></div>
+      <p>
+        El cuadrante de guardias de toda la vida: cada uno su fila, y marcadas las
+        casillas que le tocan. Cada hueco es de una sola persona, así que marcarlo
+        en una fila lo quita de la otra.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <div class="tel-cabecera"><h4>🐾 Lio</h4><span>Ajustes</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Arriba la mañana, abajo la noche. Toca para asignar.</p>
+          <div class="rota" id="rota"></div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Contesta de un vistazo la pregunta que provoca las discusiones: <strong>¿cuántas me tocan a mí y cuántas a ti?</strong></span></div>
+        <div class="si"><span>+</span><span>El nombre va escrito una sola vez, al principio de su fila: no hay iniciales que descifrar.</span></div>
+        <div class="no"><span>−</span><span>Veintiocho blancos de quince puntos de alto. Es la más difícil de acertar con el pulgar de las cinco.</span></div>
+        <div class="no"><span>−</span><span>Crece con la gente: con cuatro cabe, con seis no cabría.</span></div>
+        <div class="no"><span>−</span><span>«Nadie» deja de ser una opción que se elige y pasa a ser una casilla que no está marcada en ninguna fila, que es más difícil de ver.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================== Comparativa == -->
+
+  <div class="parte">
+    <p class="rotulo">De un vistazo</p>
+    <h2>Las cinco, en cinco preguntas</h2>
+  </div>
+
+  <div class="desplazable">
+    <table class="comparativa">
+      <thead>
+        <tr><th></th><th>A · Rejilla</th><th>B · Por días</th><th>C · Dos bloques</th><th>D · Pintar</th><th>E · Por persona</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Hay que descifrar iniciales</td>
+          <td class="ojo">Sí</td><td class="bien">No</td><td class="bien">No</td><td class="ojo">Sí</td><td class="bien">No</td>
+        </tr>
+        <tr>
+          <td>Corregir un toque de más</td>
+          <td class="ojo">4 toques</td><td class="ojo">4 toques</td><td class="ojo">4 toques</td><td class="bien">2 toques</td><td class="bien">1 toque</td>
+        </tr>
+        <tr>
+          <td>Necesita el color</td>
+          <td class="ojo">Para todo</td><td class="bien">Nada</td><td class="bien">Nada</td><td>Para leerlo</td><td class="bien">Poco</td>
+        </tr>
+        <tr>
+          <td>Alto que ocupa</td>
+          <td class="bien">≈ 90 pt</td><td class="ojo">≈ 260 pt</td><td class="bien">≈ 60 pt plegado</td><td>≈ 130 pt</td><td>≈ 120 pt</td>
+        </tr>
+        <tr>
+          <td>Tamaño del blanco</td>
+          <td class="ojo">30 pt</td><td class="bien">140 pt</td><td class="bien">300 pt</td><td class="ojo">30 pt</td><td class="ojo">15 pt</td>
+        </tr>
+        <tr>
+          <td>Se lee el reparto entero</td>
+          <td class="bien">Sí</td><td>Desplazando</td><td class="bien">Sí, en el rótulo</td><td class="bien">Sí</td><td class="bien">Sí</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- =========================================== Recomendación == -->
+
+  <div class="parte">
+    <p class="rotulo">Lo que yo haría</p>
+    <h2>B con un acento, y el carril como está</h2>
+    <p>
+      <strong>B</strong>, los siete días en línea con el nombre escrito entero,
+      porque quita las tres pegas de golpe: no hay iniciales que descifrar, el
+      blanco es cuatro veces más grande y el color deja de cargar con la
+      identidad. Los 260 puntos de alto se pagan una vez cada varios meses, que
+      es lo que se toca este cuadro.
+    </p>
+    <p>
+      <strong>C</strong> es la segunda, y la primera si te importa más que Ajustes
+      siga siendo corto: plegada dice el reparto entero en dos líneas y no gasta
+      ni una más. La cambio por B solo por el acordeón dentro del acordeón.
+    </p>
+    <p>
+      <strong>Del color, «Un acento»</strong>: el verde de la aplicación
+      significando una sola cosa, «aquí hay alguien», y la identidad en el texto.
+      Y aquí importa la atadura de arriba: en el carril de la semana, donde el
+      espacio no da para nombres, ese mismo acento sigue distinguiendo lo hecho de
+      lo previsto —que es lo que allí se mira— y las dos letras siguen diciendo
+      quién. <strong>La escala</strong> es defendible si al mirar el carril echas
+      de menos reconocer a cada uno por su tono; lo que no defiendo es dejar los
+      cuatro tintes calculados, que no son de esta aplicación.
+    </p>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>Y una cosa que no cambia con la forma.</strong> Sea cual sea la
+      elegida, el cuadro debería poder <em>copiarse de un turno a otro</em>: casi
+      todas las casas reparten igual las mañanas de lunes a viernes. Un «todos los
+      días laborables, esta persona» ahorraría cinco toques de los catorce, y no
+      lo tiene ninguna de las cinco. Si te parece, lo estudio aparte.
+    </p>
+  </div>
+
+</div>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // Un solo estado para las cinco formas: cambiar una y mirar otra enseña lo
+  // mismo, que es lo que hace comparables las opciones.
+  // ---------------------------------------------------------------------------
+  const CASA = [
+    { id: 'oscar', nombre: 'Óscar' },
+    { id: 'ana', nombre: 'Ana' },
+    { id: 'marta', nombre: 'Marta' },
+    { id: 'lucia', nombre: 'Lucía' },
+  ];
+  const VUELTAS = ['nadie', ...CASA.map((p) => p.id)];
+  const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const INICIALES = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  const TURNOS = [
+    { id: 'manana', nombre: 'Mañana', emoji: '☀️' },
+    { id: 'noche', nombre: 'Noche', emoji: '🌙' },
+  ];
+
+  const cuadro = {
+    manana: ['oscar', 'ana', 'oscar', 'ana', 'oscar', 'marta', 'lucia'],
+    noche: ['ana', 'oscar', 'ana', 'oscar', 'ana', 'oscar', 'ana'],
+  };
+
+  const nombreDe = (id) => (CASA.find((p) => p.id === id) || { nombre: 'Nadie' }).nombre;
+  const dosLetras = (id) => (id === 'nadie' ? '·' : nombreDe(id).slice(0, 2));
+  const siguiente = (id) => VUELTAS[(VUELTAS.indexOf(id) + 1) % VUELTAS.length];
+
+  let pincel = 'marta';
+  const doc = document.getElementById('doc');
+
+  // ------------------------------------------------------------- El color --
+  const DICHO = {
+    ninguno: 'Papel y tinta. A quién le toca lo dice la letra.',
+    acento: 'El verde de la aplicación, y solo significa «aquí hay alguien».',
+    escala: 'Cuatro pasos del mismo verde, sin tintes nuevos en la paleta.',
+    hoy: 'Los cuatro tonos calculados del identificador. Lo que hay hoy.',
+  };
+  for (const boton of document.querySelectorAll('.seg button')) {
+    boton.addEventListener('click', () => {
+      for (const otro of document.querySelectorAll('.seg button')) otro.setAttribute('aria-pressed', 'false');
+      boton.setAttribute('aria-pressed', 'true');
+      doc.dataset.color = boton.dataset.c;
+      document.getElementById('dicho').textContent = DICHO[boton.dataset.c];
+    });
+  }
+  document.getElementById('dicho').textContent = DICHO.escala;
+
+  // --------------------------------------------------------- Piezas comunes --
+  function pastilla(id) {
+    const nodo = document.createElement('span');
+    nodo.className = 'p';
+    nodo.dataset.quien = id;
+    nodo.textContent = dosLetras(id);
+    return nodo;
+  }
+
+  function punto(id) {
+    const nodo = document.createElement('span');
+    nodo.className = 'punto';
+    nodo.dataset.quien = id;
+    return nodo;
+  }
+
+  const pintores = [];
+  const repintar = () => pintores.forEach((f) => f());
+
+  // ------------------------------------------------------------ A · rejilla --
+  function montarRejilla(nodo, alTocar) {
+    nodo.textContent = '';
+    const hueco = document.createElement('span');
+    nodo.append(hueco);
+    for (const inicial of INICIALES) {
+      const cab = document.createElement('span');
+      cab.className = 'cab';
+      cab.textContent = inicial;
+      nodo.append(cab);
+    }
+    for (const turno of TURNOS) {
+      const rot = document.createElement('span');
+      rot.className = 'rot';
+      rot.textContent = turno.emoji;
+      rot.title = turno.nombre;
+      nodo.append(rot);
+      for (let dia = 0; dia < 7; dia += 1) {
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'casilla';
+        boton.setAttribute('aria-label', `${DIAS[dia]} por la ${turno.nombre.toLowerCase()}`);
+        boton.addEventListener('click', () => { alTocar(turno.id, dia); repintar(); });
+        boton.append(pastilla(cuadro[turno.id][dia]));
+        nodo.append(boton);
+      }
+    }
+  }
+
+  function refrescarRejilla(nodo) {
+    const casillas = nodo.querySelectorAll('button.casilla');
+    let i = 0;
+    for (const turno of TURNOS) {
+      for (let dia = 0; dia < 7; dia += 1) {
+        const quien = cuadro[turno.id][dia];
+        const pastillaNodo = casillas[i].firstChild;
+        pastillaNodo.dataset.quien = quien;
+        pastillaNodo.textContent = dosLetras(quien);
+        casillas[i].setAttribute(
+          'aria-label',
+          `${DIAS[dia]} por la ${turno.nombre.toLowerCase()}: ${nombreDe(quien)}`,
+        );
+        i += 1;
+      }
+    }
+  }
+
+  const rejillaA = document.getElementById('rejilla');
+  montarRejilla(rejillaA, (turno, dia) => { cuadro[turno][dia] = siguiente(cuadro[turno][dia]); });
+  pintores.push(() => refrescarRejilla(rejillaA));
+  document.getElementById('leyendaA').textContent = CASA.map((p) => `${p.nombre.slice(0, 2)} · ${p.nombre}`).join('   ');
+
+  // --------------------------------------------------------------- B · días --
+  const dias = document.getElementById('dias');
+  for (let dia = 0; dia < 7; dia += 1) {
+    const fila = document.createElement('div');
+    fila.className = 'dia-fila';
+    const rotulo = document.createElement('b');
+    rotulo.textContent = DIAS[dia].slice(0, 3);
+    fila.append(rotulo);
+    for (const turno of TURNOS) {
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'linea';
+      boton.innerHTML = `<span class="emo" aria-hidden="true">${turno.emoji}</span><span class="nom"></span>`;
+      boton.addEventListener('click', () => {
+        cuadro[turno.id][dia] = siguiente(cuadro[turno.id][dia]);
+        repintar();
+      });
+      fila.append(boton);
+    }
+    dias.append(fila);
+  }
+  pintores.push(() => {
+    const filas = dias.querySelectorAll('.dia-fila');
+    filas.forEach((fila, dia) => {
+      fila.querySelectorAll('button.linea').forEach((boton, i) => {
+        const turno = TURNOS[i];
+        const quien = cuadro[turno.id][dia];
+        const nom = boton.querySelector('.nom');
+        nom.textContent = quien === 'nadie' ? 'Nadie' : nombreDe(quien);
+        nom.dataset.quien = quien;
+        boton.setAttribute(
+          'aria-label',
+          `${DIAS[dia]} por la ${turno.nombre.toLowerCase()}: ${nombreDe(quien)}. Cambiar.`,
+        );
+      });
+    });
+  });
+
+  // ------------------------------------------------------------ C · bloques --
+  const bloques = document.getElementById('bloques');
+  for (const turno of TURNOS) {
+    const bloque = document.createElement('details');
+    bloque.className = 'bloque';
+    bloque.open = turno.id === 'manana';
+    bloque.innerHTML = `
+      <summary>
+        <span aria-hidden="true">${turno.emoji}</span>
+        <span>${turno.nombre}</span>
+        <span class="resumen"></span>
+      </summary>
+      <div class="dentro"></div>`;
+    const dentro = bloque.querySelector('.dentro');
+    for (let dia = 0; dia < 7; dia += 1) {
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'linea';
+      boton.innerHTML = `<span>${DIAS[dia]}</span><span class="nom"></span>`;
+      boton.addEventListener('click', () => {
+        cuadro[turno.id][dia] = siguiente(cuadro[turno.id][dia]);
+        repintar();
+      });
+      dentro.append(boton);
+    }
+    bloques.append(bloque);
+  }
+  pintores.push(() => {
+    bloques.querySelectorAll('.bloque').forEach((bloque, i) => {
+      const turno = TURNOS[i];
+      // El rótulo cuenta el reparto sin abrir: las iniciales de los siete días.
+      bloque.querySelector('.resumen').textContent =
+        cuadro[turno.id].map((q) => (q === 'nadie' ? '·' : nombreDe(q)[0])).join(' ');
+      bloque.querySelectorAll('button.linea').forEach((boton, dia) => {
+        const quien = cuadro[turno.id][dia];
+        const nom = boton.querySelector('.nom');
+        nom.textContent = quien === 'nadie' ? 'Nadie' : nombreDe(quien);
+        nom.dataset.quien = quien;
+      });
+    });
+  });
+
+  // ------------------------------------------------------------- D · pintar --
+  const pinceles = document.getElementById('pinceles');
+  for (const persona of [...CASA, { id: 'nadie', nombre: 'Nadie' }]) {
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'persona';
+    boton.dataset.p = persona.id;
+    boton.append(punto(persona.id));
+    boton.append(document.createTextNode(persona.nombre));
+    boton.addEventListener('click', () => { pincel = persona.id; repintar(); });
+    pinceles.append(boton);
+  }
+  const rejillaD = document.getElementById('rejillaD');
+  montarRejilla(rejillaD, (turno, dia) => {
+    // Volver a tocar lo que ya está puesto lo quita: sin eso, «nadie» exigiría
+    // ir a buscar el pincel de «nadie» para un gesto de deshacer.
+    cuadro[turno][dia] = cuadro[turno][dia] === pincel ? 'nadie' : pincel;
+  });
+  pintores.push(() => {
+    refrescarRejilla(rejillaD);
+    for (const boton of pinceles.querySelectorAll('button.persona')) {
+      boton.setAttribute('aria-pressed', boton.dataset.p === pincel ? 'true' : 'false');
+    }
+    document.getElementById('pincelDicho').innerHTML = pincel === 'nadie'
+      ? 'Tocando una casilla la <b>dejas sin nadie</b>.'
+      : `Tocando una casilla se la das a <b>${nombreDe(pincel)}</b>.`;
+  });
+
+  // ------------------------------------------------------------ E · persona --
+  const rota = document.getElementById('rota');
+  const hueco = document.createElement('span');
+  rota.append(hueco);
+  for (const inicial of INICIALES) {
+    const cab = document.createElement('span');
+    cab.className = 'cab';
+    cab.textContent = inicial;
+    rota.append(cab);
+  }
+  for (const persona of CASA) {
+    const fila = document.createElement('div');
+    fila.className = 'fila';
+    fila.dataset.quien = persona.id;
+    const nombre = document.createElement('span');
+    nombre.className = 'quien';
+    nombre.textContent = persona.nombre;
+    fila.append(nombre);
+    for (let dia = 0; dia < 7; dia += 1) {
+      const celda = document.createElement('div');
+      celda.className = 'celda';
+      for (const turno of TURNOS) {
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'slot';
+        boton.textContent = turno.emoji === '☀️' ? '☀' : '🌙';
+        boton.setAttribute('aria-label', `${persona.nombre}, ${DIAS[dia]} por la ${turno.nombre.toLowerCase()}`);
+        boton.addEventListener('click', () => {
+          // Un turno es de una sola persona: marcarlo aquí lo quita de quien lo
+          // tuviera, y volver a tocarlo lo deja sin nadie.
+          cuadro[turno.id][dia] = cuadro[turno.id][dia] === persona.id ? 'nadie' : persona.id;
+          repintar();
+        });
+        celda.append(boton);
+      }
+      fila.append(celda);
+    }
+    rota.append(fila);
+  }
+  pintores.push(() => {
+    for (const fila of rota.querySelectorAll('.fila')) {
+      const quien = fila.dataset.quien;
+      const botones = fila.querySelectorAll('button.slot');
+      let i = 0;
+      for (let dia = 0; dia < 7; dia += 1) {
+        for (const turno of TURNOS) {
+          botones[i].setAttribute('aria-pressed', cuadro[turno.id][dia] === quien ? 'true' : 'false');
+          i += 1;
+        }
+      }
+    }
+  });
+
+  // ------------------------------------------------------------- El carril --
+  const carril = document.getElementById('carril');
+  pintores.push(() => {
+    carril.textContent = '';
+    const rotulo = document.createElement('span');
+    rotulo.className = 'rot';
+    rotulo.textContent = '🐾';
+    carril.append(rotulo);
+    for (const inicial of INICIALES) {
+      const cab = document.createElement('span');
+      cab.className = 'cab';
+      cab.textContent = inicial;
+      carril.append(cab);
+    }
+    for (const turno of TURNOS) {
+      const rot = document.createElement('span');
+      rot.className = 'rot';
+      rot.textContent = turno.emoji;
+      carril.append(rot);
+      for (let dia = 0; dia < 7; dia += 1) carril.append(pastilla(cuadro[turno.id][dia]));
+    }
+  });
+
+  repintar();
+</script>
