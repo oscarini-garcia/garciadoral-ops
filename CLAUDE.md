@@ -145,18 +145,23 @@ pendiente. El hook lo inyecta al final del mapa.
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
   turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
   empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
-- **Quedan cinco migraciones por aplicar, y una de ellas hay que pedirla por su
-  nombre.** Las corrientes son `0007_estado_regalo.sql` —convierte a «comprado» lo
-  que estuviera «envuelto»—, `0008_lio.sql` —las dos tablas de Lío—,
-  `0010_sitios.sql` —lugar, apunte y voto— y `0011_visto.sql` —la marca de los
-  avisos—: las cuatro se pueden repetir sin consecuencias, así que basta con marcar
-  la casilla al desplegar la API. **La quinta es
-  `0009_comentario_sin_check.unavez.sql`**, que rehace la tabla `comentario` para
-  quitarle el `CHECK`, y como copia filas y tira la tabla vieja **no se repite**:
-  hay que escribir su nombre en la casilla de la migración de un solo uso. Sin
-  ella, un comentario sobre un apunte lo rechaza la base. Sin las de Sitios el
-  módulo aparece vacío y no se puede crear nada; sin la de Lío, el cuadro no se
-  puede guardar. Las dos `.unavez` viejas —los círculos (`0005`) y el
+- **Quedan cinco migraciones por aplicar, y van todas juntas en un solo fichero:
+  `todas-las-pendientes.unavez.sql`.** Al desplegar la API se escribe ese nombre en
+  la casilla de la migración de un solo uso y **no hace falta marcar la de las
+  corrientes**. Es la copia literal de las cinco pegadas en su orden —la `0007`,
+  que convierte a «comprado» lo que estuviera «envuelto»; la `0008`, las dos tablas
+  de Lío; la `0009`, que rehace `comentario` sin su `CHECK`; la `0010`, lugar,
+  apunte y voto; y la `0011`, la marca de lo visto—, y `tests/test_migraciones.py`
+  comprueba las dos cosas que pueden salir mal: que la copia siga diciendo lo mismo
+  que los originales, y que el conjunto, pasado por una base de verdad, deje el
+  esquema donde tiene que quedar sin llevarse por delante lo que ya había.
+  **Va por la casilla de un solo uso aunque cuatro de las cinco se puedan repetir**,
+  porque un paquete vale lo que su pieza más delicada: rehacer `comentario` es
+  copiar filas y tirar la tabla vieja, y hay un instante en el que los comentarios
+  existen en una sola copia. Sin ese fichero, un comentario sobre un apunte lo
+  rechaza la base, el módulo de Sitios aparece vacío y el cuadro de Lío no se puede
+  guardar. **Cuando esté aplicado, el paquete se borra** y con él su prueba; las
+  numeradas se quedan, que son las que cuentan la historia. Las dos `.unavez` viejas —los círculos (`0005`) y el
   género (`0006`)— ya están puestas, y no se vuelven a pedir porque no se pueden
   repetir: el `ALTER TABLE` falla si la columna ya está. La
   pantalla de Gente está decidida y construida: tres círculos

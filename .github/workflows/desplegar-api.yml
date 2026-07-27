@@ -23,7 +23,7 @@ on:
         type: boolean
         default: false
       migracion_unica:
-        description: 'Y además, esta migración de un solo uso (p. ej. 0005_circulos.unavez.sql)'
+        description: 'Y además, esta migración de un solo uso (hoy: todas-las-pendientes.unavez.sql)'
         type: string
         default: ''
   push:
