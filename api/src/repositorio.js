@@ -52,6 +52,28 @@ async function filas(db, sql, ...parametros) {
 }
 
 /**
+ * Lo mismo, pero para una tabla que puede no existir todavía.
+ *
+ * Desplegar y migrar son dos pasos distintos: el empujón a `main` sube el
+ * Worker solo, y las tablas nuevas se aplican marcando una casilla que alguien
+ * tiene que marcar. Entre una cosa y la otra hay una ventana, y sin esto la
+ * ventana es una caída: una consulta a una tabla que no está tumba
+ * `leerRegistro` entera, y con ella la sincronización de todos los dispositivos
+ * por una función que ninguno estaba usando.
+ *
+ * Solo se traga ese error y solo para las tablas que se le pasan. Cualquier otro
+ * fallo de la base sigue subiendo, que es lo que tiene que hacer.
+ */
+async function filasSiLaTablaEsta(db, sql, ...parametros) {
+  try {
+    return await filas(db, sql, ...parametros);
+  } catch (error) {
+    if (/no such table/i.test(String(error?.message || error))) return [];
+    throw error;
+  }
+}
+
+/**
  * Lee el registro completo. `soloActivos` deja fuera lo marcado como inactivo,
  * que es lo que quieren tanto la sincronización como el generador del plan.
  */
@@ -82,11 +104,14 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filas(db, 'SELECT * FROM codestinatario_regalo'),
     filas(db, `SELECT * FROM comentario ${activo('activo')} ORDER BY creado_en`),
     filas(db, 'SELECT * FROM conflicto WHERE revisado = 0'),
-    filas(db, `SELECT * FROM paseo ${activo('activo')} ORDER BY fecha`),
+    filasSiLaTablaEsta(db, `SELECT * FROM paseo ${activo('activo')} ORDER BY fecha`),
     // Las propuestas resueltas se quedan en la base pero no viajan: lo que la
     // pantalla necesita es lo que hay que contestar, y una bandeja con el
     // historial de todos los cambios del año no la lee nadie.
-    filas(db, `SELECT * FROM trato_paseo WHERE estado = 'pendiente' ${soloActivos ? 'AND activo = 1' : ''}`),
+    filasSiLaTablaEsta(
+      db,
+      `SELECT * FROM trato_paseo WHERE estado = 'pendiente' ${soloActivos ? 'AND activo = 1' : ''}`,
+    ),
     leerCuadro(db),
   ]);
 

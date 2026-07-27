@@ -103,6 +103,14 @@ export function esDeLaCasa(persona) {
  */
 export const DIAS_DE_GRACIA_CORRECCION = 7;
 
+/**
+ * Igual que en la lectura del registro: entre desplegar el Worker y marcar la
+ * casilla de las migraciones hay una ventana en la que la tabla no existe, y
+ * esto se ejecuta después de **cada** lote de cambios. Sin el resguardo, esa
+ * ventana convierte cualquier escritura de la agenda en un error.
+ */
+const sinTablaTodavia = (error) => /no such table/i.test(String(error?.message || error));
+
 export async function caducarTratos(db, ahora = new Date()) {
   const limiteCambio = ahora.toISOString();
   const limiteCorreccion = new Date(ahora.getTime() - DIAS_DE_GRACIA_CORRECCION * 86400000)
@@ -121,23 +129,27 @@ export async function caducarTratos(db, ahora = new Date()) {
   // sería meter una zona horaria en la base para ganar dos horas.
   const finales = TURNOS.map((t) => `WHEN '${t.id}' THEN '${String(t.hasta).padStart(2, '0')}:00:00'`).join(' ');
 
-  await db
-    .prepare(
-      `UPDATE trato_paseo
-          SET estado = 'caducado', resuelto_en = ?, actualizado_en = ?
-        WHERE estado = 'pendiente' AND activo = 1 AND clase = 'cambio'
-          AND fecha || 'T' || (CASE turno ${finales} ELSE '23:59:59' END) < ?`,
-    )
-    .bind(limiteCambio, limiteCambio, limiteCambio)
-    .run();
+  try {
+    await db
+      .prepare(
+        `UPDATE trato_paseo
+            SET estado = 'caducado', resuelto_en = ?, actualizado_en = ?
+          WHERE estado = 'pendiente' AND activo = 1 AND clase = 'cambio'
+            AND fecha || 'T' || (CASE turno ${finales} ELSE '23:59:59' END) < ?`,
+      )
+      .bind(limiteCambio, limiteCambio, limiteCambio)
+      .run();
 
-  await db
-    .prepare(
-      `UPDATE trato_paseo
-          SET estado = 'caducado', resuelto_en = ?, actualizado_en = ?
-        WHERE estado = 'pendiente' AND activo = 1 AND clase = 'correccion'
-          AND fecha < ?`,
-    )
-    .bind(limiteCambio, limiteCambio, limiteCorreccion)
-    .run();
+    await db
+      .prepare(
+        `UPDATE trato_paseo
+            SET estado = 'caducado', resuelto_en = ?, actualizado_en = ?
+          WHERE estado = 'pendiente' AND activo = 1 AND clase = 'correccion'
+            AND fecha < ?`,
+      )
+      .bind(limiteCambio, limiteCambio, limiteCorreccion)
+      .run();
+  } catch (error) {
+    if (!sinTablaTodavia(error)) throw error;
+  }
 }

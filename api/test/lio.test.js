@@ -222,6 +222,41 @@ test('el cambio caduca al cerrarse la ventana de su turno, y la corrección a la
   assert.equal(correcciones[0].args[2], '2026-07-23');
 });
 
+// ------------------------------------------- Antes de aplicar la migración --
+
+/** Base que se comporta como la de verdad mientras faltan las tablas de Lio. */
+function baseSinLasTablas() {
+  const base = baseFalsa();
+  const prepararOriginal = base.prepare.bind(base);
+  base.prepare = (sql) => {
+    if (!/\b(paseo|trato_paseo)\b/.test(sql)) return prepararOriginal(sql);
+    const estallar = async () => { throw new Error('D1_ERROR: no such table: paseo: SQLITE_ERROR'); };
+    const acciones = { first: estallar, run: estallar, all: estallar };
+    return { ...acciones, bind: () => acciones };
+  };
+  return base;
+}
+
+test('el registro se lee aunque las tablas de Lio no estén todavía', async () => {
+  const { leerRegistro } = await import('../src/repositorio.js');
+  const registro = await leerRegistro(baseSinLasTablas());
+  assert.deepEqual(registro.paseos, []);
+  assert.deepEqual(registro.tratos_paseo, []);
+});
+
+test('caducar no estalla mientras la tabla no existe', async () => {
+  await caducarTratos(baseSinLasTablas(), new Date('2026-07-30T12:00:00Z'));
+});
+
+test('un error de base que no sea la tabla ausente sí sube', async () => {
+  const base = baseFalsa();
+  base.prepare = () => {
+    const estallar = async () => { throw new Error('D1_ERROR: database is locked'); };
+    return { first: estallar, run: estallar, all: estallar, bind: () => ({ first: estallar, run: estallar, all: estallar }) };
+  };
+  await assert.rejects(() => caducarTratos(base), /database is locked/);
+});
+
 test('los dos turnos y sus ventanas son los acordados', () => {
   assert.deepEqual(TURNOS.map((t) => [t.id, t.desde, t.hasta]), [
     ['manana', 6, 10],
