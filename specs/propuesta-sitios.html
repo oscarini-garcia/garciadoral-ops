@@ -147,6 +147,32 @@
   .tarjeta p { font-size: 14.5px; color: var(--ink-soft); }
   .tarjeta-fila { display: flex; align-items: center; gap: 9px; }
 
+  /* La cabecera de la aplicación: título, y los mandos contra el borde. */
+  .cabecera-maqueta { display: flex; align-items: center; gap: 8px; padding: 6px 0 0; }
+  .titulo-maqueta { font-family: var(--serif); font-size: 21px; flex: 1; min-width: 0; }
+  .icono-cabecera {
+    width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+    color: var(--ink-soft); flex: none; position: relative;
+  }
+  .icono-cabecera svg { width: 20px; height: 20px; }
+  .icono-cabecera[data-lleno="si"] { color: var(--tinta); }
+  .globo-icono {
+    position: absolute; top: 3px; right: 3px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--tinta); border: 1.5px solid var(--paper);
+  }
+  .punto-sync { width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); flex: none; }
+
+  .hoja-cabeza { display: flex; align-items: flex-start; gap: 10px; padding: 2px 0 4px; }
+  .hoja-cabeza .tel-titulo { flex: 1; min-width: 0; }
+  .hoja-verbos { display: flex; gap: 6px; flex: none; padding-top: 4px; }
+  .icono-accion {
+    width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; flex: none;
+    background: var(--tinta-suave); color: var(--tinta);
+  }
+  .icono-accion svg { width: 19px; height: 19px; }
+  .icono-accion[data-tono="discreto"] { color: var(--ink-soft); background: var(--paper-2); }
+  .icono-accion[data-tono="peligro"] { color: var(--regalo); background: transparent; }
+
   .apunte {
     display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
     padding: 9px 0; border-bottom: 1px solid var(--line); min-height: 44px;
@@ -250,14 +276,21 @@
 <div class="doc">
 
   <header class="portada">
-    <p class="rotulo">Propuesta · julio de 2026 · segunda vuelta</p>
+    <p class="rotulo">Propuesta · julio de 2026 · tercera vuelta</p>
     <h1>Sitios: el módulo, y los avisos como pieza común</h1>
     <p>
-      El nombre está elegido y la forma también. Esta vuelta desarrolla lo que
-      quedaba: la hoja del apunte, escribir apuntes con un modelo, compartir un sitio,
-      qué hacer con Buscar —poco— y la pregunta que salió al final y que resultó ser
-      la más grande de todas: <strong>si lo que se está acumulando en Hoy no es ya un
-      módulo de avisos</strong>.
+      El nombre está elegido, la forma también, y en esta tercera vuelta quedan cerradas
+      las clases, la hoja del apunte con sus tres verbos arriba, el modelo que propone
+      apuntes, qué se comparte de un sitio y qué de un apunte, y Buscar, que se va sin
+      sustituto.
+    </p>
+    <p>
+      Queda una sola decisión abierta, y es la que tiene la parte 5: <strong>dónde viven
+      los avisos</strong>. El módulo se ha quedado con lo que hay que contestar y nada más
+      —las novedades pasan a ser marcas dentro de cada pantalla—, y eso cambia la pregunta
+      del sobre en la cabecera: hay cuatro sitios posibles, medidos por lo que de verdad
+      los separa, que es cuántos toques cuesta contestar y cuántos días el dibujo no dice
+      nada.
     </p>
   </header>
 
@@ -280,7 +313,15 @@
           </tr>
           <tr class="decidido">
             <td><strong>Las clases</strong></td>
-            <td>Los tres verbos <strong>y uno general</strong>. La parte 2 propone cómo llamarlo.</td>
+            <td><strong>Llevar · Hacer · Ir · Saber</strong>, y «Saber» es la que va puesta de origen.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>El apunte</strong></td>
+            <td>Con descripción, y se abre. En su hoja, tres verbos arriba junto al título: <strong>editar, compartir y borrar</strong>.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Compartir</strong></td>
+            <td>El sitio entero, sin votos ni comentarios. Y el apunte suelto, ese <strong>sí con la descripción y el hilo</strong>.</td>
           </tr>
           <tr class="decidido">
             <td><strong>El voto</strong></td>
@@ -296,7 +337,11 @@
           </tr>
           <tr class="decidido">
             <td><strong>El aviso</strong></td>
-            <td>Opción 1: dentro de la aplicación, derivado en el dispositivo. Las notificaciones remotas van aparte y después.</td>
+            <td>Dentro de la aplicación y derivado en el dispositivo, y <strong>de momento solo lo que hay que contestar</strong>. Lo demás, marcas en contexto. Las remotas van aparte y después.</td>
+          </tr>
+          <tr class="decidido">
+            <td><strong>Buscar</strong></td>
+            <td>Se retira sin sustituto. Si algún día duele, una lupa en la cabecera de Regalos; nunca otra vez un hueco de la barra.</td>
           </tr>
         </tbody>
       </table>
@@ -370,7 +415,20 @@
       <div>
         <div class="tel">
           <p class="tel-rot">Apunte abierto</p>
-          <p class="tel-titulo">Subir a la duna al atardecer</p>
+          <div class="hoja-cabeza">
+            <p class="tel-titulo" style="padding-bottom: 0;">Subir a la duna al atardecer</p>
+            <div class="hoja-verbos">
+              <span class="icono-accion" title="Editar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+              </span>
+              <span class="icono-accion" data-tono="discreto" title="Compartir">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg>
+              </span>
+              <span class="icono-accion" data-tono="peligro" title="Borrar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+              </span>
+            </div>
+          </div>
           <p class="tel-sub">Bolonia · Hacer · lo apuntó Marta</p>
           <div class="tel-cuerpo">
             <div class="grupo">
@@ -420,6 +478,22 @@
             sitio es, de qué clase y quién lo apuntó. El sitio es tocable y devuelve allí,
             que es cómo se sale de un apunte al que se ha llegado desde un aviso y no desde
             su lista.
+          </p>
+          <p>
+            <strong>Y los verbos van arriba, junto al título</strong>, con los iconos y los
+            tonos que ya usa el detalle del evento: editar en tinta, compartir en gris y
+            <strong>borrar en el color de los regalos</strong>, que es el que la aplicación
+            reserva para lo que no tiene vuelta. Son tres, y el evento tiene dos.
+          </p>
+          <p>
+            <strong>La diferencia con el evento es a propósito y conviene dejarla escrita</strong>,
+            porque rompe una regla que hay escrita en el código: allí borrar no vive en la
+            cabecera sino dentro del formulario, «porque es una operación de edición y está
+            donde se edita». Un evento tiene invitados, regalos colgando y un hilo; un
+            apunte es una línea con una descripción, y su formulario son dos campos.
+            Mandar a alguien a abrir un formulario para tirar una línea es abrir un
+            formulario para nada. <strong>Cuando lo que se borra es del tamaño de lo que se
+            escribe, el verbo puede estar a la vista.</strong>
           </p>
           <p>
             <strong>El voto se escribe en letra debajo de la pastilla</strong> —«A Marta y a
@@ -589,15 +663,62 @@ instrucción                    · <b>configuracion.apunte</b>, editable en Ajus
             comparte hacia fuera del círculo, y ahí no puede viajar quién dijo qué.
           </p>
           <p>
-            <strong>Un apunte suelto también se comparte</strong>, desde su hoja, y ahí sí
-            va el detalle entero: es lo que se manda cuando alguien pregunta por una cosa
-            concreta.
-          </p>
-          <p>
             <strong>No pasa por el modelo.</strong> El plan de la semana sí lo hace, porque
             allí hay que convertir filas en un párrafo que se lea. Aquí el contenido ya son
             frases escritas por personas, y meter un modelo entre medias solo introduciría
             la posibilidad de que cambie lo que alguien escribió.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="padding-top: 10px;">Y un apunte suelto, con todo</h3>
+
+    <div class="par">
+      <div>
+        <div class="codigo">📍 <b>Subir a la duna al
+   atardecer</b>
+🏖 Bolonia
+
+Se tarda como media hora y
+hay que ir con zapatillas,
+la arena quema hasta las
+ocho. Merece la pena llegar
+arriba antes de que se
+ponga el sol.
+
+<b>Óscar</b> · ¿Se puede subir
+con el carro?
+<b>Marta</b> · Ni de broma, es
+todo arena. La llevamos en
+brazos.
+<b>Julia</b> · Yo me apunto pero
+el sábado no, que llego
+tarde</div>
+      </div>
+      <div>
+        <div class="nota">
+          <p>
+            <strong>Desde su hoja, con el mismo icono, y aquí sí va todo:</strong> el
+            detalle entero y el hilo de comentarios con los nombres. Es lo contrario de lo
+            que hace el sitio completo, y la diferencia no es un descuido: compartir un
+            sitio es mandar una guía, y compartir un apunte es mandar
+            <em>una conversación</em> —«mira lo que dice Marta de subir con el carro»—. Sin
+            los comentarios sería la mitad del mensaje, y sin los nombres no se entendería
+            quién contesta a quién.
+          </p>
+          <p>
+            <strong>Lo que hay que saber de eso, en una línea:</strong> es la primera vez
+            que un comentario sale del círculo de casa. No hay nada que impedir —lo comparte
+            una persona a mano, sabiendo lo que manda—, pero sí conviene que la hoja de
+            compartir lo diga antes, como ya lo dice la del evento con su pista debajo:
+            <strong>«Con su descripción y los 3 comentarios»</strong>. Nadie tiene que
+            descubrir después lo que acaba de enviar.
+          </p>
+          <p>
+            <strong>Un apunte sin comentarios se comparte igual</strong>, y entonces la
+            pista dice solo «Con su descripción». La frase se compone con lo que hay, que es
+            lo que la hace fiable.
           </p>
         </div>
       </div>
@@ -608,43 +729,59 @@ instrucción                    · <b>configuracion.apunte</b>, editable en Ajus
 
   <section class="parte">
     <p class="rotulo">Parte 5</p>
-    <h2>Sí, es un módulo de avisos</h2>
+    <h2>Los avisos: qué llevan, y dónde viven</h2>
+
+    <div class="nota veredicto">
+      <p>
+        <strong>Primero, lo que se acaba de decidir, porque cambia la pregunta siguiente:
+        el módulo de avisos lleva, de momento, solo lo que hay que contestar.</strong> Se
+        cae el segundo grupo, el de «Nuevo desde ayer». Un comentario nuevo se seguirá
+        sabiendo, pero <strong>en su sitio y no en una lista</strong>: el punto en la tarjeta
+        del sitio, el punto en la línea del apunte y la raya de «sin leer» dentro del hilo.
+        Enterarse mientras se recorre lo que se estaba mirando, en vez de leer un parte de
+        novedades.
+      </p>
+      <p>
+        Esa decisión tiene una consecuencia inmediata sobre lo que viene después, y por eso
+        va aquí arriba: <strong>lo que queda en el módulo es poco, raro y urgente</strong>.
+        Hoy es una sola fuente —las peticiones de turno de Lío—, que aparecen unas pocas
+        veces por semana; y cuando aparecen, alguien está esperando para saber si el jueves
+        saca al perro.
+      </p>
+    </div>
+
+    <h3 style="padding-top: 6px;">Y ahora sí: ¿un sobre arriba, o la banda de Hoy?</h3>
     <p>
-      La observación es correcta y llega en el momento justo. Hoy ya tiene una banda de
-      cosas que esperan a alguien, y hasta ahora esa banda era de Lío en exclusiva:
-      <code>vistas/hoy.js</code> importa <code>tratosParaMi</code> de <code>lio.js</code> y
-      dibuja sus peticiones. Con los comentarios, esa banda pasa a tener dos dueños, y en
-      cuanto tenga dos, tendrá cinco. La pregunta ya no es si hace falta la pieza, sino de
-      qué clase es.
+      Cuatro sitios donde puede vivir eso. Las dos medidas que los separan son
+      <strong>cuántos toques cuesta contestar</strong> y <strong>cuántos días al mes el
+      dibujo no dice nada</strong>; el resto son matices.
     </p>
 
     <div class="par">
       <div>
         <div class="tel">
-          <p class="tel-rot">Hoy, con los dos grupos</p>
-          <p class="tel-titulo">Buenas tardes, Óscar</p>
+          <p class="tel-rot">A · El sobre en la cabecera</p>
+          <div class="cabecera-maqueta">
+            <span class="titulo-maqueta">Buenas tardes, Óscar</span>
+            <span class="icono-cabecera" data-lleno="si">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+              <i class="globo-icono"></i>
+            </span>
+            <span class="punto-sync"></span>
+            <span class="icono-cabecera">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77 2 2 0 1 1-2.83 2.83 1.6 1.6 0 0 0-2.77 1.15 2 2 0 1 1-4 0 1.6 1.6 0 0 0-2.77-1.15 2 2 0 1 1-2.83-2.83A1.6 1.6 0 0 0 3.4 13a2 2 0 1 1 0-4 1.6 1.6 0 0 0 1.12-2.73 2 2 0 1 1 2.83-2.83A1.6 1.6 0 0 0 10 2.4a2 2 0 1 1 4 0 1.6 1.6 0 0 0 2.73 1.12 2 2 0 1 1 2.83 2.83A1.6 1.6 0 0 0 20.6 9a2 2 0 1 1 0 4 1.6 1.6 0 0 0-1.2 2z"/></svg>
+            </span>
+          </div>
+          <p class="tel-sub" style="padding-top: 8px;">lunes, 27 de julio</p>
           <div class="tel-cuerpo">
             <div class="grupo">
-              <div class="banda">
-                <span class="rot">Por contestar</span>
-                <p>Marta te pide el turno de mañana del jueves</p>
-                <div class="acciones"><span>Sí, lo saco</span><span>No puedo</span></div>
-              </div>
-            </div>
-            <div class="grupo">
-              <p class="grupo-titulo">Nuevo desde ayer</p>
+              <p class="grupo-titulo">Lío</p>
               <div>
-                <div class="aviso-fila">
-                  <span class="de-donde">📍</span>
-                  <span>Marta y Julia, en <em>«Subir a la duna al atardecer»</em></span>
+                <div class="apunte" style="grid-template-columns: 1fr;">
+                  <span class="apunte-texto"><span>☀️ Mañana · Marta</span></span>
                 </div>
-                <div class="aviso-fila">
-                  <span class="de-donde">🎁</span>
-                  <span>Óscar, en <em>«la bici de Julia»</em></span>
-                </div>
-                <div class="aviso-fila">
-                  <span class="de-donde">📅</span>
-                  <span>Marta, en <em>«Comida en casa de los abuelos»</em></span>
+                <div class="apunte" style="grid-template-columns: 1fr;">
+                  <span class="apunte-texto"><span>🌙 Noche · te toca</span></span>
                 </div>
               </div>
             </div>
@@ -652,75 +789,81 @@ instrucción                    · <b>configuracion.apunte</b>, editable en Ajus
               <p class="grupo-titulo">Hoy</p>
               <div>
                 <div class="apunte" style="grid-template-columns: 1fr;">
-                  <span class="apunte-texto"><span>🐾 Lío, noche · te toca</span></span>
-                </div>
-                <div class="apunte" style="grid-template-columns: 1fr;">
                   <span class="apunte-texto"><span>🎾 Pádel con Javi · 19:00</span></span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        <p style="font-size: 13px; color: var(--ink-faint); font-family: var(--mono); text-align: center;">
+          Hoy sin banda. La petición está detrás del sobre.
+        </p>
       </div>
 
       <div>
-        <div class="nota">
-          <p>
-            <strong>Lo primero es que son dos cosas y no una, y hoy están mezcladas.</strong>
-            Una petición de cambio de turno <em>espera una respuesta tuya</em>: no se va
-            hasta que contestes, y lleva sus verbos encima. Un comentario nuevo
-            <em>solo ha pasado</em>: no te pide nada y desaparece en cuanto lo lees. Meterlos
-            en la misma lista obliga a leer cada renglón para saber si hay que hacer algo,
-            que es justo el trabajo que una bandeja tiene que ahorrar.
-          </p>
-          <p>
-            <strong>Por eso van en dos grupos con nombres distintos: «Por contestar» y
-            «Nuevo desde ayer».</strong> El primero conserva el sitio y el peso que ya tiene
-            —arriba del todo, con las dos respuestas escritas enteras—; el segundo es una
-            lista de renglones tocables, con un emoji delante que dice de qué módulo viene.
-            Y el segundo grupo <strong>no se cuenta ni se acumula</strong>: si llevas cuatro
-            días sin abrir, no dice «17 novedades», dice lo que hay.
-          </p>
+        <div class="opcion">
+          <div class="opcion-cabeza">
+            <div class="opcion-titulo"><span class="letra">A</span><h3>El sobre siempre, y Hoy sin banda</h3></div>
+            <p>
+              Un tercer icono fijo en la cabecera, con su punto cuando hay algo. Al tocarlo
+              se abre una hoja con lo que espera. Hoy pierde la banda.
+            </p>
+          </div>
+          <div class="juicio">
+            <div class="si"><span>+</span><span><strong>Es el único de los cuatro que se alcanza desde las cinco pestañas.</strong> Si te piden el turno mientras miras Regalos, aquí te enteras; en los otros tres, no hasta que pases por Hoy. Es el argumento fuerte a su favor y conviene no despacharlo.</span></div>
+            <div class="si"><span>+</span><span>Un solo sitio para todo lo que reclame, ahora y cuando crezca. Hoy vuelve a ser solo qué hay hoy.</span></div>
+            <div class="no"><span>−</span><span><strong>Contestar pasa de un toque a tres:</strong> ver el punto, abrir el sobre, responder. Y es lo único de la aplicación donde hay alguien esperando.</span></div>
+            <div class="no"><span>−</span><span>El icono está mudo unos veinticinco días de cada treinta, y en la esquina superior derecha, que en un móvil es donde peor llega el pulgar.</span></div>
+            <div class="no"><span>−</span><span>Tres iconos seguidos arriba a la derecha, de tres naturalezas distintas: un estado que no se toca, una bandeja y un destino.</span></div>
+          </div>
         </div>
 
         <div class="opcion">
           <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">A</span><h3>Cada módulo pinta su banda en Hoy</h3></div>
-            <p>Lo que pasa hoy, extendido. <code>hoy.js</code> importa de Lío, de comentarios y de Sitios, y decide el orden a mano.</p>
+            <div class="opcion-titulo"><span class="letra">B</span><h3>El sobre solo cuando hay algo</h3></div>
+            <p>
+              Lo mismo, pero el icono no existe mientras no haya nada que contestar. La
+              cabecera de los otros veinticinco días es exactamente la de hoy.
+            </p>
           </div>
           <div class="juicio">
-            <div class="si"><span>+</span><span>Cero piezas nuevas.</span></div>
-            <div class="no"><span>−</span><span>Hoy acaba conociendo por dentro todos los módulos de la aplicación. Es la pantalla que más se toca y la que peor aguanta eso.</span></div>
-            <div class="no"><span>−</span><span>El orden y los topes se replantean cada vez que entra un módulo, porque no hay un sitio donde vivan.</span></div>
+            <div class="si"><span>+</span><span>Quita la pega del icono muerto, que es la más grande de A. Y aquí no hay motivo para dejarlo puesto en vacío: no se oculta nada a nadie —lo que espera respuesta lo ve la casa entera—, así que su ausencia no cuenta nada que no se sepa.</span></div>
+            <div class="si"><span>+</span><span>Un icono que aparece <em>es</em> el aviso. No hace falta ni el punto.</span></div>
+            <div class="no"><span>−</span><span>Aparece y desaparece, y al hacerlo mueve el punto de sincronización y los ajustes. Un mando que se mueve se toca mal.</span></div>
+            <div class="no"><span>−</span><span>Los tres toques para contestar siguen ahí.</span></div>
           </div>
         </div>
 
         <div class="opcion elegida">
           <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">B</span><h3>Un registro de avisos, derivados de la instantánea</h3></div>
+            <div class="opcion-titulo"><span class="letra">C</span><h3>Nada nuevo: la banda de Hoy, como está</h3></div>
             <p>
-              Cada módulo exporta una función que dice qué tiene pendiente para quien mira.
-              <code>avisos.js</code> las recorre, ordena y devuelve una lista; Hoy la pinta y
-              deja de saber qué es un turno de perro.
+              La banda ya <strong>solo aparece cuando hay algo</strong> —así está escrita
+              hoy—, y lleva las dos respuestas escritas enteras y del mismo tamaño. Los
+              veinticinco días sin peticiones, Hoy ya está limpio.
             </p>
           </div>
           <div class="juicio">
-            <div class="si"><span>+</span><span>Es la misma jugada que la parte 6 hace con los comentarios. La aplicación gana una idea, no dos.</span></div>
-            <div class="si"><span>+</span><span><strong>No hay estado nuevo que mantener</strong>: un aviso es una función de lo que ya está en la instantánea. Nada que sincronizar, nada que se quede obsoleto.</span></div>
-            <div class="si"><span>+</span><span>Da el punto de la pestaña y la lista de Hoy con el mismo cálculo, y sirve igual en la web y en la cáscara.</span></div>
-            <div class="no"><span>−</span><span>Un fichero más, y hay que resistir la tentación de meterle lógica: es una lista, no un motor.</span></div>
+            <div class="si"><span>+</span><span><strong>Un toque para contestar</strong>, sin abrir nada. Es la diferencia entre responder de pasada y tener que ocuparse.</span></div>
+            <div class="si"><span>+</span><span>Cero piezas nuevas, cero iconos nuevos, y la cabecera se queda con dos mandos.</span></div>
+            <div class="si"><span>+</span><span>Está delante en la pantalla con la que abre la aplicación, que es donde de verdad se mira.</span></div>
+            <div class="no"><span>−</span><span>No se ve desde las otras cuatro pestañas.</span></div>
+            <div class="no"><span>−</span><span>Y el día que haya que enseñar algo que <em>no</em> se contesta, no cabe: eso ya no puede ir en la banda.</span></div>
           </div>
         </div>
 
         <div class="opcion">
           <div class="opcion-cabeza">
-            <div class="opcion-titulo"><span class="letra">C</span><h3>Una tabla <code>aviso</code> de verdad</h3></div>
-            <p>El Worker escribe una fila cada vez que pasa algo, con su marca de leído. Una bandeja como la de cualquier aplicación grande.</p>
+            <div class="opcion-titulo"><span class="letra">D</span><h3>El punto en la pestaña de Hoy</h3></div>
+            <p>
+              Sin sobre y sin cambiar Hoy: un punto sobre el icono de la pestaña, que se ve
+              desde las otras cuatro y lleva al sitio donde ya está la banda.
+            </p>
           </div>
           <div class="juicio">
-            <div class="si"><span>+</span><span>Es lo que hará falta el día que un aviso no se pueda derivar —uno que caduque, o que alguien archive.</span></div>
-            <div class="no"><span>−</span><span><strong>Duplica un estado que ya existe</strong>, y lo duplicado se desincroniza: si contestas un trato desde la agenda, la fila del aviso se queda ahí mintiendo, y hay que ir a borrarla.</span></div>
-            <div class="no"><span>−</span><span>Una tabla, una migración y una escritura por suceso, para enseñar tres renglones que ya se sabían.</span></div>
+            <div class="si"><span>+</span><span>Recupera lo único que le falta a C —enterarse desde otra pestaña— sin gastar un icono en la cabecera ni tocar la pantalla.</span></div>
+            <div class="si"><span>+</span><span>La barra de abajo está donde llega el pulgar, al revés que la esquina de arriba.</span></div>
+            <div class="no"><span>−</span><span>Un punto en una pestaña dice «hay algo», no dice qué. Sigue costando ir a mirar.</span></div>
           </div>
         </div>
       </div>
@@ -728,43 +871,72 @@ instrucción                    · <b>configuracion.apunte</b>, editable en Ajus
 
     <div class="nota veredicto">
       <p>
-        <strong>B, el registro derivado</strong>, y con un nombre que hay que elegir bien
-        porque va a durar: <code>avisos.js</code>, hermano de <code>comentarios.js</code>,
-        fuera de las vistas. Un módulo se da de alta con una línea, y esa línea dice tres
-        cosas: <strong>de dónde viene</strong> (emoji y a dónde lleva),
-        <strong>si espera respuesta o solo ha pasado</strong>, y <strong>desde cuándo</strong>.
+        <strong>C ahora, y D encima si la falta se nota. El sobre queda diseñado y sin
+        construir.</strong> La razón es la decisión de arriba: al dejar en el módulo solo lo
+        que hay que contestar, <strong>lo que ensuciaba Hoy se ha ido por su propio pie</strong>.
+        Lo que quedaba —la lista de novedades— es justo lo que ahora vive como marcas dentro
+        de cada módulo. Y lo que queda en la banda no es adorno: es lo único de la aplicación
+        donde otra persona está esperando, y meterlo detrás de un sobre le añade dos toques y
+        lo manda a la esquina que peor se alcanza.
       </p>
       <p>
-        <strong>Y aquí está el argumento que decide de verdad, que es el de dentro de seis
-        meses:</strong> cuando llegue APNs, el servidor tendrá que contestar exactamente la
-        misma pregunta —«¿qué tiene pendiente esta persona?»— para saber qué empujar. Si esa
-        pregunta hoy está repartida por dentro de <code>hoy.js</code>, habrá que volver a
-        escribirla en el Worker y a partir de ahí serán dos, con la garantía de que un día
-        dirán cosas distintas. Si vive en una función que solo depende de la instantánea, se
-        vuelve a escribir <strong>con la misma forma</strong> en el Worker, que es como ya
-        están Lío y la visibilidad —espejados en tres lenguajes y con la regla en un sitio
-        reconocible—. <strong>La opción B no es la que hace falta para los comentarios: es
-        la que hace falta para lo que viene después.</strong>
+        <strong>El sobre no es una mala idea: es una idea que aún no tiene inquilinos.</strong>
+        Cobra sentido el día que haya un segundo tipo de aviso —el que solo ha pasado— y no
+        quepa en una banda de dos botones. Ese día se construye <strong>B</strong>, con la
+        banda de Hoy quedándose lo que se contesta y el sobre llevando lo que solo se lee.
+        Que es, mirado con distancia, la misma división que esta propuesta acaba de hacer sin
+        icono ninguno.
       </p>
       <p>
-        <strong>El punto va en Hoy y en ninguna otra pestaña.</strong> Un punto en Sitios,
-        otro en Regalos y otro en la agenda convierten la barra en un semáforo y dejan de
-        significar nada. Dentro de cada módulo sí hay marca en contexto —la tarjeta del
-        sitio y la línea del apunte llevan su punto—, que es donde de verdad ayuda: el
-        recuento en un solo sitio, las marcas donde están las cosas.
-      </p>
-      <p>
-        <strong>No es una pestaña.</strong> La barra tiene cinco huecos y están los cinco
-        ocupados; y una bandeja a la que hay que ir no es una bandeja, es una tarea más.
-        Vive arriba de Hoy, que es la pantalla con la que abre la aplicación.
+        <strong>Y si aun así se quiere el sobre ya</strong>, la recomendación entre las dos
+        formas es <strong>B sobre A</strong>: un icono que solo existe cuando hay algo dice
+        más que un icono permanente con un punto, y no deja veinticinco días de dibujo mudo.
       </p>
     </div>
 
-    <div class="codigo">// avisos.js — el registro entero cabe aquí
+    <div class="nota">
+      <p>
+        <strong>Y tres cosas que se deciden ahora aunque el sobre no se construya</strong>,
+        para que el día que se construya no haya que volver a discutirlas:
+      </p>
+      <p>
+        <strong>Sobre y no campana.</strong> La campana es el icono estándar de las
+        notificaciones y aquí sería mentira: esta aplicación no puede sonar —los avisos se
+        programan en el dispositivo y no hay APNs—, y un icono que promete un ruido que
+        nunca llega enseña a no fiarse de él. Un sobre promete algo que se lee, que es
+        exactamente lo que hay.
+      </p>
+      <p>
+        <strong>Un punto, no un número.</strong> Es la regla que ya siguió el indicador de
+        sincronización: se le quitó la palabra porque decía «al día» el 99 % del tiempo. Un
+        número obliga además a decidir qué cuenta, y contar avisos es empezar a producirlos.
+      </p>
+      <p>
+        <strong>Y va a la izquierda del punto de sincronización</strong>, no a la derecha de
+        los ajustes: los ajustes son el borde, el sitio al que se va a configurar, y llevan
+        ahí desde el principio. Lo nuevo se mete por dentro, no empuja lo que ya tenía su
+        esquina.
+      </p>
+    </div>
+
+    <h3 style="padding-top: 6px;">Lo que no cambia: el registro sigue siendo la pieza</h3>
+    <p>
+      Elija la banda o el sobre, quien reúne lo que espera a alguien es
+      <code>avisos.js</code>, derivado de la instantánea y no de una tabla. Hoy tiene una
+      sola fuente y podría hacerse sin él —como está hecho ahora, con
+      <code>hoy.js</code> importando <code>tratosParaMi</code> de <code>lio.js</code>—, y la
+      razón de escribirlo igualmente es la de después: <strong>cuando llegue APNs, el
+      servidor tendrá que contestar la misma pregunta</strong>, «¿qué tiene pendiente esta
+      persona?», y si esa pregunta vive repartida por dentro de una vista habrá que
+      escribirla otra vez en el Worker. A partir de ahí serían dos, con la garantía de que un
+      día dirán cosas distintas. En una función que solo depende de la instantánea se
+      reescribe con la misma forma, como ya están espejados Lío y la visibilidad.
+    </p>
+
+    <div class="codigo">// avisos.js — con una fuente, y sitio hecho para las que vengan
 const FUENTES = [
-  { de: 'lio',      emoji: '🐾', clase: <b>'contestar'</b>, buscar: tratosParaMi },
-  { de: 'comentario', emoji: null, clase: <b>'nuevo'</b>,   buscar: hilosConRespuesta },
-  <i>// y el día que haya algo más, una línea más</i>
+  { de: 'lio', emoji: '🐾', clase: <b>'contestar'</b>, buscar: tratosParaMi },
+  <i>// 'nuevo' entra cuando haya dónde enseñarlo. Hoy no lo hay, y no se inventa.</i>
 ];</div>
   </section>
 
@@ -882,9 +1054,8 @@ POST /api/sitio/apuntar   cinco propuestas para un sitio y una clase</div>
     <p class="rotulo">Parte 9</p>
     <h2>Lo que queda por decidir</h2>
     <ul class="lista-seca">
-      <li><strong>Si la cuarta clase se llama «Saber»</strong>, y si es la que va puesta por defecto.</li>
+      <li><strong>Dónde viven los avisos</strong>, que es la única grande que queda: la banda de Hoy como está (C), el punto en la pestaña (D) o el sobre en la cabecera (B). La propuesta es C ahora y el sobre diseñado y sin construir.</li>
       <li><strong>Dónde vive el verbo del modelo</strong>: dentro del formulario de apunte nuevo, o como un renglón al final de cada grupo.</li>
-      <li><strong>Si el segundo grupo de avisos debería poder silenciarse por módulo</strong> —«los comentarios de regalos no me los cuentes»—, que hoy se propone que no y sería una preferencia más en Ajustes.</li>
       <li><strong>Si un sitio debería poder salir del círculo de casa</strong> para enseñar la guía del pueblo a la familia extendida. Hoy se propone que no, y es lo más fácil de revertir.</li>
       <li><strong>Qué se hace con <code>ux.md</code> §7.3</strong> cuando Buscar se retire: se propone dejarlo escrito como historia, con una línea que diga por qué se fue, y no borrarlo.</li>
     </ul>

@@ -32,23 +32,34 @@ pendiente. El hook lo inyecta al final del mapa.
   saber**, cada uno con descripción y hoja propia, con voto —un pulgar, con las
   iniciales de quien votó en vez de un número— e hilo de comentarios; en el hueco
   que deja Buscar en la barra de abajo, que se retira sin sustituto. **Borrar un
-  sitio exige vaciarlo antes.** Lleva dos cosas más: apuntes escritos por un
-  modelo, que es un encargo más de los que ya viven en Ajustes y un extremo más en
-  el Worker, y compartir el sitio entero como texto plano, sin votos ni
-  comentarios. Queda por decidir **dónde vive el verbo del modelo** y **si la
-  cuarta clase se llama «Saber»**.
+  sitio exige vaciarlo antes.** La hoja del apunte lleva sus tres verbos arriba
+  junto al título —editar, compartir y borrar—, y ahí **se desvía a propósito de la
+  regla del evento**, que manda borrar al formulario: un apunte es una línea y su
+  formulario son dos campos. Lleva dos cosas más: apuntes escritos por un modelo,
+  que es un encargo más de los que ya viven en Ajustes y un extremo más en el
+  Worker, y compartir, que va a dos alturas y con dos contenidos distintos —el sitio
+  entero **sin** votos ni comentarios, porque sale del círculo de casa; un apunte
+  suelto **con** su descripción y su hilo, porque ahí lo que se manda es la
+  conversación, y la hoja lo dice antes de enviar—. Queda por decidir **dónde vive
+  el verbo del modelo**.
 - **Y de ahí sale una pieza que no es de Sitios: `avisos.js`.** Lo que se acumula
   arriba de Hoy ya es un módulo de avisos —hoy `vistas/hoy.js` importa
-  `tratosParaMi` de `lio.js` y dibuja sus peticiones, y con los comentarios esa
-  banda pasa a tener dos dueños—. Lo decidido es **un registro derivado de la
-  instantánea**, no una tabla: cada módulo dice qué tiene pendiente para quien
-  mira, y Hoy lo pinta sin saber qué es un turno de perro. Son **dos grupos y no
-  uno** —«Por contestar», que espera respuesta, y «Nuevo desde ayer», que solo ha
-  pasado—, y **el punto va en la pestaña de Hoy y en ninguna otra**. La razón de
-  fondo es la de después: cuando llegue APNs, el servidor tendrá que contestar esa
-  misma pregunta, y si vive repartida por dentro de `hoy.js` habrá que escribirla
-  dos veces. La marca de leído empieza **local**, junto a la instantánea, y la
-  tabla llegará con las notificaciones remotas, no antes.
+  `tratosParaMi` de `lio.js` y dibuja sus peticiones—. Lo decidido es **un registro
+  derivado de la instantánea**, no una tabla: cada módulo dice qué tiene pendiente
+  para quien mira, y Hoy lo pinta sin saber qué es un turno de perro. **Lleva solo
+  lo que hay que contestar**; que a uno le hayan comentado se sabe por **marcas en
+  contexto** —punto en la tarjeta del sitio, punto en la línea del apunte, raya de
+  «sin leer» dentro del hilo— y no por una lista de novedades. La razón de escribir
+  el registro aun con una sola fuente es la de después: cuando llegue APNs, el
+  servidor tendrá que contestar esa misma pregunta, y si vive repartida por dentro
+  de `hoy.js` habrá que escribirla dos veces. La marca de leído empieza **local**,
+  junto a la instantánea; la tabla llegará con las remotas, no antes.
+  Queda abierto **dónde se enseña eso**: la banda de Hoy como está hoy, un punto en
+  la pestaña de Hoy, o un sobre en la cabecera. La propuesta es dejarlo en la banda
+  —se contesta de un toque, y el sobre lo mandaría a la esquina que peor alcanza el
+  pulgar por tres— y construir el sobre el día que haya un aviso que no se conteste.
+  Si se construye, va **solo cuando hay algo**, con sobre y no campana —una campana
+  que no puede sonar es mentira— y con punto y no número.
 - **Y la parte que importa aunque nada de eso se construya: los comentarios están
   enchufados a medias.** `pwa/publico/js/comentarios.js` es una pieza compartida de verdad,
   pero solo se la llama con `'evento'` —`vistas/semana.js` y `vistas/regalos.js`,
