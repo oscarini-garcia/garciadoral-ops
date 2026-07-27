@@ -71,8 +71,17 @@ pendiente. El hook lo inyecta al final del mapa.
   `CHECK` de la tabla se retiró en la `0009`, que es lo que hacía que cada módulo
   nuevo costara rehacerla. **Idea y regalo enseñan por fin su hilo**, que el modelo
   les prometía desde el principio y ninguna pantalla cumplía. Y la pieza creció lo
-  justo: fecha en palabras, borrar el comentario propio, una frase cuando está
-  vacío y la raya de «sin leer».
+  justo: fecha en palabras, borrar el comentario propio y la raya de «sin leer».
+  **Pero se dibuja como el extra que es**, no como una sección más de la hoja: sin
+  rótulo, cada comentario en un renglón corrido y en gris —nombre en tinta, texto
+  y cuándo en gris—, el campo sin caja y con el «Enviar» apareciendo al escribir.
+  Ocupaba 87 de los 331 puntos del detalle de un evento sin ningún comentario;
+  ahora 34, y 110 con dos en vez de 215. Se retiró la frase de «nadie ha dicho
+  nada todavía», que costaba cuarenta puntos por decir lo que el hueco ya decía, y
+  el tinte de la barra de cada comentario nuevo, porque la raya de «sin leer» ya
+  dice dónde empieza lo que falta. **Lo que no se hizo fue esconderlos** detrás de
+  un plegable, que ocupaba menos todavía: un comentario existe para que otro lo
+  lea. Las cuatro formas están en `specs/prototipo-comentarios.html`.
 - **Buscar se retiró de la barra** y no se sustituye. De las tres colecciones que
   su búsqueda global cubría, solo el banco de ideas acumula volumen. Si algún día
   duele, lo apuntado es **una lupa en la cabecera de Regalos** que filtre esa
