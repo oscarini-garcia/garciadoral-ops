@@ -94,8 +94,16 @@ export function esDeLaCasa(persona) {
  *
  * Un cambio caduca cuando termina la ventana de su turno: aceptarlo después no
  * significaría nada, y dejarlo vivo llenaría la bandeja de peticiones de días
- * que ya pasaron. Una corrección habla del pasado y no vence con él, pero
- * tampoco puede esperar indefinidamente: se le da una semana.
+ * que ya pasaron.
+ *
+ * Una corrección habla del pasado y no vence con él, pero tampoco puede esperar
+ * indefinidamente: se le da una semana **desde que se pide**, y no desde la
+ * fecha del turno. Contándola desde el turno había un caso que fallaba callando:
+ * quien marcaba un turno ajeno de hace más de siete días creaba una propuesta ya
+ * caducada, que moría en la sincronización siguiente sin que nadie pudiera
+ * aceptarla. Se veía marcar y no quedaba nada. Contada desde que se pide,
+ * cualquier corrección tiene siempre su semana para que la contesten, sea de
+ * anteayer o del mes pasado.
  *
  * Al caducar no hay nada que deshacer. Mientras una propuesta está pendiente el
  * turno sigue siendo de quien lo tenía —el trato no adelanta nada—, de modo que
@@ -114,8 +122,7 @@ const sinTablaTodavia = (error) => /no such table/i.test(String(error?.message |
 export async function caducarTratos(db, ahora = new Date()) {
   const limiteCambio = ahora.toISOString();
   const limiteCorreccion = new Date(ahora.getTime() - DIAS_DE_GRACIA_CORRECCION * 86400000)
-    .toISOString()
-    .slice(0, 10);
+    .toISOString();
 
   // El fin de la ventana se compone en SQL a partir de la fecha del turno para
   // no traerse las filas al Worker solo para compararlas con el reloj. La
@@ -142,10 +149,13 @@ export async function caducarTratos(db, ahora = new Date()) {
 
     await db
       .prepare(
+        // Por `creado_en` y no por `fecha`: el plazo corre desde que se pide. Lo
+        // escribe `aplicarCambio` con la marca del dispositivo, en el mismo
+        // formato ISO con el que se compara aquí.
         `UPDATE trato_paseo
             SET estado = 'caducado', resuelto_en = ?, actualizado_en = ?
           WHERE estado = 'pendiente' AND activo = 1 AND clase = 'correccion'
-            AND fecha < ?`,
+            AND creado_en < ?`,
       )
       .bind(limiteCambio, limiteCambio, limiteCorreccion)
       .run();

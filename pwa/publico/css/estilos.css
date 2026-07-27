@@ -497,7 +497,13 @@ button { background: none; border: 0; cursor: pointer; }
   background: transparent; border-color: var(--aviso); border-style: dashed; color: var(--aviso);
 }
 .lio-marca[data-estado="sin-asignar"] { background: transparent; color: var(--ink-faint); }
-.lio-marca[data-mio="si"] { box-shadow: 0 0 0 1.5px var(--tinta); }
+
+/* El turno propio se dice con el fondo y no con un anillo alrededor. El anillo
+   se salía de la pastilla y llamaba más la atención que el estado del turno,
+   que es lo que de verdad hay que leer al recorrer la semana. Solo se tiñe lo
+   que está por venir: un turno propio ya hecho es antes hecho que mío, y uno
+   que venció sin marcar es antes un olvido. */
+.lio-marca[data-estado="previsto"][data-mio="si"] { background: var(--tinta-suave); color: var(--tinta); }
 .lio-marca[data-pedido="si"] { border-color: var(--regalo); border-style: dashed; color: var(--regalo); }
 
 /* El cuadro de Ajustes: una línea por día y el nombre escrito entero.

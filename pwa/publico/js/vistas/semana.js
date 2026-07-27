@@ -30,7 +30,7 @@ import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 import {
   TURNOS, desmarcar, genteDeCasa, hayLio, inicialesDe, marcarHecho, pedirCambio,
-  resolverPropuesta, retirarPropuesta, turnoDe, turnosDe,
+  reclamarTurno, resolverPropuesta, retirarPropuesta, turnoDe, turnosDe,
 } from '../lio.js';
 
 let modo = 'semana';
@@ -484,7 +484,9 @@ export function abrirLioDelDia(fecha, ctx) {
  * importa de la agenda, y la agenda no importa de Hoy.
  */
 export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
-  const puedeMarcar = turno.estado !== 'hecho' && !turno.trato;
+  // Marcar solo cuando la ventana ha abierto: a las cuatro de la tarde nadie
+  // puede decir que ha sacado al perro en el turno de noche.
+  const puedeMarcar = turno.estado !== 'hecho' && !turno.trato && turno.empezado;
   const rotulo = rezagado
     ? `Ayer por la ${turno.turno.nombre.toLowerCase()}`
     : turno.turno.nombre;
@@ -517,8 +519,8 @@ export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
       class: 'lio-visto empujar', type: 'button',
       'aria-label': turno.mio || turno.estado === 'sin-asignar'
         ? `Marcar que ya está: ${rotulo.toLowerCase()}`
-        : `Decir que lo sacaste tú: ${rotulo.toLowerCase()}`,
-      title: turno.mio || turno.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo',
+        : `Reclamar el turno: ${rotulo.toLowerCase()}`,
+      title: turno.mio || turno.estado === 'sin-asignar' ? 'Ya está' : 'Reclamar',
       onclick: async () => {
         toque();
         const resultado = await marcarHecho(ctx.vista.datos, turno);
@@ -579,14 +581,27 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
     cuerpo.append(el('p', { class: 'pista', texto: formatearFechaLarga(fecha) }));
     cuerpo.append(el('p', { texto: mayuscula(resumenDeTurno(estado, ctx)) }));
 
-    if (estado.trato) cuerpo.append(bloqueDePropuesta(estado.trato, ctx));
-
-    // Con una propuesta viva no se ofrece marcar: primero se contesta lo que
-    // hay encima de la mesa, que puede cambiar de quién es el turno.
-    const acciones = el('div', { class: 'acciones' });
     if (estado.trato) {
-      /* la propuesta ya está pintada arriba, con sus dos respuestas */
-    } else if (estado.estado !== 'hecho') {
+      // Con una propuesta viva no se ofrece nada más: primero se contesta lo
+      // que hay encima de la mesa, que puede cambiar de quién es el turno.
+      cuerpo.append(bloqueDePropuesta(estado.trato, ctx));
+      return;
+    }
+
+    const acciones = el('div', { class: 'acciones' });
+
+    if (estado.estado === 'hecho') {
+      if (estado.hechoPorId === yo) {
+        acciones.append(el('button', {
+          class: 'boton', type: 'button',
+          onclick: async () => { await desmarcar(estado); cerrarHoja(); ctx.refrescar(); },
+        }, ['Deshacer']));
+      }
+    } else if (estado.empezado) {
+      // La ventana está abierta o ya pasó: aquí sí cabe decir que el perro
+      // salió. Si el turno era de otro, eso no lo marca todavía —se le pregunta
+      // a quien lo tenía—, y por eso el verbo dice lo que uno hizo y no lo que
+      // el sistema apunta.
       acciones.append(el('button', {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
@@ -595,24 +610,38 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
           avisar(resultado?.marcado ? 'Marcado' : 'Se lo he preguntado a quien le tocaba');
           ctx.refrescar();
         },
-      }, [estado.mio || estado.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo']));
-    } else if (estado.hechoPorId === yo) {
+      }, [estado.mio || estado.estado === 'sin-asignar' ? 'Ya está' : 'Reclamar']));
+    } else if (!estado.mio && estado.asignadoId) {
+      // Un turno que aún no ha empezado y que es de otro: lo único que cabe es
+      // ofrecerse a sacarlo, y hace falta que esa persona diga que sí.
       acciones.append(el('button', {
-        class: 'boton', type: 'button',
+        class: 'boton crecer', type: 'button',
         onclick: async () => {
-          await desmarcar(estado);
+          await reclamarTurno(ctx.vista.datos, estado);
           cerrarHoja();
+          avisar(`Se lo he dicho a ${ctx.vista.nombre(estado.asignadoId)}`);
           ctx.refrescar();
         },
-      }, ['Deshacer']));
+      }, ['Reclamar']));
+    } else if (!estado.asignadoId) {
+      // Sin dueño no hay a quién preguntarle: se coge y ya está.
+      acciones.append(el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async () => {
+          await marcarHecho(ctx.vista.datos, estado);
+          cerrarHoja();
+          avisar('Marcado');
+          ctx.refrescar();
+        },
+      }, ['Lo saco yo']));
     }
+
     if (acciones.childElementCount) cuerpo.append(acciones);
 
-    // Pedir el cambio solo tiene sentido sobre lo que uno tiene por delante: un
-    // turno vencido ya no lo puede sacar nadie.
-    if (estado.mio && estado.estado === 'previsto' && !estado.trato) {
-      cuerpo.append(selectorDeRelevo(estado, ctx));
-    }
+    // Buscar quien lo saque por uno tiene sentido mientras el turno no esté
+    // hecho y siga habiendo ventana por delante: un turno vencido ya no lo
+    // puede sacar nadie.
+    if (estado.mio && estado.estado === 'previsto') cuerpo.append(selectorDeRelevo(estado, ctx));
   });
 }
 
@@ -623,7 +652,7 @@ function selectorDeRelevo(estado, ctx) {
   if (!otros.length) return el('p', { class: 'pista', texto: 'No hay nadie más en casa a quien pedírselo.' });
 
   return el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: '¿Que lo saque otro?' }),
+    el('p', { class: 'pista', texto: '¿Que lo saque otro? Se lo pides y tiene que aceptarlo.' }),
     el('div', { class: 'lio-relevo' }, otros.map((persona) => el('button', {
       class: 'boton', type: 'button',
       onclick: async () => {
@@ -683,18 +712,42 @@ export function bloqueDePropuesta(trato, ctx) {
   return bloque;
 }
 
-/** Qué se está pidiendo, contado desde el lado de quien lee. */
+/**
+ * Qué se está pidiendo, contado desde el lado de quien lee.
+ *
+ * Cada frase tiene dos versiones y no una con el nombre cambiado: en cuanto uno
+ * de los dos es quien mira, el verbo cambia de persona. «Tú dice que sacó a
+ * Lio» era lo que salía de tratar el pronombre como si fuera un nombre más.
+ */
 export function textoDePropuesta(trato, ctx) {
   const yo = ctx.vista.yo.id;
-  const quien = trato.proponente_id === yo ? 'Tú' : ctx.vista.nombre(trato.proponente_id);
-  const aQuien = trato.destinatario_id === yo ? 'ti' : ctx.vista.nombre(trato.destinatario_id);
-  const cuando = `el ${formatearFechaLarga(parsearMomento(trato.fecha))}`;
-  const turno = (TURNOS.find((t) => t.id === trato.turno) || {}).nombre?.toLowerCase() || trato.turno;
+  const nombre = (id) => ctx.vista.nombre(id);
+  const cuando = `el ${formatearFechaLarga(parsearMomento(trato.fecha))} por la `
+    + ((TURNOS.find((t) => t.id === trato.turno) || {}).nombre?.toLowerCase() || trato.turno);
 
-  if (trato.clase === 'cambio') {
-    return `${quien} pide a ${aQuien} que saque a Lio ${cuando} por la ${turno}.`;
+  if (trato.clase === 'correccion') {
+    if (trato.proponente_id === yo) {
+      return `Dices que has sacado a Lio ${cuando}, y ese turno era de ${nombre(trato.destinatario_id)}.`;
+    }
+    if (trato.destinatario_id === yo) {
+      return `${nombre(trato.proponente_id)} dice que ha sacado a Lio ${cuando}, y ese turno era tuyo.`;
+    }
+    return `${nombre(trato.proponente_id)} dice que ha sacado a Lio ${cuando}, `
+      + `y ese turno era de ${nombre(trato.destinatario_id)}.`;
   }
-  return `${quien} dice que sacó a Lio ${cuando} por la ${turno}, y ese turno era de ${aQuien}.`;
+
+  // Un cambio va en un sentido o en el otro según quién lo proponga: quien ya
+  // tenía el turno está pidiendo que se lo cubran, y quien no lo tenía se está
+  // ofreciendo a sacarlo.
+  const seOfrece = trato.proponente_id !== trato.asignado_previo_id;
+  if (seOfrece) {
+    if (trato.proponente_id === yo) return `Te ofreces a sacar a Lio ${cuando}, que le toca a ${nombre(trato.destinatario_id)}.`;
+    if (trato.destinatario_id === yo) return `${nombre(trato.proponente_id)} se ofrece a sacar a Lio ${cuando}, que te toca a ti.`;
+    return `${nombre(trato.proponente_id)} se ofrece a sacar a Lio ${cuando}, que le toca a ${nombre(trato.destinatario_id)}.`;
+  }
+  if (trato.proponente_id === yo) return `Le pides a ${nombre(trato.destinatario_id)} que saque a Lio ${cuando}.`;
+  if (trato.destinatario_id === yo) return `${nombre(trato.proponente_id)} te pide que saques a Lio ${cuando}.`;
+  return `${nombre(trato.proponente_id)} le pide a ${nombre(trato.destinatario_id)} que saque a Lio ${cuando}.`;
 }
 
 const mayuscula = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);

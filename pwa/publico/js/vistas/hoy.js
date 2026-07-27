@@ -169,6 +169,60 @@ function bloqueDeLio(dia, ctx) {
   return [grupo];
 }
 
+// ------------------------------------------------------------ Lo de hoy --
+
+/**
+ * Lo que hay hoy, con los cumpleaños incluidos: se componen en el dispositivo y
+ * llegan por el mismo camino que los demás eventos.
+ *
+ * Es lo visible para quien mira, sin volver a filtrar nada: lo que está en el
+ * almacén local ya pasó por la visibilidad en el servidor.
+ */
+function bloqueDelDia(dia, ctx) {
+  const apariciones = repartirPorDia(instanciasEn(ctx.vista.datos, dia, dia), [dia]).get(iso(dia)) || [];
+
+  const grupo = el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: 'Para hoy' }),
+  ]);
+
+  if (!apariciones.length) {
+    grupo.append(el('p', { class: 'vacio', texto: 'Hoy no hay nada apuntado.' }));
+    return grupo;
+  }
+
+  for (const aparicion of apariciones) grupo.append(tarjetaDelDia(aparicion, ctx));
+  return grupo;
+}
+
+/**
+ * La tarjeta de un evento de hoy. Es la de la lista de la agenda sin la fecha:
+ * aquí todas son del mismo día, y repetirlo en cada línea sería escribir catorce
+ * veces lo que ya dice la cabecera.
+ */
+function tarjetaDelDia(aparicion, ctx) {
+  const hora = horaDe(aparicion);
+  const cara = ctx.vista.caraDe(aparicion.evento);
+  const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
+
+  const pie = [
+    hora ? null : 'Todo el día',
+    aparicion.evento.ubicacion,
+    participantes.length ? participantes.join(', ') : null,
+  ].filter(Boolean).join(' · ');
+
+  return el('button', {
+    class: 'tarjeta', type: 'button',
+    onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
+  }, [
+    el('div', { class: 'tarjeta-fila' }, [
+      el('span', { class: 'linea-emoji', texto: cara.emoji }),
+      el('h3', { texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
+      hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
+    ]),
+    pie ? el('p', { texto: pie }) : null,
+  ]);
+}
+
 // ------------------------------------------------------------- La versión --
 
 /**
