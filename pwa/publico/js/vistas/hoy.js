@@ -24,9 +24,9 @@ import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia, su
 import { comprobarActualizacion, esNativo, toque, versionInstalada } from '../native.js';
 import { VERSION_APP } from '../version.js';
 import {
-  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, resumenDeTurno, textoDePropuesta,
+  abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDePropuesta,
 } from './semana.js';
-import { hayLio, marcarHecho, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
+import { hayLio, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
 
 /** El bundle OTA que está aplicado, si se ha llegado a preguntar. Se guarda
  *  aquí para que volver a la pestaña no vuelva a enseñar la de origen mientras
@@ -167,99 +167,6 @@ function bloqueDeLio(dia, ctx) {
   }
 
   return [grupo];
-}
-
-function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
-  const puedeMarcar = turno.estado !== 'hecho' && !turno.trato;
-  const rotulo = rezagado
-    ? `Ayer por la ${turno.turno.nombre.toLowerCase()}`
-    : turno.turno.nombre;
-
-  const fila = el('div', {
-    class: 'lio-fila', 'data-estado': turno.estado, 'data-rezagado': rezagado ? 'si' : 'no',
-  }, [
-    el('span', { class: 'lio-fila-emoji', 'aria-hidden': 'true', texto: turno.turno.emoji }),
-    el('button', {
-      class: 'lio-fila-texto', type: 'button',
-      'aria-label': `${rotulo}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
-      onclick: () => { toque(); abrirTurnoDeLio(turno.fecha, turno.turno.id, ctx); },
-    }, [
-      el('span', { class: 'lio-fila-titulo', texto: rotulo }),
-      el('span', {
-        class: 'lio-fila-pista',
-        texto: rezagado && turno.estado === 'sin-marcar'
-          ? `${resumenDeTurno(turno, ctx)}. ¿La sacaste?`
-          : resumenDeTurno(turno, ctx),
-      }),
-    ]),
-  ]);
-
-  if (puedeMarcar) {
-    fila.append(el('button', {
-      class: 'boton empujar', type: 'button',
-      onclick: async () => {
-        toque();
-        const resultado = await marcarHecho(ctx.vista.datos, turno);
-        avisar(resultado?.marcado ? 'Marcado' : 'Se lo he preguntado a quien le tocaba');
-        ctx.refrescar();
-      },
-    }, [turno.mio || turno.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo']));
-  }
-  return fila;
-}
-
-// ------------------------------------------------------------ Lo de hoy --
-
-/**
- * Lo que hay hoy, con los cumpleaños incluidos: se componen en el dispositivo y
- * llegan por el mismo camino que los demás eventos.
- *
- * Es lo visible para quien mira, sin volver a filtrar nada: lo que está en el
- * almacén local ya pasó por la visibilidad en el servidor.
- */
-function bloqueDelDia(dia, ctx) {
-  const apariciones = repartirPorDia(instanciasEn(ctx.vista.datos, dia, dia), [dia]).get(iso(dia)) || [];
-
-  const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: 'Para hoy' }),
-  ]);
-
-  if (!apariciones.length) {
-    grupo.append(el('p', { class: 'vacio', texto: 'Hoy no hay nada apuntado.' }));
-    return grupo;
-  }
-
-  for (const aparicion of apariciones) grupo.append(tarjetaDelDia(aparicion, ctx));
-  return grupo;
-}
-
-/**
- * La tarjeta de un evento de hoy. Es la de la lista de la agenda sin la fecha:
- * aquí todas son del mismo día, y repetirlo en cada línea sería escribir catorce
- * veces lo que ya dice la cabecera.
- */
-function tarjetaDelDia(aparicion, ctx) {
-  const hora = horaDe(aparicion);
-  const cara = ctx.vista.caraDe(aparicion.evento);
-  const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
-
-  const pie = [
-    hora ? null : 'Todo el día',
-    aparicion.evento.ubicacion,
-    participantes.length ? participantes.join(', ') : null,
-  ].filter(Boolean).join(' · ');
-
-  return el('button', {
-    class: 'tarjeta', type: 'button',
-    onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
-  }, [
-    el('div', { class: 'tarjeta-fila' }, [
-      el('span', { class: 'linea-emoji', texto: cara.emoji }),
-      el('h3', { texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
-      hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
-    ]),
-    pie ? el('p', { texto: pie }) : null,
-  ]);
 }
 
 // ------------------------------------------------------------- La versión --
