@@ -28,13 +28,18 @@ Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
 - **Al tocar cualquier cosa de `pwa/publico/`, sube dos versiones, no una.**
-  Son dos caminos distintos y ninguno avisa si se olvida:
-  `VERSION` en `pwa/publico/sw.js` es lo que hace que el **navegador** deje de
-  servir los módulos de su caché; y `version` en `pwa/package.json` es lo que
-  hace que `ota.yml` corte un bundle nuevo para la **app de iPhone** —si esa
-  versión ya tiene release, el workflow corre, no publica nada y calla—. Los dos
-  fallos se ven igual: el cambio está en el repositorio y en la pantalla sigue lo
-  de antes. `pruebas.yml` comprueba las dos en cada PR.
+  Son dos caminos distintos: `VERSION` en `pwa/publico/sw.js` es lo que hace que
+  el **navegador** deje de servir los módulos de su caché, y `version` en
+  `pwa/package.json` es lo que hace que `ota.yml` corte un bundle nuevo para la
+  **app de iPhone**. Los dos fallos se ven igual: el cambio está en el
+  repositorio y en la pantalla sigue lo de antes. `pruebas.yml` comprueba las dos
+  en cada PR.
+  **Y súbelas por encima de lo que haya en `main` en ese momento, no de donde
+  saliste.** Con dos ramas abiertas a la vez, las dos suben desde la misma base a
+  la misma versión, git funde las dos líneas idénticas sin conflicto y la segunda
+  en mergearse se encuentra la versión ocupada. Eso pasó con la 1.15.0. El
+  workflow ya no lo deja pasar callando: si la versión tiene release y el empujón
+  cambia el bundle, falla y dice qué se habría quedado sin publicar.
 - **Queda una migración por aplicar: `0007_estado_regalo.sql`**, que convierte a
   «comprado» lo que estuviera «envuelto». Es corriente y no `.unavez` —se puede
   repetir sin consecuencias—, así que basta con marcar la casilla de las
