@@ -1239,7 +1239,23 @@ button { background: none; border: 0; cursor: pointer; }
 .icono-svg svg { width: 19px; height: 19px; display: block; }
 .hoja-seccion { display: flex; flex-direction: column; gap: 11px; }
 
-.avisos { position: fixed; z-index: 50; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
+/* Las confirmaciones —«Marcado», «Comentario añadido»— van por encima de la
+   banda de las pestañas, que es lo que hay más abajo en una pantalla normal.
+
+   **Con una hoja abierta bajan al pie.** La hoja tapa las pestañas y además
+   reserva esa banda vacía por debajo de su contenido, justamente para que sus
+   botones no acaben pegados al borde; ahí no hay nada que tapar. En su altura de
+   siempre caían encima de la última línea de la hoja —del campo de comentario y
+   su «Enviar»—, que es donde acaba de tocar quien va a leer la confirmación. */
+.avisos {
+  position: fixed; z-index: 50; left: 0; right: 0;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none;
+  transition: bottom .18s ease;
+}
+body.con-hoja .avisos { bottom: calc(15px + env(safe-area-inset-bottom)); }
+@media (prefers-reduced-motion: reduce) { .avisos { transition: none; } }
 .aviso-burbuja {
   background: var(--ink); color: var(--paper);
   border-radius: 999px; padding: 10px 17px; font-size: 14.5px;
