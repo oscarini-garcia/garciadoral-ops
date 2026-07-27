@@ -577,7 +577,20 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .lio-fila-titulo { font-size: 15px; }
 .lio-fila-pista { font-size: 12.5px; color: var(--ink-soft); }
-.lio-relevo { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Los nombres a quien pedirle el turno, y Cancelar empujado a la derecha de esa
+   misma línea: cuando el turno propio está por venir no hay nada que marcar, así
+   que esta es la única línea de verbos de la hoja.
+
+   Van en el botón corto y no en el de hoja entera. Tres nombres en el botón
+   grande medían 344 puntos y solo caben 304, de modo que la salida se bajaba
+   sola a un segundo renglón; en el corto miden 308 y con este aire caben los
+   cuatro. Y de paso dejan de ser tres verbos principales en una fila, que es lo
+   que parecían con el relleno de la tinta a tamaño de hoja: aquí no hay una
+   acción principal, hay tres nombres entre los que elegir. Si algún día no
+   caben, la salida baja sola y se queda a la derecha del renglón siguiente. */
+.lio-relevo { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.lio-relevo-nombre { padding-left: 12px; padding-right: 12px; }
+.lio-relevo-salida { margin-left: auto; display: flex; }
 
 /* Marcar el turno: una casilla redonda con el visto dentro, en trazo suave
    mientras está por hacer. Es el gesto que se repite dos veces al día, así que

@@ -661,39 +661,56 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
       }, ['Cógelo']));
     }
 
-    if (acciones.childElementCount) {
-      acciones.append(botonDeCancelar());
-      cuerpo.append(acciones);
-    }
-
     // Soltar el turno propio es lo único que sigue necesitando un sí: se le
     // está pasando un recado a otro, y eso no se hace sin preguntar.
-    if (estado.mio && estado.estado === 'previsto') cuerpo.append(selectorDeRelevo(estado, ctx));
+    const relevo = estado.mio && estado.estado === 'previsto' ? selectorDeRelevo(estado, ctx) : null;
 
-    // Sin ningún verbo que ofrecer, Cancelar es lo único que queda y se va al
-    // final, a la derecha: ahí no es la alternativa a nada, es la salida.
-    if (!acciones.childElementCount) cuerpo.append(cierreDeHoja());
+    // Cancelar se pone en la última línea de verbos que haya, sea la de arriba o
+    // la de los nombres a quien pedírselo. Cuando el turno propio está por venir
+    // no hay nada que marcar y esa línea es la única que hay.
+    if (acciones.childElementCount) {
+      if (!relevo) acciones.append(botonDeCancelar());
+      cuerpo.append(acciones);
+    }
+    if (relevo) cuerpo.append(relevo);
+
+    // Y si no hubo ninguna línea de verbos —un turno que ya sacó otro—, Cancelar
+    // se va al final y a la derecha: ahí no es la alternativa a nada.
+    if (!acciones.childElementCount && !relevo?.dataset.conSalida) cuerpo.append(cierreDeHoja());
   });
 }
 
-/** A quién pedírselo: los de casa menos uno mismo, en botones. Son tres
- *  personas; una lista desplegable para elegir entre tres es un paso de más. */
+/**
+ * A quién pedírselo: los de casa menos uno mismo, en botones. Son tres personas;
+ * una lista desplegable para elegir entre tres es un paso de más.
+ *
+ * **Y Cancelar va en esa misma línea**, empujado a la derecha. Cuando el turno
+ * propio está por venir no hay nada que marcar, así que los nombres son la única
+ * línea de verbos de la hoja y es de ella de la que Cancelar es la alternativa.
+ */
 function selectorDeRelevo(estado, ctx) {
   const otros = genteDeCasa(ctx.vista).filter((p) => p.id !== ctx.vista.yo.id);
   if (!otros.length) return el('p', { class: 'pista', texto: 'No hay nadie más en casa a quien pedírselo.' });
 
-  return el('div', { class: 'grupo' }, [
+  const bloque = el('div', { class: 'grupo' }, [
     el('p', { class: 'pista', texto: '¿Que lo saque otro? Se lo pides y tiene que aceptarlo.' }),
-    el('div', { class: 'lio-relevo' }, otros.map((persona) => el('button', {
-      class: 'boton', type: 'button',
-      onclick: async () => {
-        await pedirCambio(ctx.vista.datos, estado, persona.id);
-        cerrarHoja();
-        avisar(`Se lo he pedido a ${persona.nombre}`);
-        ctx.refrescar();
-      },
-    }, [persona.nombre]))),
+    el('div', { class: 'lio-relevo' }, [
+      ...otros.map((persona) => el('button', {
+        class: 'boton-mini lio-relevo-nombre', 'data-tono': 'principal', type: 'button',
+        onclick: async () => {
+          await pedirCambio(ctx.vista.datos, estado, persona.id);
+          cerrarHoja();
+          avisar(`Se lo he pedido a ${persona.nombre}`);
+          ctx.refrescar();
+        },
+      }, [persona.nombre])),
+      el('span', { class: 'lio-relevo-salida' }, [
+        el('button', { class: 'boton-mini', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+      ]),
+    ]),
   ]);
+  bloque.dataset.conSalida = 'si';
+  return bloque;
 }
 
 /**
