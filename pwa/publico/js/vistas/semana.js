@@ -31,7 +31,7 @@ import { compartir, toque } from '../native.js';
 import {
   TURNOS, cogerTurno, desmarcar, genteDeCasa, hayLio, inicialesDe, inicioDeVentana,
   marcarHecho, nombreDeTurno, pedirCambio, resolverPropuesta, retirarPropuesta,
-  turnoDe, turnosDe,
+  rotuloDeTurno, turnoDe, turnosDe,
 } from '../lio.js';
 
 let modo = 'semana';
@@ -495,6 +495,7 @@ export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
   const fila = el('div', {
     class: 'lio-fila', 'data-estado': turno.estado, 'data-rezagado': rezagado ? 'si' : 'no',
   }, [
+    el('span', { class: 'lio-fila-emoji', 'aria-hidden': 'true', texto: turno.turno.emoji }),
     el('button', {
       class: 'lio-fila-texto', type: 'button',
       'aria-label': `${rotulo}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
@@ -594,17 +595,18 @@ export function resumenDeTurno(estado, ctx) {
  * de otro que venció sin marcar, decir que lo sacó uno no escribe nada todavía:
  * le pide a quien lo tenía que lo confirme.
  *
- * **Cancelar va al final y a la derecha**, en su propia línea y detrás de todo
- * lo demás. Es el mismo sitio que ocupa en el formulario de evento, y es el
- * natural: se sale por abajo, después de haber visto lo que había que ver. En el
- * medio de la hoja —con el selector de relevo debajo— parecía el final de algo
- * que aún seguía.
+ * **Cancelar va a la derecha del verbo, en su misma línea**, como en el
+ * formulario de evento. Estuvo un rato en un renglón propio al final de la hoja
+ * y quedaba lejos de aquello de lo que es la alternativa: lo que se decide en
+ * esa línea es hacerlo o no hacerlo, y las dos mitades de esa decisión tienen
+ * que verse juntas. Solo cuando no hay ningún verbo —un turno que ya sacó otro—
+ * se queda solo, y entonces va al final y a la derecha.
  */
 export function abrirTurnoDeLio(fecha, turnoId, ctx) {
   const estado = turnoDe(ctx.vista.datos, fecha, turnoId);
   const yo = ctx.vista.yo.id;
 
-  abrirHoja(nombreDeTurno(estado.turno), (cuerpo) => {
+  abrirHoja(rotuloDeTurno(estado.turno), (cuerpo) => {
     cuerpo.append(el('p', { class: 'pista', texto: formatearFechaLarga(fecha) }));
     cuerpo.append(el('p', { texto: mayuscula(resumenDeTurno(estado, ctx)) }));
 
@@ -659,13 +661,18 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
       }, ['Cógelo']));
     }
 
-    if (acciones.childElementCount) cuerpo.append(acciones);
+    if (acciones.childElementCount) {
+      acciones.append(botonDeCancelar());
+      cuerpo.append(acciones);
+    }
 
     // Soltar el turno propio es lo único que sigue necesitando un sí: se le
     // está pasando un recado a otro, y eso no se hace sin preguntar.
     if (estado.mio && estado.estado === 'previsto') cuerpo.append(selectorDeRelevo(estado, ctx));
 
-    cuerpo.append(cierreDeHoja());
+    // Sin ningún verbo que ofrecer, Cancelar es lo único que queda y se va al
+    // final, a la derecha: ahí no es la alternativa a nada, es la salida.
+    if (!acciones.childElementCount) cuerpo.append(cierreDeHoja());
   });
 }
 
@@ -695,6 +702,13 @@ function selectorDeRelevo(estado, ctx) {
  * Quien tiene que contestarla la contesta aquí mismo; quien la hizo solo puede
  * retirarla. Las dos respuestas van escritas enteras y con el mismo peso:
  * decir que no tiene que costar lo mismo que decir que sí.
+ *
+ * **Sin caja y sin borde de color.** Encerrada en un recuadro parecía un aviso
+ * pegado encima de la hoja, cuando es la continuación de la frase de arriba: el
+ * turno está así, y por esto. Va como un párrafo más, detrás del resumen, y sus
+ * verbos como los verbos de cualquier otra hoja. El color de aviso sigue estando
+ * donde sí hace falta —la banda de Hoy, que es la que tiene que interrumpir a
+ * quien no venía a esto—.
  */
 export function bloqueDePropuesta(trato, ctx) {
   const yo = ctx.vista.yo.id;
@@ -714,8 +728,8 @@ export function bloqueDePropuesta(trato, ctx) {
           ctx.refrescar();
         },
       }, ['Retirar lo que pedí']),
+      botonDeCancelar(),
     ]));
-    bloque.append(cierreDeHoja());
     return bloque;
   }
 
@@ -738,17 +752,18 @@ export function bloqueDePropuesta(trato, ctx) {
         ctx.refrescar();
       },
     }, [trato.clase === 'cambio' ? 'No puedo' : 'No fue así']),
+    botonDeCancelar(),
   ]));
-  bloque.append(cierreDeHoja());
   return bloque;
 }
 
-/** Cancelar, solo, al final y a la derecha. Es el mismo sitio en todas las hojas
- *  de Lío y el que ya ocupaba en el formulario de evento: sale por abajo quien
- *  no quiere hacer ninguna de las cosas de arriba. */
-const cierreDeHoja = () => el('div', { class: 'acciones acciones-cierre' }, [
-  el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
-]);
+/** Cancelar, para poner al lado del verbo del que es la alternativa. */
+const botonDeCancelar = () => el('button', {
+  class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja,
+}, ['Cancelar']);
+
+/** Y Cancelar cuando va solo: al final de la hoja y a la derecha. */
+const cierreDeHoja = () => el('div', { class: 'acciones acciones-cierre' }, [botonDeCancelar()]);
 
 /**
  * Qué se está pidiendo, contado desde el lado de quien lee.
