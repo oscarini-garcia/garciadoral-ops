@@ -498,7 +498,12 @@ function refrescar() {
   const titulo = document.getElementById('tituloPantalla');
   // Los títulos que son función reciben el contexto: el de Hoy saluda por el
   // nombre de quien mira, y el de la agenda no necesita nada y lo ignora.
-  titulo.textContent = typeof definicion.titulo === 'function' ? definicion.titulo(ctx) : definicion.titulo;
+  //
+  // Y pueden devolver un nodo en vez de una cadena, que es lo que le hace falta
+  // a Sitios: dentro de un sitio el título son migas —«Sitios › Bolonia»— con la
+  // primera tocable, y eso no cabe en un `textContent`.
+  const escrito = typeof definicion.titulo === 'function' ? definicion.titulo(ctx) : definicion.titulo;
+  vaciar(titulo).append(escrito instanceof Node ? escrito : document.createTextNode(escrito));
   // El de la agenda es una fecha y no un nombre: se compone más largo y se
   // compone en cifras, así que se dibuja con su propio tamaño.
   titulo.dataset.pestana = pestana;

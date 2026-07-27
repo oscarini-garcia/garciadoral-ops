@@ -30,11 +30,23 @@ pendiente. El hook lo inyecta al final del mapa.
 - **Sitios está construido**, y es el segundo módulo que no cuelga de la agenda.
   Un sitio es la carpeta y los apuntes cuelgan de él, con **cuatro clases que son
   verbos —Llevar, Hacer, Ir y Saber—** y «Saber» puesta de origen, para que quien
-  no quiera clasificar no tenga que hacerlo. **El voto enseña las iniciales de
+  no quiera clasificar no tenga que hacerlo. **«Llevar» no es una clase más: es
+  una lista de la compra** —una línea, una casilla y un aspa, sin descripción, sin
+  voto y sin hilo—, va la primera porque es lo único que se mira de pie y antes de
+  salir, tocar la línea entera tacha, y lo tachado baja al final para que lo que
+  falta quede arriba. Cada línea lleva su firma —quién la puso y, **solo si ya no
+  es de hoy**, cuándo— y la lista se comparte sola con su verbo en el rótulo. **El
+  voto enseña las iniciales de
   quien votó y no un número** —con cuatro en casa, «MA·OS» contesta la pregunta
   que de verdad se hace— y **ordena su grupo**, que es lo único que separa un voto
   de un adorno. La pestaña tiene dos alturas dentro de sí misma y no una hoja para
   el sitio, y de ahí sale que el botón flotante tenga sus dos significados solos.
+  La navegación entre las dos alturas son **migas en la línea del título**
+  —«Sitios › Bolonia», con «Sitios» tocable—, y para eso el título de una pestaña
+  puede devolver un nodo y no solo una cadena. En la lista, cada sitio dice **de
+  qué va y no cuánto tiene**: «3 llevar · 2 hacer · 1 ir». Y el emoji pasa por
+  `emojiVisible`, que le añade el selector de variación: sin él, 🏖 y compañía se
+  dibujan a trazo monocromo y en un título de 29 puntos parecen un icono roto.
   **Borrar un sitio exige vaciarlo antes**, y eso lo comprueba también el Worker,
   porque la pantalla decide con la instantánea que tenga. Compartir va a dos
   alturas con dos contenidos distintos: el sitio **sin** votos ni nombres, un
@@ -162,7 +174,11 @@ pendiente. El hook lo inyecta al final del mapa.
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
   turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
   empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
-- **No queda ninguna migración por aplicar.** Las once están puestas, incluidas
+- **Queda una migración por aplicar: `0012_apunte_hecho.unavez.sql`**, que añade
+  la casilla de la lista de la compra. Lleva `ALTER TABLE`, así que **no se puede
+  repetir**: se escribe su nombre en el campo de la migración de un solo uso al
+  desplegar la API. Sin ella, tachar algo de «Llevar» lo rechaza la base. Las once
+  anteriores están puestas, incluidas
   las tres `.unavez` —los círculos (`0005`), el género (`0006`) y la `0009`, que
   rehizo `comentario` para quitarle el `CHECK`—, que no se vuelven a pedir porque
   no se pueden repetir: el `ALTER TABLE` falla si la columna ya está, y rehacer una

@@ -25,9 +25,10 @@ import { compartir, toque } from '../native.js';
 import { bloqueDeComentarios } from '../comentarios.js';
 import { marcarVisto } from '../avisos.js';
 import {
-  CLASES, CLASE_POR_DEFECTO, alternarVoto, apuntesDe, clasePorId, cuantosApuntes,
-  haySitios, lugarPorId, lugaresDe, pistaDeCompartirApunte, porClase, textoDelApunte,
-  textoDelLugar, votantesDe,
+  CLASES, CLASE_POR_DEFECTO, alternarHecho, alternarVoto, apuntesDe, clasePorId,
+  cuantosApuntes, esLista, estaHecho, firmaDeApunte, haySitios, lugarPorId, lugaresDe,
+  nombreDeLugar, pistaDeCompartirApunte, porClase, resumenDeLugar, textoDeLaLista,
+  textoDelApunte, textoDelLugar, votantesDe,
 } from '../sitios.js';
 
 /** El sitio que se está mirando, o `null` si se está en la lista. Vive aquí y
@@ -39,16 +40,28 @@ export function reiniciarSitios() {
 }
 
 /**
- * El título de la pestaña, que cambia con la altura en la que se esté.
+ * El título de la pestaña, que dentro de un sitio son migas.
  *
- * Dentro de un sitio, su nombre: es lo que sitúa todo lo que hay debajo, y
- * escribir «Sitios» arriba con «Bolonia» repetido dentro gastaría la línea que
- * mejor se lee para no decir nada.
+ * «Sitios › Bolonia», con «Sitios» tocable para volver. La navegación vive en la
+ * línea del título y no en un «‹ Sitios» debajo, porque es la misma cosa dicha
+ * dos veces: dónde estás y de dónde vienes se leen juntos o no se leen.
+ *
+ * El sitio se queda con el tamaño del título y «Sitios» va pequeño y en tinta,
+ * que es lo que hace que se lea como un camino y no como dos rótulos: lo grande
+ * es dónde estás, y lo pequeño, por dónde has llegado.
  */
 export function tituloDeSitios(ctx) {
   const lugar = lugarAbierto ? lugarPorId(ctx?.vista?.datos, lugarAbierto) : null;
   if (!lugar) return 'Sitios';
-  return [lugar.emoji, lugar.nombre].filter(Boolean).join(' ');
+
+  return el('span', { class: 'migas' }, [
+    el('button', {
+      class: 'miga', type: 'button',
+      onclick: () => { lugarAbierto = null; ctx.refrescar(); },
+    }, ['Sitios']),
+    el('span', { class: 'miga-flecha', 'aria-hidden': 'true', texto: '›' }),
+    el('span', { texto: nombreDeLugar(lugar) }),
+  ]);
 }
 
 /** Lo que hace el botón flotante, que depende de la altura. */
@@ -91,7 +104,6 @@ function pintarLaLista(pantalla, ctx) {
   }
 
   pantalla.append(el('div', { class: 'grupo' }, lugares.map((lugar) => {
-    const cuantos = cuantosApuntes(ctx.vista.datos, lugar.id);
     const sinLeer = apuntesDe(ctx.vista.datos, lugar.id)
       .filter((apunte) => tieneSinLeer(ctx, apunte)).length;
 
@@ -100,12 +112,15 @@ function pintarLaLista(pantalla, ctx) {
       onclick: () => { lugarAbierto = lugar.id; ctx.refrescar(); },
     }, [
       el('div', { class: 'tarjeta-fila' }, [
-        el('h3', { texto: [lugar.emoji, lugar.nombre].filter(Boolean).join(' ') }),
+        el('h3', { texto: nombreDeLugar(lugar) }),
         // La marca en contexto, que es lo que sustituye a una lista de
         // novedades: el sobre cuenta que hay algo y aquí se ve dónde.
         sinLeer ? el('span', { class: 'punto-nuevo', 'aria-label': 'Con comentarios sin leer' }) : null,
       ]),
-      el('p', { texto: cuantos === 1 ? '1 apunte' : `${cuantos} apuntes` }),
+      // Cuántas de cada verbo, y no cuántas en total: «6 apuntes» puede ser una
+      // lista de la compra o seis playas, y la pregunta que se hace al mirar la
+      // lista es de qué va cada sitio.
+      el('p', { texto: resumenDeLugar(ctx.vista.datos, lugar.id) }),
     ]);
   })));
 }
@@ -115,13 +130,8 @@ function pintarLaLista(pantalla, ctx) {
 function pintarUnLugar(pantalla, subcabecera, ctx) {
   const lugar = lugarPorId(ctx.vista.datos, lugarAbierto);
 
-  // La salida va arriba y a la izquierda, que es donde se busca: dentro de una
-  // pestaña no hay flecha del sistema que devuelva a ninguna parte.
-  subcabecera.append(el('button', {
-    class: 'volver', type: 'button',
-    onclick: () => { lugarAbierto = null; ctx.refrescar(); },
-  }, ['‹ Sitios']));
-
+  // La salida no vive aquí: está en las migas del título, que es donde se lee
+  // de dónde vienes. Aquí quedan solo los verbos del sitio.
   subcabecera.append(el('div', { class: 'subcabecera-verbos' }, [
     botonIcono('editar', {
       etiqueta: 'Editar el sitio',
@@ -158,10 +168,75 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
 
   for (const { clase, apuntes } of grupos) {
     pantalla.append(el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: clase.nombre }),
-      el('div', {}, apuntes.map((apunte) => filaDeApunte(apunte, ctx))),
+      // El rótulo de una lista lleva su propio verbo de compartir: «mándame lo
+      // que hay que llevar» se pide entero y sin lo demás, y quien lo recibe no
+      // quiere saber a qué duna se sube.
+      clase.lista
+        ? el('div', { class: 'grupo-cabeza' }, [
+            el('p', { class: 'grupo-titulo', texto: clase.nombre }),
+            botonIcono('compartir', {
+              etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
+              tono: 'discreto',
+              onclick: async () => {
+                toque();
+                const enviado = await compartir({
+                  titulo: `${clase.nombre} · ${lugar.nombre}`,
+                  texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
+                });
+                if (!enviado) avisar('No he podido compartirlo');
+              },
+            }),
+          ])
+        : el('p', { class: 'grupo-titulo', texto: clase.nombre }),
+      el('div', {}, apuntes.map((apunte) => (clase.lista
+        ? filaDeLista(apunte, ctx)
+        : filaDeApunte(apunte, ctx)))),
     ]));
   }
+}
+
+/**
+ * Una línea de la lista de la compra: casilla, lo que hay que llevar, quién lo
+ * puso y el aspa.
+ *
+ * **No abre nada.** Aquí no hay hoja, ni hilo, ni voto: es la lista que se mira
+ * de pie y antes de salir por la puerta, y todo lo que se puede hacer con una
+ * línea cabe en la propia línea. Tocarla la tacha, que es el gesto que se repite
+ * doce veces seguidas y tiene que costar un dedo entero y no un objetivo de
+ * veinte puntos.
+ *
+ * Y no se edita: el formulario es un solo campo, así que corregir una errata es
+ * volver a escribirla. Un verbo de editar aquí pesaría más que el error.
+ */
+function filaDeLista(apunte, ctx) {
+  const hecho = estaHecho(apunte);
+  const firma = firmaDeApunte(ctx.vista, apunte);
+
+  return el('div', { class: 'llevar', 'data-hecho': hecho ? 'si' : null }, [
+    el('button', {
+      class: 'llevar-cuerpo', type: 'button',
+      'aria-pressed': hecho ? 'true' : 'false',
+      onclick: async () => {
+        toque();
+        await alternarHecho(apunte);
+        ctx.refrescar();
+      },
+    }, [
+      el('span', { class: 'llevar-casilla', 'aria-hidden': 'true' }, [hecho ? icono('visto') : null]),
+      el('span', { class: 'llevar-texto' }, [
+        el('span', { class: 'llevar-titulo', texto: apunte.titulo }),
+        firma ? el('span', { class: 'llevar-firma', texto: firma }) : null,
+      ]),
+    ]),
+    el('button', {
+      class: 'llevar-quitar', type: 'button', 'aria-label': `Quitar ${apunte.titulo}`,
+      onclick: async () => {
+        await retirar('apunte', apunte.id);
+        toque('media');
+        ctx.refrescar();
+      },
+    }, ['×']),
+  ]);
 }
 
 /**
@@ -388,25 +463,37 @@ function abrirFormularioApunte(ctx, { id = null, lugarId = null } = {}) {
     const detalle = el('textarea', { rows: '3', placeholder: 'Allí no hay ni una sombra' });
     detalle.value = apunte?.detalle || '';
 
-    // Cuatro opciones cortas y excluyentes, a la vista y en una fila: es lo
-    // mismo que hacen los estados de un regalo, y por lo mismo —un desplegable
-    // cuesta dos toques y una lista para elegir entre cuatro palabras—.
-    const conmutador = el('div', { class: 'seg' }, CLASES.map((opcion) =>
+    // Las mismas pastillas con las que se elige gente, y por la misma razón:
+    // cuatro palabras cortas y excluyentes caben a la vista, y un desplegable
+    // cuesta dos toques y una lista para elegir entre ellas.
+    const conmutador = el('div', { class: 'opciones' }, CLASES.map((opcion) =>
       el('button', {
-        class: 'seg-opcion', type: 'button',
-        'data-elegida': opcion.id === clase ? 'si' : null,
+        class: 'opcion', type: 'button',
+        'aria-pressed': opcion.id === clase ? 'true' : 'false',
         onclick: (evento) => {
           clase = opcion.id;
           for (const otro of evento.currentTarget.parentElement.children) {
-            otro.removeAttribute('data-elegida');
+            otro.setAttribute('aria-pressed', 'false');
           }
-          evento.currentTarget.setAttribute('data-elegida', 'si');
+          evento.currentTarget.setAttribute('aria-pressed', 'true');
+          ajustarADondeVa();
         },
       }, [opcion.nombre])));
 
+    const campoDetalle = campo(
+      'Más detalle', detalle,
+      'Opcional, y es lo que de verdad vale: por qué, cuándo o qué hay que saber.',
+    );
+
+    // Una lista de la compra es un campo y ya está. Enseñar un hueco para la
+    // descripción de «sombrilla» invita a rellenarlo, y lo que se apunta de pie
+    // y con prisa no lleva descripción.
+    const ajustarADondeVa = () => { campoDetalle.hidden = esLista(clase); };
+
     cuerpo.append(campo('Qué', titulo));
     cuerpo.append(campo('De qué va', conmutador));
-    cuerpo.append(campo('Más detalle', detalle, 'Opcional, y es lo que de verdad vale: por qué, cuándo o qué hay que saber.'));
+    cuerpo.append(campoDetalle);
+    ajustarADondeVa();
 
     // El verbo del modelo vive aquí y no en la pantalla del sitio: es una acción
     // de tres veces al año, y ahí arriba competiría con lo que se viene a leer.
@@ -417,7 +504,7 @@ function abrirFormularioApunte(ctx, { id = null, lugarId = null } = {}) {
         // El porqué se guarda como el detalle, que es lo que separa una lista de
         // obviedades de algo que aporta: «crema solar» no vale nada; «allí el
         // viento engaña» es la razón por la que este módulo existe.
-        if (propuesta.porque) detalle.value = propuesta.porque;
+        if (propuesta.porque && !esLista(clase)) detalle.value = propuesta.porque;
         titulo.focus();
       }));
     }
@@ -432,7 +519,10 @@ function abrirFormularioApunte(ctx, { id = null, lugarId = null } = {}) {
             lugar_id: destino,
             clase,
             titulo: texto,
-            detalle: detalle.value.trim() || null,
+            // Si acaba en una lista, lo que hubiera escrito en la descripción no
+            // se guarda: allí no hay dónde leerlo, y un dato que no se ve es un
+            // dato que miente.
+            detalle: esLista(clase) ? null : (detalle.value.trim() || null),
             autor_id: apunte?.autor_id || ctx.vista.yo.id,
             activo: 1,
           });

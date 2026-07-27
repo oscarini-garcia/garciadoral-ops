@@ -13,6 +13,24 @@
 export const EMOJI_POR_DEFECTO = '📌';
 
 /**
+ * Un emoji tal como hay que escribirlo para que se vea como un emoji.
+ *
+ * Hay un puñado —🏖, 🏝, ⛺, ☀ y compañía— que Unicode define **con presentación
+ * de texto por defecto**: sin el selector de variación detrás, el sistema los
+ * dibuja como un glifo monocromo a trazo, que en un título de 29 puntos en
+ * serifa parece un icono roto. Pasaba con Bolonia, y lo que pasaba no era que
+ * faltara el emoji: estaba, y se dibujaba en blanco y negro.
+ *
+ * Se añade al pintar y no solo al guardar, porque lo que ya está escrito en la
+ * base también tiene que verse bien. Lo que ya trae selector, un tono de piel o
+ * un enlazador de ancho cero se deja como está.
+ */
+export const emojiVisible = (texto) => String(texto || '').replace(
+  /(\p{Extended_Pictographic})(?![\uFE0E\uFE0F\u200D]|\p{Emoji_Modifier})/gu,
+  '$1\uFE0F',
+);
+
+/**
  * Los tres círculos, y cómo se llaman en pantalla.
  *
  * Son cerrados y no un catálogo editable: cada círculo que se añadiera sería una
