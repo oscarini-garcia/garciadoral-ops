@@ -43,7 +43,8 @@ import {
 } from './native.js';
 import { NOMBRES_DIA, formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import {
-  TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana, turnosDe,
+  TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana,
+  nombreDeTurno, rotuloDeTurno, turnosDe,
 } from './lio.js';
 import { pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
@@ -477,8 +478,7 @@ function turnosPropios(datos, desde) {
         trato: turno.trato,
         fechaIso: turno.fechaIso,
         turnoId: turno.turno.id,
-        emoji: turno.turno.emoji,
-        nombre: turno.turno.nombre,
+        rotulo: rotuloDeTurno(turno.turno),
         inicio: inicioDeVentana(turno.fecha, turno.turno.id),
       });
     }
@@ -747,6 +747,14 @@ function cuadroDeLio(seccion) {
   const vueltas = [null, ...casa.map((p) => p.id)];
 
   const dias = el('div', { class: 'lio-dias' });
+  // Qué columna es cuál se dice una vez arriba, con su sol o su luna y con todas
+  // sus letras, en lugar de un emoji repetido catorce veces dentro de las
+  // casillas, donde había que traducirlo en cada línea y le quitaba sitio al
+  // nombre.
+  dias.append(el('div', { class: 'lio-dia lio-dia-cabecera' }, [
+    el('span'),
+    ...TURNOS.map((turno) => el('span', { texto: rotuloDeTurno(turno) })),
+  ]));
   for (let dia = 0; dia < 7; dia += 1) {
     dias.append(el('div', { class: 'lio-dia' }, [
       // Tres letras y no la inicial: lunes y martes empiezan igual, y aquí no
@@ -771,7 +779,7 @@ const mayusculaInicial = (texto) => texto.charAt(0).toUpperCase() + texto.slice(
 function turnoDelCuadro(cuadro, turno, dia, casa, vueltas) {
   const boton = el('button', { class: 'lio-dia-turno', type: 'button' });
   const nombre = el('span', { class: 'lio-dia-nombre' });
-  boton.append(el('span', { class: 'lio-dia-emoji', 'aria-hidden': 'true', texto: turno.emoji }), nombre);
+  boton.append(nombre);
 
   const pintar = () => {
     const persona = casa.find((p) => p.id === cuadro[turno.id][dia]) || null;
@@ -779,7 +787,7 @@ function turnoDelCuadro(cuadro, turno, dia, casa, vueltas) {
     boton.dataset.vacio = persona ? 'no' : 'si';
     boton.setAttribute(
       'aria-label',
-      `${NOMBRES_DIA[dia]} por la ${turno.nombre.toLowerCase()}: ${persona ? persona.nombre : 'nadie'}. Cambiar.`,
+      `${NOMBRES_DIA[dia]} ${nombreDeTurno(turno).toLowerCase()}: ${persona ? persona.nombre : 'nadie'}. Cambiar.`,
     );
   };
 

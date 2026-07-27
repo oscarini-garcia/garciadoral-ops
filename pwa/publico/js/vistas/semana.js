@@ -20,8 +20,8 @@ import {
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
 import {
-  INICIALES_DIA, MESES_LARGOS, TECHO_EVENTOS_DIA,
-  diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, instanciasEn, iso,
+  INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
+  diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
   isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
@@ -30,7 +30,8 @@ import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 import {
   TURNOS, cogerTurno, desmarcar, genteDeCasa, hayLio, inicialesDe, inicioDeVentana,
-  marcarHecho, pedirCambio, resolverPropuesta, retirarPropuesta, turnoDe, turnosDe,
+  marcarHecho, nombreDeTurno, pedirCambio, resolverPropuesta, retirarPropuesta,
+  rotuloDeTurno, turnoDe, turnosDe,
 } from '../lio.js';
 
 let modo = 'semana';
@@ -439,7 +440,7 @@ function columnaDeLio(dia, ctx) {
   const columna = el('button', {
     class: 'lio-col', type: 'button',
     'aria-label': `Lío el ${formatearFechaLarga(dia)}: `
-      + turnos.map((t) => `${t.turno.nombre.toLowerCase()}, ${resumenDeTurno(t, ctx)}`).join('; '),
+      + turnos.map((t) => `${nombreDeTurno(t.turno).toLowerCase()}, ${resumenDeTurno(t, ctx)}`).join('; '),
     onclick: () => { toque(); abrirLioDelDia(dia, ctx); },
   });
 
@@ -489,7 +490,7 @@ export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
   const puedeMarcar = turno.estado !== 'hecho' && !turno.trato && turno.empezado;
   const rotulo = rezagado
     ? `Ayer por la ${turno.turno.nombre.toLowerCase()}`
-    : `Por la ${turno.turno.nombre.toLowerCase()}`;
+    : nombreDeTurno(turno.turno);
 
   const fila = el('div', {
     class: 'lio-fila', 'data-estado': turno.estado, 'data-rezagado': rezagado ? 'si' : 'no',
@@ -515,16 +516,15 @@ export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
   // gesto más corriente que hay aquí. La casilla vacía dice lo que falta y el
   // visto verde dice lo que está, sin escribir ninguna de las dos cosas.
   if (puedeMarcar) {
+    const verbo = verboDeMarcar(turno);
     fila.append(el('button', {
       class: 'lio-visto empujar', type: 'button',
-      'aria-label': turno.mio || turno.estado === 'sin-asignar'
-        ? `Marcar que ya está: ${rotulo.toLowerCase()}`
-        : `Reclamar el turno: ${rotulo.toLowerCase()}`,
-      title: turno.mio || turno.estado === 'sin-asignar' ? 'Ya está' : 'Reclamar',
+      'aria-label': `${verbo}: ${rotulo.toLowerCase()}`,
+      title: verbo,
       onclick: async () => {
         toque();
         const resultado = await marcarHecho(ctx.vista.datos, turno);
-        avisar(resultado?.marcado ? 'Marcado' : 'Se lo he preguntado a quien le tocaba');
+        avisar(dichoDeMarcar(resultado, ctx));
         ctx.refrescar();
       },
     }, [icono('visto')]));
@@ -537,6 +537,28 @@ export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
     }, [icono('visto')]));
   }
   return fila;
+}
+
+/**
+ * Cómo se llama marcar, según lo que se esté diciendo al marcar.
+ *
+ * Son tres frases distintas y no una: sobre el turno propio del día se dice que
+ * ya está; sobre el propio que venció sin marcar se contesta a la pregunta que
+ * la pantalla acaba de hacer —«¿sacaste a Lío?»—, y por eso empieza por «Sí»; y
+ * sobre el de otro se dice quién lo sacó, que es el dato que falta.
+ */
+function verboDeMarcar(estado) {
+  if (estado.estado === 'sin-marcar') return estado.mio ? 'Sí, lo saqué' : 'Lo saqué yo';
+  if (estado.mio || estado.estado === 'sin-asignar') return 'Ya está';
+  return 'Lo saqué yo';
+}
+
+/** Qué se avisa después de marcar. Cuando el turno era de otro y ya había
+ *  vencido no se ha escrito nada todavía: se le ha preguntado, y hay que
+ *  decirlo o parecería que quedó apuntado. */
+function dichoDeMarcar(resultado, ctx) {
+  if (resultado?.marcado) return 'Marcado';
+  return `Se lo he preguntado a ${ctx.vista.nombre(resultado?.pedidoA)}`;
 }
 
 /** La frase que describe un turno. La misma en la etiqueta de la casilla, en la
@@ -569,19 +591,22 @@ export function resumenDeTurno(estado, ctx) {
 /**
  * La hoja de un turno: en qué está y qué se puede hacer con él.
  *
- * Los verbos dependen de quién mira y de si la ventana ya pasó. Marcar el turno
- * de otro no marca nada: propone una corrección, y hasta que ese otro la
- * confirme el turno sigue como estaba.
+ * Los verbos dependen de quién mira y de si la ventana ya pasó. Sobre el turno
+ * de otro que venció sin marcar, decir que lo sacó uno no escribe nada todavía:
+ * le pide a quien lo tenía que lo confirme.
+ *
+ * **Cancelar va a la derecha del verbo, en su misma línea**, como en el
+ * formulario de evento. Estuvo un rato en un renglón propio al final de la hoja
+ * y quedaba lejos de aquello de lo que es la alternativa: lo que se decide en
+ * esa línea es hacerlo o no hacerlo, y las dos mitades de esa decisión tienen
+ * que verse juntas. Solo cuando no hay ningún verbo —un turno que ya sacó otro—
+ * se queda solo, y entonces va al final y a la derecha.
  */
 export function abrirTurnoDeLio(fecha, turnoId, ctx) {
   const estado = turnoDe(ctx.vista.datos, fecha, turnoId);
   const yo = ctx.vista.yo.id;
 
-  const cerrar = () => el('button', {
-    class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja,
-  }, ['Cancelar']);
-
-  abrirHoja(`${estado.turno.emoji} ${estado.turno.nombre}`, (cuerpo) => {
+  abrirHoja(rotuloDeTurno(estado.turno), (cuerpo) => {
     cuerpo.append(el('p', { class: 'pista', texto: formatearFechaLarga(fecha) }));
     cuerpo.append(el('p', { texto: mayuscula(resumenDeTurno(estado, ctx)) }));
 
@@ -594,9 +619,9 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
 
     const hecho = async (accion, dicho) => {
       toque();
-      await accion();
+      const resultado = await accion();
       cerrarHoja();
-      avisar(dicho);
+      avisar(typeof dicho === 'function' ? dicho(resultado) : dicho);
       ctx.refrescar();
     };
 
@@ -611,12 +636,15 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
       }
     } else if (estado.empezado) {
       // La ventana está abierta o ya pasó: aquí sí cabe decir que el perro
-      // salió, y se escribe en el acto aunque el turno fuera de otro. Coger
-      // trabajo no necesita permiso; soltarlo, sí.
+      // salió. Mientras el día está vivo se escribe en el acto aunque el turno
+      // fuera de otro; si ya venció, se le pregunta a quien lo tenía.
       acciones.append(el('button', {
         class: 'boton crecer', type: 'button',
-        onclick: () => hecho(() => marcarHecho(ctx.vista.datos, estado), 'Marcado'),
-      }, [estado.mio || estado.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo']));
+        onclick: () => hecho(
+          () => marcarHecho(ctx.vista.datos, estado),
+          (resultado) => dichoDeMarcar(resultado, ctx),
+        ),
+      }, [verboDeMarcar(estado)]));
     } else if (!estado.mio && estado.asignadoId) {
       // Un turno que aún no ha empezado y que es de otro: se le coge y ya está.
       acciones.append(el('button', {
@@ -633,33 +661,58 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
       }, ['Cógelo']));
     }
 
-    acciones.append(cerrar());
-    cuerpo.append(acciones);
-
     // Soltar el turno propio es lo único que sigue necesitando un sí: se le
     // está pasando un recado a otro, y eso no se hace sin preguntar.
-    if (estado.mio && estado.estado === 'previsto') cuerpo.append(selectorDeRelevo(estado, ctx));
+    const relevo = estado.mio && estado.estado === 'previsto' ? selectorDeRelevo(estado, ctx) : null;
+
+    // Cancelar se pone en la última línea de verbos que haya, sea la de arriba o
+    // la de los nombres a quien pedírselo. Cuando el turno propio está por venir
+    // no hay nada que marcar y esa línea es la única que hay.
+    if (acciones.childElementCount) {
+      if (!relevo) acciones.append(botonDeCancelar());
+      cuerpo.append(acciones);
+    }
+    if (relevo) cuerpo.append(relevo);
+
+    // Y si no hubo ninguna línea de verbos —un turno que ya sacó otro—, Cancelar
+    // se va al final y a la derecha: ahí no es la alternativa a nada.
+    if (!acciones.childElementCount && !relevo?.dataset.conSalida) cuerpo.append(cierreDeHoja());
   });
 }
 
-/** A quién pedírselo: los de casa menos uno mismo, en botones. Son tres
- *  personas; una lista desplegable para elegir entre tres es un paso de más. */
+/**
+ * A quién pedírselo: los de casa menos uno mismo, en botones. Son tres personas;
+ * una lista desplegable para elegir entre tres es un paso de más.
+ *
+ * **Y Cancelar va en esa misma línea**, empujado a la derecha. Cuando el turno
+ * propio está por venir no hay nada que marcar, así que los nombres son la única
+ * línea de verbos de la hoja y es de ella de la que Cancelar es la alternativa.
+ */
 function selectorDeRelevo(estado, ctx) {
   const otros = genteDeCasa(ctx.vista).filter((p) => p.id !== ctx.vista.yo.id);
   if (!otros.length) return el('p', { class: 'pista', texto: 'No hay nadie más en casa a quien pedírselo.' });
 
-  return el('div', { class: 'grupo' }, [
+  const bloque = el('div', { class: 'grupo' }, [
     el('p', { class: 'pista', texto: '¿Que lo saque otro? Se lo pides y tiene que aceptarlo.' }),
-    el('div', { class: 'lio-relevo' }, otros.map((persona) => el('button', {
-      class: 'boton', type: 'button',
-      onclick: async () => {
-        await pedirCambio(ctx.vista.datos, estado, persona.id);
-        cerrarHoja();
-        avisar(`Se lo he pedido a ${persona.nombre}`);
-        ctx.refrescar();
-      },
-    }, [persona.nombre]))),
+    el('div', { class: 'lio-relevo' }, [
+      ...otros.map((persona) => el('button', {
+        class: 'boton-mini lio-relevo-nombre', 'data-tono': 'principal', type: 'button',
+        onclick: async () => {
+          await pedirCambio(ctx.vista.datos, estado, persona.id);
+          cerrarHoja();
+          avisar(`Se lo he pedido a ${persona.nombre}`);
+          ctx.refrescar();
+        },
+      }, [persona.nombre])),
+      el('span', { class: 'lio-relevo-salida' }, [
+        el('button', {
+          class: 'boton-mini', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja,
+        }, ['Cancelar']),
+      ]),
+    ]),
   ]);
+  bloque.dataset.conSalida = 'si';
+  return bloque;
 }
 
 /**
@@ -668,6 +721,13 @@ function selectorDeRelevo(estado, ctx) {
  * Quien tiene que contestarla la contesta aquí mismo; quien la hizo solo puede
  * retirarla. Las dos respuestas van escritas enteras y con el mismo peso:
  * decir que no tiene que costar lo mismo que decir que sí.
+ *
+ * **Sin caja y sin borde de color.** Encerrada en un recuadro parecía un aviso
+ * pegado encima de la hoja, cuando es la continuación de la frase de arriba: el
+ * turno está así, y por esto. Va como un párrafo más, detrás del resumen, y sus
+ * verbos como los verbos de cualquier otra hoja. El color de aviso sigue estando
+ * donde sí hace falta —la banda de Hoy, que es la que tiene que interrumpir a
+ * quien no venía a esto—.
  */
 export function bloqueDePropuesta(trato, ctx) {
   const yo = ctx.vista.yo.id;
@@ -687,7 +747,7 @@ export function bloqueDePropuesta(trato, ctx) {
           ctx.refrescar();
         },
       }, ['Retirar lo que pedí']),
-      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+      botonDeCancelar(),
     ]));
     return bloque;
   }
@@ -711,10 +771,18 @@ export function bloqueDePropuesta(trato, ctx) {
         ctx.refrescar();
       },
     }, [trato.clase === 'cambio' ? 'No puedo' : 'No fue así']),
-    el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
+    botonDeCancelar(),
   ]));
   return bloque;
 }
+
+/** Cancelar, para poner al lado del verbo del que es la alternativa. */
+const botonDeCancelar = () => el('button', {
+  class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja,
+}, ['Cancelar']);
+
+/** Y Cancelar cuando va solo: al final de la hoja y a la derecha. */
+const cierreDeHoja = () => el('div', { class: 'acciones acciones-cierre' }, [botonDeCancelar()]);
 
 /**
  * Qué se está pidiendo, contado desde el lado de quien lee.
@@ -826,7 +894,7 @@ function vistaMes(ctx) {
   const turnos = hayLio(ctx.vista.datos) ? turnosDe(ctx.vista.datos, ancla) : [];
 
   if (!delDia.length && !turnos.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
-  for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx));
+  for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx, { conFecha: false }));
   for (const turno of turnos) detalle.append(filaDeTurno(turno, ctx));
 
   // El día del mes que no tiene ningún evento se llena igual que la fila vacía
@@ -886,6 +954,7 @@ function vistaLista(ctx) {
     pintar: () => tarjetaDeEvento(
       { instancia, evento: instancia.evento, dia: soloFecha(instancia.inicio), continuacion: false },
       ctx,
+      { conFecha: false },
     ),
   }));
 
@@ -917,15 +986,32 @@ function vistaLista(ctx) {
 
   const visibles = cosas.slice(0, TECHO_LISTA);
   let grupoActual = null;
+  let diaActual = null;
+  let mesEscrito = null;
   let nodo = null;
 
   for (const cosa of visibles) {
     const grupo = nombreDeGrupo(cosa.dia, desde);
     if (grupo !== grupoActual) {
       grupoActual = grupo;
+      diaActual = null;
       nodo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: grupo })]);
       contenedor.append(nodo);
     }
+
+    // El separador de día solo tiene sentido dentro de un grupo que abarque
+    // varios: «Hoy» y «Mañana» son ya un día, y escribirlo debajo sería decir dos
+    // veces lo mismo en dos renglones seguidos.
+    const clave = iso(cosa.dia);
+    if (grupoAbarcaVariosDias(grupo) && clave !== diaActual) {
+      diaActual = clave;
+      const conMes = cosa.dia.getMonth() !== mesEscrito;
+      mesEscrito = cosa.dia.getMonth();
+      nodo.append(el('p', { class: 'lista-dia' }, [
+        el('span', { texto: rotuloDeDia(cosa.dia, conMes) }),
+      ]));
+    }
+
     nodo.append(cosa.pintar());
   }
 
@@ -953,10 +1039,44 @@ function nombreDeGrupo(momento, referencia) {
   return `${MESES_LARGOS[momento.getMonth()]} de ${momento.getFullYear()}`;
 }
 
-function tarjetaDeEvento(aparicion, ctx) {
+/** Los dos primeros grupos son de un solo día y no llevan separador dentro. */
+const grupoAbarcaVariosDias = (grupo) => grupo !== 'Hoy' && grupo !== 'Mañana';
+
+/**
+ * «Miércoles 29», y con el mes cuando el mes cambia.
+ *
+ * Escribirlo siempre alargaría veinte rótulos para repetir un dato que solo
+ * cambia una vez al mes; no escribirlo nunca dejaría «Lunes 3» sin saber de qué
+ * mes dentro de un grupo que cruza de julio a agosto. Se escribe en el primer
+ * día de cada mes, y a partir de ahí se hereda leyendo hacia arriba.
+ */
+function rotuloDeDia(dia, conMes) {
+  const nombre = NOMBRES_DIA[indiceDia(dia)];
+  const cabeza = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  return conMes
+    ? `${cabeza} ${dia.getDate()} de ${MESES_LARGOS[dia.getMonth()]}`
+    : `${cabeza} ${dia.getDate()}`;
+}
+
+/**
+ * La tarjeta de un evento en el mes y en la lista.
+ *
+ * **La fecha solo se escribe si no la dice ya el rótulo de encima.** En la lista
+ * la dice el separador del día y en el mes, el título del detalle; repetirla
+ * dentro de cada tarjeta era leer «miércoles 29 de julio» tantas veces como
+ * cosas hubiera ese día, en el sitio donde debería estar lo que las distingue.
+ * Es lo que ya hacía la lista de Hoy.
+ */
+function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
   const hora = horaDe(aparicion);
   const cara = ctx.vista.caraDe(aparicion.evento);
   const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
+  const pie = [
+    conFecha ? formatearFechaLarga(aparicion.dia) : null,
+    aparicion.evento.ubicacion,
+    participantes.length ? participantes.join(', ') : null,
+  ].filter(Boolean).join(' · ');
+
   return el('button', {
     class: 'tarjeta', type: 'button',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
@@ -966,13 +1086,7 @@ function tarjetaDeEvento(aparicion, ctx) {
       el('h3', { texto: cara.titulo }),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
     ]),
-    el('p', {
-      texto: [
-        formatearFechaLarga(aparicion.dia),
-        aparicion.evento.ubicacion,
-        participantes.length ? participantes.join(', ') : null,
-      ].filter(Boolean).join(' · '),
-    }),
+    pie ? el('p', { texto: pie }) : null,
   ]);
 }
 

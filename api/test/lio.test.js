@@ -1,5 +1,5 @@
 /**
- * Lio en el servidor.
+ * Lío en el servidor.
  *
  * Se comprueban las tres cosas que, si fallan, fallan sin que nadie se entere:
  * que quien no vive en casa no vea ni escriba los paseos, que una propuesta la
@@ -87,7 +87,7 @@ test('un cuadro ilegible no tumba la sincronización', () => {
 
 // ------------------------------------------------------------ Quién lo ve --
 
-test('quien no vive en casa no recibe nada de Lio', () => {
+test('quien no vive en casa no recibe nada de Lío', () => {
   const instantanea = componerInstantanea(registro(), ABUELA);
   assert.deepEqual(instantanea.paseos, []);
   assert.deepEqual(instantanea.tratos_paseo, []);
@@ -247,7 +247,7 @@ function baseSinLasTablas() {
   return base;
 }
 
-test('el registro se lee aunque las tablas de Lio no estén todavía', async () => {
+test('el registro se lee aunque las tablas de Lío no estén todavía', async () => {
   const { leerRegistro } = await import('../src/repositorio.js');
   const registro = await leerRegistro(baseSinLasTablas());
   assert.deepEqual(registro.paseos, []);

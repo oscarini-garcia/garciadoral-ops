@@ -133,7 +133,7 @@ def es_de_la_casa(persona: Persona | None) -> bool:
     """¿Vive en casa quien mira?
 
     Espejo de `esDeLaCasa` en `api/src/lio.js`. Acota a los cuatro del círculo
-    cerrado lo que solo les concierne a ellos —hoy, los turnos de Lio—, y no pasa
+    cerrado lo que solo les concierne a ellos —hoy, los turnos de Lío—, y no pasa
     por `visible` porque no es la misma pregunta: aquella oculta una cosa a su
     destinatario, y esta acota un módulo entero a un círculo.
 

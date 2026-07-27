@@ -520,13 +520,21 @@ button { background: none; border: 0; cursor: pointer; }
   display: grid; grid-template-columns: 32px 1fr 1fr; gap: 6px; align-items: center;
   border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2); padding: 2px 8px;
 }
+/* Los dos rótulos de columna, escritos una sola vez arriba. Sin caja: no es una
+   línea del cuadro, es lo que dice qué es cada mitad. */
+.lio-dia-cabecera {
+  border: 0; background: transparent; padding: 0 8px; min-height: 0;
+}
+.lio-dia-cabecera span {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-faint); padding-left: 6px;
+}
 .lio-dia-rotulo { font-size: 13px; color: var(--ink-soft); }
 .lio-dia-turno {
   display: flex; align-items: center; gap: 6px;
   min-height: 34px; padding: 2px 6px; border-radius: 8px;
   font-size: 13.5px; text-align: left; min-width: 0;
 }
-.lio-dia-emoji { flex: none; font-size: 12px; }
 .lio-dia-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lio-dia-turno[data-vacio="si"] .lio-dia-nombre { color: var(--ink-faint); }
 
@@ -537,12 +545,22 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* Lo de Lío en Hoy: la banda de lo que hay que contestar y las filas de turno. */
 .lio-banda { display: flex; flex-direction: column; gap: 9px; margin-bottom: 4px; }
-.lio-peticion, .lio-propuesta {
+
+/* La petición de Hoy sí lleva caja: interrumpe a quien venía a mirar su día y
+   tiene que distinguirse de todo lo que hay debajo. */
+.lio-peticion {
   display: flex; flex-direction: column; gap: 9px;
   border: 1px solid var(--regalo); border-radius: 12px;
   background: color-mix(in srgb, var(--regalo) 8%, var(--paper));
   padding: 11px 13px;
 }
+
+/* La misma propuesta dentro de la hoja del turno, en cambio, va sin caja: ahí
+   no interrumpe nada, es la continuación de la frase de arriba —el turno está
+   así, y por esto—. Encerrada en un recuadro de color parecía un aviso pegado
+   encima de la hoja. */
+.lio-propuesta { display: flex; flex-direction: column; gap: 9px; }
+.lio-propuesta + .lio-propuesta { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 5px; }
 .lio-peticion p, .lio-propuesta p { font-size: 14.5px; }
 
 .lio-fila {
@@ -551,15 +569,32 @@ button { background: none; border: 0; cursor: pointer; }
   background: var(--paper-2); padding: 9px 12px;
 }
 .lio-fila[data-estado="hecho"] { background: var(--tinta-suave); border-color: transparent; }
-.lio-fila[data-rezagado="si"] { border-color: var(--aviso); background: transparent; }
-.lio-fila-emoji { flex: none; font-size: 16px; }
+
+/* Lo de ayer que se quedó sin marcar se distingue por lo que dice —«Ayer por la
+   mañana» y la pregunta debajo—, no por un recuadro de color. El borde de aviso
+   convertía en alarma lo que casi siempre es un olvido del gesto y no un perro
+   sin pasear, que es justo lo que §10.3 pedía no hacer. */
+.lio-fila[data-rezagado="si"] { background: transparent; }
 .lio-fila-texto {
   display: flex; flex-direction: column; gap: 1px;
   flex: 1 1 auto; min-width: 0; text-align: left;
 }
 .lio-fila-titulo { font-size: 15px; }
 .lio-fila-pista { font-size: 12.5px; color: var(--ink-soft); }
-.lio-relevo { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Los nombres a quien pedirle el turno, y Cancelar empujado a la derecha de esa
+   misma línea: cuando el turno propio está por venir no hay nada que marcar, así
+   que esta es la única línea de verbos de la hoja.
+
+   Van en el botón corto y no en el de hoja entera. Tres nombres en el botón
+   grande medían 344 puntos y solo caben 304, de modo que la salida se bajaba
+   sola a un segundo renglón; en el corto miden 308 y con este aire caben los
+   cuatro. Y de paso dejan de ser tres verbos principales en una fila, que es lo
+   que parecían con el relleno de la tinta a tamaño de hoja: aquí no hay una
+   acción principal, hay tres nombres entre los que elegir. Si algún día no
+   caben, la salida baja sola y se queda a la derecha del renglón siguiente. */
+.lio-relevo { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.lio-relevo-nombre { padding-left: 12px; padding-right: 12px; }
+.lio-relevo-salida { margin-left: auto; display: flex; }
 
 /* Marcar el turno: una casilla redonda con el visto dentro, en trazo suave
    mientras está por hacer. Es el gesto que se repite dos veces al día, así que
@@ -649,6 +684,29 @@ button { background: none; border: 0; cursor: pointer; }
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
   text-transform: uppercase; color: var(--ink-faint);
 }
+
+/* Los dos niveles de la vista de lista.
+
+   El rótulo de proximidad —«Esta semana»— sube a cuerpo de título en serifa, y
+   el separador de día se queda con la versalita diminuta que aquel llevaba. Solo
+   con eso, grupo y día quedarían pegados al empezar cada grupo y lo único que
+   los separaría sería el cuerpo de la letra; por eso el día lleva además una
+   raya fina que llega al margen. Lo que dice esa raya es «de aquí para abajo»,
+   que es exactamente lo que un separador de día quiere decir, y de paso lo
+   coloca por debajo del grupo sin discutir. Las cuatro formas que se estudiaron
+   están en `specs/prototipo-separadores-de-lista.html`. */
+.cuerpo-agenda .grupo-titulo {
+  font-family: var(--serif); font-size: 18px; font-weight: 500;
+  letter-spacing: -.01em; text-transform: none; color: var(--ink);
+}
+.lista-dia {
+  display: flex; align-items: center; gap: 10px; margin-top: 4px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.lista-dia::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--line); }
+/* El primero del grupo va pegado a su rótulo: el aire ya lo pone el grupo. */
+.grupo > .lista-dia:first-of-type { margin-top: 0; }
 
 /* La cabecera de una persona dentro de una fecha señalada. No es un rótulo de
    sección como los de arriba —diminutos, en versalitas— porque aquí el nombre es
@@ -905,7 +963,15 @@ button { background: none; border: 0; cursor: pointer; }
 .pista { font-size: 14px; color: var(--ink-soft); }
 .pista[data-tono="aviso"] { color: var(--aviso); }
 
-.acciones { display: flex; gap: 9px; margin-top: 4px; }
+/* Los verbos de una hoja, en una línea, con «Cancelar» a la derecha del
+   principal: lo que se decide ahí es hacerlo o no hacerlo, y las dos mitades de
+   esa decisión tienen que verse juntas. Envuelve cuando no caben —tres verbos y
+   la salida en 360 puntos— en lugar de apretar el texto de los botones. */
+.acciones { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
+
+/* Y cuando Cancelar va solo, porque no hay ningún verbo que ofrecer: al final de
+   la hoja y a la derecha, que ahí no es la alternativa a nada sino la salida. */
+.acciones-cierre { justify-content: flex-end; margin-top: 14px; }
 .boton {
   min-height: var(--toque); padding: 10px 18px; border-radius: 10px;
   font-size: 16px; font-weight: 500;
@@ -927,6 +993,11 @@ button { background: none; border: 0; cursor: pointer; }
   background: var(--paper); border: 1px solid var(--line); color: var(--ink);
 }
 .boton-mini[data-tono="principal"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+/* El mismo gris que `.boton[data-tono="discreto"]`, para que un «Cancelar» corto
+   —el de la línea de los nombres a quien pedirle el turno— no se vea de otro
+   color que los «Cancelar» de todas las demás hojas. Cambia el tamaño, no el
+   tono: eso es lo que dice que es la misma cosa. */
+.boton-mini[data-tono="discreto"] { background: var(--paper-3); border-color: transparent; color: var(--ink); }
 .boton-mini:disabled { opacity: .5; cursor: default; }
 .crecer { flex: 1; }
 

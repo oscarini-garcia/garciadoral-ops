@@ -85,8 +85,8 @@ tener que recorrer la aplicación entera cada vez.
 - **gente.js** — El campo con el que se elige gente, en todas las pantallas que lo piden.
   campoDeGente
 - **lio.js** — Lío: los turnos de paseo, sus estados y el trato que los cambia de dueño.
-  TURNOS · IDS_TURNO · turnoPorId · idPaseo · cuadroVacio · cuadroDe · hayLio · genteDeCasa
-  inicialesDe · finDeVentana · …y 13 más
+  TURNOS · IDS_TURNO · turnoPorId · nombreDeTurno · rotuloDeTurno · idPaseo · cuadroVacio
+  cuadroDe · hayLio · genteDeCasa · …y 15 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS · PARENTESCO_OTRO
   nombreCompleto · deQuien · GENEROS · estaActivo · redaccionDisponible · …y 9 más
