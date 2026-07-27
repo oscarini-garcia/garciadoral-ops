@@ -122,9 +122,9 @@ tener que recorrer la aplicación entera cada vez.
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
   …y 3 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
-  reiniciarAgenda · tituloDeAgenda · pintarAgenda · resumenDeTurno · abrirTurnoDeLio
-  bloqueDePropuesta · textoDePropuesta · abrirDia · abrirDetalleEvento
-  abrirFormularioEvento · …y 1 más
+  reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirLioDelDia · filaDeTurno
+  resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta · abrirDia
+  …y 3 más
 
 ### `herramientas/` · Utilidades de desarrollo
 

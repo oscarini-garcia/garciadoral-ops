@@ -443,51 +443,62 @@ button { background: none; border: 0; cursor: pointer; }
 
 /* ------------------------------------------------------------------- Lio -- */
 
-/* El carril de la semana: siete columnas de días y una de rótulos.
+/* Lio como columna de la fila del día: día, Lio y evento.
 
-   **Sin color por persona.** A quién le toca lo dicen sus dos letras; el color
-   dice en qué está el turno, que es lo que se mira al recorrer la semana. Un
-   tinte por persona sacado del identificador los distinguía bien, pero metía
-   cuatro colores ajenos en una paleta de un solo acento —y cambiaban solos si
-   alguien volvía a darse de alta (specs/prototipo-cuadro-de-lio.html). */
-.lio-carril {
+   Empezó siendo una banda de siete columnas encima de la rejilla y se metió
+   dentro de la fila, que es donde se lee mejor: el jueves se cuenta entero de un
+   renglón —qué día es, quién saca al perro, qué hay— y la banda dejó libres sus
+   62 puntos de la parte de arriba, que es la única que se ve sin desplazar.
+
+   **La fila no crece por esto.** Su altura la marca la columna de la fecha —el
+   número en 22 puntos de serifa—, y las dos pastillas apiladas caben debajo, en
+   un hueco que antes se desperdiciaba.
+
+   **El aire no es igual a los dos lados**, y no por capricho: el número del día
+   es grande y oscuro, y se despega solo de lo que venga detrás; entre las
+   pastillas y el evento hay dos cosas del mismo tamaño y del mismo peso, y ahí
+   hace falta el hueco de verdad. El sitio sale de la columna de la fecha, que
+   llevaba 52 puntos para escribir dos cifras (specs/propuesta-lio-en-la-fila.html). */
+.semana[data-lio="si"] .dia, .semana-cabecera {
+  grid-template-columns: 38px auto 1fr;
+  column-gap: 0;
+}
+.semana[data-lio="si"] .lio-col, .semana-cabecera span:nth-child(2) {
+  margin-left: 4px; margin-right: 20px;
+}
+
+.semana-cabecera {
   display: grid;
-  grid-template-columns: 22px repeat(7, 1fr);
-  gap: 4px 2px;
-  align-items: center; justify-items: center;
-  background: var(--paper-2);
-  border: 1px solid var(--line); border-radius: 12px;
-  padding: 7px 8px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 0 5px; border-bottom: 1px solid var(--line);
 }
-.lio-rotulo { font-size: 13px; }
-.lio-cabecera { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--ink-faint); }
-.lio-cabecera[data-hoy="si"] { color: var(--tinta); }
+.semana-cabecera span:nth-child(2) { white-space: nowrap; }
 
-/* La casilla es la superficie tocable y la pastilla de dentro es lo que se ve:
-   así el blanco es holgado sin que la marca engorde. */
-.lio-casilla {
-  display: grid; place-items: center;
-  width: 100%; min-height: 30px; padding: 3px 0;
-  background: none; border: 0; cursor: pointer;
+/* La columna entera es el blanco, y las pastillas de dentro son lo que se ve:
+   cada una mide unos 40 × 18 puntos, la mitad de lo que pide un dedo, así que
+   tocar un turno suelto sería apuntar. Abre el día de Lio con los dos. */
+.lio-col {
+  display: flex; flex-direction: column; gap: 3px; justify-content: center;
+  background: none; border: 0; padding: 0; cursor: pointer;
 }
-.lio-ini {
-  display: grid; place-items: center;
-  min-width: 24px; min-height: 21px; padding: 2px 5px;
-  border-radius: 999px; border: 1px solid transparent;
-  font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
+.lio-marca {
+  display: flex; align-items: center; gap: 3px;
+  font-family: var(--mono); font-size: 10.5px; line-height: 1;
+  padding: 3px 4px; border-radius: 999px; border: 1px solid transparent;
   background: var(--paper-3); color: var(--ink-soft);
 }
+.lio-marca-turno { font-size: 9px; }
 
 /* Hecho es lo único que se rellena: al recorrer la semana, lo que salta a la
    vista es lo que ya está resuelto y lo que se quedó sin marcar. */
-.lio-casilla[data-estado="hecho"] .lio-ini { background: var(--tinta); color: var(--paper); }
-.lio-casilla[data-estado="sin-marcar"] .lio-ini {
+.lio-marca[data-estado="hecho"] { background: var(--tinta); color: var(--paper); }
+.lio-marca[data-estado="sin-marcar"] {
   background: transparent; border-color: var(--aviso); border-style: dashed; color: var(--aviso);
 }
-.lio-casilla[data-estado="sin-asignar"] .lio-ini { background: transparent; color: var(--ink-faint); }
-.lio-casilla[data-mio="si"] .lio-ini { box-shadow: 0 0 0 1.5px var(--tinta); }
-.lio-casilla[data-pedido="si"] .lio-ini { border-color: var(--regalo); border-style: dashed; color: var(--regalo); }
-.lio-casilla[data-hoy="si"] { background: var(--tinta-suave); border-radius: 8px; }
+.lio-marca[data-estado="sin-asignar"] { background: transparent; color: var(--ink-faint); }
+.lio-marca[data-mio="si"] { box-shadow: 0 0 0 1.5px var(--tinta); }
+.lio-marca[data-pedido="si"] { border-color: var(--regalo); border-style: dashed; color: var(--regalo); }
 
 /* El cuadro de Ajustes: una línea por día y el nombre escrito entero.
 
@@ -509,7 +520,10 @@ button { background: none; border: 0; cursor: pointer; }
 .lio-dia-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lio-dia-turno[data-vacio="si"] .lio-dia-nombre { color: var(--ink-faint); }
 
-.agenda-semana { display: flex; flex-direction: column; gap: 10px; }
+/* La cabecera y la rejilla van pegadas: la raya de debajo de los rótulos es la
+   misma que abría la semana, no una segunda. */
+.agenda-semana { display: flex; flex-direction: column; }
+.agenda-semana .semana { border-top: 0; }
 
 /* Lo de Lio en Hoy: la banda de lo que hay que contestar y las filas de turno. */
 .lio-banda { display: flex; flex-direction: column; gap: 9px; margin-bottom: 4px; }
@@ -536,6 +550,24 @@ button { background: none; border: 0; cursor: pointer; }
 .lio-fila-titulo { font-size: 15px; }
 .lio-fila-pista { font-size: 12.5px; color: var(--ink-soft); }
 .lio-relevo { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Marcar el turno: una casilla redonda con el visto dentro, en trazo suave
+   mientras está por hacer. Es el gesto que se repite dos veces al día, así que
+   no lleva palabra: «Ya está» escrito le daba el peso de un verbo principal en
+   la pantalla de inicio, y lo que hace es tan corriente como tachar algo. */
+.lio-visto {
+  flex: none; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--paper);
+  color: var(--ink-faint); cursor: pointer;
+}
+.lio-visto:hover { color: var(--tinta); border-color: var(--tinta); }
+.lio-visto .icono-svg svg { width: 18px; height: 18px; }
+/* Y ya hecho, el visto suelto y verde, sin caja: no es una casilla que se pueda
+   desmarcar de un toque —eso se hace entrando en el turno— sino la marca de que
+   eso ya pasó. Es el mismo signo que lleva una idea ya seleccionada. */
+.lio-hecho { flex: none; display: grid; place-items: center; width: 34px; color: var(--tinta); }
+.lio-hecho .icono-svg svg { width: 19px; height: 19px; }
 
 /* -------------------------------------------------------- Vista de semana -- */
 

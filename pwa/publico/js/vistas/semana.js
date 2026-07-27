@@ -30,7 +30,7 @@ import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 import {
   TURNOS, desmarcar, genteDeCasa, hayLio, inicialesDe, marcarHecho, pedirCambio,
-  resolverPropuesta, retirarPropuesta, turnoDe,
+  resolverPropuesta, retirarPropuesta, turnoDe, turnosDe,
 } from '../lio.js';
 
 let modo = 'semana';
@@ -318,7 +318,8 @@ function mover(pasos) {
 function vistaSemana(ctx) {
   const dias = diasDeLaSemana(lunesDe(ancla));
   const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, dias[0], dias[6]), dias);
-  const marco = el('div', { class: 'semana' });
+  const conLio = hayLio(ctx.vista.datos);
+  const marco = el('div', { class: 'semana', 'data-lio': conLio ? 'si' : 'no' });
   const clavehoy = iso(hoy());
 
   for (const dia of dias) {
@@ -371,6 +372,7 @@ function vistaSemana(ctx) {
         el('div', { class: 'dia-inicial', texto: INICIALES_DIA[(dia.getDay() + 6) % 7] }),
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
       ]),
+      columnaDeLio(dia, ctx),
       contenido,
     ]);
 
@@ -385,11 +387,13 @@ function vistaSemana(ctx) {
     marco.append(fila);
   }
 
-  // El carril de Lio va encima de la rejilla y no dentro de cada día: es un
-  // instrumento aparte, se lee de un vistazo y gasta el alto una sola vez en
-  // lugar de siete (specs/ux.md §10.3).
-  const carril = carrilDeLio(dias, ctx);
-  return carril ? el('div', { class: 'agenda-semana' }, [carril, marco]) : marco;
+  // Lio va dentro de la fila, como una columna más entre el día y los eventos,
+  // y no como una banda aparte encima de la rejilla: así el jueves se lee
+  // entero de un renglón —qué día es, quién saca al perro, qué hay— y la parte
+  // de arriba de la pantalla, que es la única que se ve sin desplazar, se queda
+  // para la semana (specs/ux.md §10.3).
+  const cabecera = cabeceraDeLio(ctx);
+  return cabecera ? el('div', { class: 'agenda-semana' }, [cabecera, marco]) : marco;
 }
 
 // ----------------------------------------------------------------- Lio --
@@ -405,69 +409,159 @@ function vistaSemana(ctx) {
  * No aparece mientras nadie haya puesto el cuadro en Ajustes, ni para quien no
  * vive en casa: a esa persona el servidor ni siquiera le manda los paseos.
  */
-function carrilDeLio(dias, ctx) {
+function cabeceraDeLio(ctx) {
   if (!hayLio(ctx.vista.datos)) return null;
-
-  const clavehoy = iso(hoy());
-  const carril = el('div', { class: 'lio-carril' });
-
-  carril.append(el('span', { class: 'lio-rotulo', texto: '🐾', 'aria-hidden': 'true' }));
-  for (const dia of dias) {
-    carril.append(el('span', {
-      class: 'lio-cabecera', 'aria-hidden': 'true',
-      'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
-      texto: INICIALES_DIA[(dia.getDay() + 6) % 7],
-    }));
-  }
-
-  for (const turno of TURNOS) {
-    carril.append(el('span', { class: 'lio-rotulo', texto: turno.emoji, title: turno.nombre }));
-    for (const dia of dias) carril.append(casillaDeLio(dia, turno, ctx));
-  }
-  return carril;
+  // Los tres rótulos nombran las tres columnas, y con la raya debajo la semana
+  // se lee como la tabla que es. La huella va pegada a «Lio» y no suelta: sola
+  // no diría de qué columna habla, y menos una semana sin turnos puestos, que
+  // es cuando la columna del medio está vacía y hay que explicarla.
+  return el('div', { class: 'semana-cabecera' }, [
+    el('span', { texto: 'Día' }),
+    el('span', { texto: '🐾 Lio' }),
+    el('span', { texto: 'Evento' }),
+  ]);
 }
 
-function casillaDeLio(dia, turno, ctx) {
-  const estado = turnoDe(ctx.vista.datos, dia, turno.id);
-  const persona = ctx.vista.persona(estado.asignadoId);
-  const hecho = ctx.vista.persona(estado.hechoPorId);
+/**
+ * La columna de Lio de un día: el sol y la luna con quien tiene cada turno.
+ *
+ * **Es un solo botón y no dos.** Cada pastilla mide unos 40 × 18 puntos, la
+ * mitad de lo que pide un blanco cómodo, así que tocar un turno concreto sería
+ * apuntar. La columna entera sí es un blanco holgado, y abre el día de Lio con
+ * los dos turnos y sus verbos: marcar cuesta un toque más, pero no se falla
+ * nunca. Y el gesto de marcar de verdad vive en Hoy; a la agenda se viene a
+ * mirar (specs/propuesta-lio-en-la-fila.html).
+ */
+function columnaDeLio(dia, ctx) {
+  if (!hayLio(ctx.vista.datos)) return null;
 
-  return el('button', {
-    class: 'lio-casilla', type: 'button',
-    'data-estado': estado.estado,
-    'data-mio': estado.mio ? 'si' : 'no',
-    'data-pedido': estado.trato ? 'si' : 'no',
-    'data-hoy': iso(dia) === iso(hoy()) ? 'si' : 'no',
-    'aria-label': `${formatearFechaLarga(dia)}, ${turno.nombre.toLowerCase()}: ${resumenDeTurno(estado, ctx)}`,
-    onclick: () => { toque(); abrirTurnoDeLio(dia, turno.id, ctx); },
+  const turnos = turnosDe(ctx.vista.datos, dia);
+  const columna = el('button', {
+    class: 'lio-col', type: 'button',
+    'aria-label': `Lio el ${formatearFechaLarga(dia)}: `
+      + turnos.map((t) => `${t.turno.nombre.toLowerCase()}, ${resumenDeTurno(t, ctx)}`).join('; '),
+    onclick: () => { toque(); abrirLioDelDia(dia, ctx); },
+  });
+
+  for (const turno of turnos) {
+    const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
+    columna.append(el('span', {
+      class: 'lio-marca',
+      'data-estado': turno.estado,
+      'data-mio': turno.mio ? 'si' : 'no',
+      'data-pedido': turno.trato ? 'si' : 'no',
+    }, [
+      el('span', { class: 'lio-marca-turno', 'aria-hidden': 'true', texto: turno.turno.emoji }),
+      // Sin color propio de cada persona: a quién le toca lo dicen sus dos
+      // letras, y el color queda para decir en qué está el turno
+      // (specs/prototipo-cuadro-de-lio.html).
+      el('span', { texto: quien ? inicialesDe(quien) : '·' }),
+    ]));
+  }
+  return columna;
+}
+
+/**
+ * El día de Lio: los dos turnos, con lo que se puede hacer con cada uno.
+ *
+ * Es la misma fila que la pantalla de Hoy pone bajo el saludo, y a propósito:
+ * quien ya sabe marcar desde Hoy no tiene que aprender nada aquí.
+ */
+export function abrirLioDelDia(fecha, ctx) {
+  abrirHoja('🐾 Lio', (cuerpo) => {
+    cuerpo.append(el('p', { class: 'pista', texto: formatearFechaLarga(fecha) }));
+    for (const turno of turnosDe(ctx.vista.datos, fecha)) {
+      cuerpo.append(filaDeTurno(turno, ctx));
+    }
+  });
+}
+
+/**
+ * Una fila de turno: el emoji, en qué está, y el visto para marcarlo.
+ *
+ * Vive aquí y no en la pantalla de Hoy porque la usan las dos, y esta es la que
+ * puede prestársela a la otra sin darle la vuelta a las dependencias: Hoy ya
+ * importa de la agenda, y la agenda no importa de Hoy.
+ */
+export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
+  const puedeMarcar = turno.estado !== 'hecho' && !turno.trato;
+  const rotulo = rezagado
+    ? `Ayer por la ${turno.turno.nombre.toLowerCase()}`
+    : turno.turno.nombre;
+
+  const fila = el('div', {
+    class: 'lio-fila', 'data-estado': turno.estado, 'data-rezagado': rezagado ? 'si' : 'no',
   }, [
-    // Sin color propio de cada persona: a quién le toca lo dicen sus dos
-    // letras, y el color queda para decir en qué está el turno. Cuatro tintes
-    // sacados del identificador distinguían bien pero no eran de esta
-    // aplicación, y encima cambiarían solos si alguien se diera de alta otra vez
-    // (specs/prototipo-cuadro-de-lio.html).
-    el('span', {
-      class: 'lio-ini',
-      texto: (hecho || persona) ? inicialesDe(hecho || persona) : '·',
-    }),
+    el('span', { class: 'lio-fila-emoji', 'aria-hidden': 'true', texto: turno.turno.emoji }),
+    el('button', {
+      class: 'lio-fila-texto', type: 'button',
+      'aria-label': `${rotulo}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
+      onclick: () => { toque(); abrirTurnoDeLio(turno.fecha, turno.turno.id, ctx); },
+    }, [
+      el('span', { class: 'lio-fila-titulo', texto: rotulo }),
+      el('span', {
+        class: 'lio-fila-pista',
+        texto: rezagado && turno.estado === 'sin-marcar'
+          ? `${resumenDeTurno(turno, ctx)}. ¿La sacaste?`
+          : resumenDeTurno(turno, ctx),
+      }),
+    ]),
   ]);
+
+  // Un visto y no una palabra. «Ya está» cantaba dos veces al día en la pantalla
+  // de inicio y le daba a marcar el peso de un verbo principal, cuando es el
+  // gesto más corriente que hay aquí. La casilla vacía dice lo que falta y el
+  // visto verde dice lo que está, sin escribir ninguna de las dos cosas.
+  if (puedeMarcar) {
+    fila.append(el('button', {
+      class: 'lio-visto empujar', type: 'button',
+      'aria-label': turno.mio || turno.estado === 'sin-asignar'
+        ? `Marcar que ya está: ${rotulo.toLowerCase()}`
+        : `Decir que lo sacaste tú: ${rotulo.toLowerCase()}`,
+      title: turno.mio || turno.estado === 'sin-asignar' ? 'Ya está' : 'Lo saqué yo',
+      onclick: async () => {
+        toque();
+        const resultado = await marcarHecho(ctx.vista.datos, turno);
+        avisar(resultado?.marcado ? 'Marcado' : 'Se lo he preguntado a quien le tocaba');
+        ctx.refrescar();
+      },
+    }, [icono('visto')]));
+  } else if (turno.estado === 'hecho') {
+    // Hecho es un visto suelto, sin caja: no es una casilla que se desmarque
+    // —eso se hace entrando en el turno— sino la marca de que ya pasó.
+    fila.append(el('span', {
+      class: 'lio-hecho empujar', role: 'img',
+      'aria-label': 'Ya está', title: 'Ya está',
+    }, [icono('visto')]));
+  }
+  return fila;
 }
 
 /** La frase que describe un turno. La misma en la etiqueta de la casilla, en la
  *  hoja del turno y en el bloque de Hoy: si se dijera de tres maneras habría que
  *  aprender tres. */
 export function resumenDeTurno(estado, ctx) {
-  const nombre = (id) => (id === ctx.vista.yo.id ? 'tú' : ctx.vista.nombre(id));
+  // A uno mismo no se le nombra, y no basta con cambiar el nombre por «tú»: el
+  // verbo cambia con él. «Le toca a tú» y «lo sacó tú» era lo que salía cuando
+  // el pronombre se colaba en una frase escrita para un tercero.
+  const yo = ctx.vista.yo.id;
+
   if (estado.estado === 'hecho') {
     const hora = estado.hechoEn ? new Date(estado.hechoEn) : null;
     const cuando = hora && !Number.isNaN(hora.getTime())
       ? ` a las ${String(hora.getHours()).padStart(2, '0')}:${String(hora.getMinutes()).padStart(2, '0')}`
       : '';
-    return `lo sacó ${nombre(estado.hechoPorId)}${cuando}`;
+    return estado.hechoPorId === yo
+      ? `lo sacaste tú${cuando}`
+      : `lo sacó ${ctx.vista.nombre(estado.hechoPorId)}${cuando}`;
   }
   if (estado.estado === 'sin-asignar') return 'sin nadie';
-  if (estado.estado === 'sin-marcar') return `le tocaba a ${nombre(estado.asignadoId)} y nadie marcó`;
-  return `le toca a ${nombre(estado.asignadoId)}`;
+  if (estado.estado === 'sin-marcar') {
+    return estado.mio
+      ? 'te tocaba a ti y nadie marcó'
+      : `le tocaba a ${ctx.vista.nombre(estado.asignadoId)} y nadie marcó`;
+  }
+  return estado.mio ? 'te toca a ti' : `le toca a ${ctx.vista.nombre(estado.asignadoId)}`;
 }
 
 /**

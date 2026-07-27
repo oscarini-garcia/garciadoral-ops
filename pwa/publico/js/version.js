@@ -15,4 +15,4 @@
  * dice `versionInstalada()` en `native.js`.
  */
 
-export const VERSION_APP = '1.19.0';
+export const VERSION_APP = '1.20.0';

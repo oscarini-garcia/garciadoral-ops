@@ -1,0 +1,932 @@
+<meta charset="utf-8">
+<title>Lio dentro de la fila del día: la semana como tabla de tres columnas</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css. Las medidas que se citan
+     están tomadas con esa hoja de verdad y un ancho de 360 puntos, no
+     calculadas a ojo. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --regalo-suave:#F5E4EA;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  }
+
+  /* El mismo reajuste que abre `estilos.css`. Sin él las maquetas de este
+     documento salen unos treinta puntos más anchas y quince más altas que la
+     pantalla de verdad, que es justo lo que este documento viene a medir. */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte p { color: var(--ink-soft); max-width: 64ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 66ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .cifra { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--paper-3); padding: 1px 6px; border-radius: 5px; }
+
+  .lista-seca { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 7px; max-width: 66ch; }
+  .lista-seca strong { color: var(--ink); }
+
+  .par { display: grid; gap: 24px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 820px) { .par { grid-template-columns: 360px 1fr; } }
+
+  .opcion { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 7px; }
+  .opcion-titulo { display: flex; align-items: center; gap: 11px; }
+  .opcion-cabeza .letra {
+    font-family: var(--serif); font-size: 15px; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 27px; height: 27px; display: grid; place-items: center; flex: none;
+  }
+  .opcion-cabeza p { color: var(--ink-soft); max-width: 64ch; }
+
+  .juicio { display: flex; flex-direction: column; gap: 10px; }
+  .juicio div { display: grid; grid-template-columns: 18px 1fr; gap: 9px; align-items: start; }
+  .juicio span:first-child { font-family: var(--mono); color: var(--ink-faint); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio div span:last-child { color: var(--ink-soft); }
+  .juicio strong { color: var(--ink); }
+
+  /* ------------------------------------------------------------- Teléfono -- */
+
+  .tel {
+    width: 360px; max-width: 100%;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--sombra); overflow: hidden; padding: 4px 14px 12px;
+  }
+  .tel-rot {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 9px 0 6px;
+  }
+
+  /* La rejilla de la semana, copiada de estilos.css para que las medidas del
+     documento sean las de la aplicación y no las de una maqueta parecida. */
+  .semana { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .dia {
+    display: grid; grid-template-columns: 52px 1fr; gap: 10px;
+    border-bottom: 1px solid var(--line); padding: 9px 0; min-height: 58px;
+  }
+  .dia[data-hoy="si"] { background: var(--tinta-suave); margin: 0 -12px; padding: 9px 12px; border-radius: 8px; }
+  .dia-fecha { text-align: left; }
+  .dia-inicial { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-faint); }
+  .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .dia[data-hoy="si"] .dia-numero { color: var(--tinta); }
+  .dia-contenido { display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: center; }
+  .dia-vacio { align-self: stretch; display: flex; align-items: center; min-height: 28px; color: var(--ink-faint); font-size: 15px; }
+  .linea { display: flex; align-items: baseline; gap: 7px; min-height: 28px; width: 100%; text-align: left; padding: 2px 0; min-width: 0; }
+  .linea-emoji { flex: 0 0 auto; font-size: 16.5px; }
+  .linea-titulo { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
+  .linea-hora { flex: 0 0 auto; font-family: var(--mono); font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+  /* El carril de hoy, para el antes y el después. */
+  .lio-carril {
+    display: grid; grid-template-columns: 22px repeat(7, 1fr); gap: 4px 2px;
+    align-items: center; justify-items: center;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 7px 8px; margin-bottom: 10px;
+  }
+  .lio-carril .rot { font-size: 13px; }
+  .lio-carril .cab { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+  .lio-ini {
+    display: grid; place-items: center; min-width: 24px; min-height: 21px; padding: 2px 5px;
+    border-radius: 999px; border: 1px solid transparent;
+    font-family: var(--mono); font-size: 11px;
+    background: var(--paper-3); color: var(--ink-soft);
+  }
+
+  /* ------------------------------------------------------ Las cuatro formas -- */
+
+  .dia[data-v="a"], .dia[data-v="d"] { grid-template-columns: 52px 40px 1fr; }
+  .dia[data-v="d"] { grid-template-columns: 52px 1fr 40px; }
+  .dia[data-v="b"] { grid-template-columns: 52px 26px 1fr; }
+  .dia[data-v="c"] { grid-template-columns: 52px 62px 1fr; }
+
+  .lio-col { display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+  .lio-marca {
+    display: flex; align-items: center; gap: 3px;
+    font-family: var(--mono); font-size: 10.5px; line-height: 1;
+    padding: 3px 4px; border-radius: 999px;
+    background: var(--paper-3); color: var(--ink-soft); border: 1px solid transparent;
+  }
+  .lio-marca .t { font-size: 9px; }
+
+  .lio-col-b { display: flex; flex-direction: column; gap: 3px; align-items: center; justify-content: center; }
+  .lio-punto {
+    font-family: var(--mono); font-size: 10.5px; line-height: 1;
+    width: 24px; height: 18px; display: grid; place-items: center;
+    border-radius: 999px; background: var(--paper-3); color: var(--ink-soft); border: 1px solid transparent;
+  }
+
+  .lio-marca[data-estado="hecho"], .lio-punto[data-estado="hecho"] { background: var(--tinta); color: var(--paper); }
+  .lio-marca[data-estado="sin-marcar"], .lio-punto[data-estado="sin-marcar"] {
+    background: transparent; border-color: var(--aviso); border-style: dashed; color: var(--aviso);
+  }
+  .lio-marca[data-estado="sin-asignar"], .lio-punto[data-estado="sin-asignar"] { background: transparent; color: var(--ink-faint); }
+  .lio-marca[data-mio="si"], .lio-punto[data-mio="si"] { box-shadow: 0 0 0 1.5px var(--tinta); }
+
+  .lio-par {
+    display: flex; align-items: center; gap: 4px; justify-content: center; align-self: center;
+    font-family: var(--mono); font-size: 10.5px; line-height: 1;
+    padding: 5px; border-radius: 999px; background: var(--paper-2); border: 1px solid var(--line);
+  }
+  .lio-par .hecho { color: var(--tinta); font-weight: 600; }
+  .lio-par .falta { color: var(--aviso); }
+  .lio-par .sep { color: var(--ink-faint); }
+
+  .cabecera-semana {
+    display: grid; grid-template-columns: 52px 26px 1fr; gap: 10px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
+    color: var(--ink-faint); padding-bottom: 5px;
+  }
+  .cabecera-semana span:nth-child(2) { text-align: center; }
+
+  .comparativa { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .comparativa th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 0 12px 8px 0; font-weight: 400;
+  }
+  .comparativa td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-soft); }
+  .comparativa td:first-child { color: var(--ink); }
+  .comparativa .ojo { color: var(--aviso); }
+  .comparativa .bien { color: var(--tinta); }
+  .desplazable { overflow-x: auto; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Lio dentro de la fila del día: la semana como tabla de tres columnas</h1>
+    <p>
+      Lo que preguntas es si el sol, la luna y quien saca al perro caben pegados
+      al número del día, como una columna más, sin que la fila engorde. La
+      respuesta corta es que sí, y mejor de lo que esperabas: <strong>no engorda
+      ni un punto</strong>, y además el carril de arriba desaparece, así que la
+      semana acaba <em>más corta</em> que ahora.
+    </p>
+  </header>
+
+  <div class="nota">
+    <p>
+      <strong>Decidida la A y ya construida</strong>, con los huecos ajustados en
+      el apartado final: columna de la fecha de <strong>38</strong> puntos, hueco
+      de <strong>4</strong> hasta las pastillas y de <strong>20</strong> hasta el
+      evento, y cabecera de tres rótulos <strong>con la raya debajo</strong>. El
+      carril de siete columnas se retiró. El mando sigue abajo para volver a
+      probar; cómo quedó está en <code>specs/ux.md</code> §10.3.
+    </p>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>Medido, no estimado.</strong> Las cuatro formas de abajo están
+      montadas con <code>pwa/publico/css/estilos.css</code>, la hoja de verdad, a
+      360 puntos de ancho. Una fila de un evento mide <span class="cifra">61 pt</span>
+      hoy y <span class="cifra">61 pt</span> con la columna puesta, en las cuatro.
+      Una de dos eventos, <span class="cifra">78 pt</span> en los dos casos.
+    </p>
+    <p>
+      El motivo es que <strong>la altura de la fila no la marca el contenido sino
+      la columna de la fecha</strong>: el número va en 22 puntos de serifa con su
+      inicial encima, y eso ya obliga a unos 58 puntos que hoy sobran por la
+      derecha. Las dos pastillas apiladas miden 39 con su hueco. Caben debajo del
+      número sin empujar nada.
+    </p>
+  </div>
+
+  <!-- ============================================= Lo que se gana y se paga == -->
+
+  <div class="parte">
+    <p class="rotulo">El balance</p>
+    <h2>Lo que se gana por arriba y lo que se paga por la derecha</h2>
+  </div>
+
+  <ul class="lista-seca">
+    <li>
+      <strong>Se gana el carril entero.</strong> Con Lio en la fila, la banda de
+      siete columnas de encima de la rejilla sobra: son <span class="cifra">62 pt</span>
+      de la parte de arriba de la pantalla, que es la única que se ve sin
+      desplazar. La semana con columna ocupa menos que la semana con carril.
+    </li>
+    <li>
+      <strong>Se paga en ancho de título.</strong> La columna de eventos pasa de
+      <span class="cifra">270 pt</span> a <span class="cifra">220</span> con la
+      forma A, y el título disponible de <span class="cifra">196</span> a
+      <span class="cifra">146</span>: unos seis caracteres menos antes de que
+      aparezcan los puntos suspensivos. «Cumpleaños de la abuela» sigue entrando;
+      «Reunión de padres del colegio» se corta antes.
+    </li>
+    <li>
+      <strong>Se gana la lectura de fila.</strong> Hoy hay que mirar arriba para
+      Lio y abajo para los eventos, y cruzar la columna del carril con la fila de
+      la rejilla. Con la columna, el jueves se lee entero de un renglón: qué día
+      es, quién saca al perro, qué hay.
+    </li>
+    <li>
+      <strong>Se pierde la lectura de columna.</strong> «¿Quién hace las mañanas
+      esta semana?» se contestaba de un vistazo en el carril, recorriendo una
+      línea; ahora hay que bajar la vista por siete filas.
+    </li>
+  </ul>
+
+  <!-- ================================================== El antes == -->
+
+  <div class="parte">
+    <p class="rotulo">Para comparar</p>
+    <h2>Como está hoy</h2>
+    <p>El carril arriba, y la fila del día con dos columnas.</p>
+  </div>
+
+  <div class="tel">
+    <div class="lio-carril">
+      <span class="rot">🐾</span>
+      <span class="cab">L</span><span class="cab">M</span><span class="cab">X</span>
+      <span class="cab">J</span><span class="cab">V</span><span class="cab">S</span><span class="cab">D</span>
+      <span class="rot">☀️</span>
+      <span class="lio-ini" style="background:var(--tinta);color:var(--paper)">Ós</span>
+      <span class="lio-ini">Ma</span><span class="lio-ini">Ós</span>
+      <span class="lio-ini" style="background:transparent;color:var(--ink-faint)">·</span>
+      <span class="lio-ini">Ós</span><span class="lio-ini">Ma</span><span class="lio-ini">Ós</span>
+      <span class="rot">🌙</span>
+      <span class="lio-ini" style="box-shadow:0 0 0 1.5px var(--tinta)">Ós</span>
+      <span class="lio-ini" style="background:transparent;border-color:var(--aviso);border-style:dashed;color:var(--aviso)">Ós</span>
+      <span class="lio-ini">Ma</span>
+      <span class="lio-ini" style="box-shadow:0 0 0 1.5px var(--tinta)">Ós</span>
+      <span class="lio-ini">Ma</span><span class="lio-ini">Ós</span><span class="lio-ini">Ma</span>
+    </div>
+    <div class="semana">
+      <div class="dia" data-hoy="si">
+        <div class="dia-fecha"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+        <div class="dia-contenido">
+          <div class="linea"><span class="linea-emoji">🏃</span><span class="linea-titulo">Entreno de Pablo</span><span class="linea-hora">18:00</span></div>
+        </div>
+      </div>
+      <div class="dia">
+        <div class="dia-fecha"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+        <div class="dia-contenido">
+          <div class="linea"><span class="linea-emoji">🎂</span><span class="linea-titulo">Cumpleaños de Ana</span></div>
+          <div class="linea"><span class="linea-emoji">🩺</span><span class="linea-titulo">Dentista</span><span class="linea-hora">09:30</span></div>
+        </div>
+      </div>
+      <div class="dia">
+        <div class="dia-fecha"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+        <div class="dia-contenido"><div class="dia-vacio">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================== Las formas == -->
+
+  <div class="parte">
+    <p class="rotulo">Cuatro formas</p>
+    <h2>La misma columna, dibujada de cuatro maneras</h2>
+    <p>
+      En las cuatro, el carril de arriba ya no está. Misma semana en todas: el
+      lunes la mañana está hecha y la noche me toca a mí, el martes la noche se
+      quedó sin marcar, y el jueves por la mañana no le toca a nadie.
+    </p>
+  </div>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">A</span><h2>Sol y luna con la persona al lado</h2></div>
+      <p>
+        Lo que pides, tal cual: dos pastillas apiladas, cada una con su turno y
+        sus dos letras, en una columna de 40 puntos entre la fecha y los eventos.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <p class="tel-rot">Julio de 2026</p>
+        <div class="semana">
+          <div class="dia" data-v="a" data-hoy="si">
+            <div class="dia-fecha"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+            <div class="lio-col">
+              <span class="lio-marca" data-estado="hecho"><span class="t">☀️</span>Ós</span>
+              <span class="lio-marca" data-mio="si"><span class="t">🌙</span>Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🏃</span><span class="linea-titulo">Entreno de Pablo</span><span class="linea-hora">18:00</span></div>
+            </div>
+          </div>
+          <div class="dia" data-v="a">
+            <div class="dia-fecha"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+            <div class="lio-col">
+              <span class="lio-marca"><span class="t">☀️</span>Ma</span>
+              <span class="lio-marca" data-estado="sin-marcar"><span class="t">🌙</span>Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🎂</span><span class="linea-titulo">Cumpleaños de Ana</span></div>
+              <div class="linea"><span class="linea-emoji">🩺</span><span class="linea-titulo">Dentista</span><span class="linea-hora">09:30</span></div>
+            </div>
+          </div>
+          <div class="dia" data-v="a">
+            <div class="dia-fecha"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+            <div class="lio-col">
+              <span class="lio-marca"><span class="t">☀️</span>Ós</span>
+              <span class="lio-marca"><span class="t">🌙</span>Ma</span>
+            </div>
+            <div class="dia-contenido"><div class="dia-vacio">—</div></div>
+          </div>
+          <div class="dia" data-v="a">
+            <div class="dia-fecha"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+            <div class="lio-col">
+              <span class="lio-marca" data-estado="sin-asignar"><span class="t">☀️</span>·</span>
+              <span class="lio-marca" data-mio="si"><span class="t">🌙</span>Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">✈️</span><span class="linea-titulo">Viaje a Cádiz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Se entiende sin aprender nada: el sol es la mañana y la luna es la noche, escritos en cada fila.</span></div>
+        <div class="si"><span>+</span><span>Un día suelto se lee entero de un renglón, que es lo que pedías.</span></div>
+        <div class="si"><span>+</span><span>Los cuatro estados se siguen distinguiendo igual que en el carril: relleno, discontinuo, apagado y con anillo.</span></div>
+        <div class="no"><span>−</span><span>Es la que más ancho se lleva de las tres de la izquierda: <strong>50 puntos</strong> menos de título.</span></div>
+        <div class="no"><span>−</span><span>Catorce emojis por pantalla. El sol y la luna se repiten en cada fila diciendo siempre lo mismo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">B</span><h2>Sin emoji: arriba la mañana, abajo la noche</h2></div>
+      <p>
+        La misma columna sin el sol ni la luna: lo dice la posición, y se enseña
+        una sola vez en una cabecera de la semana. La columna baja de 40 puntos a
+        26.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <p class="tel-rot">Julio de 2026</p>
+        <div class="cabecera-semana"><span></span><span>☀️<br>🌙</span><span></span></div>
+        <div class="semana">
+          <div class="dia" data-v="b" data-hoy="si">
+            <div class="dia-fecha"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+            <div class="lio-col-b">
+              <span class="lio-punto" data-estado="hecho">Ós</span>
+              <span class="lio-punto" data-mio="si">Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🏃</span><span class="linea-titulo">Entreno de Pablo</span><span class="linea-hora">18:00</span></div>
+            </div>
+          </div>
+          <div class="dia" data-v="b">
+            <div class="dia-fecha"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+            <div class="lio-col-b">
+              <span class="lio-punto">Ma</span>
+              <span class="lio-punto" data-estado="sin-marcar">Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🎂</span><span class="linea-titulo">Cumpleaños de Ana</span></div>
+              <div class="linea"><span class="linea-emoji">🩺</span><span class="linea-titulo">Dentista</span><span class="linea-hora">09:30</span></div>
+            </div>
+          </div>
+          <div class="dia" data-v="b">
+            <div class="dia-fecha"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+            <div class="lio-col-b">
+              <span class="lio-punto">Ós</span>
+              <span class="lio-punto">Ma</span>
+            </div>
+            <div class="dia-contenido"><div class="dia-vacio">—</div></div>
+          </div>
+          <div class="dia" data-v="b">
+            <div class="dia-fecha"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+            <div class="lio-col-b">
+              <span class="lio-punto" data-estado="sin-asignar">·</span>
+              <span class="lio-punto" data-mio="si">Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">✈️</span><span class="linea-titulo">Viaje a Cádiz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>La columna más estrecha de las que enseñan los dos turnos: solo <strong>36 puntos</strong> de título perdidos.</span></div>
+        <div class="si"><span>+</span><span>Mucho más limpia: catorce emojis menos en pantalla.</span></div>
+        <div class="si"><span>+</span><span>Es exactamente lo mismo que el carril hace hoy, girado: allí la mañana también es la fila de arriba.</span></div>
+        <div class="no"><span>−</span><span>Hay que aprenderse que arriba es la mañana. La cabecera lo dice, pero se lee una vez y luego se ignora.</span></div>
+        <div class="no"><span>−</span><span>La cabecera es una fila nueva de <strong>20 puntos</strong> arriba, así que devuelve parte de lo ahorrado.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">C</span><h2>Los dos turnos en una sola pastilla</h2></div>
+      <p>
+        Una línea en vez de dos: «Ós · Ma», la mañana primero. El estado se dice
+        con el color de cada mitad.
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <p class="tel-rot">Julio de 2026</p>
+        <div class="semana">
+          <div class="dia" data-v="c" data-hoy="si">
+            <div class="dia-fecha"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+            <div class="lio-par"><b class="hecho">Ós</b><span class="sep">·</span><b>Ós</b></div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🏃</span><span class="linea-titulo">Entreno de Pablo</span><span class="linea-hora">18:00</span></div>
+            </div>
+          </div>
+          <div class="dia" data-v="c">
+            <div class="dia-fecha"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+            <div class="lio-par"><b>Ma</b><span class="sep">·</span><b class="falta">Ós</b></div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🎂</span><span class="linea-titulo">Cumpleaños de Ana</span></div>
+              <div class="linea"><span class="linea-emoji">🩺</span><span class="linea-titulo">Dentista</span><span class="linea-hora">09:30</span></div>
+            </div>
+          </div>
+          <div class="dia" data-v="c">
+            <div class="dia-fecha"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+            <div class="lio-par"><b>Ós</b><span class="sep">·</span><b>Ma</b></div>
+            <div class="dia-contenido"><div class="dia-vacio">—</div></div>
+          </div>
+          <div class="dia" data-v="c">
+            <div class="dia-fecha"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+            <div class="lio-par"><b class="sep">·</b><span class="sep">·</span><b>Ós</b></div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">✈️</span><span class="linea-titulo">Viaje a Cádiz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Una sola pastilla por día: es la más tranquila de mirar de las cuatro.</span></div>
+        <div class="no"><span>−</span><span>La más cara en ancho: <strong>72 puntos</strong> menos de título, porque lo que era alto pasa a ser largo.</span></div>
+        <div class="no"><span>−</span><span>Nada dice cuál de los dos es la mañana, y aquí ni siquiera hay una posición que lo insinúe.</span></div>
+        <div class="no"><span>−</span><span>Los cuatro estados no caben: con solo el color de la letra no se distingue «mío» de «previsto», y el jueves sin nadie se lee como un punto perdido.</span></div>
+        <div class="no"><span>−</span><span>Tocar un turno concreto es imposible: los dos están dentro de la misma pastilla.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="opcion">
+    <div class="opcion-cabeza">
+      <div class="opcion-titulo"><span class="letra">D</span><h2>La columna al otro lado</h2></div>
+      <p>
+        La misma de A pero después de los eventos: la fila se lee «qué día es,
+        qué hay, y quién saca al perro».
+      </p>
+    </div>
+    <div class="par">
+      <div class="tel">
+        <p class="tel-rot">Julio de 2026</p>
+        <div class="semana">
+          <div class="dia" data-v="d" data-hoy="si">
+            <div class="dia-fecha"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🏃</span><span class="linea-titulo">Entreno de Pablo</span><span class="linea-hora">18:00</span></div>
+            </div>
+            <div class="lio-col">
+              <span class="lio-marca" data-estado="hecho"><span class="t">☀️</span>Ós</span>
+              <span class="lio-marca" data-mio="si"><span class="t">🌙</span>Ós</span>
+            </div>
+          </div>
+          <div class="dia" data-v="d">
+            <div class="dia-fecha"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🎂</span><span class="linea-titulo">Cumpleaños de Ana</span></div>
+              <div class="linea"><span class="linea-emoji">🩺</span><span class="linea-titulo">Dentista</span><span class="linea-hora">09:30</span></div>
+            </div>
+            <div class="lio-col">
+              <span class="lio-marca"><span class="t">☀️</span>Ma</span>
+              <span class="lio-marca" data-estado="sin-marcar"><span class="t">🌙</span>Ós</span>
+            </div>
+          </div>
+          <div class="dia" data-v="d">
+            <div class="dia-fecha"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+            <div class="dia-contenido"><div class="dia-vacio">—</div></div>
+            <div class="lio-col">
+              <span class="lio-marca"><span class="t">☀️</span>Ós</span>
+              <span class="lio-marca"><span class="t">🌙</span>Ma</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El número del día y el título del evento quedan pegados, que es la lectura de siempre.</span></div>
+        <div class="no"><span>−</span><span>Choca con la hora, que también vive a la derecha: dos cosas en cifras compitiendo por el mismo borde.</span></div>
+        <div class="no"><span>−</span><span>No es lo que pediste: querías Lio justo después del número.</span></div>
+        <div class="no"><span>−</span><span>El borde derecho es el del pulgar al deslizar la semana; poner ahí catorce blancos pequeños es pedir toques sin querer.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== La comparativa == -->
+
+  <div class="parte">
+    <p class="rotulo">De un vistazo</p>
+    <h2>Las cuatro, medidas</h2>
+  </div>
+
+  <div class="desplazable">
+    <table class="comparativa">
+      <thead>
+        <tr><th></th><th>Hoy</th><th>A · Sol y luna</th><th>B · Por posición</th><th>C · Una pastilla</th><th>D · A la derecha</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Alto de una fila de un evento</td>
+          <td>61 pt</td><td class="bien">61 pt</td><td class="bien">61 pt</td><td class="bien">61 pt</td><td class="bien">61 pt</td>
+        </tr>
+        <tr>
+          <td>Alto fijo de la parte de arriba</td>
+          <td class="ojo">62 pt (carril)</td><td class="bien">0</td><td>20 pt (cabecera)</td><td class="bien">0</td><td class="bien">0</td>
+        </tr>
+        <tr>
+          <td>Ancho del título de un evento</td>
+          <td class="bien">196 pt</td><td>146 pt</td><td>160 pt</td><td class="ojo">124 pt</td><td>146 pt</td>
+        </tr>
+        <tr>
+          <td>Se ve qué turno es sin aprender</td>
+          <td class="bien">Sí</td><td class="bien">Sí</td><td>Con cabecera</td><td class="ojo">No</td><td class="bien">Sí</td>
+        </tr>
+        <tr>
+          <td>Distingue los cuatro estados</td>
+          <td class="bien">Sí</td><td class="bien">Sí</td><td class="bien">Sí</td><td class="ojo">No</td><td class="bien">Sí</td>
+        </tr>
+        <tr>
+          <td>«¿Quién hace las mañanas?»</td>
+          <td class="bien">De un vistazo</td><td>Bajando la vista</td><td class="bien">Bajando una columna</td><td class="ojo">Leyendo</td><td>Bajando la vista</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ================================================== Lo que hay que decidir == -->
+
+  <div class="parte">
+    <p class="rotulo">Dos cosas que hay que resolver, elijas la que elijas</p>
+    <h2>El dedo, y las otras dos vistas</h2>
+  </div>
+
+  <div class="nota pega">
+    <p>
+      <strong>El blanco del dedo se queda pequeño.</strong> Una pastilla mide
+      unos 40 × 18 puntos, la mitad de lo que pide un blanco cómodo. Hay dos
+      salidas y no son equivalentes: <strong>una</strong>, que cada pastilla siga
+      siendo su propio botón y se acepte que hay que apuntar; <strong>dos</strong>,
+      que <em>la columna entera</em> sea un solo botón de 40 × 39 que abra el día
+      de Lio —los dos turnos, con sus verbos—, y entonces marcar cuesta dos
+      toques en lugar de uno pero no se falla nunca. Me inclino por la segunda:
+      marcar de verdad se hace en Hoy, y en la agenda uno viene a mirar.
+    </p>
+    <p>
+      <strong>En el mes y en la lista, Lio no aparece</strong>, igual que hoy no
+      aparece el carril. No es una pérdida nueva: es la misma decisión de §10.3,
+      que el mes no tiene sitio para esto y la lista no es una semana.
+    </p>
+  </div>
+
+  <!-- ================================================== Recomendación == -->
+
+  <div class="parte">
+    <p class="rotulo">Lo que yo haría</p>
+    <h2>La A, y la columna entera tocable</h2>
+    <p>
+      <strong>A</strong>, que es lo que pediste y lo que se entiende sin
+      instrucciones: el sol y la luna escritos en cada fila, con las dos letras
+      al lado. Cuesta seis caracteres de título y no cuesta ni un punto de alto,
+      y a cambio quita el carril de arriba: la semana entera acaba ocupando
+      <strong>62 puntos menos</strong> que ahora.
+    </p>
+    <p>
+      <strong>B</strong> es la alternativa si al verla en el teléfono los catorce
+      soles y lunas resultan ruidosos —que es el riesgo real de A—. Se pasa de
+      una a otra quitando dos caracteres del dibujo, así que no hay que decidirlo
+      hoy a ciegas: se puede probar A una semana y cambiar.
+    </p>
+    <p>
+      <strong>C queda descartada</strong>: es la que más ancho gasta, la única
+      que no dice cuál es la mañana, y no sabe enseñar los cuatro estados.
+      <strong>D</strong> tampoco, porque pelea con la hora por el borde derecho y
+      porque ese borde es el del pulgar que desliza la semana.
+    </p>
+  </div>
+
+  <!-- ========================================= Segunda vuelta: el aire == -->
+
+  <div class="parte">
+    <p class="rotulo">Segunda vuelta</p>
+    <h2>El aire entre columnas, y la fila de cabecera</h2>
+    <p>
+      Con la A elegida, quedan dos cosas por afinar: que el día y las pastillas
+      no se toquen, que las pastillas y el evento tampoco, y que la semana diga
+      qué es cada columna. Lo de abajo se toca: los tres deslizadores cambian el
+      dibujo de verdad y la cuenta de la derecha dice lo que cuesta cada punto.
+    </p>
+  </div>
+
+  <div class="nota pega">
+    <p>
+      <strong>El aire sale de algún sitio.</strong> El ancho de la pantalla no
+      crece, así que cada punto de hueco es un punto menos de título. Hay tres
+      grifos y conviene abrirlos en este orden: primero <em>la columna de la
+      fecha</em>, que hoy mide 52 puntos para escribir dos cifras y le sobran
+      unos ocho; después <em>el hueco de la derecha</em>, que es el que de verdad
+      separa dos cosas distintas; y solo al final el de la izquierda, donde el
+      número grande ya hace de separador por sí mismo.
+    </p>
+  </div>
+
+  <div class="mando-fila" id="mando">
+    <label>
+      <span>Columna del día <b id="vFecha">52</b> pt</span>
+      <input type="range" id="cFecha" min="38" max="60" value="52">
+    </label>
+    <label>
+      <span>Hueco día → Lio <b id="vUno">10</b> pt</span>
+      <input type="range" id="cUno" min="4" max="28" value="10">
+    </label>
+    <label>
+      <span>Hueco Lio → evento <b id="vDos">10</b> pt</span>
+      <input type="range" id="cDos" min="4" max="28" value="10">
+    </label>
+    <div class="cuenta">
+      <span>Título: <b id="vTitulo">—</b></span>
+      <span>Fila: <b id="vAlto">—</b></span>
+    </div>
+  </div>
+
+  <div class="par">
+    <div class="tel" id="banco">
+      <div class="ajustable">
+        <div class="cabecera-tres" data-c="versalitas">
+          <span>Día</span><span>🐾 Lio</span><span>Evento</span>
+        </div>
+        <div class="semana">
+          <div class="dia dia-tres" data-hoy="si">
+            <div class="dia-fecha"><div class="dia-inicial">L</div><div class="dia-numero">27</div></div>
+            <div class="lio-col">
+              <span class="lio-marca" data-estado="hecho"><span class="t">☀️</span>Ós</span>
+              <span class="lio-marca" data-mio="si"><span class="t">🌙</span>Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🏃</span><span class="linea-titulo">Entreno de Pablo</span><span class="linea-hora">18:00</span></div>
+            </div>
+          </div>
+          <div class="dia dia-tres">
+            <div class="dia-fecha"><div class="dia-inicial">M</div><div class="dia-numero">28</div></div>
+            <div class="lio-col">
+              <span class="lio-marca"><span class="t">☀️</span>Ma</span>
+              <span class="lio-marca" data-estado="sin-marcar"><span class="t">🌙</span>Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🎂</span><span class="linea-titulo">Cumpleaños de Ana</span></div>
+              <div class="linea"><span class="linea-emoji">🩺</span><span class="linea-titulo">Dentista</span><span class="linea-hora">09:30</span></div>
+            </div>
+          </div>
+          <div class="dia dia-tres">
+            <div class="dia-fecha"><div class="dia-inicial">X</div><div class="dia-numero">29</div></div>
+            <div class="lio-col">
+              <span class="lio-marca"><span class="t">☀️</span>Ós</span>
+              <span class="lio-marca"><span class="t">🌙</span>Ma</span>
+            </div>
+            <div class="dia-contenido"><div class="dia-vacio">—</div></div>
+          </div>
+          <div class="dia dia-tres">
+            <div class="dia-fecha"><div class="dia-inicial">J</div><div class="dia-numero">30</div></div>
+            <div class="lio-col">
+              <span class="lio-marca" data-estado="sin-asignar"><span class="t">☀️</span>·</span>
+              <span class="lio-marca" data-mio="si"><span class="t">🌙</span>Ós</span>
+            </div>
+            <div class="dia-contenido">
+              <div class="linea"><span class="linea-emoji">🎒</span><span class="linea-titulo">Reunión del colegio</span><span class="linea-hora">17:00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 18px;">
+      <div>
+        <p class="rotulo" style="margin-bottom: 8px;">Cuatro ajustes de partida</p>
+        <div class="presets" id="presets">
+          <button type="button" data-p="hoy">Como está la A</button>
+          <button type="button" data-p="simetrico">Aire simétrico</button>
+          <button type="button" data-p="asimetrico" aria-pressed="true">Aire asimétrico</button>
+          <button type="button" data-p="justo">Aire sin pagar título</button>
+        </div>
+        <p class="pie-preset" id="piePreset"></p>
+      </div>
+      <div>
+        <p class="rotulo" style="margin-bottom: 8px;">Y cuatro cabeceras</p>
+        <div class="presets" id="cabeceras">
+          <button type="button" data-h="ninguna">Ninguna</button>
+          <button type="button" data-h="iconos">Solo la huella</button>
+          <button type="button" data-h="versalitas" aria-pressed="true">Día · Lio · Evento</button>
+          <button type="button" data-h="linea">Con línea debajo</button>
+        </div>
+        <p class="pie-preset" id="pieCabecera"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="parte">
+    <p class="rotulo">Lo que yo haría en esta segunda vuelta</p>
+    <h2>Aire asimétrico, y la cabecera con las tres palabras</h2>
+    <p>
+      <strong>El aire, asimétrico</strong>: poco a la izquierda y bastante a la
+      derecha. La razón es que los dos huecos no separan lo mismo. El número del
+      día es grande, oscuro y está solo en su columna: ya se despega de lo que
+      venga detrás sin que nadie le ponga hueco. Entre las pastillas y el evento,
+      en cambio, hay dos cosas del mismo tamaño y del mismo peso, y ahí sí que
+      diez puntos no bastan para que la vista sepa dónde acaba una y empieza la
+      otra. Con <span class="cifra">8</span> a la izquierda y
+      <span class="cifra">16</span> a la derecha se ve claro, y lo paga la
+      columna de la fecha bajando a <span class="cifra">44</span>, que es lo que
+      de verdad ocupan dos cifras.
+    </p>
+    <p>
+      Y sale a favor, que es lo que no esperaba al proponerlo: el título queda en
+      <span class="cifra">151 pt</span> contra los <span class="cifra">147</span>
+      de la A tal como está. <strong>Más aire y cuatro puntos más de título</strong>,
+      porque el sitio no sale de los eventos sino de una columna de la fecha que
+      llevaba ocho puntos de más desde siempre.
+    </p>
+    <p>
+      <strong>La cabecera, con las tres palabras y sin línea.</strong> «Día · 🐾
+      Lio · Evento» en versalita, del tamaño de la inicial del día, y nada más:
+      la rejilla ya tiene una raya por fila, y una más arriba la convierte en una
+      tabla de verdad —con su cuadrícula y su peso— que es más de lo que esta
+      pantalla quiere ser. La huella va pegada a «Lio» y no suelta, porque sola
+      no dice de qué columna habla.
+    </p>
+    <p>
+      Y la cabecera resuelve de paso algo que no se veía: <strong>cuando la
+      semana entera está sin turnos puestos</strong> —una casa que aún no ha
+      rellenado el cuadro— la columna del medio queda vacía y sin explicación.
+      Con el rótulo, esa columna vacía dice qué es y por qué está ahí.
+    </p>
+  </div>
+
+</div>
+
+<style>
+  /* -------------------------------------------------- El mando de la segunda vuelta -- */
+  .mando-fila {
+    display: flex; flex-wrap: wrap; gap: 16px 26px; align-items: end;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  }
+  .mando-fila label { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: var(--ink-soft); }
+  .mando-fila label b { font-family: var(--mono); color: var(--ink); font-weight: 500; }
+  .mando-fila input[type="range"] { width: 165px; accent-color: var(--tinta); }
+  .mando-fila .cuenta { margin-left: auto; display: flex; gap: 18px; font-size: 12.5px; color: var(--ink-soft); }
+  .mando-fila .cuenta b { font-family: var(--mono); color: var(--tinta); font-weight: 500; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 7px; }
+  .presets button {
+    font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2); color: var(--ink-soft); cursor: pointer;
+  }
+  .presets button[aria-pressed="true"] { border-color: var(--tinta); color: var(--ink); background: var(--paper); box-shadow: var(--sombra); }
+  .pie-preset { font-size: 13px; color: var(--ink-soft); margin-top: 9px; max-width: 52ch; }
+
+  /* La fila ajustable: los dos huecos son márgenes de la columna del medio, de
+     modo que se pueden mover por separado —una rejilla solo sabe de un hueco
+     igual para todas—. */
+  .ajustable { --col-fecha: 52px; --hueco-uno: 10px; --hueco-dos: 10px; }
+  .dia-tres {
+    grid-template-columns: var(--col-fecha) auto 1fr;
+    column-gap: 0;
+  }
+  .dia-tres .lio-col { margin-left: var(--hueco-uno); margin-right: var(--hueco-dos); }
+
+  .cabecera-tres {
+    display: grid; grid-template-columns: var(--col-fecha) auto 1fr; column-gap: 0;
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink-faint); padding: 2px 0 6px;
+  }
+  .cabecera-tres span:nth-child(2) { margin-left: var(--hueco-uno); margin-right: var(--hueco-dos); white-space: nowrap; }
+  .cabecera-tres[data-c="ninguna"] { display: none; }
+  .cabecera-tres[data-c="iconos"] span:not(:nth-child(2)) { visibility: hidden; }
+  .cabecera-tres[data-c="linea"] { border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 1px; }
+</style>
+
+<script>
+  const banco = document.querySelector('#banco .ajustable');
+  const mandos = { fecha: 'cFecha', uno: 'cUno', dos: 'cDos' };
+  const salidas = { fecha: 'vFecha', uno: 'vUno', dos: 'vDos' };
+  const propiedad = { fecha: '--col-fecha', uno: '--hueco-uno', dos: '--hueco-dos' };
+
+  const PRESETS = {
+    hoy: { fecha: 52, uno: 10, dos: 10, dicho: 'La A de arriba: el hueco de la rejilla, igual a los dos lados. Título, 147 pt.' },
+    simetrico: { fecha: 52, uno: 16, dos: 16, dicho: 'Más aire por igual, y es el único que se paga: el título baja a 135 pt, doce menos que la A.' },
+    asimetrico: { fecha: 44, uno: 8, dos: 16, dicho: 'Poco a la izquierda, donde el número ya separa, y el doble a la derecha, donde hay dos cosas del mismo peso. Lo paga la columna de la fecha, no el título: 151 pt, cuatro MÁS que la A.' },
+    justo: { fecha: 44, uno: 8, dos: 12, dicho: 'El mismo reparto apretando cuatro puntos a la derecha: 155 pt de título, ocho más que la A. El aire de la derecha se nota menos.' },
+  };
+
+  const CABECERAS = {
+    ninguna: 'Sin cabecera no hay nada que aprender, pero la columna del medio no se explica sola cuando está vacía.',
+    iconos: 'Solo la huella sobre su columna. Es lo más callado; a cambio, la huella suelta no dice de qué habla hasta que hay algo debajo.',
+    versalitas: 'Las tres palabras, del tamaño de la inicial del día. Dice qué es cada columna sin dibujar una tabla.',
+    linea: 'Lo mismo con una raya debajo. Ordena más, pero con la raya de cada fila la rejilla empieza a parecer una hoja de cálculo.',
+  };
+
+  function medir() {
+    const titulo = document.querySelector('#banco .linea-titulo');
+    const fila = document.querySelector('#banco .dia-tres');
+    document.getElementById('vTitulo').textContent = Math.round(titulo.getBoundingClientRect().width) + ' pt';
+    document.getElementById('vAlto').textContent = Math.round(fila.getBoundingClientRect().height) + ' pt';
+  }
+
+  function aplicar(clave, valor) {
+    banco.style.setProperty(propiedad[clave], valor + 'px');
+    document.querySelector('.cabecera-tres').style.setProperty(propiedad[clave], valor + 'px');
+    document.getElementById(salidas[clave]).textContent = valor;
+    document.getElementById(mandos[clave]).value = valor;
+    medir();
+  }
+
+  for (const clave of Object.keys(mandos)) {
+    document.getElementById(mandos[clave]).addEventListener('input', (e) => aplicar(clave, Number(e.target.value)));
+  }
+
+  for (const boton of document.querySelectorAll('#presets button')) {
+    boton.addEventListener('click', () => {
+      for (const otro of document.querySelectorAll('#presets button')) otro.setAttribute('aria-pressed', 'false');
+      boton.setAttribute('aria-pressed', 'true');
+      const p = PRESETS[boton.dataset.p];
+      for (const clave of Object.keys(mandos)) aplicar(clave, p[clave]);
+      document.getElementById('piePreset').textContent = p.dicho;
+    });
+  }
+
+  for (const boton of document.querySelectorAll('#cabeceras button')) {
+    boton.addEventListener('click', () => {
+      for (const otro of document.querySelectorAll('#cabeceras button')) otro.setAttribute('aria-pressed', 'false');
+      boton.setAttribute('aria-pressed', 'true');
+      document.querySelector('.cabecera-tres').dataset.c = boton.dataset.h;
+      document.getElementById('pieCabecera').textContent = CABECERAS[boton.dataset.h];
+      medir();
+    });
+  }
+
+  // Arranca en lo recomendado, que es lo que conviene ver primero.
+  const inicial = PRESETS.asimetrico;
+  for (const clave of Object.keys(mandos)) aplicar(clave, inicial[clave]);
+  document.getElementById('piePreset').textContent = inicial.dicho;
+  document.getElementById('pieCabecera').textContent = CABECERAS.versalitas;
+</script>
