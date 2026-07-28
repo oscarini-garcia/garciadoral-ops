@@ -93,12 +93,24 @@ pendiente. El hook lo inyecta al final del mapa.
   **Los botones abren la app** en vez de contestar a oscuras, porque una acción de
   segundo plano se pierde justo con la aplicación cerrada, que es el caso que
   importa. **Y no hace falta ningún esquema de URL**: una notificación no abre la
-  aplicación por un enlace, la abre y le entrega su contenido. Está en
-  `specs/ux.md` §12.4, el token en `specs/modelo-datos.md` §2.9 y el despliegue en
-  `docs/despliegue-cloudflare.md` §4.6 y §8.3. Queda abierto **si el recordatorio
-  del turno propio debería dejar de ser local** —hoy conviven los dos y no se
-  estorban— y **qué pasa cuando alguien acumule avisos de una semana fuera**, que
-  hoy es una pila que se descarta a mano. Y una atadura nueva: **el entorno de
+  aplicación por un enlace, la abre y le entrega su contenido. **Lo de Lío
+  atraviesa el modo concentración y lo demás no** —menos las correcciones, que
+  hablan del pasado—, que es la única distinción de urgencia que se hace: marcar
+  de urgente lo que no lo es se paga en que nadie se fía del tercer aviso. **Y el
+  globo del icono cuenta lo que espera respuesta y solo eso**, no las novedades:
+  un comentario no reclama nada de nadie, y un número que solo baja abriendo la
+  aplicación es un número que no se mira. Va en todos los avisos aunque no sean
+  de Lío, porque es absoluto: uno que llegara sin él dejaría puesta la cuenta
+  anterior. Está en `specs/ux.md` §12.4, el token en `specs/modelo-datos.md` §2.9
+  y el despliegue en `docs/despliegue-cloudflare.md` §4.6 y §8.3. **El recordatorio del turno
+  propio se queda siendo local** y convive con el remoto: dicen cosas distintas
+  —«te toca ahora» y «alguien ha tocado tu turno»— y el local funciona sin red y
+  sin permiso de APNs, que es una red de seguridad que no cuesta nada. **Y
+  descartar un aviso del teléfono no descarta nada del sobre**: son dos sitios, y
+  iOS solo avisa del descarte si la aplicación está despierta, de modo que
+  enlazarlos funcionaría a veces sí y a veces no. Queda abierto **qué pasa cuando
+  alguien acumule avisos de una semana fuera**, que hoy es una pila que se
+  descarta a mano. Y una atadura nueva: **el entorno de
   APNs tiene que coincidir con cómo se instaló la app** —`pruebas` desde Xcode,
   `produccion` desde TestFlight—; equivocarse da `BadDeviceToken` y nada más.
 - **La marca de lo visto viaja: la tabla `visto`.** Guarda persona, tipo, objeto y

@@ -121,6 +121,18 @@ test('el sobre lleva lo que hace sonar el teléfono y lo que dice a dónde ir', 
   assert.deepEqual(sobre.tipo, 'lio');
 });
 
+test('lo urgente se marca para que atraviese el modo concentración, y solo eso', async () => {
+  const llamadas = fetchFalso([{ status: 200 }, { status: 200 }]);
+
+  await enviarAviso(ENTORNO, TOKEN, { titulo: 'x', cuerpo: 'y', urgente: true });
+  assert.equal(JSON.parse(llamadas[0].opciones.body).aps['interruption-level'], 'time-sensitive');
+
+  // Sin la clave, no con la clave puesta a «normal»: lo que no se declara es lo
+  // corriente, y mandar la palabra sobra.
+  await enviarAviso(ENTORNO, TOKEN, { titulo: 'x', cuerpo: 'y' });
+  assert.equal('interruption-level' in JSON.parse(llamadas[1].opciones.body).aps, false);
+});
+
 test('el entorno de pruebas es otro servidor, no otra cabecera', async () => {
   const llamadas = fetchFalso([{ status: 200 }]);
   await enviarAviso({ ...ENTORNO, APNS_ENTORNO: 'pruebas' }, TOKEN, { titulo: 'x', cuerpo: 'y' });

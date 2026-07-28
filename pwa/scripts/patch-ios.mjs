@@ -162,19 +162,49 @@ const rutaEntitlements = join(APP_IOS, 'App.entitlements');
 // entonces el Worker tiene que hablar con el APNs de producción: es lo que
 // decide `APNS_ENTORNO` en `api/wrangler.toml`. Los tokens de un entorno no
 // valen en el otro, y el síntoma es `BadDeviceToken` sin más explicación.
+// El segundo entitlement es el que deja marcar un aviso como urgente
+// (`interruption-level: time-sensitive`), que es lo que hace que una petición de
+// turno atraviese el modo concentración. No hay que pedírselo a Apple ni
+// justificarlo —eso es lo de las alertas críticas—: basta con declararlo. Sin
+// él, iOS entrega el aviso igual pero como uno corriente, y el fallo no se ve
+// hasta que alguien tiene el teléfono en concentración a las siete y media.
+const ENTITLEMENTS = {
+  'aps-environment': '\t<string>development</string>',
+  'com.apple.developer.usernotifications.time-sensitive': '\t<true/>',
+};
+
 if (!existsSync(rutaEntitlements)) {
+  const claves = Object.entries(ENTITLEMENTS)
+    .map(([clave, valor]) => `\t<key>${clave}</key>\n${valor}`)
+    .join('\n');
   writeFileSync(rutaEntitlements, `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-\t<key>aps-environment</key>
-\t<string>development</string>
+${claves}
 </dict>
 </plist>
 `);
-  console.log('[patch-ios] App.entitlements escrito (aps-environment) ✅');
+  console.log('[patch-ios] App.entitlements escrito (avisos y urgencia) ✅');
 } else {
-  console.log('[patch-ios] App.entitlements ya estaba.');
+  // Ya existe —lo habitual si la capacidad se marcó a mano en Xcode—, así que
+  // solo se le añade lo que le falte, sin tocar lo que ya diga.
+  let plist = readFileSync(rutaEntitlements, 'utf8');
+  const faltan = Object.entries(ENTITLEMENTS).filter(([clave]) => !plist.includes(`<key>${clave}</key>`));
+
+  if (!faltan.length) {
+    console.log('[patch-ios] App.entitlements ya lo tenía todo.');
+  } else {
+    const cierre = plist.lastIndexOf('</dict>');
+    if (cierre === -1) {
+      console.warn('[patch-ios] ⚠ App.entitlements no tiene la forma esperada; añade las claves en Xcode.');
+    } else {
+      const nuevas = faltan.map(([clave, valor]) => `\t<key>${clave}</key>\n${valor}\n`).join('');
+      plist = plist.slice(0, cierre) + nuevas + plist.slice(cierre);
+      writeFileSync(rutaEntitlements, plist);
+      console.log(`[patch-ios] App.entitlements completado: ${faltan.map(([c]) => c).join(', ')} ✅`);
+    }
+  }
 }
 
 if (existsSync(rutaProyecto)) {

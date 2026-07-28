@@ -262,6 +262,46 @@ test('lo que ningún módulo reconoce no avisa, y no revienta', () => {
   assert.deepEqual(avisosDe(datos, MARTA, []), []);
 });
 
+test('lo de Lío es urgente y los comentarios no, que es lo que lo mantiene creíble', () => {
+  const peticion = avisosDe(registro({ tratos_paseo: [trato()] }), MARTA, [cambio()]);
+  assert.equal(peticion[0].urgente, true);
+
+  // Una corrección habla del pasado por definición: llegar tarde no le quita
+  // nada. Marcarla de urgente sería gastar la interrupción en lo que no la pide.
+  const correccion = trato({ clase: 'correccion', proponente_id: 'p-oscar', destinatario_id: 'p-marta' });
+  assert.equal(avisosDe(registro({ tratos_paseo: [correccion] }), OSCAR, [cambio()])[0].urgente, false);
+
+  const datos = registro({ eventos: [EVENTO], comentarios: [comentario()] });
+  const comentarios = avisosDe(datos, MARTA, [{ tipo: 'comentario', id: 'c-2', novedad: true }]);
+  assert.equal(comentarios[0].urgente, undefined);
+});
+
+test('el globo cuenta lo que espera respuesta, y viaja en todos los avisos', () => {
+  const otra = trato({ id: 't-2', fecha: '2026-07-31', destinatario_id: 'p-oscar' });
+  const avisos = avisosDe(registro({ tratos_paseo: [trato(), otra] }), MARTA, [cambio()]);
+  assert.equal(avisos[0].para, 'p-oscar');
+  assert.equal(avisos[0].globo, 2);
+
+  // Contestada una, el globo del que la pidió no cuenta la del otro: cuenta las
+  // suyas, que son ninguna.
+  const resuelta = avisosDe(
+    registro({ tratos_paseo: [trato({ estado: 'aceptado' }), otra] }),
+    OSCAR,
+    [cambio()],
+  );
+  assert.equal(resuelta[0].para, 'p-marta');
+  assert.equal(resuelta[0].globo, 0);
+});
+
+test('un comentario también lleva el globo, o dejaría puesto el de antes', () => {
+  const datos = registro({
+    eventos: [EVENTO], comentarios: [comentario()], tratos_paseo: [trato()],
+  });
+  const avisos = avisosDe(datos, MARTA, [{ tipo: 'comentario', id: 'c-2', novedad: true }]);
+  assert.equal(avisos[0].para, 'p-oscar');
+  assert.equal(avisos[0].globo, 1);
+});
+
 test('cada aviso lleva a dónde ir al tocarlo', () => {
   const avisos = avisosDe(registro({ tratos_paseo: [trato()] }), MARTA, [cambio()]);
   assert.deepEqual(avisos[0].datos, {

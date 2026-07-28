@@ -135,8 +135,17 @@ function sobre(aviso) {
     aps: {
       alert: { title: aviso.titulo, body: aviso.cuerpo },
       sound: 'default',
+      // El globo del icono, con lo que espera respuesta. Es un número absoluto y
+      // no un incremento: se manda siempre, incluso a cero, porque omitirlo deja
+      // puesto el de antes y un globo que no baja es peor que ninguno.
+      badge: Number.isInteger(aviso.globo) ? aviso.globo : undefined,
       category: aviso.categoria || undefined,
       'thread-id': aviso.hilo || undefined,
+      // Lo urgente atraviesa el modo concentración y el resumen programado; lo
+      // demás espera su turno como cualquier otro aviso. La diferencia importa
+      // en un solo caso y es el que justifica todo esto: una petición de turno a
+      // las 7:40 que llega a mediodía no es un aviso, es un reproche.
+      'interruption-level': aviso.urgente ? 'time-sensitive' : undefined,
     },
     ...aviso.datos,
   };

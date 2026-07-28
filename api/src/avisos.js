@@ -87,7 +87,28 @@ export function avisosDe(registro, actor, cambios) {
       // Lo que no viaja tampoco se cuenta: si el objeto no está en su
       // instantánea, es que no puede verlo.
       return (instantanea[aviso.donde] || []).some((fila) => fila.id === aviso.objetoId);
-    });
+    })
+    .map((aviso) => ({ ...aviso, globo: porContestarDe(instantaneaDe(aviso.para), aviso.para) }));
+}
+
+/**
+ * Cuánto le espera a alguien respuesta, que es lo único que lleva el globo del
+ * icono.
+ *
+ * No es «cuántas novedades hay»: un comentario nuevo no reclama nada de nadie, y
+ * un número que solo baja abriendo la aplicación acaba siendo un número que no
+ * se mira. Cuenta lo mismo que el grupo de arriba del sobre —lo que se contesta
+ * o se queda— y por eso se calcula igual, sobre la instantánea de esa persona.
+ *
+ * Va en **todos** los avisos y no solo en los de Lío: el número es absoluto y no
+ * un incremento, así que un comentario que llegara sin él dejaría el globo con
+ * la cuenta de antes. Mandarlo siempre es lo que hace que el globo no mienta.
+ */
+function porContestarDe(instantanea, personaId) {
+  if (!instantanea) return 0;
+  return (instantanea.tratos_paseo || []).filter(
+    (t) => t.destinatario_id === personaId && t.estado === 'pendiente' && t.activo,
+  ).length;
 }
 
 // ------------------------------------------------------------------ Lío --
@@ -126,16 +147,22 @@ function avisosDeLio(contexto, cambio) {
   const trato = (registro.tratos_paseo || []).find((t) => t.id === cambio.id);
   if (!trato) return [];
 
+  const esCorreccion = trato.clase === 'correccion';
   const comun = {
     donde: 'tratos_paseo',
     objetoId: trato.id,
     hilo: `lio:${trato.fecha}:${trato.turno}`,
+    // Lo de Lío atraviesa el modo concentración, menos las correcciones: una
+    // petición para esta mañana que llega a mediodía ya no sirve de nada, pero
+    // una corrección habla del pasado por definición y puede esperar. Marcar de
+    // urgente lo que no lo es se paga en el mismo sitio: quien recibe dos avisos
+    // así deja de fiarse del tercero.
+    urgente: !esCorreccion,
     datos: { tipo: 'lio', fecha: trato.fecha, turno: trato.turno, trato: trato.id },
   };
   const cuando = cuandoFue(trato.fecha, trato.turno);
   const proponente = nombreDe(registro, trato.proponente_id);
   const destinatario = nombreDe(registro, trato.destinatario_id);
-  const esCorreccion = trato.clase === 'correccion';
 
   // Retirar lo que uno pidió también se avisa: quien lo tenía en la bandeja se
   // quedaría contestando algo que ya no existe.
@@ -224,6 +251,9 @@ function avisosDeUnPaseo(contexto, cambio) {
     donde: 'paseos',
     objetoId: paseo.id,
     hilo: `lio:${paseo.fecha}:${paseo.turno}`,
+    // Los dos atajos son de ahora mismo: enterarse tarde de que ya lo han sacado
+    // es salir a la calle con el perro y encontrárselo dormido.
+    urgente: true,
     datos: { tipo: 'lio', fecha: paseo.fecha, turno: paseo.turno },
   };
   const cuando = cuandoFue(paseo.fecha, paseo.turno);

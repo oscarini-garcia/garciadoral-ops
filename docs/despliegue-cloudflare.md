@@ -845,9 +845,13 @@ porqué de cada decisión, en `specs/ux.md` §12.4.
 sus rótulos, a quién se avisa, qué dice el aviso— es JavaScript o Worker y viaja
 por OTA. Del binario son dos cosas, y `npm run sync:ios` deja las dos puestas:
 
-1. El entitlement `aps-environment`, sin el cual iOS ni siquiera pide un token.
-   Si ya marcó **Push Notifications** a mano en Xcode → target App → *Signing &
-   Capabilities*, el parche lo detecta y no toca nada.
+1. Dos entitlements. `aps-environment`, sin el cual iOS ni siquiera pide un
+   token, y `com.apple.developer.usernotifications.time-sensitive`, que es lo que
+   deja que una petición de turno atraviese el modo concentración. El segundo no
+   hay que pedírselo ni justificárselo a Apple —eso son las alertas críticas—:
+   basta con declararlo. Si ya marcó **Push Notifications** a mano en Xcode →
+   target App → *Signing & Capabilities*, el parche respeta lo que hay y solo
+   añade lo que falte.
 2. El reenvío del token en `AppDelegate.swift`, que la plantilla de Capacitor no
    trae y que **marcar la capacidad en Xcode no añade**. Sin él,
    `PushNotifications.register()` no da error: el token sencillamente no llega
@@ -873,6 +877,10 @@ APNs lo cambia cuando le parece —al restaurar una copia, al reinstalar— y el
 3. Falta la migración `0013_avisos_push.unavez.sql`, y entonces no hay dónde
    guardar el token.
 4. El permiso está denegado en Ajustes de iOS → Agenda → Notificaciones.
+
+Y si suena, pero no cuando el teléfono está en modo concentración: falta el
+entitlement de urgencia. iOS entrega el aviso igual, pero como uno corriente, y
+eso no se ve hasta que alguien tiene la concentración puesta a las siete y media.
 
 ### 8.4 Enviar a la App Store
 

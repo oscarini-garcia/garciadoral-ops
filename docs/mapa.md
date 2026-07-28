@@ -243,7 +243,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**254** en total.
+**258** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -255,8 +255,8 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
-- `api/test/apns.test.js` — 10
-- `api/test/avisos.test.js` — 19
+- `api/test/apns.test.js` — 11
+- `api/test/avisos.test.js` — 22
 - `api/test/cuenta.test.js` — 6
 - `api/test/lio.test.js` — 17
 - `api/test/redaccion.test.js` — 54
