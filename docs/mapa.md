@@ -42,8 +42,12 @@ tener que recorrer la aplicación entera cada vez.
 
 ### `api/src/` · Worker de Cloudflare: filtra antes de transmitir
 
+- **apns.js** — El transporte hasta el teléfono: APNs con autenticación por token.
+  hayApnsConfigurado · tokenDeProveedor · olvidarTokenDeProveedor · enviarAviso
 - **apple.js** — Verificación del token de identidad de Sign in with Apple.
   base64urlADatos · verificarTokenDeApple
+- **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
+  CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · empujar
 - **comentables.js** — Qué cosas admiten comentario, en un solo sitio.
   COMENTABLES · esComentable · comentariosVisibles
 - **derivar.js** — Estados que nadie mantiene a mano.
@@ -53,7 +57,7 @@ tener que recorrer la aplicación entera cada vez.
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
-  cuadroEn · tramoLocal · leerCuadro · guardarCuadro · …y 3 más
+  cuadroEn · tramoLocal · inicioDeVentana · leerCuadro · …y 4 más
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
@@ -99,7 +103,7 @@ tener que recorrer la aplicación entera cada vez.
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
-  HORIZONTE_RECORDATORIOS_DIAS · …y 1 más
+  HORIZONTE_RECORDATORIOS_DIAS · …y 8 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
   soloFecha · iso · isoConHora · sumarDias · …y 15 más
@@ -108,7 +112,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 8 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 10 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -153,6 +157,8 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/cuenta/baja` — elimina la cuenta de quien la pide (App Store 5.1.1)
 - `GET  /api/sync` — instantánea filtrada para el lector autenticado
 - `POST /api/cambios` — aplica la cola de cambios del dispositivo
+- `POST /api/avisos` — este aparato quiere avisos, y este es su token
+- `DELETE /api/avisos` — este aparato deja de querer avisos
 - `GET  /api/conflictos` — coordinación pendiente de revisar (administradores)
 - `GET  /api/solicitudes` — bandeja de quien espera (administradores)
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
@@ -189,15 +195,15 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `api/src/comentables.js` §5.3 · `pwa/publico/js/native.js` §3.5
   `scripts/agenda/modelo.py` §7
 - **`specs/modelo-datos.md`**
-  `api/src/comentables.js` §2.3 · `api/src/filtrado.js` §7.3 · `api/src/lio.js` §2.6
-  `api/src/repositorio.js` §4 · `api/src/visibilidad.js` · `pwa/publico/js/avisos.js` §2.8
-  `pwa/publico/js/lio.js` §2.6 · `pwa/publico/js/modelo.js` §4
-  `pwa/publico/js/semana.js` §7.4 · `pwa/publico/js/sincronizacion.js` §1
-  `pwa/publico/js/sitios.js` §2.7 · `pwa/publico/js/vistas/regalos.js` §5.2, §7.4
-  `scripts/agenda/__init__.py` §2, §4, §6 · `scripts/agenda/lio.py` §2.6
-  `scripts/agenda/modelo.py` §4 · `scripts/agenda/semana.py` §2.4, §7.4
-  `scripts/agenda/visibilidad.py` · `tests/test_modelo.py` §4
-  `tests/test_visibilidad.py` §6
+  `api/src/avisos.js` §2.9 · `api/src/comentables.js` §2.3 · `api/src/filtrado.js` §7.3
+  `api/src/lio.js` §2.6 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
+  `pwa/publico/js/avisos.js` §2.8 · `pwa/publico/js/lio.js` §2.6
+  `pwa/publico/js/modelo.js` §4 · `pwa/publico/js/semana.js` §7.4
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §2.7
+  `pwa/publico/js/vistas/regalos.js` §5.2, §7.4 · `scripts/agenda/__init__.py` §2, §4, §6
+  `scripts/agenda/lio.py` §2.6 · `scripts/agenda/modelo.py` §4
+  `scripts/agenda/semana.py` §2.4, §7.4 · `scripts/agenda/visibilidad.py`
+  `tests/test_modelo.py` §4 · `tests/test_visibilidad.py` §6
 - **`specs/plan-semanal.md`**
   `api/src/index.js` §9 · `api/src/visibilidad.js` §5
   `scripts/agenda/__init__.py` §3, §4, §6 · `scripts/agenda/fuente.py` §12.1
@@ -206,11 +212,12 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_mensaje.py` §6, §7 · `tests/test_plan_semanal.py` · `tests/test_semana.py` §3
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
-  `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
+  `api/src/avisos.js` §12.4 · `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
   `pwa/publico/js/avisos.js` §12.2 · `pwa/publico/js/lio.js` §10.3
-  `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/semana.js` §8, §10.2
-  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §12.1
-  `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
+  `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/native.js` §12.4
+  `pwa/publico/js/semana.js` §8, §10.2 · `pwa/publico/js/sincronizacion.js` §1
+  `pwa/publico/js/sitios.js` §12.1 · `pwa/publico/js/ui.js` §1, §3
+  `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
   `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2, §10.3
@@ -231,12 +238,13 @@ Scripts, y quién las lee:
 
 Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
-`APPLE_AUD_IOS` · `APPLE_AUD_WEB` · `APPLE_CLAVE_ID` · `APPLE_CLAVE_P8` · `APPLE_EQUIPO`
-`DB` · `ORIGENES_PERMITIDOS` · `REDIRECCION_WEB` · `SESION_SECRETO` · `TOKEN_SERVICIO`
+`APNS_CLAVE_ID` · `APNS_CLAVE_P8` · `APNS_ENTORNO` · `APNS_TOPICO` · `APPLE_AUD_IOS`
+`APPLE_AUD_WEB` · `APPLE_CLAVE_ID` · `APPLE_CLAVE_P8` · `APPLE_EQUIPO` · `DB`
+`ORIGENES_PERMITIDOS` · `REDIRECCION_WEB` · `SESION_SECRETO` · `TOKEN_SERVICIO`
 
 ## Pruebas
 
-**235** en total.
+**269** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -248,6 +256,8 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
+- `api/test/apns.test.js` — 11
+- `api/test/avisos.test.js` — 23
 - `api/test/cuenta.test.js` — 6
 - `api/test/lio.test.js` — 23
 - `api/test/redaccion.test.js` — 54

@@ -122,6 +122,44 @@ export function tramoLocal(momento) {
   return `${valor.year}-${valor.month}-${valor.day}:${franja}`;
 }
 
+/**
+ * El instante en que se abre la ventana de un turno, en UTC.
+ *
+ * Espejo de `inicioDeVentana` en `pwa/publico/js/lio.js`, donde sale gratis
+ * porque el navegador ya está en la hora de casa. Aquí hay que traducir, igual
+ * que en `tramoLocal`, y por el mismo motivo: el Worker corre en UTC.
+ *
+ * Se calcula tanteando —se toma la hora local como si fuera UTC y se corrige con
+ * el desfase que la zona tenga en ese instante—, y un solo tanteo basta: el
+ * desfase de Madrid cambia dos veces al año y de madrugada, y las ventanas
+ * empiezan a las 6 y a las 20.
+ *
+ * Lo usa quien tiene que saber **qué cuadro gobernaba ese turno**, que es el que
+ * estaba en vigor cuando su ventana se abrió y no el de ahora.
+ */
+export function inicioDeVentana(fecha, turnoId) {
+  const turno = TURNOS.find((t) => t.id === turnoId);
+  const [anno, mes, dia] = String(fecha).split('-').map(Number);
+  if (!anno || !mes || !dia) return new Date(0);
+  const comoSiFueraUtc = Date.UTC(anno, mes - 1, dia, turno ? turno.desde : 0);
+  return new Date(comoSiFueraUtc - desfaseLocal(new Date(comoSiFueraUtc)));
+}
+
+/** Cuánto se adelanta la hora de casa a la de UTC en ese instante, en ms. */
+function desfaseLocal(momento) {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(momento);
+  const valor = Object.fromEntries(partes.map((parte) => [parte.type, parte.value]));
+  const local = Date.UTC(
+    Number(valor.year), Number(valor.month) - 1, Number(valor.day),
+    Number(valor.hour) % 24, Number(valor.minute), Number(valor.second),
+  );
+  return local - momento.getTime();
+}
+
 export async function leerCuadro(db) {
   const fila = await db
     .prepare('SELECT valor FROM configuracion WHERE clave = ?')

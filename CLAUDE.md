@@ -70,9 +70,57 @@ pendiente. El hook lo inyecta al final del mapa.
   otro esperando sin rastro. Descartar significa «ya lo he visto», así que un
   comentario posterior lo trae de vuelta. Hoy conserva su banda de lo que espera
   respuesta, que se contesta de un toque. Está en `specs/ux.md` §12.2. **Y la
-  razón de que exista siendo tan poco código es la de después:** cuando llegue
-  APNs, el servidor tendrá que contestar esa misma pregunta, y se reescribirá con
-  la misma forma en vez de estar repartida por dentro de `hoy.js`.
+  razón de que existiera siendo tan poco código era la de después**, que ya ha
+  llegado: `api/src/avisos.js` es esa misma pieza en el servidor, escrita con la
+  misma forma —una lista de `FUENTES`— en vez de repartida por dentro de `hoy.js`.
+  Lo que no son es la misma pregunta: **en el dispositivo un aviso es un estado**
+  —qué te espera sin contestar— y **en el servidor es un suceso** —qué acaba de
+  pasar—. Por eso uno se deriva de la instantánea y el otro, del lote de cambios.
+- **Las notificaciones remotas están construidas.** Lo que se programaba en el
+  dispositivo solo alcanzaba a lo que ya se sabía; que a otro le suene el teléfono
+  porque acabas de pedirle un cambio de turno no lo puede programar nadie por
+  adelantado, y ese era justo el aviso que servía para algo a las 7:40. Suena
+  **Lío entero** —petición, corrección, acepto, no puedo, retirada, y los dos
+  atajos que se escriben sin preguntar— y los comentarios en algo tuyo o en un
+  hilo donde ya hablaste. **La visibilidad hay que volver a aplicarla**, porque el
+  texto lo compone el servidor: se aplica componiendo la instantánea de quien
+  recibiría el aviso y mirando si el objeto está dentro, sin escribir una segunda
+  copia de la regla. La prueba que lo sostiene está en `api/test/avisos.test.js` y
+  el caso que ataja no es teórico —quien comentó una idea antes de que se orientara
+  hacia ella seguiría «participando en el hilo»—. **El texto viaja entero**, a
+  sabiendas de que pasa por Apple y se queda en la pantalla de bloqueo: un aviso
+  que hay que abrir para leer obliga a entrar para saber si hacía falta entrar.
+  **Los botones abren la app** en vez de contestar a oscuras, porque una acción de
+  segundo plano se pierde justo con la aplicación cerrada, que es el caso que
+  importa. Y cuando alguien se queda el turno de otro, a quién se avisa sale del
+  **cuadro que gobernaba al abrirse la ventana** y no del de ahora, por lo mismo
+  que lo hace la pantalla: con el de ahora, tocar Ajustes cambiaría a quién se le
+  avisó de un turno de la semana pasada. **Y no hace falta ningún esquema de URL**: una notificación no abre la
+  aplicación por un enlace, la abre y le entrega su contenido. **Lo de Lío
+  atraviesa el modo concentración y lo demás no** —menos las correcciones, que
+  hablan del pasado—, que es la única distinción de urgencia que se hace: marcar
+  de urgente lo que no lo es se paga en que nadie se fía del tercer aviso. **Y el
+  globo del icono cuenta lo que espera respuesta y solo eso**, no las novedades:
+  un comentario no reclama nada de nadie, y un número que solo baja abriendo la
+  aplicación es un número que no se mira. Va en todos los avisos aunque no sean
+  de Lío, porque es absoluto: uno que llegara sin él dejaría puesta la cuenta
+  anterior. **Y lo escriben dos: el servidor en cada aviso** —lo único que
+  funciona con la aplicación cerrada— **y la aplicación en cada instantánea**
+  —lo único que funciona al contestar desde dentro, porque contestarte a ti mismo
+  no genera aviso ninguno—. Esa segunda mitad es la única dependencia nativa que
+  se añade además del push (`@capawesome/capacitor-badge`): ponerlo **a cero** se
+  puede sin nada, pero a cero no es lo que hay que poner. Está en `specs/ux.md` §12.4, el token en `specs/modelo-datos.md` §2.9
+  y el despliegue en `docs/despliegue-cloudflare.md` §4.6 y §8.3. **El recordatorio del turno
+  propio se queda siendo local** y convive con el remoto: dicen cosas distintas
+  —«te toca ahora» y «alguien ha tocado tu turno»— y el local funciona sin red y
+  sin permiso de APNs, que es una red de seguridad que no cuesta nada. **Y
+  descartar un aviso del teléfono no descarta nada del sobre**: son dos sitios, y
+  iOS solo avisa del descarte si la aplicación está despierta, de modo que
+  enlazarlos funcionaría a veces sí y a veces no. Queda abierto **qué pasa cuando
+  alguien acumule avisos de una semana fuera**, que hoy es una pila que se
+  descarta a mano. Y una atadura nueva: **el entorno de
+  APNs tiene que coincidir con cómo se instaló la app** —`pruebas` desde Xcode,
+  `produccion` desde TestFlight—; equivocarse da `BadDeviceToken` y nada más.
 - **La marca de lo visto viaja: la tabla `visto`.** Guarda persona, tipo, objeto y
   **hasta qué momento**, no un booleano, que es lo que permite que un aviso
   descartado vuelva. Solo llega a su dueño. Se escribe al abrir el hilo, al
@@ -190,13 +238,17 @@ pendiente. El hook lo inyecta al final del mapa.
   del mes. Queda abierto **si el rezagado de ayer debería
   poder marcarse más de un día después** —hoy sube una vez y desaparece— y **qué
   hacer cuando alguien se va de vacaciones**, que hoy se resuelve a mano cambiando
-  turno a turno. Y una atadura: el aviso de que te piden un cambio **no puede
-  empujarse**; las notificaciones son locales y solo alcanzan al turno propio.
-- **Queda una migración por aplicar: `0012_apunte_hecho.unavez.sql`**, que añade
-  la casilla de la lista de la compra. Lleva `ALTER TABLE`, así que **no se puede
-  repetir**: se escribe su nombre en el campo de la migración de un solo uso al
-  desplegar la API. Sin ella, tachar algo de «Llevar» lo rechaza la base. Las once
-  anteriores están puestas, incluidas
+  turno a turno. La atadura que tenía —que el aviso de pedirte un cambio no podía
+  empujarse— **se ha levantado**: eso son ahora los avisos remotos, y Lío suena
+  entero.
+- **Quedan dos migraciones por aplicar, y las dos son de un solo uso.**
+  `0012_apunte_hecho.unavez.sql` añade la casilla de la lista de la compra —sin
+  ella, tachar algo de «Llevar» lo rechaza la base— y
+  `0013_avisos_push.unavez.sql` añade el token del aparato —sin ella no hay dónde
+  guardarlo y el interruptor de Avisos no llega a encenderse—. Las dos llevan
+  `ALTER TABLE`, así que **no se pueden repetir**: se escribe su nombre en el
+  campo de la migración de un solo uso al desplegar la API, una en cada pasada.
+  Las once anteriores están puestas, incluidas
   las tres `.unavez` —los círculos (`0005`), el género (`0006`) y la `0009`, que
   rehizo `comentario` para quitarle el `CHECK`—, que no se vuelven a pedir porque
   no se pueden repetir: el `ALTER TABLE` falla si la columna ya está, y rehacer una

@@ -16,6 +16,8 @@
  *   POST   /api/cuenta/baja · elimina la cuenta de quien la pide (App Store 5.1.1)
  *   GET    /api/sync        · instantánea filtrada para el lector autenticado
  *   POST   /api/cambios     · aplica la cola de cambios del dispositivo
+ *   POST   /api/avisos      · este aparato quiere avisos, y este es su token
+ *   DELETE /api/avisos      · este aparato deja de querer avisos
  *   GET    /api/conflictos  · coordinación pendiente de revisar (administradores)
  *   GET    /api/solicitudes · bandeja de quien espera (administradores)
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
@@ -59,6 +61,8 @@ import {
 import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
+import { empujar } from './avisos.js';
+import { hayApnsConfigurado } from './apns.js';
 import {
   cabeUnaMas,
   componerMaterial,
@@ -342,15 +346,17 @@ async function sincronizar(peticion, env) {
   return json(instantanea);
 }
 
-async function recibirCambios(peticion, env) {
+async function recibirCambios(peticion, env, ctx) {
   const lector = await lectorAutenticado(peticion, env);
   const { cambios = [] } = await peticion.json();
 
   const resultados = [];
+  const aplicados = [];
   for (const cambio of cambios) {
     try {
       const resultado = await aplicarCambio(env.DB, lector, cambio);
       resultados.push({ id: cambio.id, tipo: cambio.tipo, ...resultado });
+      if (resultado.aplicado) aplicados.push({ ...cambio, novedad: resultado.novedad !== false });
     } catch (error) {
       resultados.push({ id: cambio.id, tipo: cambio.tipo, aplicado: false, motivo: String(error.message || error) });
     }
@@ -362,7 +368,78 @@ async function recibirCambios(peticion, env) {
   // siempre con lo que le corresponde ver, incluido lo que acaba de dejar de
   // corresponderle por haber pasado a ser destinatario de algo.
   const registro = await leerRegistro(env.DB);
+
+  // Y a quien le afecte, se le hace sonar el teléfono. Va detrás de la respuesta
+  // y no dentro de ella: quien acaba de guardar algo no tiene por qué esperar a
+  // que APNs conteste, y un aviso que no sale no puede tumbar una escritura que
+  // ya está hecha. Por eso `empujar` no lanza nunca.
+  if (aplicados.length) {
+    const empuje = empujar(env, registro, lector, aplicados).catch(() => ({ enviados: 0 }));
+    if (ctx?.waitUntil) ctx.waitUntil(empuje);
+  }
+
   return json({ resultados, instantanea: await conBanderaDeRedaccion(env, componerInstantanea(registro, lector)) });
+}
+
+// ------------------------------------------------------- Avisos remotos --
+
+/** Un token de APNs son 32 octetos en hexadecimal; se admite algo más de largo
+ *  porque Apple se ha reservado poder alargarlo. Lo que no se admite es
+ *  cualquier cosa: esto acaba en una URL hacia Apple. */
+const TOKEN_DE_AVISOS = /^[0-9a-fA-F]{64,200}$/;
+
+/** Qué aparato es este. Sin cabecera no hay fila propia, y entonces el token se
+ *  guarda en la del titular, que es donde estaba antes de que hubiera avisos. */
+const aparatoDe = (peticion, lector) => peticion.headers.get('X-Dispositivo') || `${lector.id}:desconocido`;
+
+/**
+ * El teléfono dice por dónde se le alcanza.
+ *
+ * Se llama al encender el interruptor de Ajustes y en cada arranque con él
+ * puesto: APNs cambia el token cuando le parece —al restaurar una copia, al
+ * reinstalar— y el único que se entera es el propio aparato.
+ */
+async function darDeAltaLosAvisos(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { token = '', plataforma = 'ios' } = await peticion.json();
+  if (!TOKEN_DE_AVISOS.test(token)) return json({ error: 'token de avisos no válido' }, 400);
+
+  const aparato = aparatoDe(peticion, lector);
+
+  // El mismo token no puede estar en dos filas. Un teléfono que cambia de manos
+  // —o dos cuentas en el mismo aparato— dejaría a la anterior recibiendo los
+  // avisos de la nueva, que es exactamente lo que este sistema existe para no
+  // hacer.
+  await env.DB
+    .prepare('UPDATE dispositivo SET token_push = NULL, token_push_desde = NULL WHERE token_push = ? AND id <> ?')
+    .bind(token, aparato)
+    .run();
+
+  await env.DB
+    .prepare(
+      `INSERT INTO dispositivo (id, persona_id, plataforma, token_push, token_push_desde, ultima_sincronizacion)
+       VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET
+         persona_id = excluded.persona_id,
+         plataforma = excluded.plataforma,
+         token_push = excluded.token_push,
+         token_push_desde = excluded.token_push_desde`,
+    )
+    .bind(aparato, lector.id, plataforma, token)
+    .run();
+
+  return json({ alta: true, empuja: hayApnsConfigurado(env) });
+}
+
+/** Se apaga el interruptor: el aparato deja de ser alcanzable, y el token se
+ *  borra en lugar de marcarse, que es lo mismo y no guarda de más. */
+async function darDeBajaLosAvisos(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  await env.DB
+    .prepare('UPDATE dispositivo SET token_push = NULL, token_push_desde = NULL WHERE id = ? AND persona_id = ?')
+    .bind(aparatoDe(peticion, lector), lector.id)
+    .run();
+  return json({ baja: true });
 }
 
 async function conflictosPendientes(peticion, env) {
@@ -680,6 +757,8 @@ const RUTAS = [
   ['POST', '/api/cuenta/baja', darDeBaja],
   ['GET', '/api/sync', sincronizar],
   ['POST', '/api/cambios', recibirCambios],
+  ['POST', '/api/avisos', darDeAltaLosAvisos],
+  ['DELETE', '/api/avisos', darDeBajaLosAvisos],
   ['GET', '/api/conflictos', conflictosPendientes],
   ['GET', '/api/solicitudes', bandeja],
   ['POST', '/api/solicitudes/resolver', resolverSolicitud],
@@ -694,7 +773,10 @@ const RUTAS = [
 ];
 
 export default {
-  async fetch(peticion, env) {
+  // `ctx` llega hasta aquí por los avisos remotos: son lo único que continúa
+  // después de haber contestado, y sin `waitUntil` el isolate se apagaría con
+  // ellos a medio salir.
+  async fetch(peticion, env, ctx) {
     const cors = cabecerasCors(env, peticion);
 
     if (peticion.method === 'OPTIONS') {
@@ -707,7 +789,7 @@ export default {
     if (!ruta) return json({ error: 'no encontrado' }, 404, cors);
 
     try {
-      const respuesta = await ruta[2](peticion, env);
+      const respuesta = await ruta[2](peticion, env, ctx);
       for (const [clave, valor] of Object.entries(cors)) respuesta.headers.set(clave, valor);
       return respuesta;
     } catch (error) {
