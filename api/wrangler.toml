@@ -37,7 +37,14 @@ REDIRECCION_WEB = "https://garciadoral-ops.galoopa.store"
 # `produccion` para TestFlight y la App Store: son dos servidores distintos y los
 # tokens de uno no valen en el otro. El síntoma de equivocarse es un
 # `BadDeviceToken` que no explica nada más. Sin valor, producción.
-APNS_ENTORNO = "produccion"
+#
+# **Puesto en `pruebas` mientras el módulo se prueba desde Xcode.** Hay que
+# devolverlo a `produccion` antes de subir a TestFlight, y ese ir y venir es
+# precisamente lo que no puede quedarse así: en esta casa uno instala desde Xcode
+# y los otros tres desde TestFlight, y un solo valor no puede servir a los dos.
+# Lo que toca después es que el Worker lo averigüe solo —probar el otro servidor
+# cuando APNs conteste `BadDeviceToken`, en lugar de dar el token por muerto—.
+APNS_ENTORNO = "pruebas"
 
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
