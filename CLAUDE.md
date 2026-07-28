@@ -101,7 +101,12 @@ pendiente. El hook lo inyecta al final del mapa.
   un comentario no reclama nada de nadie, y un número que solo baja abriendo la
   aplicación es un número que no se mira. Va en todos los avisos aunque no sean
   de Lío, porque es absoluto: uno que llegara sin él dejaría puesta la cuenta
-  anterior. Está en `specs/ux.md` §12.4, el token en `specs/modelo-datos.md` §2.9
+  anterior. **Y lo escriben dos: el servidor en cada aviso** —lo único que
+  funciona con la aplicación cerrada— **y la aplicación en cada instantánea**
+  —lo único que funciona al contestar desde dentro, porque contestarte a ti mismo
+  no genera aviso ninguno—. Esa segunda mitad es la única dependencia nativa que
+  se añade además del push (`@capawesome/capacitor-badge`): ponerlo **a cero** se
+  puede sin nada, pero a cero no es lo que hay que poner. Está en `specs/ux.md` §12.4, el token en `specs/modelo-datos.md` §2.9
   y el despliegue en `docs/despliegue-cloudflare.md` §4.6 y §8.3. **El recordatorio del turno
   propio se queda siendo local** y convive con el remoto: dicen cosas distintas
   —«te toca ahora» y «alguien ha tocado tu turno»— y el local funciona sin red y

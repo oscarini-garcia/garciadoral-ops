@@ -102,7 +102,7 @@ tener que recorrer la aplicación entera cada vez.
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
-  HORIZONTE_RECORDATORIOS_DIAS · …y 7 más
+  HORIZONTE_RECORDATORIOS_DIAS · …y 8 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
   soloFecha · iso · isoConHora · sumarDias · …y 15 más

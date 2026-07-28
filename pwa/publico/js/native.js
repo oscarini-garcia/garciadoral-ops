@@ -546,6 +546,31 @@ export async function desactivarAvisosRemotos() {
   }
 }
 
+/**
+ * El globo rojo del icono, con lo que espera respuesta.
+ *
+ * Lo escriben **dos** y tienen que escribir lo mismo. El servidor lo manda en
+ * cada aviso, que es lo único que funciona con la aplicación cerrada —ahí no hay
+ * JavaScript corriendo—; y esto lo reescribe en cada instantánea nueva, que es lo
+ * único que funciona cuando contestas desde dentro, porque contestarte a ti mismo
+ * no genera ningún aviso y el globo se quedaría contando lo que ya no espera.
+ *
+ * De ahí la única dependencia nativa que se añade además del push. Se puede
+ * poner a cero sin ninguna —`removeAllDeliveredNotifications` lo hace de
+ * pasada—, pero a cero no es lo que hay que poner: quien abre la aplicación con
+ * dos peticiones sin contestar y sale sin contestarlas sigue teniendo dos.
+ */
+export async function ponerElGlobo(cuantos) {
+  const globo = plugin('Badge');
+  if (!esNativo() || !globo) return;
+  try {
+    if (cuantos > 0) await globo.set({ count: cuantos });
+    else await globo.clear();
+  } catch {
+    /* sin globo: no es nada que arreglar aquí */
+  }
+}
+
 /** Las categorías se declaran con el plugin de las locales, que es el único que
  *  sabe hacerlo; valen para las dos clases de aviso porque son de la aplicación. */
 async function registrarCategorias() {

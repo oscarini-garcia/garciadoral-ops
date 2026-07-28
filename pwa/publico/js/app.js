@@ -42,6 +42,7 @@ import {
   hayAvisosRemotos,
   iniciarNativo,
   permisoDeAvisos,
+  ponerElGlobo,
   programarRecordatorios,
   toque,
   versionInstalada,
@@ -451,6 +452,10 @@ function prepararInterfaz() {
     if (datos !== ultimaInstantanea) {
       ultimaInstantanea = datos;
       refrescarRecordatorios(datos);
+      // El globo, con lo mismo que el grupo de arriba del sobre. El servidor ya
+      // lo manda en cada aviso, pero contestar desde dentro no genera ninguno:
+      // sin esta línea, el número se quedaría contando lo que acabas de resolver.
+      ponerElGlobo(porContestar(ctx).length);
     }
   });
 

@@ -857,9 +857,24 @@ por OTA. Del binario son dos cosas, y `npm run sync:ios` deja las dos puestas:
    `PushNotifications.register()` no da error: el token sencillamente no llega
    nunca, y desde la web parece que Apple no contesta.
 
-Y una dependencia nueva, `@capacitor/push-notifications`, que es código nativo:
-exige `npm install`, `npx cap sync ios` y **un binario nuevo con su revisión**.
-No se puede meter por OTA.
+Y dos dependencias nuevas, las dos con código nativo: `@capacitor/push-notifications`
+y `@capawesome/capacitor-badge`. Exigen `npm install`, `npx cap sync ios` y **un
+binario nuevo con su revisión**; no se pueden meter por OTA.
+
+> **Por qué hace falta la segunda.** El globo del icono lo escriben dos, y tienen
+> que decir lo mismo. El servidor lo manda dentro de cada aviso, que es lo único
+> que funciona con la aplicación cerrada —ahí no hay JavaScript corriendo—, y la
+> aplicación lo reescribe en cada instantánea, que es lo único que funciona
+> cuando contestas desde dentro: contestarte a ti mismo no genera ningún aviso.
+> Poner el globo **a cero** sí se puede sin dependencia alguna, pero a cero no es
+> lo que hay que poner: quien abre la aplicación con dos peticiones sin contestar
+> y sale sin contestarlas sigue teniendo dos.
+
+Después de añadir la capacidad de **Time Sensitive Notifications** hay que
+activarla también en el App ID y **regenerar los perfiles de aprovisionamiento**.
+Es el paso que se olvida, y da un error al subir el binario —«*Provisioning
+profile missing `com.apple.developer.usernotifications.time-sensitive`*»— que
+llega al final del todo, cuando uno cree que ya ha terminado.
 
 **Cómo se enciende.** Ajustes → *Avisos* → «Avisarme en este teléfono». Ahí es
 donde iOS pide el permiso, y no al arrancar: un «no» dado de sopetón nada más
