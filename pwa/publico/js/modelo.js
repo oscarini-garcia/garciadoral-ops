@@ -139,6 +139,20 @@ export const GENEROS = { f: 'Femenino', m: 'Masculino' };
 const EMOJI_INICIAL = /^(\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier}|\u200D\p{Extended_Pictographic})*)\s*/u;
 
 /**
+ * Parte un texto en el emoji con el que empieza y lo demás.
+ *
+ * Es el mismo trato que tienen los eventos —«para otro emoji, empieza el título
+ * con él»— y por eso se comparte: en esta aplicación un emoji se escribe donde
+ * se escribe el nombre, y no en un campo aparte.
+ */
+export function partirEmoji(texto) {
+  const entero = String(texto || '').trim();
+  const hallado = entero.match(EMOJI_INICIAL);
+  if (!hallado) return { emoji: null, resto: entero };
+  return { emoji: hallado[1], resto: entero.slice(hallado[0].length).trim() || entero };
+}
+
+/**
  * ¿Sigue vivo este registro?
  *
  * El borrado nunca es físico: se marca como inactivo (specs/modelo-datos.md
