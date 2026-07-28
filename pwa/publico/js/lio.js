@@ -67,10 +67,8 @@ export function cuadroVacio() {
   return Object.fromEntries(IDS_TURNO.map((turno) => [turno, Array(7).fill(null)]));
 }
 
-/** El cuadro tal como llega, saneado: catorce casillas siempre, con el lunes
- *  en 0. */
-export function cuadroDe(instantanea) {
-  const bruto = instantanea?.lio_cuadro;
+/** Un cuadro suelto, saneado: catorce casillas siempre, con el lunes en 0. */
+function saneado(bruto) {
   const cuadro = cuadroVacio();
   if (!bruto || typeof bruto !== 'object') return cuadro;
   for (const turno of IDS_TURNO) {
@@ -83,6 +81,60 @@ export function cuadroDe(instantanea) {
 }
 
 /**
+ * El cuadro no es uno: es la lista de los que ha habido, con el instante desde
+ * el que valió cada uno.
+ *
+ * **Porque cambiar el reparto no puede reescribir el pasado.** Un turno sin fila
+ * de `paseo` se deriva del cuadro, y con un solo cuadro se derivaba del de
+ * ahora: el martes pasado que nadie marcó cambiaba de dueño al tocar Ajustes.
+ * Con la lista, cada turno se deriva del que gobernaba cuando se abrió su
+ * ventana. El porqué y las alternativas están en
+ * `specs/propuesta-cuadro-con-vigencia.html`.
+ *
+ * Lo que hay guardado del formato viejo —un cuadro suelto— se lee como una
+ * versión sin `desde`, que vale desde siempre; y una instantánea vieja en la
+ * caché del dispositivo también, que es lo que hace que esto no rompa nada al
+ * llegar.
+ */
+export function versionesDe(instantanea) {
+  const bruto = instantanea?.lio_cuadro;
+  if (bruto && typeof bruto === 'object' && !Array.isArray(bruto)) {
+    return [{ desde: null, cuadro: saneado(bruto) }];
+  }
+  if (!Array.isArray(bruto)) return [];
+  return bruto
+    .filter((version) => version && typeof version === 'object')
+    .map((version) => ({
+      desde: typeof version.desde === 'string' && version.desde ? version.desde : null,
+      cuadro: saneado(version.cuadro),
+    }))
+    .sort((a, b) => String(a.desde || '').localeCompare(String(b.desde || '')));
+}
+
+/**
+ * Qué cuadro gobernaba en un instante: el último que empezó antes.
+ *
+ * Antes del primero vale el primero, que es lo más antiguo que se sabe del
+ * reparto: un turno de hace tres meses no se queda sin dueño por haber sido
+ * anterior a la primera vez que alguien tocó Ajustes.
+ */
+export function cuadroEn(instantanea, cuando) {
+  const versiones = versionesDe(instantanea);
+  if (!versiones.length) return cuadroVacio();
+  const momento = (cuando instanceof Date ? cuando : new Date(cuando)).toISOString();
+  let elegida = versiones[0];
+  for (const version of versiones) {
+    if (!version.desde || version.desde <= momento) elegida = version;
+    else break;
+  }
+  return elegida.cuadro;
+}
+
+/** El cuadro que rige ahora, que es el que se edita en Ajustes y el que se
+ *  enseña como reparto de la casa. */
+export const cuadroDe = (instantanea) => cuadroEn(instantanea, new Date());
+
+/**
  * ¿Hay Lío en esta casa?
  *
  * Mientras nadie haya puesto el cuadro no se dibuja nada: ni carril en la
@@ -91,8 +143,11 @@ export function cuadroDe(instantanea) {
  */
 export function hayLio(instantanea) {
   if (!instantanea) return false;
-  const cuadro = cuadroDe(instantanea);
-  if (IDS_TURNO.some((turno) => cuadro[turno].some(Boolean))) return true;
+  // Cualquier versión con algo escrito cuenta: si el cuadro de ahora está vacío
+  // pero hubo reparto en marzo, Lío existe y su historia se puede mirar.
+  const conAlguien = versionesDe(instantanea).some((version) =>
+    IDS_TURNO.some((turno) => version.cuadro[turno].some(Boolean)));
+  if (conAlguien) return true;
   return (instantanea.paseos || []).some((p) => estaActivo(p));
 }
 
@@ -148,9 +203,12 @@ export function turnoDe(instantanea, fecha, turnoId, referencia = new Date()) {
   const dia = fecha instanceof Date ? fecha : parsearMomento(fecha);
   const fechaIso = iso(dia);
   const paseo = paseoDe(instantanea, fechaIso, turnoId);
-  const cuadro = cuadroDe(instantanea);
-  // La fila manda sobre el cuadro: si existe es porque ese día no fue como
-  // estaba previsto, y eso ya no lo cambia un reparto nuevo.
+  // **El cuadro que gobierna es el de cuando se abrió la ventana**, no el de
+  // ahora: así, cambiar el reparto en Ajustes cambia lo que viene y no reescribe
+  // el turno del martes pasado que nadie llegó a marcar.
+  const cuadro = cuadroEn(instantanea, inicioDeVentana(dia, turnoId));
+  // Y la fila manda sobre el cuadro: si existe es porque ese día no fue como
+  // estaba previsto, y eso ya no lo cambia ningún reparto.
   const asignadoId = paseo ? paseo.asignado_id || null : cuadro[turnoId]?.[indiceDia(dia)] || null;
   const hechoPorId = paseo?.hecho_por_id || null;
   const vencido = referencia >= finDeVentana(dia, turnoId);

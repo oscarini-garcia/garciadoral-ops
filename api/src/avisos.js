@@ -31,7 +31,7 @@
 
 import { componerInstantanea } from './filtrado.js';
 import { enviarAviso, hayApnsConfigurado } from './apns.js';
-import { TURNOS, normalizarCuadro } from './lio.js';
+import { TURNOS, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
 
 /**
  * Las categorías con botones, que se llaman igual aquí y en `native.js`.
@@ -277,8 +277,13 @@ function avisosDeUnPaseo(contexto, cambio) {
   }
 
   // Quedarse con el turno de otro: quien lo pierde es quien lo tenía previsto,
-  // que mientras no hubiera fila era el del cuadro.
-  const cuadro = normalizarCuadro(registro.lio_cuadro);
+  // que mientras no hubiera fila era el del cuadro. Y el cuadro que gobierna es
+  // **el de cuando se abrió la ventana**, no el de ahora: con el de ahora, tocar
+  // Ajustes cambiaría a quién se le avisa de un turno de la semana pasada.
+  const cuadro = cuadroEn(
+    normalizarVersiones(registro.lio_cuadro),
+    inicioDeVentana(paseo.fecha, paseo.turno),
+  );
   const previsto = cuadro[paseo.turno]?.[indiceDeDia(paseo.fecha)] || null;
   if (paseo.asignado_id && previsto && previsto !== paseo.asignado_id) {
     return [{

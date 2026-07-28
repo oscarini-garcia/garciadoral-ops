@@ -168,6 +168,31 @@ test('coger el turno de otro se le dice a quien lo tenía previsto', () => {
   assert.equal(avisos[0].titulo, '🐾 Óscar se queda tu turno');
 });
 
+/**
+ * El cuadro es una lista de versiones desde la `#91`, y el que gobierna un turno
+ * es el que estaba en vigor cuando se abrió su ventana. Aquí importa: con el
+ * cuadro de ahora, quedarse un turno de la semana pasada avisaría a quien lo
+ * tiene *hoy*, que puede no ser quien lo tenía entonces.
+ */
+test('el turno se lo quita a quien lo tenía aquel día, no a quien lo tiene hoy', () => {
+  const paseo = {
+    id: 'lio:2026-07-30:manana', fecha: '2026-07-30', turno: 'manana', asignado_id: 'p-oscar', activo: true,
+  };
+  const versiones = [
+    // Hasta el 31 de julio, el jueves por la mañana era de Marta.
+    { desde: null, cuadro: { manana: [null, null, null, 'p-marta', null, null, null], noche: Array(7).fill(null) } },
+    // Y desde entonces, de la abuela. El turno del 30 no se entera.
+    { desde: '2026-07-31T09:00:00.000Z', cuadro: { manana: [null, null, null, 'p-abuela', null, null, null], noche: Array(7).fill(null) } },
+  ];
+  const avisos = avisosDe(
+    registro({ paseos: [paseo], lio_cuadro: versiones }),
+    OSCAR,
+    [{ tipo: 'paseo', id: paseo.id, novedad: true }],
+  );
+  assert.equal(avisos.length, 1);
+  assert.equal(avisos[0].para, 'p-marta');
+});
+
 test('aceptar una propuesta suena una vez, aunque escriba dos filas', () => {
   // `resolverPropuesta` guarda el trato y el paseo en el mismo lote. Sin el
   // resguardo, el segundo sonaría otra vez con otras palabras.

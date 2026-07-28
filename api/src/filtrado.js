@@ -15,7 +15,7 @@
 
 import { visible } from './visibilidad.js';
 import { comentariosVisibles } from './comentables.js';
-import { cuadroVacio, esDeLaCasa } from './lio.js';
+import { esDeLaCasa } from './lio.js';
 
 /** Categorías que el observador puede ver. Las que no, no existen para él.
  *  No se muestra un contenedor bloqueado: la existencia misma de la categoría
@@ -94,7 +94,7 @@ export function componerInstantanea(registro, observador) {
     // persona no le dicen nada a esta, y mandarlas contaría además qué ha
     // mirado cada uno, que no es asunto de nadie.
     vistos: (registro.vistos || []).filter((v) => v.persona_id === observador.id),
-    lio_cuadro: deLaCasa ? registro.lio_cuadro || cuadroVacio() : cuadroVacio(),
+    lio_cuadro: deLaCasa ? registro.lio_cuadro || [] : [],
     paseos: deLaCasa ? registro.paseos || [] : [],
     // Las propuestas llegan enteras y no solo las dirigidas al lector: quien
     // pidió un cambio tiene que ver que sigue sin contestar, y el carril de la
