@@ -17,11 +17,14 @@ from comun import agenda_minima
 from agenda.lio import (
     IDS_TURNO,
     TurnoLio,
+    cuadro_en,
     cuadro_normalizado,
     hay_lio,
     id_paseo,
+    inicio_de_ventana,
     turno_de,
     turnos_de,
+    versiones_normalizadas,
 )
 from agenda.mensaje import componer, formatear_lio
 from agenda.modelo import ErrorDeIntegridad
@@ -235,3 +238,62 @@ class ElTurnoSuelto(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CuadroConVigencia(unittest.TestCase):
+    """El cuadro no es uno: es la lista de los que ha habido.
+
+    Es lo que impide que cambiar el reparto en Ajustes reescriba un día pasado
+    que nadie llegó a marcar. El análisis está en
+    `specs/propuesta-cuadro-con-vigencia.html`.
+    """
+
+    def test_el_formato_viejo_vale_desde_siempre(self):
+        versiones = versiones_normalizadas(CUADRO)
+        self.assertEqual(len(versiones), 1)
+        self.assertIsNone(versiones[0][0])
+        antiguo = cuadro_en(versiones, inicio_de_ventana(date(2020, 1, 6), "manana"))
+        self.assertEqual(antiguo["manana"][0], "p-oscar")
+
+    def test_cada_turno_toma_el_cuadro_de_su_ventana(self):
+        versiones = versiones_normalizadas(
+            [
+                {"desde": "2026-03-01T00:00:00.000Z", "cuadro": {"manana": ["p-oscar"]}},
+                {"desde": "2026-07-27T16:00:00.000Z", "cuadro": {"manana": ["p-marta"]}},
+            ]
+        )
+        agenda = _casa(lio_cuadro=None)
+        agenda.cuadro_lio = versiones
+
+        # El lunes 27 por la mañana abre a las 6:00 de Madrid, antes de las 16:00
+        # UTC en que se cambió el reparto: sigue siendo de Óscar.
+        self.assertEqual(turno_de(agenda, LUNES, "manana").asignado_id, "p-oscar")
+        # El lunes siguiente ya está gobernado por el cuadro nuevo.
+        self.assertEqual(turno_de(agenda, date(2026, 8, 3), "manana").asignado_id, "p-marta")
+
+    def test_cambiar_el_reparto_no_reescribe_un_lunes_pasado(self):
+        """La escena entera: un lunes que nadie marcó, y un cambio de cuadro
+        posterior que en el mundo viejo se lo llevaba por delante."""
+        agenda = _casa(lio_cuadro=None)
+        agenda.cuadro_lio = versiones_normalizadas(
+            [{"desde": "2026-07-01T00:00:00.000Z", "cuadro": CUADRO}]
+        )
+        antes = turno_de(agenda, LUNES, "manana").asignado_id
+
+        agenda.cuadro_lio = versiones_normalizadas(
+            [
+                {"desde": "2026-07-01T00:00:00.000Z", "cuadro": CUADRO},
+                {"desde": "2026-07-28T09:00:00.000Z", "cuadro": {"manana": ["p-marta"] * 7}},
+            ]
+        )
+        self.assertEqual(turno_de(agenda, LUNES, "manana").asignado_id, antes)
+
+    def test_hay_lio_mira_todas_las_versiones(self):
+        agenda = _casa(lio_cuadro=None)
+        agenda.cuadro_lio = versiones_normalizadas(
+            [
+                {"desde": "2026-03-01T00:00:00.000Z", "cuadro": CUADRO},
+                {"desde": "2026-07-01T00:00:00.000Z", "cuadro": {}},
+            ]
+        )
+        self.assertTrue(hay_lio(agenda))

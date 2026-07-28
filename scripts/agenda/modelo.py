@@ -23,7 +23,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Iterator
 
-from .lio import IDS_TURNO, cuadro_normalizado
+from .lio import IDS_TURNO, versiones_normalizadas
 
 REGLAS_VISIBILIDAD = ("publica", "restringida", "privada")
 ROLES = ("administrador", "miembro")
@@ -315,10 +315,13 @@ class Agenda:
     regalos: dict[str, Regalo] = field(default_factory=dict)
     comentarios: list[Comentario] = field(default_factory=list)
     emojis_permitidos: tuple[str, ...] = ()
-    #: Lío: el cuadro semanal —catorce casillas, el lunes en 0— y las
-    #: excepciones ya escritas, indexadas por su identificador compuesto.
-    cuadro_lio: dict[str, list[str | None]] = field(
-        default_factory=lambda: {turno: [None] * 7 for turno in IDS_TURNO}
+    #: Lío: los cuadros semanales que ha habido —catorce casillas cada uno, el
+    #: lunes en 0— con el instante desde el que valió cada uno, y las excepciones
+    #: ya escritas, indexadas por su identificador compuesto. Es una lista y no
+    #: un cuadro suelto para que cambiar el reparto no reescriba el pasado
+    #: (`specs/propuesta-cuadro-con-vigencia.html`).
+    cuadro_lio: list[tuple[str | None, dict[str, list[str | None]]]] = field(
+        default_factory=list
     )
     paseos: dict[str, Paseo] = field(default_factory=dict)
 
@@ -579,7 +582,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             )
         )
 
-    agenda.cuadro_lio = cuadro_normalizado(datos.get("lio_cuadro"))
+    agenda.cuadro_lio = versiones_normalizadas(datos.get("lio_cuadro"))
     for bruto in datos.get("paseos", []):
         if not bool(bruto.get("activo", True)):
             continue
@@ -809,11 +812,13 @@ def validar(agenda: Agenda) -> list[str]:
         elif persona.circulo != "familia":
             problemas.append(f"{donde}: {persona.nombre} no está en el círculo de casa")
 
-    for turno, fila in agenda.cuadro_lio.items():
-        if turno not in IDS_TURNO:
-            problemas.append(f"cuadro de Lío: turno inválido «{turno}»")
-        for dia, persona_id in enumerate(fila):
-            _de_casa(persona_id, f"cuadro de Lío ({turno}, día {dia})")
+    for desde, cuadro in agenda.cuadro_lio:
+        cuando = desde or "siempre"
+        for turno, fila in cuadro.items():
+            if turno not in IDS_TURNO:
+                problemas.append(f"cuadro de Lío ({cuando}): turno inválido «{turno}»")
+            for dia, persona_id in enumerate(fila):
+                _de_casa(persona_id, f"cuadro de Lío desde {cuando} ({turno}, día {dia})")
 
     for paseo in agenda.paseos.values():
         if paseo.turno not in IDS_TURNO:

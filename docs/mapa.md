@@ -15,7 +15,8 @@ tener que recorrer la aplicación entera cada vez.
 - **fuente.py** — Lectura del registro canónico de la agenda.
   FuenteNoDisponible · leer_agenda
 - **lio.py** — Los turnos de paseo de Lío, derivados del cuadro semanal.
-  TurnoLio · id_paseo · cuadro_normalizado · turno_de · turnos_de · hay_lio
+  TurnoLio · id_paseo · cuadro_normalizado · inicio_de_ventana · versiones_normalizadas
+  cuadro_en · turno_de · turnos_de · hay_lio
 - **mensaje.py** — Composición del texto del plan semanal para WhatsApp.
   formatear_dia · formatear_rango · formatear_lio · formatear_evento · Plan · componer
 - **modelo.py** — Entidades y reglas de integridad de la Agenda Familiar.
@@ -51,8 +52,8 @@ tener que recorrer la aplicación entera cada vez.
   componerInstantanea
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
-  CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · leerCuadro
-  guardarCuadro · esDeLaCasa · DIAS_DE_GRACIA_CORRECCION · caducarTratos
+  CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
+  cuadroEn · tramoLocal · leerCuadro · guardarCuadro · …y 3 más
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
@@ -91,7 +92,7 @@ tener que recorrer la aplicación entera cada vez.
   campoDeGente
 - **lio.js** — Lío: los turnos de paseo, sus estados y el trato que los cambia de dueño.
   TURNOS · IDS_TURNO · turnoPorId · nombreDeTurno · rotuloDeTurno · idPaseo · cuadroVacio
-  cuadroDe · hayLio · genteDeCasa · …y 15 más
+  versionesDe · cuadroEn · cuadroDe · …y 17 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · emojiVisible · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS
   PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 11 más
@@ -235,11 +236,11 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**225** en total.
+**235** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
-- `tests/test_lio.py` — 18
+- `tests/test_lio.py` — 22
 - `tests/test_mensaje.py` — 12
 - `tests/test_modelo.py` — 25
 - `tests/test_plan_semanal.py` — 11
@@ -248,7 +249,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
 - `api/test/cuenta.test.js` — 6
-- `api/test/lio.test.js` — 17
+- `api/test/lio.test.js` — 23
 - `api/test/redaccion.test.js` — 54
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
