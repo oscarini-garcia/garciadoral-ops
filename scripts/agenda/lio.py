@@ -19,7 +19,8 @@ Las entidades están en `specs/modelo-datos.md` §2.6 y la pantalla, en
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time
+from zoneinfo import ZoneInfo
 
 TURNOS = (
     ("manana", "Mañana", "☀️", 6, 10),
@@ -28,7 +29,12 @@ TURNOS = (
 
 IDS_TURNO = tuple(turno[0] for turno in TURNOS)
 EMOJI_TURNO = {turno[0]: turno[2] for turno in TURNOS}
+HORA_TURNO = {turno[0]: turno[3] for turno in TURNOS}
 EMOJI_LIO = "🐾"
+
+#: La casa está en Madrid y las ventanas de los turnos son horas locales. Hace
+#: falta para saber qué cuadro gobernaba cuando se abrió la de un turno.
+LOCAL = ZoneInfo("Europe/Madrid")
 
 
 @dataclass(frozen=True)
@@ -75,11 +81,74 @@ def cuadro_normalizado(bruto: object) -> dict[str, list[str | None]]:
     return cuadro
 
 
+def inicio_de_ventana(fecha: date, turno: str) -> datetime:
+    """Cuándo abre la ventana de un turno, en hora local. Es el instante que
+    decide qué cuadro lo gobierna."""
+    return datetime.combine(fecha, time(HORA_TURNO.get(turno, 0)), tzinfo=LOCAL)
+
+
+def versiones_normalizadas(bruto: object) -> list[tuple[str | None, dict[str, list[str | None]]]]:
+    """El cuadro no es uno: es la lista de los que ha habido, con el instante
+    desde el que valió cada uno.
+
+    **Porque cambiar el reparto no puede reescribir el pasado.** Un turno sin
+    fila de `paseo` se deriva del cuadro, y con un solo cuadro se derivaba del de
+    ahora. El formato viejo —un cuadro suelto— se lee como una versión sin
+    `desde`, que vale desde siempre, y por eso esto no necesita migración.
+    """
+    if isinstance(bruto, dict):
+        return [(None, cuadro_normalizado(bruto))]
+    if not isinstance(bruto, list):
+        return []
+    versiones = [
+        (
+            version.get("desde") if isinstance(version.get("desde"), str) and version.get("desde") else None,
+            cuadro_normalizado(version.get("cuadro")),
+        )
+        for version in bruto
+        if isinstance(version, dict)
+    ]
+    return sorted(versiones, key=lambda version: version[0] or "")
+
+
+def cuadro_en(versiones, cuando: datetime) -> dict[str, list[str | None]]:
+    """Qué cuadro gobernaba en un instante: el último que empezó antes.
+
+    Antes del primero vale el primero, que es lo más antiguo que se sabe del
+    reparto.
+    """
+    if not versiones:
+        return cuadro_normalizado(None)
+    momento = cuando.astimezone(tz=None).isoformat() if cuando.tzinfo is None else cuando.isoformat()
+    elegido = versiones[0][1]
+    for desde, cuadro in versiones:
+        if desde is None or _antes(desde, cuando):
+            elegido = cuadro
+        else:
+            break
+    return elegido
+
+
+def _antes(desde: str, cuando: datetime) -> bool:
+    """¿Empezó esta versión antes del instante dado? Compara momentos y no
+    textos: el `desde` lo escribe el Worker en UTC y la ventana está en hora de
+    Madrid."""
+    try:
+        inicio = datetime.fromisoformat(desde.replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    if inicio.tzinfo is None:
+        inicio = inicio.replace(tzinfo=LOCAL)
+    return inicio <= cuando
+
+
 def turno_de(agenda, fecha: date, turno: str) -> TurnoLio:
     paseo = agenda.paseos.get(id_paseo(fecha, turno))
     if paseo is not None:
         return TurnoLio(fecha, turno, paseo.asignado_id, paseo.hecho_por_id)
-    return TurnoLio(fecha, turno, agenda.cuadro_lio[turno][fecha.weekday()], None)
+    # El cuadro que gobierna es el de cuando se abrió la ventana, no el de ahora.
+    cuadro = cuadro_en(agenda.cuadro_lio, inicio_de_ventana(fecha, turno))
+    return TurnoLio(fecha, turno, cuadro[turno][fecha.weekday()], None)
 
 
 def turnos_de(agenda, fecha: date) -> list[TurnoLio]:
@@ -89,6 +158,7 @@ def turnos_de(agenda, fecha: date) -> list[TurnoLio]:
 def hay_lio(agenda) -> bool:
     """¿Está puesto el cuadro? Mientras no lo esté, Lío no sale por ninguna
     parte: ni en la aplicación ni en el mensaje de los domingos."""
-    if any(any(fila) for fila in agenda.cuadro_lio.values()):
-        return True
+    for _desde, cuadro in agenda.cuadro_lio:
+        if any(any(fila) for fila in cuadro.values()):
+            return True
     return bool(agenda.paseos)

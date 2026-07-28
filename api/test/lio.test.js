@@ -11,7 +11,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cuadroVacio, esDeLaCasa, normalizarCuadro, caducarTratos, TURNOS } from '../src/lio.js';
+import {
+  cuadroEn, cuadroVacio, esDeLaCasa, guardarCuadro, normalizarCuadro, normalizarVersiones,
+  caducarTratos, tramoLocal, TURNOS,
+} from '../src/lio.js';
 import { aplicarCambio } from '../src/repositorio.js';
 import { componerInstantanea } from '../src/filtrado.js';
 
@@ -91,7 +94,7 @@ test('quien no vive en casa no recibe nada de Lío', () => {
   const instantanea = componerInstantanea(registro(), ABUELA);
   assert.deepEqual(instantanea.paseos, []);
   assert.deepEqual(instantanea.tratos_paseo, []);
-  assert.deepEqual(instantanea.lio_cuadro, cuadroVacio());
+  assert.deepEqual(instantanea.lio_cuadro, []);
 });
 
 test('quien vive en casa lo recibe entero', () => {
@@ -140,7 +143,77 @@ test('el cuadro solo lo cambia un administrador', async () => {
   assert.equal(admitido.aplicado, true);
   const escritura = sql(otra, 'INSERT INTO configuracion')[0];
   assert.equal(escritura.args[0], 'lio.cuadro');
-  assert.deepEqual(JSON.parse(escritura.args[1]).manana[0], 'p-marta');
+  const versiones = JSON.parse(escritura.args[1]);
+  assert.equal(versiones.length, 1);
+  assert.equal(versiones[0].cuadro.manana[0], 'p-marta');
+});
+
+// ------------------------------------------------- El cuadro tiene vigencia --
+
+/**
+ * Lo que se protege aquí es que **cambiar el reparto no reescriba el pasado**.
+ * Un turno sin fila de `paseo` se deriva del cuadro, y con un solo cuadro se
+ * derivaba del de ahora: el martes que nadie marcó cambiaba de dueño al tocar
+ * Ajustes. El porqué está en `specs/propuesta-cuadro-con-vigencia.html`.
+ */
+test('el formato viejo se lee como una versión que vale desde siempre', () => {
+  const versiones = normalizarVersiones({ manana: ['p-marta'], noche: [] });
+  assert.equal(versiones.length, 1);
+  assert.equal(versiones[0].desde, null);
+  assert.equal(versiones[0].cuadro.manana[0], 'p-marta');
+  // Y sirve para cualquier instante, también uno anterior a que esto existiera.
+  assert.equal(cuadroEn(versiones, new Date('2020-01-01T00:00:00Z')).manana[0], 'p-marta');
+});
+
+test('cada instante toma el cuadro que gobernaba entonces', () => {
+  const versiones = normalizarVersiones([
+    { desde: '2026-03-01T00:00:00.000Z', cuadro: { manana: ['p-marta'] } },
+    { desde: '2026-07-01T00:00:00.000Z', cuadro: { manana: ['p-oscar'] } },
+  ]);
+  assert.equal(cuadroEn(versiones, new Date('2026-05-10T08:00:00Z')).manana[0], 'p-marta');
+  assert.equal(cuadroEn(versiones, new Date('2026-07-02T08:00:00Z')).manana[0], 'p-oscar');
+  // Antes de la primera vale la primera: un turno de enero no se queda huérfano.
+  assert.equal(cuadroEn(versiones, new Date('2026-01-05T08:00:00Z')).manana[0], 'p-marta');
+});
+
+test('guardar añade una versión y no pisa la que había', async () => {
+  const previa = JSON.stringify([{ desde: '2026-03-01T00:00:00.000Z', cuadro: normalizarCuadro({ manana: ['p-marta'] }) }]);
+  const base = baseFalsa({ 'SELECT valor FROM configuracion': { valor: previa } });
+  const versiones = await guardarCuadro(base, OSCAR, { manana: ['p-oscar'] }, new Date('2026-07-27T10:00:00Z'));
+
+  assert.equal(versiones.length, 2);
+  assert.equal(versiones[0].cuadro.manana[0], 'p-marta');
+  assert.equal(versiones[1].cuadro.manana[0], 'p-oscar');
+  // Y el martes de marzo sigue siendo de Marta después de haber guardado.
+  assert.equal(cuadroEn(versiones, new Date('2026-03-10T06:00:00Z')).manana[0], 'p-marta');
+});
+
+test('catorce toques seguidos son una sola versión', async () => {
+  // Dos guardados sin que se abra ninguna ventana entre medias: la segunda
+  // sustituye a la primera en lugar de apilarse, porque ninguna de las dos
+  // llegó a gobernar un turno distinto.
+  const previa = JSON.stringify([{ desde: '2026-07-27T12:00:00.000Z', cuadro: normalizarCuadro({ manana: ['p-marta'] }) }]);
+  const base = baseFalsa({ 'SELECT valor FROM configuracion': { valor: previa } });
+  const versiones = await guardarCuadro(base, OSCAR, { manana: ['p-oscar'] }, new Date('2026-07-27T12:00:30Z'));
+  assert.equal(versiones.length, 1);
+  assert.equal(versiones[0].cuadro.manana[0], 'p-oscar');
+});
+
+test('un guardado después de abrirse una ventana sí añade versión', async () => {
+  // Las 12:00 y las 19:00 UTC de ese día son las 14:00 y las 21:00 en Madrid:
+  // entre medias abrió la ventana de noche, así que son dos repartos distintos.
+  const previa = JSON.stringify([{ desde: '2026-07-27T12:00:00.000Z', cuadro: normalizarCuadro({ manana: ['p-marta'] }) }]);
+  const base = baseFalsa({ 'SELECT valor FROM configuracion': { valor: previa } });
+  const versiones = await guardarCuadro(base, OSCAR, { manana: ['p-oscar'] }, new Date('2026-07-27T19:00:00Z'));
+  assert.equal(versiones.length, 2);
+});
+
+test('el tramo se calcula en hora de Madrid y no en UTC', () => {
+  // 04:30 UTC en julio son las 06:30 en Madrid: la ventana de mañana ya abrió.
+  assert.notEqual(
+    tramoLocal(new Date('2026-07-27T03:30:00Z')),
+    tramoLocal(new Date('2026-07-27T04:30:00Z')),
+  );
 });
 
 // ------------------------------------------------------------- El trato --

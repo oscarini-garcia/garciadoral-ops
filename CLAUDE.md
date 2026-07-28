@@ -160,7 +160,14 @@ pendiente. El hook lo inyecta al final del mapa.
   sobre el cuadro. Eso es lo que hace que cambiar el reparto cambie el futuro y
   no reescriba el pasado; si algún día se toca `lio.js`, esa es la regla que hay
   que no romper —y está en los tres sitios a la vez: `pwa/publico/js/lio.js`,
-  `api/src/lio.js` y `scripts/agenda/lio.py`—. En la semana va como carril propio
+  `api/src/lio.js` y `scripts/agenda/lio.py`—. **Y el cuadro tiene vigencia: es la lista de los que ha habido, con el instante
+  desde el que valió cada uno**, porque con uno solo cambiar el reparto reescribía
+  hacia atrás los días que nadie marcó. Cada turno se deriva del que gobernaba al
+  abrirse su ventana; guardar añade versión salvo que entre dos guardados no se
+  haya abierto ninguna, que es lo que hace que los catorce toques de una edición
+  sean una. No llevó migración: el formato viejo se lee como «una versión, desde
+  siempre». Está en `specs/propuesta-cuadro-con-vigencia.html`.
+  En la semana va como carril propio
   encima de la rejilla, no como línea de día; en Hoy, la banda de lo que hay que
   contestar y los dos turnos; y sale en el plan de WhatsApp en su propio renglón,
   fuera del techo de tres. Está en `specs/ux.md` §10.3, las entidades en

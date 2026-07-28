@@ -1,0 +1,374 @@
+<meta charset="utf-8">
+<title>El cuadro de Lío reescribe el pasado: por qué, y cuatro maneras de que deje de hacerlo</title>
+
+<style>
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.6; margin: 0; padding: 28px 20px 90px;
+  }
+  .doc { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; line-height: 1.25; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17.5px; }
+  p { margin: 0; max-width: 68ch; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  code { font-family: var(--mono); font-size: .87em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p, .parte > p { color: var(--ink-soft); }
+  .parte { border-top: 2px solid var(--ink); padding-top: 15px; display: flex; flex-direction: column; gap: 13px; }
+  .parte h3 { margin-top: 8px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .nota p { color: var(--ink-soft); }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.bien { border-left-color: var(--tinta); }
+
+  /* La escena que enseña el fallo */
+  .escena { display: flex; flex-wrap: wrap; gap: 18px; }
+  .momento {
+    flex: 1 1 240px; min-width: 240px;
+    border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .momento[data-mal="si"] { border-color: var(--regalo); }
+  .momento h4 { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); font-weight: 400; }
+  .fila-turno {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 14.5px; padding: 6px 0; border-top: 1px solid var(--line);
+  }
+  .fila-turno:first-of-type { border-top: 0; }
+  .fila-turno b { font-weight: 500; min-width: 68px; color: var(--ink); }
+  .fila-turno span { color: var(--ink-soft); }
+  .fila-turno[data-cambia="si"] span { color: var(--regalo); font-weight: 600; }
+  .fila-turno[data-firme="si"] span { color: var(--tinta); }
+
+  .tabla-envoltorio { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 400; }
+  tr.gana td { color: var(--ink); }
+  tr.gana td:first-child { font-weight: 600; }
+
+  pre {
+    margin: 0; overflow-x: auto; background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 13px 15px; font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+  }
+  pre b { color: var(--tinta); font-weight: 600; }
+
+  .elegida {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--paper); background: var(--tinta); padding: 3px 9px; border-radius: 999px;
+    vertical-align: middle; margin-left: 8px;
+  }
+  .pros { display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; }
+  .si, .no { display: flex; gap: 9px; align-items: flex-start; }
+  .si span:first-child { color: var(--tinta); font-weight: 700; }
+  .no span:first-child { color: var(--regalo); font-weight: 700; }
+  .si span:last-child, .no span:last-child { color: var(--ink-soft); }
+  .opcion { display: flex; flex-direction: column; gap: 11px; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>El cuadro de Lío reescribe el pasado: por qué, y cuatro maneras de que deje de hacerlo</h1>
+    <p>
+      Cambiar el reparto en Ajustes tenía que cambiar el futuro y dejar el pasado
+      como estaba. Cambia las dos cosas, y este documento explica exactamente
+      cuánto, qué parte sí está a salvo —más de la que parece— y qué hacer.
+    </p>
+  </header>
+
+  <section class="parte">
+    <h2>1. La regla que hay, y por dónde se escapa</h2>
+    <p>
+      Un turno no es una fila mientras no pasa nada. Se deriva del cuadro
+      semanal, y solo cuando alguien marca o se acuerda un cambio se escribe una
+      fila de <code>paseo</code> que desde entonces manda sobre el cuadro. En las
+      tres implementaciones es la misma línea:
+    </p>
+    <pre>paseo = filaDe(fecha, turno)
+si hay paseo  → asignado = paseo.asignado_id
+si no         → asignado = <b>cuadro</b>[turno][diaDeLaSemana(fecha)]</pre>
+    <p>
+      El «si no» no pregunta <em>de cuándo</em> es el cuadro, porque solo hay uno
+      y es el de ahora. Para un día futuro eso es justo lo que se quiere. Para un
+      día pasado <strong>en el que no pasó nada</strong> —nadie marcó y nadie
+      acordó ningún cambio— significa que ese día se vuelve a calcular hoy, con
+      el reparto de hoy.
+    </p>
+
+    <h3>Lo que se ve</h3>
+    <div class="escena">
+      <div class="momento">
+        <h4>El martes pasado, tal como fue</h4>
+        <div class="fila-turno"><b>☀️ Mañana</b><span>le tocaba a Marta y nadie marcó</span></div>
+        <div class="fila-turno" data-firme="si"><b>🌙 Noche</b><span>lo sacó Óscar a las 20:40</span></div>
+      </div>
+      <div class="momento" data-mal="si">
+        <h4>Hoy se cambia el cuadro: los martes por la mañana pasan a Ana</h4>
+        <div class="fila-turno" data-cambia="si"><b>☀️ Mañana</b><span>le tocaba a Ana y nadie marcó</span></div>
+        <div class="fila-turno" data-firme="si"><b>🌙 Noche</b><span>lo sacó Óscar a las 20:40</span></div>
+      </div>
+    </div>
+    <p>
+      El turno de noche aguanta porque tiene fila. El de la mañana cambia de
+      dueño hacia atrás: el martes pasado Ana no tenía nada que ver con eso, y
+      ahora la aplicación dice que le tocaba a ella y que no lo hizo.
+    </p>
+  </section>
+
+  <section class="parte">
+    <h2>2. Lo que <em>no</em> está roto</h2>
+    <div class="nota bien">
+      <p>
+        <strong>Lo acordado y lo ejecutado ya están a salvo, y no hay que hacer
+        nada para protegerlo.</strong> Toda operación que decide algo sobre un día
+        concreto escribe su fila de <code>paseo</code>, y una fila no la toca
+        ningún cambio de cuadro, ni ahora ni nunca. Son cinco, y están todas en
+        <code>pwa/publico/js/lio.js</code>:
+      </p>
+    </div>
+    <div class="tabla-envoltorio">
+      <table>
+        <thead>
+          <tr><th>Cuando alguien…</th><th>Escribe</th><th>¿Le afecta cambiar el cuadro?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>marca que sacó a Lío</td><td><code>marcarHecho</code></td><td>no</td></tr>
+          <tr><td>deshace su propia marca</td><td><code>desmarcar</code></td><td>no</td></tr>
+          <tr><td>coge el turno de otro</td><td><code>cogerTurno</code></td><td>no</td></tr>
+          <tr><td>acepta un cambio pedido</td><td><code>resolverPropuesta</code></td><td>no</td></tr>
+          <tr><td>confirma una corrección</td><td><code>resolverPropuesta</code></td><td>no</td></tr>
+          <tr><td><strong>nadie hizo nada ese día</strong></td><td><strong>nada</strong></td><td><strong>sí</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Es decir: <strong>el agujero es exactamente uno</strong>, el día pasado en
+      el que no pasó nada. No es poca cosa —es el día que nadie marcó, que es
+      justamente del que la aplicación dice «le tocaba a X y nadie marcó»— pero
+      acota mucho el problema y descarta que haya que revisar los tratos.
+    </p>
+  </section>
+
+  <section class="parte">
+    <h2>3. Dónde se nota</h2>
+    <p>Los sitios donde se dibuja un turno de un día ya pasado son cuatro:</p>
+    <div class="tabla-envoltorio">
+      <table>
+        <thead><tr><th>Pantalla</th><th>Qué enseña del pasado</th></tr></thead>
+        <tbody>
+          <tr><td>El carril de la semana</td><td>al retroceder de semana, las catorce pastillas de cada una</td></tr>
+          <tr><td>El detalle de un día del mes</td><td>los dos turnos del día elegido</td></tr>
+          <tr><td>Hoy, el rezagado</td><td>los turnos de <em>ayer</em> que se quedaron sin marcar</td></tr>
+          <tr><td>La hoja de un turno</td><td>«Le tocaba a X y nadie marcó», y el verbo «Lo saqué yo»</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nota pega">
+      <p>
+        <strong>El rezagado es el caso que más escuece.</strong> Si se toca el
+        cuadro un lunes por la tarde, el turno de ayer que sube a Hoy con la
+        pregunta «¿sacaste a Lío?» puede haber cambiado de dueño esa misma tarde.
+        Y si alguien contesta que sí, se abre una corrección <em>contra la
+        persona equivocada</em>: contra quien el cuadro dice ahora que le tocaba,
+        no contra quien lo tenía de verdad.
+      </p>
+      <p>
+        El plan de los domingos no está afectado: solo mira la semana entrante.
+      </p>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>4. Las cuatro maneras</h2>
+
+    <div class="opcion">
+      <h3>A · El cuadro pasa a tener vigencia <span class="elegida">elegida y construida</span></h3>
+      <p>
+        En lugar de un cuadro, una lista de cuadros con la fecha desde la que
+        vale cada uno. Guardar en Ajustes no pisa el que hay: añade uno nuevo que
+        empieza hoy. Al derivar un turno se usa el que estaba en vigor
+        <em>aquel</em> día.
+      </p>
+      <pre>lio.cuadro = [
+  { desde: "2026-01-01", cuadro: { manana: [...], noche: [...] } },
+  { desde: "2026-07-27", cuadro: { manana: [...], noche: [...] } }   <b>← el de ahora</b>
+]
+
+derivar(fecha) → el último cuadro cuyo «desde» &lt;= fecha</pre>
+      <div class="pros">
+        <div class="si"><span>+</span><span>El pasado queda exactamente como fue, sin excepciones y sin depender de que alguien marcara.</span></div>
+        <div class="si"><span>+</span><span><strong>No escribe ni una fila</strong>: se mantiene el principio del módulo, que es derivar y no almacenar.</span></div>
+        <div class="si"><span>+</span><span>No hace falta migración: <code>configuracion.valor</code> es texto y lo que cambia es la forma de dentro. El formato viejo se lee como «una versión, desde siempre».</span></div>
+        <div class="si"><span>+</span><span>Da gratis algo que hoy no se puede contestar: cómo estaba el reparto en marzo.</span></div>
+        <div class="no"><span>−</span><span>Toca las tres implementaciones —dispositivo, Worker y plan semanal— y las tres tienen que elegir versión igual.</span></div>
+        <div class="no"><span>−</span><span>Ajustes tiene que decir que lo que se edita vale desde hoy, o se convierte en una sorpresa.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <h3>B · Congelar el pasado al guardar</h3>
+      <p>
+        Al guardar un cuadro nuevo, el Worker escribe una fila de
+        <code>paseo</code> por cada turno pasado que tuviera dueño y no tuviera
+        fila. El pasado deja de derivarse porque pasa a estar escrito.
+      </p>
+      <div class="pros">
+        <div class="si"><span>+</span><span>La regla de derivación no cambia en ninguna parte: sigue habiendo un solo cuadro.</span></div>
+        <div class="no"><span>−</span><span>Cientos de filas que dicen que no pasó nada. A dos por día, un año son 730.</span></div>
+        <div class="no"><span>−</span><span>¿Desde cuándo se congela? Hay que inventar una fecha de arranque del módulo, que no existe en ninguna parte.</span></div>
+        <div class="no"><span>−</span><span>Convierte en almacenado lo que el módulo decidió derivar, que es justo la decisión que lo hace simple.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <h3>C · El pasado sin fila no se deriva</h3>
+      <p>
+        Un día ya pasado sin fila de <code>paseo</code> no dice de quién era:
+        sale como «sin nadie».
+      </p>
+      <div class="pros">
+        <div class="si"><span>+</span><span>Dos líneas de código y ningún cambio de formato.</span></div>
+        <div class="no"><span>−</span><span><strong>Mata el rezagado.</strong> Lo de ayer sin marcar dejaría de decir a quién le tocaba, que es toda su información.</span></div>
+        <div class="no"><span>−</span><span>El carril de las semanas pasadas se queda en blanco, y con él la única memoria de quién saca al perro.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <h3>D · Un proceso nocturno que cierra el día</h3>
+      <p>
+        Cada noche, una tarea escribe las filas de los turnos del día que se
+        quedaron sin marcar. El pasado queda escrito con un día de retraso.
+      </p>
+      <div class="pros">
+        <div class="si"><span>+</span><span>Filas acotadas: dos al día como mucho, y solo de lo que no se marcó.</span></div>
+        <div class="no"><span>−</span><span>Estrena un proceso programado, y con él la pregunta de qué pasa la semana que falle.</span></div>
+        <div class="no"><span>−</span><span>Sigue escribiendo filas que dicen que no pasó nada, y solo desde el día que se ponga: lo anterior sigue expuesto.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>5. Recomendación</h2>
+    <div class="nota">
+      <p class="rotulo">Decidido y construido: A</p>
+      <p>
+        <strong>El cuadro con vigencia.</strong> Es la única que arregla el
+        pasado entero —también el anterior a cuando se decida esto— sin escribir
+        una sola fila y sin tocar la base de datos. Y es la que dice la verdad
+        sobre lo que un cuadro es: no un ajuste, sino <em>el reparto que estuvo
+        en vigor durante un tiempo</em>. B y D pagan el arreglo en filas que
+        significan «no pasó nada», y C lo paga tirando el rezagado, que es la
+        mitad de para qué existe el módulo.
+      </p>
+      <p>
+        El coste real es que la regla de derivación se toca en tres sitios a la
+        vez —<code>pwa/publico/js/lio.js</code>, <code>api/src/lio.js</code> y
+        <code>scripts/agenda/lio.py</code>— y las tres tienen que elegir versión
+        con el mismo criterio. Es exactamente el mismo riesgo que ya se asumió
+        cuando se decidió que la fila manda sobre el cuadro, y se cubre igual:
+        con pruebas en los tres lados.
+      </p>
+      <p>
+        <strong>Construido, y con la precisión del instante.</strong> Un turno
+        toma su dueño del cuadro que gobernaba cuando se abrió su ventana. La
+        lista crece una vez por cambio de reparto y no una por toque: guardar
+        sustituye la última versión mientras entre las dos no se haya abierto
+        ninguna ventana, y los catorce toques de una edición caen todos en el
+        mismo tramo del día. Las pruebas están en los tres lados —seis en el
+        Worker, cuatro en el plan semanal— y no hizo falta tocar la base.
+      </p>
+    </div>
+
+    <h3>Una decisión que va dentro, y en la que me mojo</h3>
+    <div class="nota pega">
+      <p>
+        <strong>¿Desde cuándo vale exactamente un cuadro nuevo?</strong> «Desde
+        hoy» tiene un caso raro: si se edita el lunes a las seis de la tarde, el
+        turno de <em>esta mañana</em> —que ya pasó, ventana de 6 a 10— cambiaría
+        de dueño igual que antes. Un día es demasiado grueso para un módulo cuyo
+        estado lo decide un reloj.
+      </p>
+      <p>
+        Propongo que la vigencia sea <strong>un instante y no un día</strong>, y
+        que un turno tome su dueño del cuadro que estuviera en vigor
+        <strong>cuando se abrió su ventana</strong>. Editar a las seis de la tarde
+        cambia el turno de noche —que empieza a las ocho— y no toca el de la
+        mañana, que empezó a las seis. Sale exacto sin inventar ninguna frontera:
+        la frontera es la misma que ya decide cuándo un turno pasa a estar sin
+        marcar.
+      </p>
+    </div>
+
+    <h3>Lo que habría que construir</h3>
+    <div class="tabla-envoltorio">
+      <table>
+        <thead><tr><th>Dónde</th><th>Qué</th></tr></thead>
+        <tbody>
+          <tr><td><code>api/src/lio.js</code></td><td>leer y guardar la lista de versiones, con lectura del formato viejo; <code>guardarCuadro</code> añade una versión con el instante del servidor en lugar de pisar</td></tr>
+          <tr><td><code>pwa/publico/js/lio.js</code></td><td><code>cuadroDe(instantanea, cuando)</code> elige versión; <code>turnoDe</code> le pasa el inicio de la ventana</td></tr>
+          <tr><td><code>scripts/agenda/lio.py</code></td><td>lo mismo, para que el plan de los domingos no se desvíe del dispositivo</td></tr>
+          <tr><td><code>app.js</code>, Ajustes</td><td>una línea que diga que lo que se cambia vale de ahora en adelante</td></tr>
+          <tr><td>pruebas</td><td>en los tres lados: un cuadro con dos versiones, y un turno de antes y otro de después</td></tr>
+          <tr><td>base de datos</td><td><strong>nada</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>

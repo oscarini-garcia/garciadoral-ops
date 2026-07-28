@@ -16,6 +16,11 @@
 
 export const CLAVE_CUADRO = 'lio.cuadro';
 
+/** La casa está en Madrid, y las ventanas de los turnos son horas locales. El
+ *  Worker corre en UTC, así que para saber si una ventana se ha abierto hay que
+ *  traducir. */
+const ZONA = 'Europe/Madrid';
+
 export const TURNOS = [
   { id: 'manana', nombre: 'Mañana', emoji: '☀️', desde: 6, hasta: 10 },
   { id: 'noche', nombre: 'Noche', emoji: '🌙', desde: 20, hasta: 24 },
@@ -48,21 +53,106 @@ export function normalizarCuadro(bruto) {
   return cuadro;
 }
 
+/**
+ * El cuadro no es uno: es una lista de los que ha habido, con la fecha desde la
+ * que valió cada uno.
+ *
+ * **Porque cambiar el reparto no puede reescribir el pasado.** Un turno sin fila
+ * de `paseo` se deriva del cuadro, y con un solo cuadro se derivaba del de
+ * ahora: el martes pasado que nadie marcó cambiaba de dueño al tocar Ajustes, y
+ * la aplicación pasaba a decir que le tocaba a alguien que aquel día no tenía
+ * nada que ver. Con la lista, cada turno se deriva del cuadro que estaba en
+ * vigor **cuando se abrió su ventana**, y lo que pasó, pasó.
+ *
+ * El formato viejo —un solo cuadro suelto— se lee como una versión sin `desde`,
+ * que vale desde siempre. Por eso esto no necesita migración: lo que cambia es
+ * la forma de dentro de un texto que la base no mira.
+ */
+export function normalizarVersiones(bruto) {
+  // Lo que hay guardado de antes: un cuadro suelto, que valió desde siempre.
+  if (bruto && typeof bruto === 'object' && !Array.isArray(bruto)) {
+    return [{ desde: null, cuadro: normalizarCuadro(bruto) }];
+  }
+  if (!Array.isArray(bruto)) return [];
+
+  return bruto
+    .filter((version) => version && typeof version === 'object')
+    .map((version) => ({
+      desde: typeof version.desde === 'string' && version.desde ? version.desde : null,
+      cuadro: normalizarCuadro(version.cuadro),
+    }))
+    // Sin `desde` solo puede ir la primera, y el orden es el que decide cuál
+    // gobierna: se ordena al leer para no depender de cómo se escribió.
+    .sort((a, b) => String(a.desde || '').localeCompare(String(b.desde || '')));
+}
+
+/**
+ * Qué cuadro gobernaba en un instante: el último que empezó antes.
+ *
+ * Si el instante es anterior a todos —un turno de antes de que esto se pusiera—
+ * vale el primero, que es lo más antiguo que se sabe del reparto.
+ */
+export function cuadroEn(versiones, cuando) {
+  if (!versiones.length) return cuadroVacio();
+  const momento = cuando instanceof Date ? cuando.toISOString() : String(cuando);
+  let elegida = versiones[0];
+  for (const version of versiones) {
+    if (!version.desde || version.desde <= momento) elegida = version;
+    else break;
+  }
+  return elegida.cuadro;
+}
+
+/**
+ * En qué tramo del día cae un instante, en hora local: antes de que abra la
+ * mañana, entre las dos ventanas, o de la noche en adelante.
+ *
+ * Sirve para una sola cosa: saber si entre dos momentos se ha abierto alguna
+ * ventana. Dos instantes del mismo tramo son indistinguibles para cualquier
+ * turno, porque ninguno empezó entre medias.
+ */
+export function tramoLocal(momento) {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: ZONA, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+  }).formatToParts(momento);
+  const valor = Object.fromEntries(partes.map((parte) => [parte.type, parte.value]));
+  const hora = Number(valor.hour) % 24;
+  const franja = TURNOS.filter((turno) => hora >= turno.desde).length;
+  return `${valor.year}-${valor.month}-${valor.day}:${franja}`;
+}
+
 export async function leerCuadro(db) {
   const fila = await db
     .prepare('SELECT valor FROM configuracion WHERE clave = ?')
     .bind(CLAVE_CUADRO)
     .first();
-  if (!fila?.valor) return cuadroVacio();
+  if (!fila?.valor) return [];
   try {
-    return normalizarCuadro(JSON.parse(fila.valor));
+    return normalizarVersiones(JSON.parse(fila.valor));
   } catch {
-    return cuadroVacio();
+    return [];
   }
 }
 
-export async function guardarCuadro(db, persona, bruto) {
-  const cuadro = normalizarCuadro(bruto);
+/**
+ * Guardar no pisa lo que había: añade una versión que empieza ahora.
+ *
+ * **Salvo que la anterior no haya llegado a gobernar nada.** El cuadro se edita
+ * a toques, uno por casilla, y cada toque guarda: catorce toques seguidos son
+ * una sola decisión, y las trece versiones intermedias no rigieron ningún turno
+ * porque entre ellas no se abrió ninguna ventana. Cuando eso pasa se sustituye
+ * la última en lugar de apilar otra, y la lista crece una vez por cambio de
+ * reparto y no una vez por toque.
+ */
+export async function guardarCuadro(db, persona, bruto, ahora = new Date()) {
+  const versiones = await leerCuadro(db);
+  const nueva = { desde: ahora.toISOString(), cuadro: normalizarCuadro(bruto) };
+
+  const ultima = versiones[versiones.length - 1];
+  const mismaTanda = Boolean(ultima?.desde) && tramoLocal(new Date(ultima.desde)) === tramoLocal(ahora);
+  const siguientes = mismaTanda ? [...versiones.slice(0, -1), nueva] : [...versiones, nueva];
+
   await db
     .prepare(
       `INSERT INTO configuracion (clave, valor, actualizado_en, actualizado_por)
@@ -72,9 +162,9 @@ export async function guardarCuadro(db, persona, bruto) {
          actualizado_en = excluded.actualizado_en,
          actualizado_por = excluded.actualizado_por`,
     )
-    .bind(CLAVE_CUADRO, JSON.stringify(cuadro), persona.id)
+    .bind(CLAVE_CUADRO, JSON.stringify(siguientes), persona.id)
     .run();
-  return cuadro;
+  return siguientes;
 }
 
 /**

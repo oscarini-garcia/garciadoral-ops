@@ -770,7 +770,14 @@ function cuadroDeLio(seccion) {
   }
 
   seccion.append(
-    el('p', { class: 'pista', texto: 'Toca un turno para pasar a la siguiente persona.' }),
+    // Que el cambio vale de ahora en adelante hay que decirlo: es lo único que
+    // esta pantalla hace y que no se ve al hacerlo. Lo que ya pasó se queda como
+    // pasó (`specs/propuesta-cuadro-con-vigencia.html`).
+    el('p', {
+      class: 'pista',
+      texto: 'Toca un turno para pasar a la siguiente persona. Lo que cambies vale de ahora en adelante;'
+        + ' lo que ya pasó se queda como fue.',
+    }),
     dias,
     // La leyenda se queda aunque aquí ya no haga falta: en la semana no cabe un
     // nombre y cada uno sale con sus dos primeras letras, así que este es el
