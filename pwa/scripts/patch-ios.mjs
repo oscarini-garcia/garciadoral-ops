@@ -1,5 +1,7 @@
-// Aplica al proyecto iOS generado por Capacitor el arreglo del rebote del
-// scroll. Es idempotente y se engancha a `npm run sync:ios`.
+// Aplica al proyecto iOS generado por Capacitor lo que no cabe en la web: el
+// arreglo del rebote del scroll, la declaración de que esto es una aplicación de
+// iPhone, el cumplimiento de exportación y el entitlement de los avisos remotos.
+// Es idempotente y se engancha a `npm run sync:ios`.
 //
 // El «rubber-band» del WKWebView es lo que más delata que dentro hay una web.
 // Se quita subclaseando el controlador y poniendo `scrollView.bounces = false`.
@@ -139,7 +141,103 @@ if (existsSync(rutaPlist)) {
   }
 }
 
-// 5) Apuntar el storyboard al controlador nuevo.
+// 5) Los avisos remotos: el entitlement y el reenvío del token.
+//
+// Es lo único de todo el módulo de avisos que no puede llegar por OTA. Las
+// categorías, los botones, sus rótulos, a quién se avisa y qué dice el aviso son
+// JavaScript o Worker; esto son dos cosas del binario:
+//
+//   a) `aps-environment`, sin el cual iOS ni siquiera pide un token.
+//   b) El reenvío del token desde el AppDelegate, que la plantilla de Capacitor
+//      no trae: sin él, `register()` no falla —simplemente no llega nunca el
+//      token— y desde la web parece que Apple no contesta.
+//
+// Queda un paso que ningún script puede dar: habilitar Push Notifications para
+// el App ID en el portal de Apple Developer. Con la firma automática, Xcode lo
+// hace solo al leer este entitlement; si la firma es manual, hay que ir.
+const rutaEntitlements = join(APP_IOS, 'App.entitlements');
+
+// `development` es el valor para lo que se instala desde Xcode. Al archivar
+// para TestFlight o la App Store, la firma lo sustituye por `production`, y
+// entonces el Worker tiene que hablar con el APNs de producción: es lo que
+// decide `APNS_ENTORNO` en `api/wrangler.toml`. Los tokens de un entorno no
+// valen en el otro, y el síntoma es `BadDeviceToken` sin más explicación.
+if (!existsSync(rutaEntitlements)) {
+  writeFileSync(rutaEntitlements, `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+\t<key>aps-environment</key>
+\t<string>development</string>
+</dict>
+</plist>
+`);
+  console.log('[patch-ios] App.entitlements escrito (aps-environment) ✅');
+} else {
+  console.log('[patch-ios] App.entitlements ya estaba.');
+}
+
+if (existsSync(rutaProyecto)) {
+  const proyecto = readFileSync(rutaProyecto, 'utf8');
+
+  if (proyecto.includes('CODE_SIGN_ENTITLEMENTS')) {
+    console.log('[patch-ios] El entitlement ya estaba declarado en Xcode.');
+  } else {
+    // El identificador del paquete solo aparece en las configuraciones del
+    // target de la aplicación, que son exactamente aquellas donde tiene que ir
+    // el entitlement. No hace falta añadir el fichero al proyecto: esto es una
+    // ruta, no un fuente que se compile.
+    const conEntitlement = proyecto.replace(
+      /(\n(\s*)PRODUCT_BUNDLE_IDENTIFIER = [^;]+;\n)/g,
+      (_, linea, sangria) => `${linea}${sangria}CODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n`,
+    );
+    if (conEntitlement === proyecto) {
+      console.warn(
+        '[patch-ios] ⚠ No he encontrado dónde declarar el entitlement.\n' +
+        '            Ponlo a mano: target App → Signing & Capabilities → + Push Notifications.',
+      );
+    } else {
+      writeFileSync(rutaProyecto, conEntitlement);
+      console.log('[patch-ios] Entitlement de avisos declarado ✅');
+    }
+  }
+}
+
+const rutaDelegado = join(APP_IOS, 'AppDelegate.swift');
+
+if (existsSync(rutaDelegado)) {
+  const delegado = readFileSync(rutaDelegado, 'utf8');
+
+  if (delegado.includes('didRegisterForRemoteNotificationsWithDeviceToken')) {
+    console.log('[patch-ios] El reenvío del token de avisos ya estaba.');
+  } else {
+    const reenvio = `
+    // El token que APNs le da a este aparato. Capacitor lo espera por el centro
+    // de notificaciones, y su plantilla no trae este reenvío: sin él,
+    // \`PushNotifications.register()\` no da error y el token no llega nunca.
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications,
+                                        object: deviceToken)
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications,
+                                        object: error)
+    }
+`;
+    const cierre = delegado.lastIndexOf('}');
+    if (cierre === -1) {
+      console.warn('[patch-ios] ⚠ AppDelegate.swift no tiene la forma esperada; añade el reenvío a mano.');
+    } else {
+      writeFileSync(rutaDelegado, delegado.slice(0, cierre) + reenvio + delegado.slice(cierre));
+      console.log('[patch-ios] Reenvío del token de avisos añadido ✅');
+    }
+  }
+}
+
+// 6) Apuntar el storyboard al controlador nuevo.
 const rutaStoryboard = join(APP_IOS, 'Base.lproj', 'Main.storyboard');
 
 if (existsSync(rutaStoryboard)) {

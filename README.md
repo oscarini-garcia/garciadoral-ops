@@ -296,6 +296,14 @@ ocupa la jornada completa. Lo que falta es la parte configurable —la tabla
 hay pantalla para tocarla—, de modo que hoy vale su valor por defecto: el
 recordatorio activo y los avisos de modificación desactivados.
 
+Los **avisos remotos** sí están construidos, y son la otra mitad: lo que se
+programa en el dispositivo solo alcanza a lo que ya se sabe, y que a otro le
+suene el teléfono porque acabas de pedirle un cambio de turno no lo puede
+programar nadie por adelantado. Los empuja el Worker por APNs, con Lío entero y
+los comentarios, y se encienden desde Ajustes → Avisos. Piden dos secretos
+(`docs/despliegue-cloudflare.md` §4.6) y, sin ellos, no se empuja nada y la
+aplicación funciona igual.
+
 La cáscara de iOS no se ha generado aquí: `npx cap add ios` hace `pod install` y
 eso solo funciona en macOS. Los pasos están en `pwa/README.md` y en el apartado 8
 de la guía de despliegue.

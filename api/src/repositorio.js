@@ -518,6 +518,17 @@ export async function aplicarCambio(db, actor, cambio) {
   }
 
   const claves = Object.keys(propuestos);
+
+  // ¿Esto cambia algo de verdad?
+  //
+  // Lo pregunta quien empuja los avisos: reenviar la cola entera tras una
+  // sincronización a medias es corriente, y sin distinguir una escritura nueva
+  // de la repetición de una que ya estaba, el mismo aviso sonaría dos veces en
+  // el teléfono de otro. Se compara en texto porque de la base vuelven enteros
+  // donde el dispositivo mandó booleanos.
+  const novedad = !anterior
+    || claves.some((c) => String(propuestos[c] ?? '') !== String(anterior[c] ?? ''));
+
   if (anterior) {
     if (claves.length) {
       const asignaciones = claves.map((c) => `${c} = ?`).join(', ');
@@ -539,5 +550,5 @@ export async function aplicarCambio(db, actor, cambio) {
   }
 
   await guardarRelaciones(db, tipo, id, campos);
-  return { aplicado: true };
+  return { aplicado: true, novedad };
 }

@@ -33,6 +33,12 @@ APPLE_AUD_IOS = "com.garciadoral.ops"
 # pwa/publico/config.json; `tests/test_configuracion.py` lo comprueba.
 REDIRECCION_WEB = "https://garciadoral-ops.galoopa.store"
 
+# Con qué APNs se habla. `pruebas` para lo que se instala desde Xcode y
+# `produccion` para TestFlight y la App Store: son dos servidores distintos y los
+# tokens de uno no valen en el otro. El síntoma de equivocarse es un
+# `BadDeviceToken` que no explica nada más. Sin valor, producción.
+APNS_ENTORNO = "produccion"
+
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
 #   TOKEN_SERVICIO  · credencial del generador del plan semanal (AGENDA_TOKEN)
@@ -45,6 +51,14 @@ REDIRECCION_WEB = "https://garciadoral-ops.galoopa.store"
 #   APPLE_CLAVE_P8  · contenido del fichero .p8 de Sign in with Apple
 #   APPLE_CLAVE_ID  · identificador de esa clave (Key ID)
 #   APPLE_EQUIPO    · identificador del equipo de Apple Developer (Team ID)
+#
+# Y los dos de los avisos remotos, que son de **otra** clave: la de Sign in with
+# Apple no sirve para APNs aunque las dos sean `.p8` del mismo equipo. Sin ellos
+# no se empuja nada y no pasa nada más —el sobre de la cabecera sigue igual—, de
+# modo que un despliegue sin esto no es un despliegue roto. El equipo se
+# reaprovecha de arriba. Consulte docs/despliegue-cloudflare.md §4.6.
+#   APNS_CLAVE_P8   · contenido del fichero .p8 de la clave de APNs
+#   APNS_CLAVE_ID   · identificador de esa clave (Key ID)
 
 [observability]
 enabled = true

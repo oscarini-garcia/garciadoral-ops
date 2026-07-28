@@ -198,13 +198,43 @@ function derivarEnLocal() {
 
 // ------------------------------------------------------------ Subida/bajada --
 
+/**
+ * Qué aparato es este, con un nombre que le dura.
+ *
+ * El Worker ya escribía una fila de `dispositivo` en cada sincronización, pero
+ * sin cabecera que lo identificara la escribía a nombre del titular, de modo que
+ * las cuatro personas de casa tenían una fila y sus tres teléfonos, ninguna. Con
+ * los avisos remotos eso deja de dar igual: el token es del aparato, y quien
+ * tiene el iPhone y el navegador abiertos a la vez necesita dos filas o el
+ * segundo le pisa el token al primero.
+ *
+ * Se guarda en `localStorage` y no en IndexedDB a propósito: tiene que estar
+ * disponible sin esperar a nada, y borrarlo no pierde nada —el aparato se da de
+ * alta otra vez con otro nombre—.
+ */
+const CLAVE_APARATO = 'agenda.aparato';
+
+function idDeAparato() {
+  try {
+    let id = localStorage.getItem(CLAVE_APARATO);
+    if (!id) {
+      id = (crypto.randomUUID?.() || `a${Date.now()}${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem(CLAVE_APARATO, id);
+    }
+    return id;
+  } catch {
+    return 'sin-nombre';
+  }
+}
+
 async function peticion(camino, opciones = {}) {
   const respuesta = await fetch(`${configuracion.base}${camino}`, {
     ...opciones,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${configuracion.token}`,
-      'X-Plataforma': 'web',
+      'X-Plataforma': globalThis.Capacitor?.isNativePlatform?.() ? 'ios' : 'web',
+      'X-Dispositivo': idDeAparato(),
       ...(opciones.headers || {}),
     },
   });
@@ -334,6 +364,16 @@ export async function apuntarEnSitio(lugarId, { clase = 'saber', descartadas = [
 }
 
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */
+// ---------------------------------------------------------- Avisos remotos --
+
+/** Este aparato quiere avisos, y este es el token con el que se le alcanza. */
+export const darDeAltaLosAvisos = (token, plataforma = 'ios') =>
+  peticion('/api/avisos', { method: 'POST', body: JSON.stringify({ token, plataforma }) });
+
+/** Y deja de quererlos. Se borra el token en el servidor; el permiso del sistema
+ *  se queda puesto, que es de iOS y no nuestro. */
+export const darDeBajaLosAvisos = () => peticion('/api/avisos', { method: 'DELETE' });
+
 export const leerAjustesDeIa = () => peticion('/api/ia');
 
 export const guardarAjustesDeIa = (campos) =>

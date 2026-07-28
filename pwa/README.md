@@ -126,7 +126,7 @@ Después, *Any iOS Device* → **Product ▸ Archive** → **Distribute App**.
 Eso deja el binario en App Store Connect, que no es lo mismo que publicarlo. La
 ficha, las notas de revisión y el obstáculo que tiene esta aplicación en
 concreto —que quien la revisa no puede entrar, porque el acceso es por
-invitación— están en `docs/despliegue-cloudflare.md` §8.3.
+invitación— están en `docs/despliegue-cloudflare.md` §8.4.
 
 ### Publicar una actualización
 

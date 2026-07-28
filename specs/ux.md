@@ -761,7 +761,7 @@ Si se prefiere reducir el riesgo, la opción A es una primera versión legítima
 
 ---
 
-## 12. Sitios, y el sobre de los avisos
+## 12. Sitios, y los avisos
 
 Dos módulos que nacieron a la vez porque el segundo salió del primero. El análisis completo, con las opciones que se descartaron en cada decisión, está en `specs/propuesta-sitios.html`; aquí queda lo que se construyó.
 
@@ -807,7 +807,7 @@ Lo que se acumulaba arriba de Hoy ya era un módulo: `hoy.js` importaba las peti
 
 **Un aviso es una función de la instantánea, no una fila.** No hay tabla de avisos y no debe haberla: si un aviso fuera algo escrito por el servidor, contestar un trato desde la agenda dejaría su fila ahí mintiendo, y habría que ir a borrarla. Derivado, la petición contestada desaparece porque ya no hay nada que pedir. Y esa es la razón de escribirlo aparte aunque hoy quepa en dos funciones: cuando lleguen las notificaciones remotas, el servidor tendrá que contestar esta misma pregunta para saber qué empujar, y se reescribirá con la misma forma, como ya están espejados Lío y la visibilidad.
 
-**Vive en un sobre en la cabecera que solo existe cuando hay algo.** Por eso no lleva punto encima ni número: que aparezca *es* el aviso. Es un sobre y no una campana porque esta aplicación no puede sonar —los avisos se programan en el dispositivo y no hay APNs—, y un icono que promete un ruido que nunca llega enseña a no fiarse de él. Va a la izquierda de los ajustes, que llevan su esquina desde el principio.
+**Vive en un sobre en la cabecera que solo existe cuando hay algo.** Por eso no lleva punto encima ni número: que aparezca *es* el aviso. Y sigue siendo un sobre y no una campana ahora que la aplicación sí puede sonar (§12.4), porque contestan a dos preguntas distintas: el sobre dice qué te esperaba al abrir, y el aviso remoto alcanza a quien no está mirando. Un sobre lleno no significa que nada haya sonado —el teléfono puede tener los avisos apagados, o la novedad haber llegado mientras se miraba la pantalla—, y por eso el icono no promete ruido. Va a la izquierda de los ajustes, que llevan su esquina desde el principio.
 
 **Dos grupos, y solo uno se descarta.** «Por contestar» no lleva aspa: descartar una petición de turno dejaría a quien la hizo esperando una respuesta que ya nadie va a dar, y sin rastro de que existió. Lo que espera a otra persona se contesta o se queda. «Nuevo» sí, con un aspa por fila y un «Vaciar» al pie para quien vuelve de una semana fuera.
 
@@ -828,6 +828,26 @@ Allí **la línea es a la vez el dato y el verbo**, igual que la de la versión:
 **Lo que había que no perder al quitarlo** es que alguien pueda pasarse dos días escribiendo en un dispositivo que no sube nada. Se resuelve con nada mientras va bien y una línea en la subcabecera de Hoy cuando lleva un rato fallando, que desaparece sola al arreglarse. **No va al sobre**: el sobre es de personas y sus renglones se descartan, y un fallo de sincronización no lo manda nadie ni se arregla descartándolo.
 
 **La demostración es caso aparte y conserva marca permanente**, porque es lo único que cambia el significado de todo lo que se ve: quien no sepa que está en ella creerá que ha borrado un regalo de verdad. En demostración, y solo en demostración, la cabecera lleva su pastilla escrita donde estaba el punto.
+
+### 12.4 Los avisos que suenan
+
+Hasta aquí la aplicación solo podía avisar de lo que ya sabía: el recordatorio previo a un evento y el turno propio de Lío se programan **en el dispositivo**, a partir de la instantánea, y por eso la regla de que las notificaciones heredan la visibilidad se cumplía sola —el servidor filtra antes de transmitir, de modo que un aviso compuesto con lo que hay en el aparato no puede delatar nada—.
+
+Lo que eso no alcanza es la mitad que importa. **Que a otro le suene el teléfono porque tú acabas de escribir algo** no lo puede programar ningún dispositivo por adelantado: nadie sabe que le van a pedir un cambio de turno hasta que se lo piden. Sin avisos remotos, una petición de las 7:40 —«no puedo, sácalo tú»— espera a que el otro abra la aplicación, que es exactamente cuando ya no sirve.
+
+**Qué suena.** Lío entero: la petición, la corrección, el «acepto», el «no puedo», la retirada de lo que uno pidió, y los dos atajos que Lío permite sin preguntar —marcar que lo has sacado por otro y quedarte con su turno—, porque el que se entera de que su turno cambió de manos es justamente el que no lo hizo. Y los comentarios en algo tuyo o en un hilo donde ya has hablado. Nada más, de momento: las fuentes son una lista abierta y dar de alta un módulo es una línea, igual que en el sobre.
+
+**La visibilidad hay que volver a programarla, y no se programa dos veces.** Al componer el texto en el servidor se pierde la garantía que daba componerlo en el aparato. Se recupera sin escribir una segunda versión de la regla: antes de enviar, se compone la instantánea de quien recibiría el aviso —con la misma función que la transmite— y se mira si el objeto está dentro. El caso que esto ataja no es teórico: quien comentó una idea antes de que se orientara hacia ella seguiría «participando en el hilo», y el siguiente comentario le contaría por el teléfono que hay un regalo para ella y de qué va.
+
+**El texto viaja entero, a sabiendas.** Un aviso remoto pasa por los servidores de Apple y se queda en la pantalla de bloqueo. Se decidió mandarlo completo —el comentario, no «tienes un comentario»— porque un aviso que hay que abrir para leer obliga a entrar en la aplicación para averiguar si hacía falta entrar, que es el trabajo que el aviso venía a ahorrar. Lo que no viaja nunca es lo que su destinatario no podría ver abriendo la aplicación.
+
+**Se contesta desde el propio aviso.** Una petición de turno lleva sus dos botones con las palabras de la hoja del turno —«Acepto» y «No puedo»; «Es verdad» y «No fue así» si es una corrección—, y tocarlos **abre la aplicación** en ese turno con la respuesta ya escrita. Podría contestarse sin abrir nada, y suena mejor hasta que se mira de cerca: iOS despierta el proceso pero la web tarda en estar viva, y la respuesta se perdería justo en el caso que más importa, con la aplicación cerrada. Abriendo, además, se ve qué ha quedado escrito, que en un módulo donde una respuesta cambia el reparto de la casa no es un detalle.
+
+**No hace falta ningún esquema de URL.** Una notificación no abre la aplicación por un enlace: la abre y le entrega su contenido, y ahí va escrito de qué módulo y de qué objeto se trata. Un `garciadoral://` serviría para entrar desde fuera —un enlace en un mensaje— y costaría un binario nuevo por algo que aquí no se usa.
+
+**El interruptor está en Ajustes, en apartado propio, y no salta solo.** Preguntar por los avisos nada más abrir es lo que más permisos consigue y lo que peor sienta, y un «no» de esos no se recupera desde la aplicación: hay que ir a los Ajustes de iOS. En ese apartado se dice además qué se avisa, porque no es evidente y porque acota.
+
+**El aviso no sustituye al sobre ni a la banda de Hoy.** Un aviso remoto se puede no ver: llega una vez, se descarta con el pulgar y no vuelve. Lo que espera respuesta tiene que seguir estando donde estaba cuando se abre la aplicación, y eso es el sobre. Uno alcanza, el otro recuerda.
 
 ---
 

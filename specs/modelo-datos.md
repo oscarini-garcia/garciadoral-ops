@@ -156,6 +156,16 @@ Guarda un momento y no un indicador de sí o no, y esa es toda su gracia: **un a
 
 Viaja, y no se queda en el dispositivo. Mientras la marca era pasiva —leer— guardarla en local era defendible; desde que el sobre permite **descartar** ya no lo es, porque un descarte es un acto y un acto que se deshace al abrir el otro aparato no es un acto. Solo llega a su dueño: qué ha mirado cada uno no es asunto de nadie, y una fila apunta siempre a algo que quien la escribió ya podía ver.
 
+### 2.9 Por dónde se alcanza a un aparato
+
+**Dispositivo**, que ya existía, gana el token con el que APNs entrega un aviso a ese aparato concreto (`ux.md` §12.4). Va aquí y no en una tabla nueva porque la fila ya significaba exactamente esto —qué aparato es y de quién—; lo único que le faltaba era por dónde llamarlo.
+
+**El token es del aparato, no de la persona.** La misma persona puede tener dos, y el mismo teléfono ha podido cambiar de manos, de modo que un token solo puede estar en una fila: al darlo de alta se borra de cualquier otra. Sin eso, quien dejó su iPhone viejo en casa seguiría recibiendo los avisos de quien lo usa ahora, que es justo lo que este modelo existe para no hacer.
+
+**Vacío significa apagado**, y no hay una segunda columna que diga si se quieren avisos: el interruptor de Ajustes escribe el token o lo borra. La preferencia sí se recuerda en el propio aparato, porque el token caduca solo —al restaurar una copia, al reinstalar— y hay que volver a darlo sin volver a preguntar. Un token que APNs rechaza por muerto se borra en el acto: insistir con él no lo resucita, y el aparato se da de alta otra vez la próxima vez que abra.
+
+**Una notificación no es una fila.** Lo que se empuja se deriva del lote de cambios que se acaba de escribir y no se guarda en ninguna parte, por la misma razón por la que no hay tabla de avisos (`ux.md` §12.2). Y esta tabla no relaja la regla de §6: antes de enviar nada se compone la instantánea de quien lo recibiría y se comprueba que el objeto esté dentro.
+
 ---
 
 ## 3. Diagrama entidad-relación

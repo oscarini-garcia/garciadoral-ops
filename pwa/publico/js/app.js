@@ -19,8 +19,8 @@ import {
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista } from './modelo.js';
 import {
-  detener, estado, guardarAjustesDeIa, iniciar, instantanea, leerAjustesDeIa,
-  probarRedaccion, sincronizar, suscribir,
+  darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardarAjustesDeIa, iniciar,
+  instantanea, leerAjustesDeIa, probarRedaccion, sincronizar, suscribir,
 } from './sincronizacion.js';
 import {
   cargarConfiguracion,
@@ -34,9 +34,14 @@ import {
 import { cargarRegistroDemo, componerDemo } from './demo.js';
 import {
   HORIZONTE_RECORDATORIOS_DIAS,
+  activarAvisosRemotos,
+  alTocarUnAviso,
   comprobarActualizacion,
+  desactivarAvisosRemotos,
   esNativo,
+  hayAvisosRemotos,
   iniciarNativo,
+  permisoDeAvisos,
   programarRecordatorios,
   toque,
   versionInstalada,
@@ -44,12 +49,12 @@ import {
 import { NOMBRES_DIA, formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana,
-  nombreDeTurno, rotuloDeTurno, turnosDe,
+  nombreDeTurno, resolverPropuesta, rotuloDeTurno, turnosDe,
 } from './lio.js';
 import { pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
-  abrirDetalleEvento, abrirFormularioEvento, bloqueDePropuesta, pintarAgenda, reiniciarAgenda,
-  tituloDeAgenda,
+  abrirDetalleEvento, abrirFormularioEvento, abrirTurnoDeLio, bloqueDePropuesta, pintarAgenda,
+  reiniciarAgenda, tituloDeAgenda,
 } from './vistas/semana.js';
 import {
   abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
@@ -410,6 +415,13 @@ function prepararInterfaz() {
   document.getElementById('botonAvisos').onclick = abrirAvisos;
   document.getElementById('botonAjustes').onclick = abrirAjustes;
 
+  // Los avisos remotos, en la demostración, no: allí no hay servidor al que dar
+  // un token ni nadie que pueda pedir un turno.
+  if (estado().estado !== 'demostracion') {
+    alTocarUnAviso(atenderUnAviso);
+    renovarAvisos();
+  }
+
   let ultimaInstantanea = null;
   let ultimosRechazos = null;
 
@@ -634,6 +646,146 @@ function abrirLoComentado(aviso) {
   return null;
 }
 
+// ------------------------------------------------------- Avisos remotos --
+
+/**
+ * Que suene el teléfono cuando alguien de casa hace algo que te toca.
+ *
+ * La marca de que están puestos vive aquí y no en el servidor porque contesta a
+ * otra pregunta: el servidor sabe si este aparato tiene token, y esto sabe si
+ * quien lo usa los quiere. Se separan porque el token caduca solo —al restaurar
+ * una copia, al reinstalar— y hay que volver a darlo sin volver a preguntar.
+ */
+const CLAVE_AVISOS = 'agenda.avisos';
+
+const losQuiere = () => localStorage.getItem(CLAVE_AVISOS) === 'si';
+
+/**
+ * Vuelve a dar el token en cada arranque, si se han pedido.
+ *
+ * En silencio y sin preguntar nada: el permiso ya está concedido, y lo único que
+ * puede haber cambiado es el token, que es justo lo que nadie más sabe. Si el
+ * permiso se retiró desde los Ajustes de iOS, se apaga también aquí para que el
+ * interruptor no mienta.
+ */
+async function renovarAvisos() {
+  if (!hayAvisosRemotos() || !losQuiere()) return;
+  if (await permisoDeAvisos() !== 'concedido') {
+    localStorage.removeItem(CLAVE_AVISOS);
+    return;
+  }
+  const alta = await activarAvisosRemotos();
+  if (alta.estado === 'registrado') await darDeAltaLosAvisos(alta.token, 'ios').catch(() => {});
+}
+
+function bloqueDeAvisos(dentro) {
+  const linea = el('p', { class: 'pista' });
+
+  // En el navegador no hay dónde entregar un aviso. Se dice, en lugar de
+  // esconder el apartado: quien viene a buscarlo merece saber por qué no está,
+  // y no que el sitio donde debería estar no exista.
+  if (!hayAvisosRemotos()) {
+    dentro.append(el('p', {
+      class: 'pista',
+      texto: 'Los avisos suenan en la aplicación del iPhone. En el navegador no hay dónde entregarlos.',
+    }));
+    return;
+  }
+
+  const casilla = el('input', { type: 'checkbox' });
+  casilla.checked = losQuiere();
+
+  const escribir = (texto) => { linea.textContent = texto; };
+
+  escribir(casilla.checked
+    ? 'Te avisamos de lo que te toca contestar.'
+    : 'Hoy solo lo ves al abrir la aplicación.');
+
+  casilla.addEventListener('change', async () => {
+    casilla.disabled = true;
+    if (casilla.checked) {
+      escribir('Pidiendo permiso…');
+      const alta = await activarAvisosRemotos();
+      if (alta.estado === 'registrado') {
+        try {
+          await darDeAltaLosAvisos(alta.token, 'ios');
+          localStorage.setItem(CLAVE_AVISOS, 'si');
+          escribir('Listo: te avisamos en este teléfono.');
+        } catch (error) {
+          casilla.checked = false;
+          escribir(`No he podido darlo de alta: ${error.message}`);
+        }
+      } else {
+        casilla.checked = false;
+        escribir({
+          'sin-permiso': 'iOS los tiene denegados para esta aplicación. Se cambia en Ajustes de iOS → Agenda → Notificaciones.',
+          'sin-token': 'No he conseguido el permiso de Apple. Inténtalo con red.',
+          'no-aplica': 'Aquí no hay avisos que activar.',
+        }[alta.estado] || `No he podido activarlos: ${alta.detalle || alta.estado}`);
+      }
+    } else {
+      escribir('Apagando…');
+      localStorage.removeItem(CLAVE_AVISOS);
+      await darDeBajaLosAvisos().catch(() => {});
+      await desactivarAvisosRemotos();
+      escribir('Apagados. Lo verás al abrir la aplicación.');
+    }
+    casilla.disabled = false;
+  });
+
+  dentro.append(
+    el('label', { class: 'conmutador' }, [casilla, 'Avisarme en este teléfono']),
+    linea,
+    // Lo que se avisa se dice, porque no es evidente y porque acota: nadie se
+    // entera de lo que no vería abriendo la aplicación.
+    el('p', {
+      class: 'pista',
+      texto: 'Suenan las peticiones de turno de Lío, sus respuestas y los comentarios '
+        + 'en algo tuyo. Nunca algo que no puedas ver ya.',
+    }),
+  );
+}
+
+/**
+ * Alguien ha tocado un aviso, o uno de sus dos botones.
+ *
+ * Contestar desde el botón hace las dos cosas: escribe la respuesta y abre el
+ * turno, para que se vea qué ha quedado escrito. Es la diferencia entre una
+ * aplicación que contesta por ti en la oscuridad y una que te lleva a donde
+ * acabas de contestar.
+ *
+ * Lo que puede faltar es la propuesta: el aviso llega por APNs y la instantánea,
+ * por la sincronización, y no tienen por qué haber llegado en ese orden. Si no
+ * está, se pide una y se vuelve a mirar.
+ */
+async function atenderUnAviso({ accion, datos }) {
+  if (!datos?.tipo) return;
+
+  if (datos.tipo === 'comentario') {
+    abrirLoComentado({ tipo: datos.objeto_tipo, objetoId: datos.objeto_id });
+    return;
+  }
+
+  if (datos.tipo !== 'lio') return;
+
+  if (accion === 'aceptar' || accion === 'rechazar') {
+    let trato = tratoPorId(datos.trato);
+    if (!trato) {
+      await sincronizar().catch(() => {});
+      trato = tratoPorId(datos.trato);
+    }
+    if (trato && trato.estado === 'pendiente') {
+      await resolverPropuesta(trato, accion === 'aceptar');
+      avisar(accion === 'aceptar' ? 'Contestado: ese turno es tuyo' : 'Contestado: se queda como estaba');
+      refrescar();
+    }
+  }
+
+  if (datos.fecha && datos.turno) abrirTurnoDeLio(datos.fecha, datos.turno, ctx);
+}
+
+const tratoPorId = (id) => (instantanea()?.tratos_paseo || []).find((t) => t.id === id) || null;
+
 // -------------------------------------------------------------- Ajustes --
 
 /**
@@ -686,6 +838,12 @@ function abrirAjustes() {
     // viene a mirar cuando sospecha que algo que escribió no ha llegado, y
     // mezclarlas obligaría a abrir un apartado que se llama otra cosa.
     if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion));
+
+    // Aquí y no al arrancar. Preguntar por los avisos nada más entrar es lo que
+    // más permisos consigue y lo que peor sienta, y un «no» de esos no se
+    // recupera desde la aplicación: hay que ir a los Ajustes de iOS. En este
+    // apartado lo enciende quien ha venido a buscarlo.
+    if (!demostracion) cuerpo.append(acordeon('Avisos', bloqueDeAvisos));
 
     cuerpo.append(acordeon('La aplicación', (dentro) => {
       dentro.append(bloqueDeVersion());

@@ -3,8 +3,9 @@
  *
  * El modelo es el de la receta: el binario nativo casi nunca cambia y los
  * cambios de web se reparten por OTA, sin pasar por Apple. Aquí vive la parte
- * web de ese trato —háptica, compartir, portapapeles y comprobación del
- * bundle— y todo lo que hay es **seguro en el navegador**: fuera de la cáscara
+ * web de ese trato —háptica, compartir, portapapeles, comprobación del bundle y
+ * los avisos, los que se programan aquí y los que llegan de fuera— y todo lo que
+ * hay es **seguro en el navegador**: fuera de la cáscara
  * cada función es una operación nula o cae al equivalente web, de modo que la
  * PWA y las pruebas siguen funcionando igual.
  *
@@ -380,6 +381,213 @@ export async function programarRecordatorios(instancias, turnosDeLio = []) {
 }
 
 export const HORIZONTE_RECORDATORIOS_DIAS = HORIZONTE_DIAS;
+
+// ------------------------------------------------- Avisos remotos (APNs) --
+
+/**
+ * Lo que sí puede empujarse: que a otro le suene el teléfono porque tú acabas
+ * de escribir algo.
+ *
+ * Es la mitad que a los recordatorios locales les faltaba. Un turno propio se
+ * sabe por adelantado y se programa aquí; que alguien te pida un cambio no se
+ * sabe hasta que lo pide, y no hay manera de que un dispositivo programe un
+ * aviso por un suceso que ocurre en otro. De ahí que esto salga del servidor
+ * (`api/src/avisos.js`), que es quien se entera.
+ *
+ * **La visibilidad ya no se cumple sola**, que era la ventaja de programarlos en
+ * el dispositivo: el texto lo compone el Worker, así que allí hay que volver a
+ * aplicarla. Se aplica componiendo la instantánea de quien recibiría el aviso y
+ * mirando si el objeto está dentro; no hay una segunda copia de la regla.
+ *
+ * **Los botones no los pone este plugin.** `@capacitor/push-notifications` no
+ * tiene `registerActionTypes`, pero las categorías de notificación son de la
+ * aplicación entera y no del plugin que las declara: se registran con el de
+ * notificaciones locales, el servidor nombra la categoría en el sobre, y la
+ * respuesta vuelve por `pushNotificationActionPerformed` porque Capacitor
+ * reparte por el tipo de disparador y no por quién registró la categoría. Todo
+ * esto vive en JS, así que los botones y sus rótulos se cambian por OTA.
+ *
+ * La forma entera está en `specs/ux.md` §12.4.
+ */
+
+/**
+ * Los botones de cada clase de propuesta, con las palabras de la hoja del turno.
+ *
+ * Los identificadores son los de `api/src/avisos.js` —`CATEGORIA_CAMBIO` y
+ * `CATEGORIA_CORRECCION`— y tienen que decir lo mismo en los dos sitios, como
+ * los turnos de Lío. Los rótulos, en cambio, son solo de aquí: son pantalla.
+ *
+ * Van todos con `foreground`, es decir, abriendo la aplicación. Una acción de
+ * segundo plano contestaría sin abrir nada, que suena mejor hasta que se mira de
+ * cerca: iOS despierta el proceso pero el WebView tarda en estar vivo, y la
+ * respuesta se perdería justo en el caso que más importa, con la aplicación
+ * cerrada. Abriendo, se ve lo que se ha contestado.
+ */
+export const CATEGORIAS_DE_AVISO = [
+  {
+    id: 'LIO_CAMBIO',
+    actions: [
+      { id: 'aceptar', title: 'Acepto', foreground: true },
+      { id: 'rechazar', title: 'No puedo', foreground: true, destructive: true },
+    ],
+  },
+  {
+    id: 'LIO_CORRECCION',
+    actions: [
+      { id: 'aceptar', title: 'Es verdad', foreground: true },
+      { id: 'rechazar', title: 'No fue así', foreground: true, destructive: true },
+    ],
+  },
+];
+
+const pushDisponible = () => Boolean(esNativo() && plugin('PushNotifications'));
+
+/** ¿Se puede siquiera preguntar? En el navegador, no: esto es de la cáscara. */
+export const hayAvisosRemotos = () => pushDisponible();
+
+/**
+ * En qué ha quedado el permiso, sin pedirlo.
+ *
+ * `concedido`, `denegado` —y entonces solo se arregla en los Ajustes de iOS—,
+ * `sin-preguntar` o `no-aplica`.
+ */
+export async function permisoDeAvisos() {
+  const push = plugin('PushNotifications');
+  if (!pushDisponible()) return 'no-aplica';
+  try {
+    const { receive } = await push.checkPermissions();
+    if (receive === 'granted') return 'concedido';
+    if (receive === 'denied') return 'denegado';
+    return 'sin-preguntar';
+  } catch {
+    return 'no-aplica';
+  }
+}
+
+/**
+ * Registrarse en APNs y devolver el token, que es por donde se alcanza a este
+ * aparato.
+ *
+ * El token no lo devuelve `register()`: llega después, por un oyente, y puede no
+ * llegar —sin red, o con el aparato en un estado en el que Apple no contesta—.
+ * De ahí la espera con tope: sin ella, encender el interruptor podría quedarse
+ * girando para siempre.
+ */
+const ESPERA_DEL_TOKEN_MS = 15000;
+
+/** Una promesa que se contesta desde fuera y una sola vez, venga la respuesta de
+ *  donde venga: del token, de un error de Apple o del reloj. */
+class PromesaDelToken {
+  constructor() {
+    this.espera = new Promise((cumplir) => { this.cumplir = cumplir; });
+    this.contestada = false;
+  }
+
+  resolver(valor) {
+    if (this.contestada) return;
+    this.contestada = true;
+    this.cumplir(valor);
+  }
+}
+
+export async function activarAvisosRemotos() {
+  const push = plugin('PushNotifications');
+  if (!pushDisponible()) return { estado: 'no-aplica' };
+
+  try {
+    let permiso = await push.checkPermissions();
+    if (permiso.receive === 'prompt' || permiso.receive === 'prompt-with-rationale') {
+      permiso = await push.requestPermissions();
+    }
+    if (permiso.receive !== 'granted') return { estado: 'sin-permiso' };
+
+    await registrarCategorias();
+
+    // Los oyentes se ponen **antes** de registrarse, y por eso se esperan: si se
+    // pidiera el registro primero, el token podría llegar antes de que hubiera
+    // nadie escuchando y la espera se agotaría con el aparato ya dado de alta.
+    const respuesta = new PromesaDelToken();
+    const oyentes = await Promise.all([
+      push.addListener('registration', ({ value }) => respuesta.resolver(value || null)),
+      push.addListener('registrationError', () => respuesta.resolver(null)),
+    ]);
+
+    const reloj = setTimeout(() => respuesta.resolver(null), ESPERA_DEL_TOKEN_MS);
+    push.register().catch(() => respuesta.resolver(null));
+
+    const token = await respuesta.espera;
+    clearTimeout(reloj);
+    for (const oyente of oyentes) oyente?.remove?.();
+
+    if (!token) return { estado: 'sin-token' };
+    return { estado: 'registrado', token };
+  } catch (error) {
+    return { estado: 'error', detalle: String(error?.message ?? error) };
+  }
+}
+
+/**
+ * Dejar de recibirlos.
+ *
+ * `unregister()` le dice a APNs que este aparato ya no quiere nada; quitar el
+ * token de la base es cosa del Worker, y quien llama tiene que hacer las dos.
+ * Solo con lo de aquí, el servidor seguiría empujando a un token que ya no
+ * escucha; solo con lo del servidor, el permiso del sistema quedaría puesto sin
+ * que nada lo use.
+ */
+export async function desactivarAvisosRemotos() {
+  const push = plugin('PushNotifications');
+  if (!pushDisponible()) return { estado: 'no-aplica' };
+  try {
+    await push.unregister();
+    return { estado: 'retirado' };
+  } catch (error) {
+    return { estado: 'error', detalle: String(error?.message ?? error) };
+  }
+}
+
+/** Las categorías se declaran con el plugin de las locales, que es el único que
+ *  sabe hacerlo; valen para las dos clases de aviso porque son de la aplicación. */
+async function registrarCategorias() {
+  const locales = plugin('LocalNotifications');
+  if (!locales?.registerActionTypes) return;
+  try {
+    await locales.registerActionTypes({ types: CATEGORIAS_DE_AVISO });
+  } catch {
+    /* sin botones: el aviso sigue llegando y se abre tocándolo */
+  }
+}
+
+/**
+ * Qué hacer cuando alguien toca un aviso, o uno de sus botones.
+ *
+ * Llega `{ accion, datos }`: la acción es `tap` si se tocó el cuerpo, o el
+ * identificador del botón; los datos son lo que el Worker puso fuera de `aps`
+ * —de qué módulo es y de qué objeto—, que es lo que dice a qué pantalla ir.
+ *
+ * **No hace falta ningún esquema de URL para esto.** Un `garciadoral://` sirve
+ * para entrar desde fuera —un enlace en un mensaje—, y sería un binario nuevo
+ * por algo que aquí no se usa: una notificación no abre la aplicación por una
+ * URL, la abre y le entrega su contenido. Capacitor además retiene el suceso
+ * hasta que alguien lo escucha, así que un arranque en frío no lo pierde: se
+ * atiende en cuanto este oyente queda puesto.
+ */
+export async function alTocarUnAviso(atender) {
+  const push = plugin('PushNotifications');
+  if (!pushDisponible()) return;
+  try {
+    await push.addListener('pushNotificationActionPerformed', ({ actionId, notification }) => {
+      const { aps, ...datos } = notification?.data || {};
+      try {
+        atender({ accion: actionId || 'tap', datos });
+      } catch {
+        /* que un fallo navegando no rompa el oyente */
+      }
+    });
+  } catch {
+    /* sin oyente: el aviso abre la aplicación por donde estuviera */
+  }
+}
 
 // --------------------------------------------------------------- Arranque --
 

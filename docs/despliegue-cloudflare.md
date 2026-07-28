@@ -374,6 +374,53 @@ por cada persona. Como darse de baja es raro, la aplicación abre la hoja de
 Apple en ese momento: el acceso no se toca, no se almacena nada, y volver a
 identificarse justo antes de una acción irreversible es lo que uno espera.
 
+### 4.6 La clave de APNs, para los avisos que suenan
+
+Los avisos remotos —que a otro le suene el teléfono porque usted acaba de pedirle
+un cambio de turno— salen del Worker y van a los servidores de Apple. Eso pide
+**otra clave**: la de Sign in with Apple del paso 4.5 no sirve para APNs aunque
+las dos sean ficheros `.p8` del mismo equipo.
+
+1. En <https://developer.apple.com/account> → **Certificates, Identifiers &
+   Profiles → Keys → +**.
+2. Nómbrela «Agenda Familiar — avisos» y marque **Apple Push Notifications
+   service (APNs)**. Deje el alcance por defecto (todo el equipo) o acótelo al
+   `com.garciadoral.ops` del paso 4.1: las dos cosas valen.
+3. Descargue el `.p8`. **Solo se descarga una vez.**
+4. Anote el **Key ID**. El Team ID es el mismo del paso 4.5.
+
+```bash
+cd api
+wrangler secret put APNS_CLAVE_P8    # pegue el contenido entero del .p8, cabeceras incluidas
+wrangler secret put APNS_CLAVE_ID    # el Key ID de *esta* clave: diez caracteres
+# APPLE_EQUIPO ya está puesto en el 4.5; se reaprovecha.
+```
+
+Y compruebe que el App ID tenga la capacidad activada: **Identifiers →
+`com.garciadoral.ops` → Push Notifications**. Con la firma automática de Xcode
+suele activarse sola al leer el entitlement que escribe `patch-ios.mjs`; con la
+firma manual hay que marcarla aquí y regenerar el perfil.
+
+> **Sin estos dos secretos no se empuja nada y no pasa nada más.** El sobre de la
+> cabecera sigue igual y la aplicación funciona entera: lo único que se pierde es
+> que el teléfono suene. Un despliegue sin ellos no es un despliegue roto.
+
+#### El entorno, que es el fallo que más tiempo cuesta
+
+APNs son **dos servidores distintos** y un token de uno no vale en el otro. Lo
+elige `APNS_ENTORNO` en `api/wrangler.toml`:
+
+| Cómo llegó la app al teléfono | `aps-environment` del binario | `APNS_ENTORNO` |
+| --- | --- | --- |
+| Instalada desde Xcode | `development` | `pruebas` |
+| TestFlight o App Store | `production` | `produccion` |
+
+`patch-ios.mjs` escribe `development` en el entitlement, y la firma lo sustituye
+por `production` al archivar. **Si no coinciden, APNs contesta `BadDeviceToken` y
+no explica nada más**, y el token se borra de la base como si el aparato hubiera
+desinstalado la aplicación. Si está probando desde Xcode, cambie la variable a
+`pruebas` y vuelva a desplegar el Worker.
+
 ---
 
 ## 5. Cloudflare Pages: la aplicación web
@@ -741,6 +788,14 @@ iconos, los permisos o la versión de Capacitor.
 
 ### 8.2 Los recordatorios
 
+Hay dos clases de aviso y conviene no confundirlas, porque fallan por motivos
+distintos:
+
+| | Quién lo programa | Para qué sirve | Si falla |
+|---|---|---|---|
+| **Recordatorio** | el propio teléfono | lo que ya se sabe: un evento tuyo, un turno tuyo | no hay claves; se rehace en la siguiente sincronización |
+| **Aviso remoto** (§8.3) | el Worker, por APNs | lo que acaba de hacer otra persona | mire el entorno de APNs (§4.6) |
+
 El recordatorio previo al evento —la única notificación activa por defecto según
 la especificación funcional— lo programa **el propio teléfono**, no el servidor.
 No pasa por APNs, no hay claves que rotar y funciona sin conexión.
@@ -749,8 +804,8 @@ Esa decisión no es de comodidad: es lo que hace que se cumpla sola la regla de
 que **las notificaciones heredan la visibilidad**. El Worker filtra antes de
 transmitir, de modo que la instantánea del dispositivo no contiene lo que su
 titular no puede ver, y un aviso compuesto a partir de ella tampoco puede
-delatarlo. Con avisos remotos habría que volver a aplicar la regla al componer
-cada mensaje, y el texto pasaría además por los servidores de Apple.
+delatarlo. Lo que se programa aquí no puede delatar nada porque no sabe nada que
+no supiera ya el aparato.
 
 Cuándo avisa, con los valores de hoy:
 
@@ -780,7 +835,46 @@ persona, su aviso pendiente desaparece con él.
 > valor por defecto para todo el mundo y con la misma antelación. Poder
 > configurarlo por evento, como pide la especificación, es el paso siguiente.
 
-### 8.3 Enviar a la App Store
+### 8.3 Los avisos remotos
+
+Los que sí pasan por APNs: que a otro le suene el teléfono porque usted acaba de
+pedirle un cambio de turno o de comentar algo suyo. Las claves están en §4.6 y el
+porqué de cada decisión, en `specs/ux.md` §12.4.
+
+**Lo que hay que hacer una sola vez, y en el Mac.** Todo lo demás —los botones,
+sus rótulos, a quién se avisa, qué dice el aviso— es JavaScript o Worker y viaja
+por OTA. Del binario son dos cosas, y `npm run sync:ios` deja las dos puestas:
+
+1. El entitlement `aps-environment`, sin el cual iOS ni siquiera pide un token.
+   Si ya marcó **Push Notifications** a mano en Xcode → target App → *Signing &
+   Capabilities*, el parche lo detecta y no toca nada.
+2. El reenvío del token en `AppDelegate.swift`, que la plantilla de Capacitor no
+   trae y que **marcar la capacidad en Xcode no añade**. Sin él,
+   `PushNotifications.register()` no da error: el token sencillamente no llega
+   nunca, y desde la web parece que Apple no contesta.
+
+Y una dependencia nueva, `@capacitor/push-notifications`, que es código nativo:
+exige `npm install`, `npx cap sync ios` y **un binario nuevo con su revisión**.
+No se puede meter por OTA.
+
+**Cómo se enciende.** Ajustes → *Avisos* → «Avisarme en este teléfono». Ahí es
+donde iOS pide el permiso, y no al arrancar: un «no» dado de sopetón nada más
+abrir solo se recupera yendo a los Ajustes de iOS. El interruptor guarda la
+preferencia en el propio aparato y vuelve a dar el token en cada arranque, porque
+APNs lo cambia cuando le parece —al restaurar una copia, al reinstalar— y el
+único que se entera es el teléfono.
+
+**Cuando no suena.** Por orden de probabilidad:
+
+1. El entorno de APNs no coincide con cómo se instaló la app (§4.6). Es el fallo
+   más común y el que peor se explica solo.
+2. Falta el reenvío del token en el `AppDelegate`: el interruptor se queda en
+   «No he conseguido el permiso de Apple».
+3. Falta la migración `0013_avisos_push.unavez.sql`, y entonces no hay dónde
+   guardar el token.
+4. El permiso está denegado en Ajustes de iOS → Agenda → Notificaciones.
+
+### 8.4 Enviar a la App Store
 
 Subir el binario **no es publicarlo**: lo deja en App Store Connect esperando
 una ficha. Este apartado es esa ficha, y las tres cosas de esta aplicación en
@@ -1143,4 +1237,4 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 13. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
     la app dos veces.
 14. Para publicar: los tres secretos de revocación del paso 4.5, la ficha de App
-    Store Connect y las notas de revisión del apartado 8.3.
+    Store Connect y las notas de revisión del apartado 8.4.
