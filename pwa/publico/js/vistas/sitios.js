@@ -20,7 +20,7 @@ import {
   vaciar,
 } from '../ui.js';
 import { apuntarEnSitio, guardar, retirar } from '../sincronizacion.js';
-import { estaActivo, nuevoId, redaccionDisponible } from '../modelo.js';
+import { estaActivo, nuevoId, partirEmoji, redaccionDisponible } from '../modelo.js';
 import { compartir, toque } from '../native.js';
 import { bloqueDeComentarios } from '../comentarios.js';
 import { marcarVisto } from '../avisos.js';
@@ -418,11 +418,23 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
   const lugar = id ? lugarPorId(ctx.vista.datos, id) : null;
 
   abrirHoja(lugar ? 'Editar el sitio' : 'Un sitio nuevo', (cuerpo) => {
-    const nombre = entrada({ value: lugar?.nombre || '', placeholder: 'Bolonia' });
-    const emoji = entrada({ value: lugar?.emoji || '', placeholder: '🏖', maxlength: '4' });
+    // Un solo campo, con el emoji dentro del nombre. Antes eran dos, y el de al
+    // lado tenía un emoji de ejemplo por marcador: **un marcador con emoji se ve
+    // exactamente igual que un valor**, porque el color de un glifo de emoji se
+    // lo pone la fuente y el gris del CSS no le llega. El campo parecía relleno,
+    // se guardaba vacío, y el sitio salía sin emoji sin que nada lo dijera.
+    //
+    // Y de paso es el trato que ya tienen los eventos —«para otro emoji, empieza
+    // el título con él»—, así que deja de haber dos maneras de hacer lo mismo.
+    const nombre = entrada({
+      value: nombreDeLugar(lugar) || '',
+      placeholder: 'Bolonia',
+    });
 
-    cuerpo.append(campo('Nombre', nombre));
-    cuerpo.append(campo('Emoji', emoji, 'Opcional. Es lo que hace que se reconozca de un vistazo en la lista.'));
+    cuerpo.append(campo(
+      'Nombre', nombre,
+      'Empiézalo por un emoji y será lo que lo distinga de un vistazo en la lista.',
+    ));
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
@@ -430,10 +442,13 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
         onclick: async () => {
           const texto = nombre.value.trim();
           if (!texto) { avisar('Ponle un nombre'); return; }
+          // Se parte al guardar y no al escribir: la columna sigue significando
+          // lo que decía, y lo que se teclea es una sola cosa.
+          const partido = partirEmoji(texto);
           const nuevo = id || nuevoId();
           await guardar('lugar', nuevo, {
-            nombre: texto,
-            emoji: emoji.value.trim() || null,
+            nombre: partido.emoji ? partido.resto : texto,
+            emoji: partido.emoji,
             autor_id: lugar?.autor_id || ctx.vista.yo.id,
             activo: 1,
           });

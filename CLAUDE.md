@@ -47,6 +47,11 @@ pendiente. El hook lo inyecta al final del mapa.
   qué va y no cuánto tiene**: «3 llevar · 2 hacer · 1 ir». Y el emoji pasa por
   `emojiVisible`, que le añade el selector de variación: sin él, 🏖 y compañía se
   dibujan a trazo monocromo y en un título de 29 puntos parecen un icono roto.
+  **Y el emoji se escribe dentro del nombre**, como en un evento, no en un campo
+  aparte: el campo aparte tenía un emoji de marcador, y **un marcador con emoji
+  se ve igual que un valor** —el color se lo pone la fuente y el gris del CSS no
+  le llega—, así que parecía relleno, se guardaba vacío y el sitio salía sin
+  emoji sin que nada lo dijera. Un marcador nunca debe ser un emoji.
   **Borrar un sitio exige vaciarlo antes**, y eso lo comprueba también el Worker,
   porque la pantalla decide con la instantánea que tenga. Compartir va a dos
   alturas con dos contenidos distintos: el sitio **sin** votos ni nombres, un
@@ -100,6 +105,12 @@ pendiente. El hook lo inyecta al final del mapa.
   pantalla; lo que no debe volver a pasar es gastar un hueco de la barra en eso.
   `specs/ux.md` §7.3 no habla de esto: es el buscador de personas de Gente, que
   sigue en pie.
+- **Al mergear, di qué versión tiene que estar puesta.** Un número, y dónde
+  mirarlo: la aplicación escribe la suya abajo a la derecha en Hoy. Sin eso, la
+  primera pregunta ante cualquier cosa que no se ve es «¿tengo lo nuevo?», y esa
+  pregunta no se puede contestar desde la pantalla. Con el número delante, si lo
+  que se ve no coincide es que falta el OTA, y si coincide es un fallo y hay que
+  ir a buscarlo.
 - **Al tocar cualquier cosa de `pwa/publico/`, sube dos versiones, no una.**
   Son dos caminos distintos: `VERSION` en `pwa/publico/sw.js` es lo que hace que
   el **navegador** deje de servir los módulos de su caché, y `version` en
