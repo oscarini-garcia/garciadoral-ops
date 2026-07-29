@@ -444,6 +444,10 @@ export const darDeBajaLosAvisos = () => peticion('/api/avisos', { method: 'DELET
 
 export const leerAjustesDeIa = () => peticion('/api/ia');
 
+/** Fuerza la sincronización del calendario de viajes sin esperar al cron diario.
+ *  La descarga la hace el servidor; esto solo la dispara (calendario-viajes.md §5.4). */
+export const refrescarViajes = () => peticion('/api/viajes/refrescar', { method: 'POST' });
+
 export const guardarAjustesDeIa = (campos) =>
   peticion('/api/ia', { method: 'POST', body: JSON.stringify(campos) });
 

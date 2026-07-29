@@ -90,7 +90,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     ocasiones, participantesOcasion, presupuestos,
     regalos, codestinatarios, comentarios, conflictos,
     paseos, tratos, cuadroLio,
-    lugares, apuntes, votos, vistos,
+    lugares, apuntes, votos, vistos, calendarios,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -126,6 +126,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filasSiLaTablaEsta(db, `SELECT * FROM apunte ${activo('activo')} ORDER BY creado_en`),
     filasSiLaTablaEsta(db, `SELECT * FROM voto ${activo('activo')}`),
     filasSiLaTablaEsta(db, 'SELECT * FROM visto'),
+    filas(db, 'SELECT * FROM calendario_externo ORDER BY nombre'),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -157,6 +158,10 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     acceso_categoria: accesos,
     etiquetas: etiquetas.map((e) => ({ ...e, activa: bool(e.activa) })),
     tipos_evento: tipos.map((t) => ({ ...t, lleva_regalos: bool(t.lleva_regalos) })),
+    // Los calendarios externos que se importan (§2.4): su metadato —nombre y
+    // sello de última sincronización— viaja para que Ajustes pueda mostrarlo. El
+    // secreto del feed no está aquí; vive fuera, en el servidor (calendario-viajes §8).
+    calendarios_externos: calendarios,
     eventos: eventos.map((e) => ({
       ...e,
       jornada_completa: bool(e.jornada_completa),

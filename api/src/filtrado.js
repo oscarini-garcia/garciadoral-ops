@@ -81,6 +81,10 @@ export function componerInstantanea(registro, observador) {
     categorias: categoriasVisibles(registro, observador),
     etiquetas: registro.etiquetas,
     tipos_evento: registro.tipos_evento,
+    // Los calendarios externos viajan enteros: su metadato —nombre y sello de
+    // última sincronización— no es secreto (los viajes son públicos en casa,
+    // calendario-viajes.md §8) y Ajustes lo muestra. El feed no está aquí.
+    calendarios_externos: registro.calendarios_externos || [],
     emojis_permitidos: registro.emojis_permitidos,
     eventos,
     ideas,

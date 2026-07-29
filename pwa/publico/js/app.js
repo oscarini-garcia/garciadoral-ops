@@ -20,7 +20,7 @@ import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.
 import { crearVista } from './modelo.js';
 import {
   darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardarAjustesDeIa, iniciar,
-  instantanea, leerAjustesDeIa, probarRedaccion, sincronizar, suscribir,
+  instantanea, leerAjustesDeIa, probarRedaccion, refrescarViajes, sincronizar, suscribir,
 } from './sincronizacion.js';
 import {
   cargarConfiguracion,
@@ -840,6 +840,14 @@ function abrirAjustes() {
       cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
     }
 
+    // Los viajes vienen de un calendario de Google, y su única palanca desde
+    // aquí es traerlos ahora sin esperar al ciclo diario. La descarga la hace el
+    // servidor; esto solo la dispara, y por eso —como Lío y la IA— es de quien
+    // administra (`specs/calendario-viajes.md` §9).
+    if (ctx.vista?.esAdministrador() && !demostracion) {
+      cuerpo.append(acordeon('✈️ Viajes', bloqueDeViajes));
+    }
+
     // Aquí y no al arrancar. Preguntar por los avisos nada más entrar es lo que
     // más permisos consigue y lo que peor sienta, y un «no» de esos no se
     // recupera desde la aplicación: hay que ir a los Ajustes de iOS. En este
@@ -998,6 +1006,51 @@ function turnoDelCuadro(cuadro, turno, dia, casa, vueltas) {
  * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
  * la clave, el modelo o la instrucción.
  */
+/**
+ * El calendario de viajes en Ajustes: cuándo se sincronizó por última vez y un
+ * botón para traerlo ahora. El contenido de los viajes se corrige en Google
+ * (`specs/calendario-viajes.md`); esta pantalla no edita nada, solo dispara la
+ * descarga que hace el servidor y refresca la instantánea al terminar.
+ */
+function bloqueDeViajes(seccion) {
+  const calendario = () =>
+    (instantanea().calendarios_externos || []).find((c) => c.id === 'cal-viajes');
+
+  const textoDeEstado = () => {
+    const sello = calendario()?.ultima_sincronizacion;
+    return sello ? `Última sincronización: ${formatearHace(new Date(sello))}.` : 'Todavía sin sincronizar.';
+  };
+
+  const linea = el('p', { class: 'pista', texto: textoDeEstado() });
+  const boton = el('button', { class: 'boton crecer', type: 'button' }, ['Sincronizar ahora']);
+
+  boton.onclick = async () => {
+    const antes = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = 'Sincronizando…';
+    try {
+      const resultado = await refrescarViajes();
+      await sincronizar();
+      if (resultado.estado === 'ok') {
+        const cambios = (resultado.altas || 0) + (resultado.cambios || 0) + (resultado.bajas || 0);
+        avisar(cambios
+          ? `Viajes al día: ${resultado.altas} nuevos, ${resultado.cambios} cambios, ${resultado.bajas} retirados.`
+          : 'Viajes al día, sin cambios.');
+      } else {
+        avisar(`No se ha podido sincronizar (${resultado.estado}).`);
+      }
+      linea.textContent = textoDeEstado();
+    } catch (error) {
+      avisar(`No se ha podido sincronizar: ${error.message}`);
+    } finally {
+      boton.disabled = false;
+      boton.textContent = antes;
+    }
+  };
+
+  seccion.append(linea, el('div', { class: 'acciones' }, [boton]));
+}
+
 function bloqueDeRedaccion(seccion) {
   seccion.append(el('p', { class: 'pista', texto: 'Cargando…' }));
 

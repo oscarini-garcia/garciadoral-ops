@@ -22,6 +22,8 @@
  *   GET    /api/solicitudes · bandeja de quien espera (administradores)
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
  *   GET    /api/registro    · registro completo para el generador del plan semanal
+ *   POST   /api/viajes/sincronizar · descarga el calendario de viajes ahora (servicio)
+ *   POST   /api/viajes/refrescar    · lo mismo, desde Ajustes (administradores)
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
  *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
@@ -48,6 +50,7 @@ import {
   personaPorApple,
   personaPorId,
 } from './repositorio.js';
+import { sincronizarViajes } from './viajes.js';
 import {
   Rechazo,
   anotarLlegada,
@@ -470,6 +473,37 @@ async function registroCompleto(peticion, env) {
   return json(registro);
 }
 
+// ----------------------------------------------------- Calendario de viajes --
+
+/**
+ * Sincroniza el calendario de viajes a petición, para el botón «sincronizar
+ * ahora» de Ajustes. Se autentica con el mismo token de servicio que el
+ * registro: la descarga del feed la hace el servidor, nunca el dispositivo
+ * (`specs/calendario-viajes.md` §5.1), y esta ruta solo la dispara.
+ *
+ * El cron diario del propio Worker cubre la sincronización automática; esto es
+ * el atajo para no esperar al ciclo cuando se acaba de tocar algo en Google.
+ */
+async function sincronizarViajesManual(peticion, env) {
+  if (!env.TOKEN_SERVICIO || !coincideEnTiempoConstante(credencial(peticion), env.TOKEN_SERVICIO)) {
+    return json({ error: 'no autorizado' }, 401);
+  }
+  const resumen = await sincronizarViajes(env, { ahora: new Date().toISOString() });
+  return json(resumen);
+}
+
+/**
+ * Lo mismo, pero desde Ajustes: aquí manda una persona con sesión, no el token
+ * del sistema. Por eso se exige rol de administrador —cambiar la agenda de la
+ * casa no es cosa de cualquiera— en lugar del token de servicio, que el
+ * dispositivo no tiene ni debe tener.
+ */
+async function refrescarViajes(peticion, env) {
+  await administradorAutenticado(peticion, env);
+  const resumen = await sincronizarViajes(env, { ahora: new Date().toISOString() });
+  return json(resumen);
+}
+
 // ------------------------------------------------------- Redacción con IA --
 
 /**
@@ -820,6 +854,8 @@ const RUTAS = [
   ['GET', '/api/solicitudes', bandeja],
   ['POST', '/api/solicitudes/resolver', resolverSolicitud],
   ['GET', '/api/registro', registroCompleto],
+  ['POST', '/api/viajes/sincronizar', sincronizarViajesManual],
+  ['POST', '/api/viajes/refrescar', refrescarViajes],
   ['POST', '/api/redactar', contarElDia],
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
   ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],
@@ -862,5 +898,16 @@ export default {
       const autenticacion = /sesión|token|firma/i.test(mensaje);
       return json({ error: mensaje }, autenticacion ? 401 : 500, cors);
     }
+  },
+
+  // El cron del propio Worker sincroniza el calendario de viajes. Es el servidor
+  // quien descarga el feed —por el secreto y porque aquí se escribe el registro
+  // (`specs/calendario-viajes.md` §5.1)—, y una vez al día basta para una fuente
+  // que Google regenera cada varias horas (§5.4). Un fallo de descarga no toca
+  // nada y no propaga la excepción: el cron no tiene a quién contestar.
+  async scheduled(controlador, env, ctx) {
+    ctx.waitUntil(
+      sincronizarViajes(env, { ahora: new Date().toISOString() }).catch(() => ({ estado: 'error' })),
+    );
   },
 };
