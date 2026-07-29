@@ -37,6 +37,7 @@ import {
   activarAvisosRemotos,
   alTocarUnAviso,
   comprobarActualizacion,
+  copiar,
   desactivarAvisosRemotos,
   esNativo,
   hayAvisosRemotos,
@@ -48,6 +49,7 @@ import {
   versionInstalada,
 } from './native.js';
 import { NOMBRES_DIA, formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { VERSION_APP } from './version.js';
 import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana,
   nombreDeTurno, resolverPropuesta, rotuloDeTurno, turnosDe,
@@ -1260,6 +1262,20 @@ async function salir() {
  * dato que se lee para tranquilizarse, y «hoy» tranquiliza de un vistazo
  * mientras que una fecha completa hay que descifrarla para llegar a lo mismo.
  */
+/** Lo que se lleva al portapapeles: el motivo y lo mínimo que lo sitúa. */
+function informeDelFallo(situacion) {
+  return [
+    `Agenda ${VERSION_APP} · ${TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado}`,
+    situacion.motivo || '(sin motivo)',
+    // El mensaje tal cual lo dio el navegador, cuando no es el mismo que se
+    // enseña: eso es lo que se busca en un motor y lo que reconoce quien pueda
+    // arreglarlo. En la pantalla estorba; en lo que se pega, no.
+    situacion.detalle && situacion.detalle !== situacion.motivo ? situacion.detalle : null,
+    `API: ${configuracion.api || '(sin configurar)'}`,
+    situacion.ultima ? `Última correcta: ${formatearHace(situacion.ultima)}` : 'Nunca ha llegado a sincronizar',
+  ].filter(Boolean).join('\n');
+}
+
 function bloqueDeSincronizacion(dentro) {
   const progreso = el('ul', { class: 'progreso' });
 
@@ -1270,6 +1286,25 @@ function bloqueDeSincronizacion(dentro) {
     }),
     texto,
   ]);
+
+  /**
+   * El renglón del fallo, tocable para llevárselo.
+   *
+   * Un mensaje de TLS o un número de la API no se transcriben a mano desde un
+   * teléfono, y son justo lo que hay que enseñarle a quien pueda arreglarlo. Se
+   * copia el motivo con lo que lo sitúa —qué versión, contra qué API y cuándo
+   * fue la última correcta—, que es lo que evita la ronda de preguntas
+   * siguiente. El token no entra: no hace falta para nada de esto.
+   */
+  const pasoQueSeCopia = (texto, informe) => {
+    const renglon = paso(texto, 'fallo');
+    renglon.dataset.copiable = 'si';
+    renglon.title = 'Tócalo para copiarlo';
+    renglon.onclick = async () => {
+      avisar(await copiar(informe) ? 'Copiado' : 'No se ha podido copiar');
+    };
+    return renglon;
+  };
 
   const linea = el('button', { class: 'linea-verbo', type: 'button' });
 
@@ -1295,12 +1330,8 @@ function bloqueDeSincronizacion(dentro) {
     } else {
       // Con el motivo cuando lo hay: «no se ha podido: sin sincronizar» decía la
       // misma cosa dos veces y dejaba a quien mira sin nada que hacer.
-      progreso.append(paso(
-        situacion.motivo
-          ? `No se ha podido: ${situacion.motivo}`
-          : `No se ha podido: ${TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado}`,
-        'fallo',
-      ));
+      const dicho = situacion.motivo || TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
+      progreso.append(pasoQueSeCopia(`No se ha podido: ${dicho}`, informeDelFallo(situacion)));
     }
     escribirLinea();
   };

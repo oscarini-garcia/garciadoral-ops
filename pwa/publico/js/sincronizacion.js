@@ -69,8 +69,8 @@ function anunciar() {
  * mira puede decir si la API está caída, si contesta 500 o si el teléfono ni
  * siquiera la alcanza, sin abrir la consola de Safari.
  */
-function fijarEstado(estado, ultima = estadoActual.ultima, rechazados = [], motivo = null) {
-  estadoActual = { estado, ultima, rechazados, motivo };
+function fijarEstado(estado, ultima = estadoActual.ultima, rechazados = [], fallo = {}) {
+  estadoActual = { estado, ultima, rechazados, motivo: fallo.motivo || null, detalle: fallo.detalle || null };
   anunciar();
 }
 
@@ -83,21 +83,30 @@ function fijarEstado(estado, ultima = estadoActual.ultima, rechazados = [], moti
  * salir —red, DNS o certificado—.
  */
 function motivoDe(error) {
+  const crudo = String(error?.message || error || '');
+
   if (error?.estado) {
     // Lo que el servidor haya explicado, si explicó algo. Sin eso, el número
     // solo: `peticion` compone ahí un «la API respondió 404» que repetido
     // sonaría dos veces.
     const explicacion = error.datos?.error || error.datos?.motivo;
-    return explicacion
+    const motivo = explicacion
       ? `la API respondió ${error.estado}: ${explicacion}`
       : `la API respondió ${error.estado}`;
+    return { motivo, detalle: crudo };
   }
-  // Sin número no hubo respuesta: `fetch` falla así cuando no se llega al
-  // servidor, y su mensaje es el del navegador y está en inglés. Se traduce a lo
-  // que de verdad significa, que es lo que hay que mirar a continuación.
-  const mensaje = String(error?.message || error || '');
-  if (/fetch|network|load failed/i.test(mensaje)) return 'no se ha podido contactar con la API';
-  return mensaje || 'sin detalle';
+
+  // Sin número no hubo respuesta. Aquí el mensaje lo escribe el navegador y
+  // viene en inglés, así que se traduce a lo que de verdad significa —que es lo
+  // que hay que mirar a continuación— y el original se guarda aparte, porque es
+  // lo que hay que enseñarle a quien pueda arreglarlo.
+  if (/tls|ssl|certificate|secure connection/i.test(crudo)) {
+    return { motivo: 'no se pudo abrir la conexión segura con la API', detalle: crudo };
+  }
+  if (/fetch|network|load failed|connection/i.test(crudo)) {
+    return { motivo: 'no se ha podido contactar con la API', detalle: crudo };
+  }
+  return { motivo: crudo || 'sin detalle', detalle: crudo };
 }
 
 // --------------------------------------------------------------- Arranque --

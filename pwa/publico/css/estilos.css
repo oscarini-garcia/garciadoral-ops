@@ -294,7 +294,15 @@ button { background: none; border: 0; cursor: pointer; }
 .progreso li[data-estado="hecho"] { color: var(--ink-soft); }
 .progreso li[data-estado="curso"] { color: var(--ink); font-weight: 500; }
 .progreso li[data-estado="fallo"] { color: var(--regalo); }
-.progreso-marca { font-family: var(--mono); font-size: 13px; width: 1.2em; flex: none; }
+/* El renglón del fallo se toca para llevárselo: un mensaje de TLS o un número de
+   la API no se transcriben a mano desde un teléfono, y son justo lo que hay que
+   enseñarle a quien pueda arreglarlo. Se subraya con puntos, que es lo que dice
+   «esto hace algo» sin vestirlo de botón dentro de una lista de pasos. */
+.progreso li[data-copiable="si"] {
+  cursor: pointer; text-decoration: underline; text-decoration-style: dotted;
+  text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--regalo) 45%, transparent);
+}
+.progreso-marca { font-family: var(--mono); font-size: 13px; width: 1.2em; flex: none; text-decoration: none; }
 
 /* Lo único que se desplaza. Antes se desplazaba el documento entero, con la
    cabecera pegada arriba y la barra de pestañas fija abajo, y la barra de
