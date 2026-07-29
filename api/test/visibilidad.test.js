@@ -158,3 +158,21 @@ test('la instantánea no transmite lo oculto ni la categoría que lo contiene', 
   assert.equal(deAna.comentarios.length, 1);
   assert.equal(deAna.ocasiones[0].presupuestos.length, 1);
 });
+
+test('el calendario de viajes y un viaje importado llegan a la instantánea', () => {
+  const r = registro({
+    calendarios_externos: [
+      { id: 'cal-viajes', nombre: 'Viajes', tipo_evento_id: 'viaje', ultima_sincronizacion: '2026-07-29T10:00:00Z' },
+    ],
+    tipos_evento: [{ id: 'viaje', nombre: 'Viaje', emoji: '✈️', lleva_regalos: false }],
+    eventos: [{
+      id: 'v1', titulo: 'Lisboa', tipo_id: 'viaje', inicio: '2026-07-10', fin: '2026-07-12',
+      jornada_completa: true, origen: 'importado', calendario_id: 'cal-viajes', participantes: [], activo: true,
+    }],
+  });
+  // El metadato del calendario viaja para que Ajustes muestre la última sincronización.
+  const deLucia = componerInstantanea(r, LUCIA);
+  assert.equal(deLucia.calendarios_externos[0].ultima_sincronizacion, '2026-07-29T10:00:00Z');
+  // Un viaje es público en casa: sin destinatarios, no hay a quién ocultárselo.
+  assert.ok(deLucia.eventos.some((e) => e.id === 'v1'));
+});

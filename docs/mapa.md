@@ -116,7 +116,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 11 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 12 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -168,6 +168,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 - `POST /api/viajes/sincronizar` — descarga el calendario de viajes ahora (servicio)
+- `POST /api/viajes/refrescar` — lo mismo, desde Ajustes (administradores)
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
@@ -195,6 +196,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/sesion.js` §8
 - **`specs/calendario-viajes.md`**
   `api/src/ical.js` §4 · `api/src/index.js` §5.1 · `api/src/viajes.js`
+  `pwa/publico/js/app.js` §9
 - **`specs/despachador.md`**
   `scripts/agenda/__init__.py` §8 · `scripts/agenda/modelo.py` §5
   `scripts/agenda/semana.py` §8 · `scripts/callmebot.py` §6 · `scripts/despachar.py`
@@ -253,7 +255,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**298** en total.
+**299** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -278,7 +280,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
 - `api/test/viajes.test.js` — 10
-- `api/test/visibilidad.test.js` — 11
+- `api/test/visibilidad.test.js` — 12
 
 Lo que ejecuta la integración continua:
 

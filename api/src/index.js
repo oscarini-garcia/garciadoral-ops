@@ -23,6 +23,7 @@
  *   POST   /api/solicitudes/resolver · aprueba o rechaza (administradores)
  *   GET    /api/registro    · registro completo para el generador del plan semanal
  *   POST   /api/viajes/sincronizar · descarga el calendario de viajes ahora (servicio)
+ *   POST   /api/viajes/refrescar    · lo mismo, desde Ajustes (administradores)
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
  *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
@@ -491,6 +492,18 @@ async function sincronizarViajesManual(peticion, env) {
   return json(resumen);
 }
 
+/**
+ * Lo mismo, pero desde Ajustes: aquí manda una persona con sesión, no el token
+ * del sistema. Por eso se exige rol de administrador —cambiar la agenda de la
+ * casa no es cosa de cualquiera— en lugar del token de servicio, que el
+ * dispositivo no tiene ni debe tener.
+ */
+async function refrescarViajes(peticion, env) {
+  await administradorAutenticado(peticion, env);
+  const resumen = await sincronizarViajes(env, { ahora: new Date().toISOString() });
+  return json(resumen);
+}
+
 // ------------------------------------------------------- Redacción con IA --
 
 /**
@@ -842,6 +855,7 @@ const RUTAS = [
   ['POST', '/api/solicitudes/resolver', resolverSolicitud],
   ['GET', '/api/registro', registroCompleto],
   ['POST', '/api/viajes/sincronizar', sincronizarViajesManual],
+  ['POST', '/api/viajes/refrescar', refrescarViajes],
   ['POST', '/api/redactar', contarElDia],
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
   ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],
