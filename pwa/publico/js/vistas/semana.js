@@ -18,7 +18,7 @@ import {
   deslizarHorizontal, dobleToque, botonIcono, enlazar,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
-import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
+import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
@@ -1313,74 +1313,46 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
  * mediados de diciembre resultaría tan informativa como su presencia.
  */
 /**
- * Las notas de un evento. En un viaje importado desde Flighty vienen con la
- * ruta, las horas y un enlace, todo en una línea con coletillas; aquí se leen y
- * se muestran legibles —«París → Barcelona», «Sale 19:03 · Llega 20:46 · 1 h 43
- * min», y un botón para abrirlo en Flighty—. El huso solo se enseña si cambia
- * entre salida y llegada, que es cuando dice algo. Si no se reconoce el formato,
- * las notas van tal cual, pero con sus enlaces ya clicables.
+ * Las notas de un evento. Un vuelo importado de Flighty se muestra como una
+ * tarjeta de embarque —origen y destino con su código de aeropuerto, la ciudad
+ * y la hora, y la duración en medio—, más un botón para abrirlo en Flighty. El
+ * huso solo se pega a la hora si cambia entre salida y llegada, que es cuando
+ * dice algo. Si las notas no tienen forma de vuelo, van tal cual, pero con sus
+ * enlaces ya clicables.
  *
  * Es presentación, no dato: el contenido se corrige en el calendario de origen
- * (`specs/calendario-viajes.md` §9); esto solo lo lee.
+ * (`specs/calendario-viajes.md` §9); esto solo lo lee. `presentarVuelo` vive en
+ * `modelo.js`, junto al título en ciudades que usa `caraDe`.
  */
 function bloqueDeNotas(evento) {
-  const vuelo = evento.origen === 'importado' ? analizarVuelo(evento.notas) : null;
+  const vuelo = presentarVuelo(evento);
   if (!vuelo) return el('p', {}, enlazar(evento.notas));
 
-  const filas = [];
-  if (vuelo.origen && vuelo.destino) {
-    filas.push(el('p', { class: 'ruta-vuelo', texto: `${vuelo.origen} → ${vuelo.destino}` }));
-  }
   const cambiaHuso = vuelo.husoSalida && vuelo.husoLlegada && vuelo.husoSalida !== vuelo.husoLlegada;
   const conHuso = (hora, huso) => (cambiaHuso && huso ? `${hora} ${huso}` : hora);
-  filas.push(el('p', {
-    class: 'pista',
-    texto: [
-      `Sale ${conHuso(vuelo.salida, vuelo.husoSalida)}`,
-      `Llega ${conHuso(vuelo.llegada, vuelo.husoLlegada)}`,
-      vuelo.duracion,
-    ].filter(Boolean).join(' · '),
-  }));
+
+  const polo = (codigo, ciudad, hora, huso, lado) => el('div', { class: lado ? `polo ${lado}` : 'polo' }, [
+    codigo ? el('span', { class: 'code', texto: codigo }) : null,
+    ciudad ? el('span', { class: 'city', texto: ciudad }) : null,
+    el('span', { class: 'time', texto: conHuso(hora, huso) }),
+  ].filter(Boolean));
+
+  const tramo = el('div', { class: 'tramo' }, [
+    vuelo.duracion ? el('span', { class: 'dur', texto: vuelo.duracion }) : null,
+    el('span', { class: 'via' }),
+  ].filter(Boolean));
+
+  const embarque = el('div', { class: 'embarque' }, [
+    polo(vuelo.codigoOrigen, vuelo.origen, vuelo.salida, vuelo.husoSalida),
+    tramo,
+    polo(vuelo.codigoDestino, vuelo.destino, vuelo.llegada, vuelo.husoLlegada, 'der'),
+  ]);
+
+  const filas = [embarque];
   if (vuelo.enlaceFlighty) {
-    filas.push(el('a', { class: 'boton', href: vuelo.enlaceFlighty }, ['Abrir en Flighty']));
+    filas.push(el('a', { class: 'boton fantasma', href: vuelo.enlaceFlighty }, ['Abrir en Flighty']));
   }
   return el('div', { class: 'grupo' }, filas);
-}
-
-/** Normaliza la duración que escribe Flighty: «1 hr, 43 min» → «1 h 43 min». */
-function normalizarDuracion(bruto) {
-  return bruto.replace(/\bhr\b/gi, 'h').replace(/,\s*/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-/**
- * Lee las notas de un vuelo de Flighty y saca lo legible, o `null` si no tienen
- * esa forma. Se ancla en las flechas ↗ (salida) y ↘ (llegada); la ruta es lo que
- * hay entre el número de vuelo y « to », y el enlace, el `flighty://`. Todo lo
- * demás —«Open in Flighty», «Synced by Flighty www.flighty.app»— se descarta.
- */
-function analizarVuelo(notas) {
-  const texto = String(notas || '');
-  if (!/flighty/i.test(texto)) return null;
-
-  const salida = texto.match(/↗\s*(\d{1,2}:\d{2})\s*([A-Z]{2,5})?/);
-  const llegada = texto.match(/↘\s*(\d{1,2}:\d{2})\s*([A-Z]{2,5})?/);
-  if (!salida || !llegada) return null;
-
-  const antes = texto.slice(0, texto.indexOf('↗'));
-  const ruta = antes.replace(/^.*\d+\s+/, '').match(/^(.*?)\s+to\s+(.+?)\s*$/i);
-  const duracion = texto.match(/Flight time\s+([^]*?)(?=\s+Open in Flighty|\s+Synced by|$)/i);
-  const enlace = texto.match(/flighty:\/\/\S+/);
-
-  return {
-    origen: ruta ? ruta[1].trim() : null,
-    destino: ruta ? ruta[2].trim() : null,
-    salida: salida[1],
-    husoSalida: salida[2] || null,
-    llegada: llegada[1],
-    husoLlegada: llegada[2] || null,
-    duracion: duracion ? normalizarDuracion(duracion[1]) : null,
-    enlaceFlighty: enlace ? enlace[0] : null,
-  };
 }
 
 function bloqueDeRegalos(evento, ctx) {

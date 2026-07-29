@@ -103,7 +103,7 @@ tener que recorrer la aplicación entera cada vez.
   versionesDe · cuadroEn · cuadroDe · …y 18 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · emojiVisible · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS
-  PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 11 más
+  PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 14 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
