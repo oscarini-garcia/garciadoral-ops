@@ -128,20 +128,28 @@ export const INSTRUCCION_APUNTE_POR_DEFECTO = [
  * La gracia sale de lo que hay apuntado y del tema que se le pasa, no de un
  * chiste de calendario, y no se mete con nadie de la casa: quien aparece en la
  * frase es quien la va a leer.
+ *
+ * **Se piden cinco de golpe y se enseñan de una en una.** Cuesta lo mismo que
+ * pedir una —el encargo y el material son casi todo lo que se paga, y cinco
+ * frases son cuarenta palabras— y hace que tocar la frase conteste al instante
+ * en vez de esperar a un modelo. Y le sale mejor: pidiendo cinco a la vez las
+ * escribe distintas entre sí, mientras que cinco peticiones seguidas con el
+ * mismo material daban cinco variantes del mismo chiste.
  */
 export const INSTRUCCION_CHISPA_POR_DEFECTO = [
-  'Escribes la frase con la que una familia abre su agenda por la mañana. Te doy',
-  'qué día es, qué hay apuntado hoy, qué viene en los próximos días y un tema del',
-  'que tirar si el día está vacío.',
-  'Escribe UNA sola frase de dos líneas como mucho, en español de España y',
-  'tuteando: seca, irónica y cómplice, de las que arrancan media sonrisa a quien',
-  'ya sabe lo que le espera.',
+  'Escribes las frases con las que una familia abre su agenda por la mañana. Te',
+  'doy qué día es, qué hay apuntado hoy, qué viene en los próximos días y un tema',
+  'del que tirar si el día está vacío.',
+  'Escribe CINCO frases distintas entre sí, de dos líneas como mucho cada una, en',
+  'español de España y tuteando: secas, irónicas y cómplices, de las que arrancan',
+  'media sonrisa a quien ya sabe lo que le espera. Que no sean cinco versiones del',
+  'mismo chiste: cambia de ángulo en cada una.',
   'La gracia sale de lo que te doy, no de un chiste de calendario ni de una frase',
   'motivacional. No te metas con nadie de la casa —quien salga en la frase es',
   'quien la va a leer—, no inventes planes que no estén, y no nombres nunca',
   'regalos, ideas ni deseos, ni siquiera de pasada.',
-  'Sin saludo, sin emojis, sin comillas y sin explicar nada: responde solo con la',
-  'frase.',
+  'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada línea una',
+  'frase entera, sin saludo, sin emojis, sin comillas y sin explicar nada.',
 ].join(' ');
 
 const MAXIMO_EVENTOS = 20;
@@ -645,7 +653,7 @@ export function temasDeLaCasa(instantanea) {
 }
 
 /**
- * Lo que se le cuenta al modelo para escribir la frase del día.
+ * Lo que se le cuenta al modelo para escribir las frases del día.
  *
  * Lo de hoy y lo que viene, por el mismo camino que el resto: el dispositivo
  * manda identificadores —que es donde se expanden las repeticiones— y aquí se
@@ -655,10 +663,13 @@ export function temasDeLaCasa(instantanea) {
  * Y un `tema` sacado al azar de `temasDeLaCasa`, que es lo único de este
  * material que no es un dato: sin él, los días vacíos —la mayoría— darían todos
  * la misma frase sobre no tener nada que hacer.
+ *
+ * `descartadas` son las que ya se han enseñado hoy, y viajan al pedir la segunda
+ * tanda: sin ellas, quien se acaba las cinco recibe otras cinco parecidas.
  */
 export function componerMaterialDeChispa(
   instantanea,
-  { fecha, eventos = [], proximos = [], tema = null } = {},
+  { fecha, eventos = [], proximos = [], tema = null, descartadas = [] } = {},
 ) {
   const visibles = visiblesDe(instantanea);
   const omitidos = [];
@@ -683,24 +694,30 @@ export function componerMaterialDeChispa(
 
   if (tema) lineas.push(`Si el día da poco de sí, tira de este tema: ${tema}`);
 
-  return { titulo: 'La frase de hoy', lineas, omitidos };
+  const yaDichas = descartadas
+    .map((frase) => String(frase || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, MAXIMO_DESCARTADAS);
+  if (yaDichas.length) {
+    lineas.push('Ya has escrito estas hoy, escribe otras distintas:');
+    lineas.push(...yaDichas.map((frase) => `  ${frase}`));
+  }
+
+  return { titulo: 'Las frases de hoy', lineas, omitidos };
 }
 
 /**
- * La frase, recortada a lo que cabe.
+ * Las cinco frases, una por línea y recortadas a lo que cabe.
  *
- * El modelo obedece casi siempre, pero cuando no obedece lo hace de dos maneras
- * conocidas: entrecomilla la frase o añade un párrafo explicando el chiste. Lo
- * primero se limpia, lo segundo se corta por el primer salto de línea doble.
- * Devuelve cadena vacía si no queda nada, y entonces la línea no se enseña.
+ * Mismo desmontaje que las felicitaciones —la numeración fuera, las comillas de
+ * los extremos fuera— más el recorte a dos líneas de teléfono. Lo que sobra de
+ * cinco se tira; si vienen menos, se devuelven las que haya, que es mejor que
+ * quedarse sin ninguna por no haber contado bien.
  */
-export function interpretarChispa(texto) {
-  const primera = String(texto || '').trim().split(/\n\s*\n/)[0] || '';
-  return primera
-    .replace(/\s+/g, ' ')
-    .replace(/^["“«']+|["”»']+$/g, '')
-    .trim()
-    .slice(0, TOPE_DE_CHISPA);
+export function interpretarChispas(texto, cuantas = PROPUESTAS_POR_TANDA) {
+  return interpretarFelicitaciones(texto, cuantas)
+    .map((linea) => linea.replace(/\s+/g, ' ').trim().slice(0, TOPE_DE_CHISPA))
+    .filter(Boolean);
 }
 
 /**
