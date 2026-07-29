@@ -14,7 +14,7 @@
 // Los módulos y los estilos se sirven de la caché antes que de la red, así que
 // un cambio en ellos no llega a quien ya tiene la aplicación abierta hasta que
 // esta constante cambia: es lo que reinstala el armazón y borra el anterior.
-const VERSION = 'agenda-v49';
+const VERSION = 'agenda-v51';
 
 const ARMAZON = [
   '/',

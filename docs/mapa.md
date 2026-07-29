@@ -103,7 +103,7 @@ tener que recorrer la aplicación entera cada vez.
   versionesDe · cuadroEn · cuadroDe · …y 18 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · emojiVisible · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS
-  PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 11 más
+  PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 14 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
@@ -121,8 +121,8 @@ tener que recorrer la aplicación entera cada vez.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
-  el · vaciar · colorDePersona · iniciales · avatar · icono · botonIcono · abrirHoja
-  cerrarHoja · hayHojaAbierta · …y 10 más
+  el · vaciar · enlazar · colorDePersona · iniciales · avatar · icono · botonIcono
+  abrirHoja · cerrarHoja · …y 11 más
 - **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
   VERSION_APP
 
@@ -196,7 +196,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/sesion.js` §8
 - **`specs/calendario-viajes.md`**
   `api/src/ical.js` §4 · `api/src/index.js` §5.1 · `api/src/viajes.js`
-  `pwa/publico/js/app.js` §9
+  `pwa/publico/js/app.js` §9 · `pwa/publico/js/vistas/semana.js` §9
 - **`specs/despachador.md`**
   `scripts/agenda/__init__.py` §8 · `scripts/agenda/modelo.py` §5
   `scripts/agenda/semana.py` §8 · `scripts/callmebot.py` §6 · `scripts/despachar.py`

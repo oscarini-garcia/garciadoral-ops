@@ -15,10 +15,10 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
-  deslizarHorizontal, dobleToque, botonIcono,
+  deslizarHorizontal, dobleToque, botonIcono, enlazar,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
-import { REPETICIONES, nuevoId, redaccionDisponible } from '../modelo.js';
+import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
@@ -1265,7 +1265,7 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
       ]));
     }
 
-    if (evento.notas) cuerpo.append(el('p', { texto: evento.notas }));
+    if (evento.notas) cuerpo.append(bloqueDeNotas(evento));
 
     // A quien puede verlo conviene recordarle que el resto no. La marca no
     // aparece en la fila de la semana: allí cada evento ocupa una sola línea.
@@ -1312,6 +1312,49 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
  * que haya o no contenido: si apareciera solo cuando hay regalos, su ausencia a
  * mediados de diciembre resultaría tan informativa como su presencia.
  */
+/**
+ * Las notas de un evento. Un vuelo importado de Flighty se muestra como una
+ * tarjeta de embarque —origen y destino con su código de aeropuerto, la ciudad
+ * y la hora, y la duración en medio—, más un botón para abrirlo en Flighty. El
+ * huso solo se pega a la hora si cambia entre salida y llegada, que es cuando
+ * dice algo. Si las notas no tienen forma de vuelo, van tal cual, pero con sus
+ * enlaces ya clicables.
+ *
+ * Es presentación, no dato: el contenido se corrige en el calendario de origen
+ * (`specs/calendario-viajes.md` §9); esto solo lo lee. `presentarVuelo` vive en
+ * `modelo.js`, junto al título en ciudades que usa `caraDe`.
+ */
+function bloqueDeNotas(evento) {
+  const vuelo = presentarVuelo(evento);
+  if (!vuelo) return el('p', {}, enlazar(evento.notas));
+
+  const cambiaHuso = vuelo.husoSalida && vuelo.husoLlegada && vuelo.husoSalida !== vuelo.husoLlegada;
+  const conHuso = (hora, huso) => (cambiaHuso && huso ? `${hora} ${huso}` : hora);
+
+  const polo = (codigo, ciudad, hora, huso, lado) => el('div', { class: lado ? `polo ${lado}` : 'polo' }, [
+    codigo ? el('span', { class: 'code', texto: codigo }) : null,
+    ciudad ? el('span', { class: 'city', texto: ciudad }) : null,
+    el('span', { class: 'time', texto: conHuso(hora, huso) }),
+  ].filter(Boolean));
+
+  const tramo = el('div', { class: 'tramo' }, [
+    vuelo.duracion ? el('span', { class: 'dur', texto: vuelo.duracion }) : null,
+    el('span', { class: 'via' }),
+  ].filter(Boolean));
+
+  const embarque = el('div', { class: 'embarque' }, [
+    polo(vuelo.codigoOrigen, vuelo.origen, vuelo.salida, vuelo.husoSalida),
+    tramo,
+    polo(vuelo.codigoDestino, vuelo.destino, vuelo.llegada, vuelo.husoLlegada, 'der'),
+  ]);
+
+  const filas = [embarque];
+  if (vuelo.enlaceFlighty) {
+    filas.push(el('a', { class: 'boton fantasma', href: vuelo.enlaceFlighty }, ['Abrir en Flighty']));
+  }
+  return el('div', { class: 'grupo' }, filas);
+}
+
 function bloqueDeRegalos(evento, ctx) {
   if (!ctx.vista.llevaRegalos(evento)) return el('div', { hidden: true });
 

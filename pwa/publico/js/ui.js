@@ -30,6 +30,30 @@ export function vaciar(nodo) {
   return nodo;
 }
 
+/**
+ * Convierte en enlaces tocables las direcciones de un texto —`http(s)`, `www.`
+ * y esquemas de aplicación como `flighty://`— y devuelve la lista de nodos para
+ * meter en un elemento; lo demás viaja como texto. Es lo que hace clicable el
+ * enlace que un evento importado trae en sus notas, en vez de dejar la URL cruda.
+ */
+export function enlazar(texto) {
+  const cadena = String(texto || '');
+  const patron = /((?:https?|[a-z][a-z0-9+.-]*):\/\/[^\s]+|www\.[^\s]+)/gi;
+  const nodos = [];
+  let ultimo = 0;
+  let hallado;
+  while ((hallado = patron.exec(cadena)) !== null) {
+    if (hallado.index > ultimo) nodos.push(document.createTextNode(cadena.slice(ultimo, hallado.index)));
+    const bruto = hallado[0];
+    const href = bruto.startsWith('www.') ? `https://${bruto}` : bruto;
+    const externa = /^https?:/i.test(href);
+    nodos.push(el('a', { href, ...(externa ? { target: '_blank', rel: 'noopener' } : {}) }, [bruto]));
+    ultimo = hallado.index + bruto.length;
+  }
+  if (ultimo < cadena.length) nodos.push(document.createTextNode(cadena.slice(ultimo)));
+  return nodos;
+}
+
 /** Color estable por persona: el mismo nombre da siempre el mismo tono.
  *  Sin imágenes en la primera versión, los avatares se generan a partir de las
  *  iniciales (specs/ux.md §3). */

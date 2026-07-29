@@ -152,6 +152,77 @@ export function partirEmoji(texto) {
   return { emoji: hallado[1], resto: entero.slice(hallado[0].length).trim() || entero };
 }
 
+/** Normaliza la duración que escribe Flighty: «1 hr, 43 min» → «1 h 43 min». */
+function normalizarDuracion(bruto) {
+  return String(bruto).replace(/\bhr\b/gi, 'h').replace(/,\s*/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Lee las notas de un vuelo de Flighty y saca lo legible, o `null` si no tienen
+ * esa forma. Se ancla en las flechas ↗ (salida) y ↘ (llegada); la ruta es lo que
+ * hay entre el número de vuelo y « to », y el enlace, el `flighty://`. Lo demás
+ * —«Open in Flighty», «Synced by Flighty www.flighty.app»— se descarta.
+ */
+export function analizarVuelo(notas) {
+  const texto = String(notas || '');
+  if (!/flighty/i.test(texto)) return null;
+
+  const salida = texto.match(/↗\s*(\d{1,2}:\d{2})\s*([A-Z]{2,5})?/);
+  const llegada = texto.match(/↘\s*(\d{1,2}:\d{2})\s*([A-Z]{2,5})?/);
+  if (!salida || !llegada) return null;
+
+  const antes = texto.slice(0, texto.indexOf('↗'));
+  const ruta = antes.replace(/^.*\d+\s+/, '').match(/^(.*?)\s+to\s+(.+?)\s*$/i);
+  const duracion = texto.match(/Flight time\s+([^]*?)(?=\s+Open in Flighty|\s+Synced by|$)/i);
+  const enlace = texto.match(/flighty:\/\/\S+/);
+
+  return {
+    origen: ruta ? ruta[1].trim() : null,
+    destino: ruta ? ruta[2].trim() : null,
+    salida: salida[1],
+    husoSalida: salida[2] || null,
+    llegada: llegada[1],
+    husoLlegada: llegada[2] || null,
+    duracion: duracion ? normalizarDuracion(duracion[1]) : null,
+    enlaceFlighty: enlace ? enlace[0] : null,
+  };
+}
+
+/**
+ * Presentación completa de un vuelo importado: junta lo que dicen las notas
+ * —ciudades, horas, duración, huso, enlace— con lo que dice el título de
+ * Flighty —los códigos de aeropuerto y el número de vuelo, «CDG→BCN · AF 1248»—.
+ * Devuelve `null` si el evento no es un vuelo reconocible. Es presentación, no
+ * dato: el contenido se corrige en el calendario de origen (calendario-viajes §9).
+ */
+export function presentarVuelo(evento) {
+  if (!evento || evento.origen !== 'importado') return null;
+  const vuelo = analizarVuelo(evento.notas);
+  if (!vuelo) return null;
+
+  const titulo = String(evento.titulo || '');
+  const codigos = titulo.match(/\b([A-Z]{3})\b\s*(?:→|->|–|-|—)\s*\b([A-Z]{3})\b/);
+  const numero = (titulo.split('·')[1] || '').trim() || null;
+
+  return {
+    ...vuelo,
+    codigoOrigen: codigos ? codigos[1] : null,
+    codigoDestino: codigos ? codigos[2] : null,
+    numero,
+  };
+}
+
+/** El título de un vuelo en nombres de ciudad —«París → Barcelona · AF 1248»—,
+ *  o `null` si el evento no es un vuelo. El código IATA del título se lee de un
+ *  vistazo pero no dice a dónde vas; la ciudad, sí. */
+export function tituloDeVuelo(evento) {
+  const vuelo = presentarVuelo(evento);
+  if (!vuelo || !vuelo.origen || !vuelo.destino) return null;
+  return vuelo.numero
+    ? `${vuelo.origen} → ${vuelo.destino} · ${vuelo.numero}`
+    : `${vuelo.origen} → ${vuelo.destino}`;
+}
+
 /**
  * ¿Sigue vivo este registro?
  *
@@ -239,7 +310,10 @@ export function crearVista(instantanea) {
       if (propio) return { emoji: propio[1], titulo: titulo.slice(propio[0].length) || titulo };
       return {
         emoji: evento.emoji || tipos.get(evento.tipo_id)?.emoji || EMOJI_POR_DEFECTO,
-        titulo,
+        // Un vuelo importado se nombra por sus ciudades —«París → Barcelona»— y no
+        // por los códigos de aeropuerto que trae Flighty en el título: el código
+        // se lee de un vistazo pero no dice a dónde vas.
+        titulo: tituloDeVuelo(evento) || titulo,
       };
     },
 
