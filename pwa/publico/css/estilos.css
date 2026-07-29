@@ -1176,6 +1176,10 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .traza.mal { color: var(--regalo); }
 
+/* La ruta de un vuelo importado: «París → Barcelona», en serifa para que se lea
+   de un vistazo por encima de las horas y el enlace. */
+.ruta-vuelo { font-family: var(--serif); font-size: 18px; margin-bottom: 2px; }
+
 .opciones { display: flex; flex-wrap: wrap; gap: 7px; }
 .opcion {
   min-height: 40px; padding: 8px 13px; border-radius: 999px;
