@@ -76,6 +76,10 @@ function avisoDeSincronizacion() {
   return null;
 }
 
+/** Y por qué, para el `title` de esa línea: la subcabecera no es sitio para un
+ *  mensaje de servidor, pero quien lo busque no tiene por qué abrir Ajustes. */
+const motivoDeSincronizacion = () => estado().motivo || null;
+
 /** Las tres franjas de siempre, con la madrugada contada como noche: a las tres
  *  de la mañana nadie da los buenos días. */
 function saludoDeLaHora(hora) {
@@ -95,7 +99,11 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
   // días, y era el argumento por el que el punto perdió su palabra—; cuando no,
   // se lee en vez de leerse en un color. Desaparece sola al arreglarse.
   const aviso = avisoDeSincronizacion();
-  if (aviso) subcabecera.append(el('p', { class: 'hoy-sync', texto: aviso }));
+  if (aviso) {
+    subcabecera.append(el('p', {
+      class: 'hoy-sync', texto: aviso, title: motivoDeSincronizacion() || null,
+    }));
+  }
 
   vaciar(pantalla);
   pantalla.classList.add('pantalla-hoy');

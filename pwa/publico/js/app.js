@@ -1292,7 +1292,14 @@ function bloqueDeSincronizacion(dentro) {
       progreso.append(paso('Subido lo que había pendiente', 'hecho'));
       progreso.append(paso('Traída y guardada la última copia', 'hecho'));
     } else {
-      progreso.append(paso(`No se ha podido: ${TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado}`, 'fallo'));
+      // Con el motivo cuando lo hay: «no se ha podido: sin sincronizar» decía la
+      // misma cosa dos veces y dejaba a quien mira sin nada que hacer.
+      progreso.append(paso(
+        situacion.motivo
+          ? `No se ha podido: ${situacion.motivo}`
+          : `No se ha podido: ${TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado}`,
+        'fallo',
+      ));
     }
     escribirLinea();
   };

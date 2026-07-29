@@ -130,7 +130,11 @@ pendiente. El hook lo inyecta al final del mapa.
   es a la vez el dato y el verbo. Lo que había que no perder —que algo lleve un
   rato sin subir— lo dice **una línea en la subcabecera de Hoy**, y solo cuando
   pasa; y la demostración conserva **pastilla escrita permanente** en la cabecera,
-  porque es lo único que cambia el significado de todo lo que se ve.
+  porque es lo único que cambia el significado de todo lo que se ve. **Y cuando falla dice por qué**: el estado
+  guarda el motivo —«la API respondió 500», «no se ha podido contactar con la
+  API»— y lo escriben Ajustes y el `title` de esa línea. Antes se tiraba, y el
+  panel acababa diciendo «no se ha podido: sin sincronizar», que es la misma
+  frase dos veces.
 - **Los comentarios ya no están enchufados a medias.** La lista de tipos vive en
   `api/src/comentables.js` —con su espejo en `scripts/agenda/modelo.py`— y el
   `CHECK` de la tabla se retiró en la `0009`, que es lo que hacía que cada módulo
