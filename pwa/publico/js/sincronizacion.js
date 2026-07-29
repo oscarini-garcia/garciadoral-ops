@@ -36,7 +36,9 @@ const PLURAL = {
 
 let configuracion = { base: '', token: '', demostracion: false };
 let instantaneaActual = null;
-let estadoActual = { estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null, rechazados: [] };
+let estadoActual = {
+  estado: navigator.onLine ? 'al-dia' : 'sin-conexion', ultima: null, rechazados: [], motivo: null,
+};
 const suscriptores = new Set();
 let sincronizando = false;
 
@@ -59,10 +61,43 @@ function anunciar() {
  * que lo rechazado se vio guardado un momento y desaparece con la instantánea
  * siguiente. Sin aviso, eso no se lee como un error sino como que la aplicación
  * pierde cosas.
+ *
+ * **Y `motivo` es por qué falló, que antes se tiraba.** El error trae el estado
+ * HTTP y lo que el servidor haya explicado, y aquí solo se guardaba la palabra
+ * «error»: la pantalla acababa diciendo «no se ha podido: sin sincronizar», que
+ * es la misma frase dos veces y no sirve para nada. Con el motivo dentro, quien
+ * mira puede decir si la API está caída, si contesta 500 o si el teléfono ni
+ * siquiera la alcanza, sin abrir la consola de Safari.
  */
-function fijarEstado(estado, ultima = estadoActual.ultima, rechazados = []) {
-  estadoActual = { estado, ultima, rechazados };
+function fijarEstado(estado, ultima = estadoActual.ultima, rechazados = [], motivo = null) {
+  estadoActual = { estado, ultima, rechazados, motivo };
   anunciar();
+}
+
+/**
+ * Qué se le puede contar a quien mira sobre un fallo de sincronización.
+ *
+ * El estado HTTP delante cuando lo hay, porque es lo que separa «la API contestó
+ * que no» de «la API no contestó»: un 500 es un fallo del servidor, un 404 es
+ * una dirección equivocada y no tener número es que la petición no llegó a
+ * salir —red, DNS o certificado—.
+ */
+function motivoDe(error) {
+  if (error?.estado) {
+    // Lo que el servidor haya explicado, si explicó algo. Sin eso, el número
+    // solo: `peticion` compone ahí un «la API respondió 404» que repetido
+    // sonaría dos veces.
+    const explicacion = error.datos?.error || error.datos?.motivo;
+    return explicacion
+      ? `la API respondió ${error.estado}: ${explicacion}`
+      : `la API respondió ${error.estado}`;
+  }
+  // Sin número no hubo respuesta: `fetch` falla así cuando no se llega al
+  // servidor, y su mensaje es el del navegador y está en inglés. Se traduce a lo
+  // que de verdad significa, que es lo que hay que mirar a continuación.
+  const mensaje = String(error?.message || error || '');
+  if (/fetch|network|load failed/i.test(mensaje)) return 'no se ha podido contactar con la API';
+  return mensaje || 'sin detalle';
 }
 
 // --------------------------------------------------------------- Arranque --
@@ -420,7 +455,7 @@ export async function sincronizar() {
       anunciar();
     } else {
       console.warn('Sincronización fallida:', error);
-      fijarEstado(navigator.onLine ? 'error' : 'sin-conexion');
+      fijarEstado(navigator.onLine ? 'error' : 'sin-conexion', undefined, [], motivoDe(error));
     }
   } finally {
     sincronizando = false;

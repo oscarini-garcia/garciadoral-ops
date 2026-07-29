@@ -825,9 +825,9 @@ Lo que se acumulaba arriba de Hoy ya era un módulo: `hoy.js` importaba las peti
 
 ### 12.3 La cabecera, sin el punto de sincronización
 
-El punto que llevaba el estado de la sincronización se retira de la esquina: decía «al día» el 99 % del tiempo y ocupaba, para no contar nada, la esquina que peor alcanza el pulgar. Su contenido pasa a **Ajustes, en apartado propio** —no dentro de «La aplicación», que es de la instalación; esto es de los datos, y es lo que uno viene a mirar cuando sospecha que algo que escribió no ha llegado—.
+El punto que llevaba el estado de la sincronización se retira de la esquina: decía «al día» el 99 % del tiempo y ocupaba, para no contar nada, la esquina que peor alcanza el pulgar. Su contenido pasa a **Ajustes, en apartado propio** —no dentro de «La aplicación», que es de la instalación; esto es de los datos, y es lo que uno viene a mirar cuando sospecha que algo que escribió no ha llegado—. **Y va por debajo de «La aplicación»**, que es lo que sí se busca a menudo —qué versión hay puesta—: apartado propio no significa apartado por delante, y esto se abre solo cuando ya se sospecha algo.
 
-Allí **la línea es a la vez el dato y el verbo**, igual que la de la versión: se lee cuándo fue la última correcta, escrita en palabras —«hoy a las 14:03»—, y al tocarla sincroniza contando por dónde va.
+Allí **la línea es a la vez el dato y el verbo**, igual que la de la versión: se lee cuándo fue la última correcta, escrita en palabras —«hoy a las 14:03»—, y al tocarla sincroniza contando por dónde va. **Y cuando falla dice por qué**: «no se ha podido: la API respondió 500», o «no se ha podido contactar con la API» cuando la petición no llegó a salir. El motivo estaba en el error desde siempre y se tiraba al guardar el estado, de modo que el panel acababa diciendo «no se ha podido: sin sincronizar», que es la misma frase dos veces. La línea de Hoy lo lleva también, en su `title`.
 
 **Lo que había que no perder al quitarlo** es que alguien pueda pasarse dos días escribiendo en un dispositivo que no sube nada. Se resuelve con nada mientras va bien y una línea en la subcabecera de Hoy cuando lleva un rato fallando, que desaparece sola al arreglarse. **No va al sobre**: el sobre es de personas y sus renglones se descartan, y un fallo de sincronización no lo manda nadie ni se arregla descartándolo.
 

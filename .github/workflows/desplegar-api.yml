@@ -104,7 +104,23 @@ jobs:
           ruta="migraciones/$(basename "$FICHERO")"
           test -f "$ruta" || { echo "No existe $ruta"; exit 1; }
           echo "→ $ruta"
-          npx --yes wrangler@4 d1 execute agenda-familiar --remote --yes --file="$ruta"
+
+          # Repetir una `.unavez` no puede costar el despliegue. Este paso va
+          # antes de desplegar —el código nuevo puede necesitar la columna—, así
+          # que cortarse aquí deja el Worker sin subir; y pedir una que ya estaba
+          # es el error más fácil de cometer, porque lo único que dice cuáles
+          # faltan es una lista escrita a mano. Se distingue: «ya estaba» se
+          # cuenta y se sigue, y cualquier otro fallo de SQL para, que es lo que
+          # tiene que hacer.
+          salida=$(npx --yes wrangler@4 d1 execute agenda-familiar --remote --yes --file="$ruta" 2>&1) && codigo=0 || codigo=$?
+          echo "$salida"
+          if [ "$codigo" -ne 0 ]; then
+            if echo "$salida" | grep -qiE 'duplicate column name|already exists'; then
+              echo "::notice file=$ruta::Esa migración ya estaba aplicada. Se sigue con el despliegue; quita su nombre de la lista de pendientes en CLAUDE.md."
+            else
+              exit "$codigo"
+            fi
+          fi
 
       - name: Desplegar el Worker
         working-directory: api
