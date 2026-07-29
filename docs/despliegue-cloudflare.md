@@ -1145,6 +1145,150 @@ parte web siguen yendo por OTA sin pasar por revisión (apartado 8.1), y solo un
 cambio nativo obliga a volver por aquí. Cuando eso ocurra, la revisión de una
 actualización es bastante más rápida que la primera.
 
+### 8.5 Repartirla en casa sin publicarla: TestFlight interno
+
+El apartado anterior es el camino largo, y **para cuatro teléfonos no hace
+falta**. La revisión de la App Store existe para que a la aplicación llegue
+cualquiera; aquí no la va a usar nadie de fuera de casa. TestFlight tiene dos
+círculos y solo uno de ellos pasa por revisión.
+
+| | Interno | Externo |
+| --- | --- | --- |
+| Cuántos | 100 | 10.000 |
+| Quiénes | usuarios de App Store Connect de este equipo | quien reciba el correo o el enlace público |
+| Revisión de Apple | **ninguna** | *Beta App Review*, uno o dos días la primera vez |
+| Cuándo pueden instalar | en cuanto Apple termina de procesar la build, minutos | cuando pase esa revisión |
+
+Para esta casa, **interno**. No hay que registrar los UDID de los teléfonos —eso
+es la distribución *ad hoc*, otra cosa—, no hay ficha que rellenar y no hay nadie
+mirando el binario.
+
+#### Lo que hace falta antes
+
+Todo lo del apartado 8, sin ningún añadido: la cuenta de pago del Apple Developer
+Program, el App ID del 4.1 con **Sign in with Apple** y **Push Notifications**,
+la capacidad de urgencia del 8.3 con **los perfiles regenerados después de
+activarla**, y `npm run sync:ios` corrido para que `patch-ios.mjs` deje puestos
+los dos entitlements, el reenvío del token en el `AppDelegate` y el cumplimiento
+de exportación en el `Info.plist`.
+
+Ese último detalle ahorra un paso al subir: con
+`ITSAppUsesNonExemptEncryption` declarado, App Store Connect no pregunta por el
+cifrado y la build queda disponible sin intervención.
+
+#### Dar de alta a las tres personas
+
+En <https://appstoreconnect.apple.com> → **Users and Access → ＋**. Por cada una:
+nombre, su **Apple ID de siempre** —el que ya usa en su iPhone, no uno nuevo— y
+un rol. Basta el más acotado: **Customer Support**. No hace falta *Admin*, y
+desde luego no *Account Holder*. Si al llegar a la lista de testers internos
+alguna no aparece, súbala a *App Manager* y vuelva a mirar.
+
+> **Una cuenta Individual sirve.** Los usuarios de App Store Connect son cosa
+> aparte de los miembros del equipo de desarrollo: se pueden añadir sin convertir
+> la cuenta en *Organization* y sin que ninguna de ellas toque certificados ni
+> firme nada.
+
+Cada una recibe un correo de invitación y **tiene que aceptarlo**. Ese es el paso
+que se atasca, porque el correo llega de Apple con aspecto de trámite y se queda
+sin abrir. Hasta que no lo acepta, no se la puede marcar como tester.
+
+Después, en la app → pestaña **TestFlight** → **Internal Testing** → un grupo
+(sirve el que crea Apple por defecto) → añadir a las tres. Un grupo interno
+reparte cada build nueva sola, sin que haya que volver aquí.
+
+#### El binario
+
+En el Mac, y con un iPhone real a mano:
+
+```bash
+cd pwa
+npm install
+npm run sync:ios
+npm run open:ios
+```
+
+En Xcode, antes de archivar, dos números que no son el del OTA (véase «Números de
+versión» del 8.4): `MARKETING_VERSION` puede quedarse quieta, pero
+**`CURRENT_PROJECT_VERSION` tiene que subir en cada subida** o App Store Connect
+rechaza la build por repetida.
+
+*Any iOS Device* → **Product ▸ Archive** → **Distribute App ▸ App Store Connect ▸
+Upload**. Al terminar, la build tarda entre cinco y treinta minutos en procesarse;
+hasta entonces aparece en TestFlight como *Processing* y no es que haya fallado.
+
+#### Lo que no hay que rellenar
+
+Esta es la parte que más tiempo ahorra, y conviene decirla al revés: para
+TestFlight interno **no** hacen falta la descripción, las capturas, las palabras
+clave, el cuestionario de *App Privacy*, la clasificación por edades ni las notas
+de revisión del 8.4. Nada de eso.
+
+Lo único que sí hay que crear es el **registro de la app** —**Apps → ＋ → Nueva
+app**, con el Bundle ID `com.garciadoral.ops`, el idioma y un SKU inventado—,
+porque sin él no hay dónde subir la build. Se queda en *Prepare for Submission*
+para siempre y no pasa nada: un registro sin enviar no lo mira nadie.
+
+La **Test Information** de TestFlight —descripción de la beta, correo de
+respuesta— es obligatoria para los testers externos y opcional para los internos.
+
+#### El entorno de APNs, que aquí vuelve a morder
+
+`api/wrangler.toml` trae `APNS_ENTORNO = "produccion"`, que es **el valor
+correcto para TestFlight**. Si en algún momento lo cambió a `pruebas` para
+depurar desde Xcode (§4.6), vuelva a ponerlo y despliegue el Worker, o a los
+teléfonos de casa no les sonará nada y el token se les borrará de la base como si
+hubieran desinstalado la aplicación.
+
+Y el corolario, que no está escrito en ningún otro sitio: **el Worker apunta a un
+solo entorno**, así que no se puede depurar desde Xcode con `pruebas` y a la vez
+tener sonando los teléfonos de TestFlight. Mientras dure la depuración, en casa
+no suena; al terminar, hay que acordarse de devolver la variable.
+
+#### Los 90 días
+
+Es el único precio real de no publicar. **Una build de TestFlight caduca a los
+noventa días de subirla**, y cuando caduca la aplicación deja de abrirse: quien
+la toque verá que la beta ha expirado. La cura es archivar y subir otra vez,
+subiendo `CURRENT_PROJECT_VERSION`, sin tocar nada más —el trabajo de esos tres
+meses ya está en los teléfonos por OTA, no en el binario—.
+
+Son diez minutos cada trimestre. Cuando dejen de compensar, ese es el momento de
+volver al 8.4 y publicar de verdad.
+
+#### Lo que ve quien recibe la invitación
+
+1. Instala **TestFlight** desde la App Store. Esa sí es pública y es gratis.
+2. Abre el correo de invitación desde el propio iPhone y toca **View in
+   TestFlight**.
+3. Dentro, **Agenda** con su botón de instalar. Queda en la pantalla de inicio
+   como cualquier otra aplicación, con su icono y sin marca de beta.
+4. Entra con Apple —hoja nativa, Face ID— y aparece en **la sala de espera**.
+
+Ahí termina lo suyo y empieza lo de usted: en **Gente** verá la solicitud y hay
+que **vincularla a la ficha que ya existe**, no crear una nueva, o esa persona
+acabará duplicada y sus cumpleaños y sus regalos se quedarán colgando de la ficha
+vieja. Está en el apartado 6.
+
+Después, cada una tiene que encender sus avisos por su cuenta: **Ajustes → Avisos
+→ «Avisarme en este teléfono»** (§8.3). No se hereda ni se puede activar desde
+otro teléfono; es el permiso de iOS y lo da su dueña.
+
+Cuando suba una build nueva, TestFlight les avisa por notificación. Pasará poco:
+lo normal viaja por OTA (§8.1) y del binario solo se acuerda uno cuando caducan
+los noventa días o cambia algo nativo.
+
+#### Cuando algo no va
+
+| Síntoma | Casi siempre es |
+| --- | --- |
+| No le llega la invitación | no aceptó el alta de usuario de App Store Connect, o el correo se fue a *spam* |
+| La build no aparece en TestFlight | sigue procesando, o `CURRENT_PROJECT_VERSION` repetía una anterior |
+| «Esta beta ha expirado» | los noventa días; archive y suba otra vez |
+| Entra pero no ve nada | está en la sala de espera y falta aprobarla en Gente |
+| No le suena el teléfono | `APNS_ENTORNO` en `pruebas`, o el interruptor de Ajustes sin dar |
+| «Esta versión no trae el acceso con Apple» | el complemento no entró: `npm install`, `npm run sync:ios` y archivar de nuevo |
+
 ---
 
 ## 9. Comprobaciones finales
@@ -1265,6 +1409,8 @@ comando y suba el resultado a un almacenamiento privado; no está montado todav�
 9. Entrar, copiar el identificador de Apple a la ficha, volver a entrar.
 10. Secretos de GitHub y simulacro del plan semanal.
 11. En el Mac: `npx cap add ios` → `npm run sync:ios` → assets → Xcode → TestFlight.
+    Para repartirla en casa basta con quedarse aquí: el apartado 8.5 cuenta cómo,
+    y no pasa por revisión.
 12. Recorrer la lista de comprobaciones del apartado 9.
 13. Validar en un iPhone real que el OTA entra: suba la versión, mergee y abra
     la app dos veces.

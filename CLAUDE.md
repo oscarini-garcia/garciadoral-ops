@@ -121,6 +121,20 @@ pendiente. El hook lo inyecta al final del mapa.
   descarta a mano. Y una atadura nueva: **el entorno de
   APNs tiene que coincidir con cómo se instaló la app** —`pruebas` desde Xcode,
   `produccion` desde TestFlight—; equivocarse da `BadDeviceToken` y nada más.
+- **La aplicación se reparte por TestFlight interno y no por la App Store.** La
+  revisión existe para que llegue cualquiera, y aquí no la va a usar nadie de
+  fuera de casa: el círculo interno **no pasa por revisión** y la build está en
+  los teléfonos minutos después de subirla. Cuesta dar de alta a cada una como
+  usuaria de App Store Connect —con el rol más acotado, y con su Apple ID de
+  siempre— y **no cuesta ficha ninguna**: ni descripción, ni capturas, ni
+  cuestionario de privacidad. Lo único que se paga es que **una build caduca a
+  los noventa días** y hay que volver a archivar, aunque no haya cambiado nada:
+  lo de esos tres meses ya está en los teléfonos por OTA. Está en
+  `docs/despliegue-cloudflare.md` §8.5, y el §8.4 —la ficha entera de la App
+  Store— sigue escrito y sin usar, que es donde hay que ir el día que los
+  noventa días dejen de compensar. La atadura que hereda es la de §4.6: **el
+  Worker apunta a un solo entorno de APNs**, así que mientras se depura desde
+  Xcode con `pruebas`, a los teléfonos de casa no les suena nada.
 - **La marca de lo visto viaja: la tabla `visto`.** Guarda persona, tipo, objeto y
   **hasta qué momento**, no un booleano, que es lo que permite que un aviso
   descartado vuelva. Solo llega a su dueño. Se escribe al abrir el hilo, al
