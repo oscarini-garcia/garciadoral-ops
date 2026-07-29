@@ -1,0 +1,505 @@
+<meta charset="utf-8">
+<title>La frase del día — opciones</title>
+
+<style>
+  :root {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+    --sombra: 0 1px 2px rgba(28,43,51,.06), 0 8px 24px rgba(28,43,51,.06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  /* Los teléfonos llevan su tema puesto, no el de quien lee la página: la
+     pregunta de si una frase en gris se lee de noche no se contesta enseñando
+     solo el tema claro. */
+  .tema-claro {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --sombra: 0 1px 2px rgba(28,43,51,.06), 0 8px 24px rgba(28,43,51,.06);
+  }
+  .tema-oscuro {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.6; margin: 0; padding: 28px 20px 90px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 30px; line-height: 1.25; }
+  h2 { font-size: 22px; }
+  h3 { font-size: 17.5px; }
+  p { margin: 0; max-width: 68ch; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  code { font-family: var(--mono); font-size: .87em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 12px; }
+  .portada p, .parte > p { color: var(--ink-soft); }
+  .parte { border-top: 2px solid var(--ink); padding-top: 15px; display: flex; flex-direction: column; gap: 15px; }
+  .parte h3 { margin-top: 6px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .nota p { color: var(--ink-soft); }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.mal { border-left-color: var(--regalo); }
+
+  /* --------------------------------------------------------- Teléfonos -- */
+
+  .tira { display: flex; flex-wrap: wrap; gap: 20px; }
+  .caso { display: flex; flex-direction: column; gap: 9px; flex: 1 1 250px; min-width: 240px; }
+  .caso > .rotulo { padding-left: 2px; }
+
+  .tel {
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 20px;
+    box-shadow: var(--sombra); overflow: hidden;
+    display: flex; flex-direction: column; min-height: 372px;
+  }
+  .tel-cab {
+    padding: 13px 15px 9px; border-bottom: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .tel-titulo { font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: -.01em; }
+  .tel-fecha { font-size: 12px; color: var(--ink-soft); }
+  .tel-cuerpo { flex: 1; padding: 12px 15px 14px; display: flex; flex-direction: column; gap: 11px; }
+  .tel-grupo { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .tel-tarjeta {
+    border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2);
+    padding: 8px 10px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .tel-tarjeta b { font-size: 12.5px; font-weight: 500; }
+  .tel-tarjeta span { font-size: 11px; color: var(--ink-soft); }
+  .tel-pie {
+    border-top: 1px solid var(--line); padding: 7px 15px;
+    display: flex; justify-content: space-around;
+    font-size: 8.5px; letter-spacing: .04em; color: var(--ink-faint);
+  }
+  .tel-pie b { color: var(--tinta); font-weight: 500; }
+  .tel-version { font-family: var(--mono); font-size: 9.5px; color: var(--ink-faint); text-align: right; margin-top: auto; }
+
+  /* La frase, en sus cuatro tratamientos. */
+  .frase {
+    font-family: var(--serif); font-style: italic;
+    font-size: 13px; line-height: 1.5; color: var(--ink-soft);
+  }
+  .frase-cab { padding-top: 5px; }
+  .frase-caja {
+    font-style: normal; font-family: var(--sans); font-size: 12.5px;
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px;
+  }
+  .frase-marca { display: flex; gap: 8px; align-items: flex-start; }
+  .frase-marca::before {
+    content: '✳'; color: var(--tinta); font-style: normal;
+    font-size: 12px; line-height: 1.5; flex: none;
+  }
+  .frase-pie { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
+
+  /* --------------------------------------------------------- Muestrario -- */
+
+  .muestras { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+  .muestra {
+    display: grid; grid-template-columns: 128px 1fr; gap: 16px;
+    padding: 12px 0; border-bottom: 1px solid var(--line); align-items: baseline;
+  }
+  .muestra span {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .muestra p { font-family: var(--serif); font-style: italic; font-size: 15.5px; color: var(--ink); }
+  @media (max-width: 560px) {
+    .muestra { grid-template-columns: 1fr; gap: 4px; }
+  }
+
+  .tabla-envoltorio { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 8px 14px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); font-weight: 400; }
+  td.num { font-variant-numeric: tabular-nums; }
+  tr.gana td { color: var(--ink); }
+  tr.gana td:first-child { font-weight: 600; }
+
+  pre {
+    margin: 0; overflow-x: auto; background: var(--paper-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 13px 15px; font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+  }
+  pre b { color: var(--tinta); font-weight: 600; }
+
+  .recomendada {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--paper); background: var(--tinta); padding: 3px 9px; border-radius: 999px;
+    vertical-align: middle; margin-left: 8px;
+  }
+  .opcion { display: flex; flex-direction: column; gap: 11px; }
+  .pros { display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; }
+  .si, .no { display: flex; gap: 9px; align-items: flex-start; }
+  .si span:first-child { color: var(--tinta); font-weight: 700; }
+  .no span:first-child { color: var(--regalo); font-weight: 700; }
+  .si span:last-child, .no span:last-child { color: var(--ink-soft); }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>La frase del día: dónde ponerla, cómo tiene que sonar y quién la escribe</h1>
+    <p>
+      Dos líneas bajo el saludo, distintas cada día, escritas por la IA a partir
+      de lo que hay apuntado —o de nada, cuando no hay nada—, y que se cambian
+      tocándolas. Aquí van las opciones de sitio, un muestrario de tono para que
+      calibres cuánta guasa quieres, y la única decisión que no es estética: cada
+      cuánto se pide y quién la paga.
+    </p>
+  </header>
+
+  <section class="parte">
+    <h2>1. Dónde va</h2>
+    <p>
+      Cuatro sitios posibles. Los cuatro están «bajo el buenos días»; lo que
+      cambia es si la frase forma parte del marco fijo de la pantalla o del
+      contenido que se desplaza, y con quién compite.
+    </p>
+
+    <div class="opcion">
+      <h3>A · En la cabecera, pegada a la fecha</h3>
+      <div class="tira">
+        <div class="caso">
+          <p class="rotulo">Tema claro</p>
+          <div class="tel tema-claro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+              <p class="frase frase-cab">Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p>
+            </div>
+            <div class="tel-cuerpo">
+              <div class="tel-grupo">Lío</div>
+              <div class="tel-tarjeta"><b>Por la noche</b><span>te toca a ti</span></div>
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+        <div class="caso">
+          <p class="rotulo">Tema oscuro</p>
+          <div class="tel tema-oscuro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+              <p class="frase frase-cab">Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p>
+            </div>
+            <div class="tel-cuerpo">
+              <div class="tel-grupo">Lío</div>
+              <div class="tel-tarjeta"><b>Por la noche</b><span>te toca a ti</span></div>
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pros">
+        <div class="si"><span>+</span><span>Es literalmente lo que pediste: bajo el saludo, formando bloque con él.</span></div>
+        <div class="si"><span>+</span><span>No compite con nada. La cabecera no se desplaza, así que la frase no se pelea por el primer sitio con las peticiones de Lío.</span></div>
+        <div class="no"><span>−</span><span>Cuesta unos 38 px permanentes de cabecera, en la pantalla de inicio y para siempre. Lo que nunca se va acaba dejando de leerse.</span></div>
+        <div class="no"><span>−</span><span>La cabecera es el marco: hasta ahora solo dice quién eres, qué día es y si algo falla. Meter ahí una broma cambia lo que esa zona significa.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <h3>B · Lo primero del contenido, sin caja <span class="recomendada">recomendada</span></h3>
+      <div class="tira">
+        <div class="caso">
+          <p class="rotulo">Tema claro</p>
+          <div class="tel tema-claro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+            </div>
+            <div class="tel-cuerpo">
+              <p class="frase">Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p>
+              <div class="tel-grupo">Lío</div>
+              <div class="tel-tarjeta"><b>Por la noche</b><span>te toca a ti</span></div>
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+        <div class="caso">
+          <p class="rotulo">Tema oscuro</p>
+          <div class="tel tema-oscuro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+            </div>
+            <div class="tel-cuerpo">
+              <p class="frase">Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p>
+              <div class="tel-grupo">Lío</div>
+              <div class="tel-tarjeta"><b>Por la noche</b><span>te toca a ti</span></div>
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pros">
+        <div class="si"><span>+</span><span>Visualmente va bajo el saludo igual que en A, pero es contenido: se desplaza, se pasa de largo, no se convierte en papel pintado.</span></div>
+        <div class="si"><span>+</span><span>La cursiva en serif la marca como lo que es —una voz, no un dato— sin necesidad de caja, icono ni rótulo.</span></div>
+        <div class="si"><span>+</span><span>Sin caja no pesa: una broma en una tarjeta con borde pide ser tomada en serio.</span></div>
+        <div class="no"><span>−</span><span>Los días con peticiones de Lío pendientes, la frase queda por encima de lo único de esa pantalla que espera respuesta. Se arregla poniéndola detrás de las peticiones y delante de todo lo demás.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <h3>C · Lo primero del contenido, en tarjeta</h3>
+      <div class="tira">
+        <div class="caso">
+          <p class="rotulo">Tema claro</p>
+          <div class="tel tema-claro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+            </div>
+            <div class="tel-cuerpo">
+              <p class="frase frase-caja frase-marca"><span>Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</span></p>
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+        <div class="caso">
+          <p class="rotulo">Tema oscuro</p>
+          <div class="tel tema-oscuro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+            </div>
+            <div class="tel-cuerpo">
+              <p class="frase frase-caja frase-marca"><span>Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</span></p>
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pros">
+        <div class="si"><span>+</span><span>La marca de la izquierda dice sin palabras que eso lo ha escrito la máquina y que se puede tocar.</span></div>
+        <div class="no"><span>−</span><span>Se parece demasiado a una tarjeta de evento. En una pantalla donde todo lo que lleva caja hay que hacerlo, la broma parece una tarea.</span></div>
+        <div class="no"><span>−</span><span>Es la opción más ruidosa de las cuatro, y la frase es lo menos importante de la pantalla.</span></div>
+      </div>
+    </div>
+
+    <div class="opcion">
+      <h3>D · Al final, sobre la versión</h3>
+      <div class="tira">
+        <div class="caso">
+          <p class="rotulo">Tema claro</p>
+          <div class="tel tema-claro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+            </div>
+            <div class="tel-cuerpo">
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-tarjeta"><b>Comida con los abuelos</b><span>14:00 · la abuela, el abuelo</span></div>
+              <p class="frase frase-pie">Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+        <div class="caso">
+          <p class="rotulo">Tema oscuro</p>
+          <div class="tel tema-oscuro">
+            <div class="tel-cab">
+              <div class="tel-titulo">Buenos días, Ana</div>
+              <div class="tel-fecha">miércoles 29 de Julio</div>
+            </div>
+            <div class="tel-cuerpo">
+              <div class="tel-grupo">Para hoy</div>
+              <div class="tel-tarjeta"><b>Entreno de hípica</b><span>18:00 · Marta</span></div>
+              <div class="tel-tarjeta"><b>Comida con los abuelos</b><span>14:00 · la abuela, el abuelo</span></div>
+              <p class="frase frase-pie">Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p>
+              <div class="tel-version">Versión 1.35.0</div>
+            </div>
+            <div class="tel-pie"><b>Hoy</b><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pros">
+        <div class="si"><span>+</span><span>No estorba a nada y funciona como despedida: se lee después de enterarse del día, que es cuando la broma tiene contexto.</span></div>
+        <div class="no"><span>−</span><span>No es «bajo el buenos días». Y el día que haya doce cosas apuntadas, nadie llegará hasta ahí.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>2. Cuánta guasa: muestrario de tono</h2>
+    <p>
+      Esto es lo que de verdad hay que calibrar, porque es lo único que no se
+      puede deducir del código. Van doce escritas a mano con el tono que
+      propongo —seca, cómplice, nunca cruel con nadie de la casa— para que digas
+      si te quedas ahí, subes o bajas.
+    </p>
+
+    <div class="muestras">
+      <div class="muestra"><span>Hípica</span><p>Hípica otra vez. A estas alturas el caballo os conoce mejor que el pediatra.</p></div>
+      <div class="muestra"><span>Hípica</span><p>Entreno a las seis. El coche ya sabe ir solo; tú vas de acompañante.</p></div>
+      <div class="muestra"><span>Viaje</span><p>Viaje el jueves. La maleta lleva tres días mirándote y tú llevas tres días mirando el móvil.</p></div>
+      <div class="muestra"><span>Viaje</span><p>Sale lo de la sierra. Todavía nadie ha dicho quién conduce, que es exactamente como empiezan estas cosas.</p></div>
+      <div class="muestra"><span>Exámenes</span><p>Semana de exámenes. Es el momento del año en que los cuartos de esta casa se ordenan solos.</p></div>
+      <div class="muestra"><span>Exámenes</span><p>Examen el viernes. Ánimo: el temario también está nervioso.</p></div>
+      <div class="muestra"><span>Día vacío</span><p>Hoy no hay nada apuntado. Desconfía: o sois libres, o alguien no ha apuntado algo.</p></div>
+      <div class="muestra"><span>Día vacío</span><p>Agenda en blanco. Aprovechadlo antes de que a alguien se le ocurra una idea.</p></div>
+      <div class="muestra"><span>Familia</span><p>Comida con los abuelos. Id con hambre y con paciencia, en ese orden.</p></div>
+      <div class="muestra"><span>Médico</span><p>Cita a las nueve. La parte difícil no es la cita: es aparcar.</p></div>
+      <div class="muestra"><span>Sin más</span><p>Miércoles. Ni el impulso del lunes ni la esperanza del viernes: puro oficio.</p></div>
+      <div class="muestra"><span>Lío</span><p>Te toca sacar a Lío esta noche. Él ya lo sabe. Lleva sabiéndolo desde las cuatro.</p></div>
+    </div>
+
+    <div class="nota mal">
+      <p><strong>Y una que no puede salir nunca:</strong></p>
+      <p><em>«Cumple Marta el sábado. Los regalos no aparecen solos, por mucho que lo estéis intentando.»</em></p>
+      <p>
+        Tiene gracia y es exactamente el fallo que esta aplicación existe para
+        impedir. Marta no vería esa frase —el material sale de su instantánea
+        filtrada, igual que el resto—, pero basta que mire el teléfono de su
+        madre por encima del hombro. La instrucción llevará prohibido nombrar
+        regalos, ideas y deseos, aunque el modelo no llegue a verlos.
+      </p>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>3. Quién la escribe y cada cuánto</h2>
+    <p>
+      Es el quinto encargo de IA de la casa, detrás de contar el día, sugerir un
+      regalo, felicitar un cumpleaños y apuntar en un sitio. Estrena poca
+      maquinaria: mismo freno por minuto, misma cadena de modelos, misma
+      instrucción editable en Ajustes. Lo suyo es el material y, sobre todo,
+      cada cuánto se pide.
+    </p>
+
+    <h3>1 · Una al día y por persona, guardada en el teléfono <span class="recomendada">recomendada</span></h3>
+    <div class="pros">
+      <div class="si"><span>+</span><span>La primera apertura del día la pide; el resto del día se lee de lo guardado. Es lo que hace que sea «la frase del día» y no una frase distinta cada vez que tocas una pestaña.</span></div>
+      <div class="si"><span>+</span><span>Tocarla pide otra y sustituye a la guardada. Sin límite artificial: si te aburres, la cambias.</span></div>
+      <div class="si"><span>+</span><span>Cada uno recibe la suya a partir de su propia instantánea, así que la regla de ocultación se cumple sola, sin excepción nueva que mantener.</span></div>
+      <div class="si"><span>+</span><span>Cuatro llamadas al día. Con Haiku, unos céntimos al mes.</span></div>
+    </div>
+
+    <h3>2 · Una al día para toda la casa</h3>
+    <div class="pros">
+      <div class="si"><span>+</span><span>Una llamada al día en vez de cuatro, y una broma compartida que se puede comentar en la cocina.</span></div>
+      <div class="no"><span>−</span><span>Si la ve todo el mundo, tiene que componerse de lo que todo el mundo puede ver. Adiós a que hable de nada delicado, y hay que escribir y mantener una instantánea «pública» que hoy no existe.</span></div>
+      <div class="no"><span>−</span><span>Que uno la refresque se la cambia a los demás sin avisar.</span></div>
+    </div>
+
+    <h3>3 · Una nueva en cada apertura</h3>
+    <div class="pros">
+      <div class="no"><span>−</span><span>Deja de ser del día. Y cada vuelta a la pestaña Hoy cuesta una llamada y un segundo de espera.</span></div>
+    </div>
+
+    <h3>Qué recibe el modelo</h3>
+    <pre>desde   2026-07-29
+hoy     18:00  Entreno de hípica · Marta
+mañana  (nada)
+cerca   1 de Agosto · cumple Marta
+<b>tema    hípica</b>          ← sacado al azar de los que esta casa usa de verdad</pre>
+    <p>
+      El <strong>tema al azar</strong> es lo que resuelve los días vacíos, que
+      en esta casa son la mayoría. Sale de los tipos de evento que ya existen
+      —viaje, competición, entreno, fecha escolar, cita médica, celebración— y
+      de lo que las fichas de la gente dicen que hacen, no de una lista escrita
+      a mano que envejecería. Con el día lleno, el tema es lo de hoy; con el día
+      vacío, es una excusa.
+    </p>
+
+    <div class="nota pega">
+      <p><strong>Sin clave de Anthropic puesta, no sale nada.</strong></p>
+      <p>
+        Ni frase, ni hueco, ni mensaje de error: la línea no está, igual que hoy
+        no está el botón de la IA en compartir. Y sin cobertura tampoco pasa
+        nada, porque la del día ya está guardada en el teléfono desde la primera
+        apertura. El único caso sin frase es abrir por primera vez un día
+        estando sin conexión.
+      </p>
+    </div>
+
+    <div class="tabla-envoltorio">
+      <table>
+        <thead>
+          <tr><th>Encargo</th><th>Instrucción en Ajustes</th><th>Llamadas al día</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Contar el día o la semana</td><td><code>ia.instruccion</code></td><td class="num">a demanda</td></tr>
+          <tr><td>Sugerir un regalo</td><td><code>ia.regalo</code></td><td class="num">a demanda</td></tr>
+          <tr><td>Felicitar un cumpleaños</td><td><code>ia.felicitacion</code></td><td class="num">a demanda</td></tr>
+          <tr><td>Apuntar en un sitio</td><td><code>ia.apunte</code></td><td class="num">a demanda</td></tr>
+          <tr class="gana"><td>La frase del día</td><td><code>ia.chispa</code></td><td class="num">4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="parte">
+    <h2>4. Qué hay que decidir</h2>
+    <div class="pros">
+      <div class="si"><span>1</span><span><strong>Sitio:</strong> A, B, C o D. Recomiendo <strong>B</strong>, y dentro de B, si la frase va delante o detrás de las peticiones de Lío los días que las haya.</span></div>
+      <div class="si"><span>2</span><span><strong>Tono:</strong> si el muestrario del apartado 2 está en su punto, se queda más suave o sube.</span></div>
+      <div class="si"><span>3</span><span><strong>Ritmo:</strong> 1, 2 o 3. Recomiendo <strong>1</strong>; la 2 obliga a inventarse una instantánea pública para ahorrar tres llamadas al día.</span></div>
+    </div>
+  </section>
+
+</div>

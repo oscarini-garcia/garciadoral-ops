@@ -58,11 +58,11 @@ tener que recorrer la aplicación entera cada vez.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
   cuadroEn · tramoLocal · inicioDeVentana · leerCuadro · …y 4 más
-- **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo y…
+- **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo,…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
-  INSTRUCCION_APUNTE_POR_DEFECTO · leerConfiguracion · configuracionPublica
-  guardarConfiguracion · cadenaDeModelos · …y 10 más
+  INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO · leerConfiguracion
+  configuracionPublica · guardarConfiguracion · …y 14 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -83,7 +83,7 @@ tener que recorrer la aplicación entera cada vez.
 
 - **almacen.js** — Almacén local.
   guardarDocumento · leerDocumento · guardarInstantanea · leerInstantanea · encolarCambio
-  leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 3 más
+  leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 5 más
 - **app.js** — Arranque y navegación.
   TEXTO_SINCRONIZACION
 - **avisos.js** — Lo que espera a quien mira, venga del módulo que venga.
@@ -112,7 +112,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 10 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 11 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -169,6 +169,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
+- `POST /api/ia/chispa` — la frase con la que abre la pantalla de Hoy
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
 
 ## Workflows
@@ -244,7 +245,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**269** en total.
+**276** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -260,7 +261,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/avisos.test.js` — 23
 - `api/test/cuenta.test.js` — 6
 - `api/test/lio.test.js` — 23
-- `api/test/redaccion.test.js` — 54
+- `api/test/redaccion.test.js` — 61
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11

@@ -437,6 +437,23 @@ button { background: none; border: 0; cursor: pointer; }
 /* Columna, para que el pie se pueda ir al fondo. */
 .pantalla-hoy { display: flex; flex-direction: column; }
 
+/* La frase del día. En cursiva y en serifa porque es una voz y no un dato: en
+   la fuente de palo, al lado de las tarjetas, se leería como un aviso del
+   sistema. Y sin caja, sin rótulo y sin icono —una broma dentro de un recuadro
+   con borde pide que la tomes en serio—; lo único que dice que se puede tocar
+   es que se apaga al hacerlo.
+   Alineada a la izquierda a mano: es un `button`, y los botones centran. */
+.hoy-chispa {
+  font-family: var(--serif); font-style: italic;
+  font-size: 15.5px; line-height: 1.45; color: var(--ink-soft);
+  text-align: left; padding: 2px 0 4px; margin-bottom: 4px;
+  text-wrap: pretty;
+}
+.hoy-chispa[data-estado="pidiendo"] { opacity: .45; }
+@media (prefers-reduced-motion: no-preference) {
+  .hoy-chispa { transition: opacity .18s ease; }
+}
+
 /* La versión se va abajo del todo y a la derecha, y se queda ahí aunque el día
    esté vacío: es un pie de pantalla, no la última línea de la lista. */
 .pie-version { margin-top: auto; padding-top: 28px; display: flex; justify-content: flex-end; }
