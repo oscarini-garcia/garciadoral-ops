@@ -131,9 +131,13 @@ test('las ya enseñadas viajan para que la segunda tanda no repita a la primera'
   ]);
 });
 
-test('el encargo de la frase pide cinco y prohíbe nombrar regalos', () => {
+test('el encargo de la frase pide cinco, marca el registro y prohíbe nombrar regalos', () => {
   assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /CINCO frases distintas entre sí/);
   assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /no nombres nunca\s+regalos, ideas ni deseos/);
+  // El registro se marca a mano porque sin decírselo no lo acierta: la primera
+  // tanda de verdad trajo un taco puesto para dar énfasis.
+  assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /ironía seca/);
+  assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /Nada de tacos ni de palabras malsonantes/);
 
   const publica = configuracionPublica({
     ...CONFIGURACION, chispa: INSTRUCCION_CHISPA_POR_DEFECTO, guardada_en: null,
