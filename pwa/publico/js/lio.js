@@ -13,11 +13,15 @@
  * cuadro para siempre: cambiar el reparto cambia el futuro y no reescribe el
  * pasado, que es justamente lo que se le pide a un histórico.
  *
- * **El estado que nadie marca lo pone el reloj.** Nadie va a decir «no lo he
- * sacado»: lo que hay es previsto y hecho, y un previsto cuya ventana ya pasó se
- * lee como sin marcar. Sin marcar no es una acusación —casi siempre el perro
- * salió y lo que faltó fue el gesto—, así que la pantalla pregunta en lugar de
- * afirmar.
+ * **El estado que nadie marca lo pone el reloj.** Un previsto cuya ventana ya
+ * pasó se lee como sin marcar. Sin marcar no es una acusación —casi siempre el
+ * perro salió y lo que faltó fue el gesto—, así que la pantalla pregunta en
+ * lugar de afirmar: «¿sacaste a Lío?».
+ *
+ * **Y una pregunta tiene dos respuestas.** Al principio solo se podía contestar
+ * que sí, y quien no lo hubiera sacado se quedaba sin manera de decirlo: el
+ * turno se quedaba en «nadie marcó», que no es lo mismo. Sin marcar es no
+ * saberlo; `no-hecho` es saber que no.
  *
  * La forma está en `specs/ux.md` §10.3 y las entidades, en
  * `specs/modelo-datos.md` §2.6.
@@ -192,12 +196,20 @@ export function inicioDeVentana(fecha, turnoId) {
 /**
  * Un turno resuelto: quién lo tiene, cómo está y qué hay pendiente sobre él.
  *
- * `estado` es uno de cuatro:
+ * `estado` es uno de cinco:
  *
  * - `hecho` — alguien dijo que lo sacó, y consta quién.
+ * - `no-hecho` — se contestó que no salió. Es lo único que distingue no haber
+ *   salido de no haberlo apuntado, y solo se llega a él contestando.
  * - `previsto` — tiene dueño y su ventana no ha terminado.
  * - `sin-marcar` — tenía dueño, la ventana pasó y nadie dijo nada.
  * - `sin-asignar` — el cuadro no dice de quién es y nadie lo ha cogido.
+ *
+ * **Cómo se guarda que no salió, sin columna nueva.** La fila lleva `hecho_en`
+ * —cuándo se contestó— y `hecho_por_id` vacío. Las dos cosas juntas solo las
+ * escribe esta respuesta: coger un turno pone dueño y no pone `hecho_en`, y
+ * marcar pone las dos. Así se distingue de un turno que simplemente venció sin
+ * que nadie dijera nada, que no tiene fila ninguna.
  */
 export function turnoDe(instantanea, fecha, turnoId, referencia = new Date()) {
   const dia = fecha instanceof Date ? fecha : parsearMomento(fecha);
@@ -211,10 +223,13 @@ export function turnoDe(instantanea, fecha, turnoId, referencia = new Date()) {
   // estaba previsto, y eso ya no lo cambia ningún reparto.
   const asignadoId = paseo ? paseo.asignado_id || null : cuadro[turnoId]?.[indiceDia(dia)] || null;
   const hechoPorId = paseo?.hecho_por_id || null;
+  const hechoEn = paseo?.hecho_en || null;
   const vencido = referencia >= finDeVentana(dia, turnoId);
 
   let estado = 'previsto';
   if (hechoPorId) estado = 'hecho';
+  // Contestado que no: hay fila y hay respuesta, pero no hay quien lo sacara.
+  else if (hechoEn) estado = 'no-hecho';
   else if (!asignadoId) estado = 'sin-asignar';
   else if (vencido) estado = 'sin-marcar';
 
@@ -224,7 +239,7 @@ export function turnoDe(instantanea, fecha, turnoId, referencia = new Date()) {
     turno: turnoPorId(turnoId),
     asignadoId,
     hechoPorId,
-    hechoEn: paseo?.hecho_en || null,
+    hechoEn,
     estado,
     vencido,
     // Si la ventana ha llegado a abrirse. Antes de que abra no se puede decir
@@ -309,8 +324,30 @@ export async function marcarHecho(instantanea, turno) {
   return { marcado: true };
 }
 
-/** Deshacer la marca propia. Solo la suya: quitar de la lista a quien dijo que
- *  lo sacó sería desdecir a otro sin preguntarle. */
+/**
+ * «No, no salió»: queda escrito que ese turno no lo sacó nadie.
+ *
+ * Es la otra mitad de la pregunta que la pantalla hace —«¿sacaste a Lío?»— y sin
+ * ella solo se podía contestar que sí: quien no lo hubiera sacado no tenía
+ * manera de decirlo y el turno se quedaba para siempre en «nadie marcó», que no
+ * es lo mismo. **Sin marcar es no saberlo; esto es saber que no.**
+ *
+ * Solo sobre el turno propio. Decir que otro no sacó al perro es una afirmación
+ * sobre lo que hizo otro, y eso, como la corrección, no se escribe de un toque.
+ */
+export function marcarNoHecho(instantanea, turno) {
+  return guardar('paseo', idPaseo(turno.fechaIso, turno.turno.id), {
+    fecha: turno.fechaIso,
+    turno: turno.turno.id,
+    asignado_id: turno.asignadoId || instantanea.yo.id,
+    hecho_por_id: null,
+    hecho_en: ahora(),
+    activo: 1,
+  });
+}
+
+/** Deshacer la respuesta propia, sea la que sea. Solo la suya: quitar de la
+ *  lista a quien dijo que lo sacó sería desdecir a otro sin preguntarle. */
 export function desmarcar(turno) {
   return guardar('paseo', idPaseo(turno.fechaIso, turno.turno.id), {
     hecho_por_id: null,
