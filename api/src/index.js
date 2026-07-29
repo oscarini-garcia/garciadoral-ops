@@ -28,7 +28,7 @@
  *   POST   /api/sitio/apuntar · cinco apuntes para un sitio y una clase
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
- *   POST   /api/ia/chispa   · la frase con la que abre la pantalla de Hoy
+ *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
  */
 
@@ -74,7 +74,7 @@ import {
   componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
-  interpretarChispa,
+  interpretarChispas,
   interpretarFelicitaciones,
   interpretarPropuestas,
   leerConfiguracion,
@@ -698,26 +698,33 @@ async function apuntarEnUnSitio(peticion, env) {
 }
 
 /**
- * La frase con la que abre la pantalla de Hoy.
+ * Las cinco frases con las que abre la pantalla de Hoy.
  *
  * El quinto encargo, y el único que no nace de un toque: la pide la pantalla al
  * abrirse el primer día. Por eso es también el único que **contesta 200 con la
- * frase vacía** en vez de 503 cuando algo falla —no hay clave puesta, ningún
+ * lista vacía** en vez de 503 cuando algo falla —no hay clave puesta, ningún
  * modelo responde, el freno por minuto salta—. Un error aquí no tiene a quién
  * dárselo: nadie ha pedido nada, así que la línea sencillamente no aparece y la
  * pantalla queda como estaba.
+ *
+ * Cinco de golpe y no una: cuestan lo mismo —lo que se paga es el encargo y el
+ * material— y el teléfono las va enseñando de una en una sin volver a preguntar,
+ * de modo que tocar la frase contesta en el acto. `descartadas` son las que ya se
+ * han enseñado hoy, y viajan al pedir la segunda tanda.
  *
  * El tema se sortea aquí y no en el teléfono para que salga de lo que la casa
  * usa de verdad, que es un dato del registro y no del dispositivo.
  */
 async function escribirLaChispa(peticion, env) {
   const lector = await lectorAutenticado(peticion, env);
-  const { fecha, eventos = [], proximos = [] } = await peticion.json().catch(() => ({}));
+  const {
+    fecha, eventos = [], proximos = [], descartadas = [],
+  } = await peticion.json().catch(() => ({}));
   if (!fecha) return json({ error: 'falta la fecha' }, 400);
 
   const configuracion = await leerConfiguracion(env.DB);
-  if (!configuracion.clave) return json({ frase: '' });
-  if (!(await cabeUnaMas(env.DB, lector.id))) return json({ frase: '' });
+  if (!configuracion.clave) return json({ frases: [] });
+  if (!(await cabeUnaMas(env.DB, lector.id))) return json({ frases: [] });
 
   const instantanea = componerInstantanea(await leerRegistro(env.DB), lector);
   const temas = temasDeLaCasa(instantanea);
@@ -725,6 +732,7 @@ async function escribirLaChispa(peticion, env) {
     fecha,
     eventos,
     proximos,
+    descartadas,
     tema: temas.length ? temas[Math.floor(Math.random() * temas.length)] : null,
   });
 
@@ -733,13 +741,13 @@ async function escribirLaChispa(peticion, env) {
   }
 
   const resultado = await redactar({
-    configuracion, material, instruccion: configuracion.chispa, tope: 200,
+    configuracion, material, instruccion: configuracion.chispa, tope: 700,
   });
 
-  const frase = interpretarChispa(resultado.texto);
-  if (!frase) console.warn('chispa fallida', JSON.stringify(resultado.intentos));
+  const frases = interpretarChispas(resultado.texto);
+  if (!frases.length) console.warn('chispa fallida', JSON.stringify(resultado.intentos));
 
-  return json({ frase, modelo: frase ? resultado.modelo : null });
+  return json({ frases, modelo: frases.length ? resultado.modelo : null });
 }
 
 async function leerAjustesDeIa(peticion, env) {

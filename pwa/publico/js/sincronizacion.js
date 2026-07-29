@@ -408,25 +408,26 @@ export async function apuntarEnSitio(lugarId, { clase = 'saber', descartadas = [
 }
 
 /**
- * La frase con la que abre la pantalla de Hoy.
+ * Una tanda de cinco frases para la pantalla de Hoy.
  *
- * Viajan la fecha y los identificadores de lo de hoy y de lo que viene, igual
- * que en el resto: las repeticiones se expanden en el dispositivo y el Worker
- * los resuelve contra la instantánea filtrada de quien pide.
+ * Viajan la fecha, los identificadores de lo de hoy y de lo que viene —las
+ * repeticiones se expanden en el dispositivo y el Worker los resuelve contra la
+ * instantánea filtrada de quien pide— y las que ya se han enseñado hoy, para que
+ * la segunda tanda no repita a la primera.
  *
- * Devuelve cadena vacía siempre que no haya frase, sin distinguir por qué: sin
- * clave, sin cobertura o con el modelo callado, la línea no se enseña y ya está.
- * Nadie ha pedido esto, así que no hay a quién darle un error.
+ * Devuelve la lista vacía siempre que no haya frases, sin distinguir por qué:
+ * sin clave, sin cobertura o con el modelo callado, la línea no se enseña y ya
+ * está. Nadie ha pedido esto, así que no hay a quién darle un error.
  */
-export async function escribirLaChispa(fecha, eventos = [], proximos = []) {
+export async function escribirLaChispa(fecha, eventos = [], proximos = [], descartadas = []) {
   try {
-    const { frase } = await peticion('/api/ia/chispa', {
+    const { frases } = await peticion('/api/ia/chispa', {
       method: 'POST',
-      body: JSON.stringify({ fecha, eventos, proximos }),
+      body: JSON.stringify({ fecha, eventos, proximos, descartadas }),
     });
-    return frase || '';
+    return frases || [];
   } catch {
-    return '';
+    return [];
   }
 }
 

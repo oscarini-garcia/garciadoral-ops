@@ -1116,7 +1116,7 @@ function formularioDeRedaccion(ajustes) {
     campo('Instrucción', apunte, 'También en tandas de cinco, con el porqué detrás de la raya: el porqué es lo que se guarda como detalle del apunte, y es lo que separa una lista de obviedades de algo que aporta. Se le dan el sitio, de qué clase se le pide, lo que ya hay apuntado ahí y quiénes son de casa. Vacío, vuelve el encargo de origen.'),
 
     el('h4', { class: 'subtitulo-ajuste', texto: 'La frase con la que abre Hoy' }),
-    campo('Instrucción', chispa, 'El único encargo que nadie pide: sale solo al abrir, una vez al día, y se cambia tocándola. Se le dan el día, lo que hay apuntado hoy, lo que viene en la semana y un tema sacado al azar de lo que esta casa hace de verdad. Aquí conviene dejarle prohibido nombrar regalos, ideas y deseos: es la pantalla que se lee con alguien al lado. Vacío, vuelve el encargo de origen.'),
+    campo('Instrucción', chispa, 'El único encargo que nadie pide: sale solo al abrir, una vez al día, y se pasa a la siguiente tocándola. También en tandas de cinco, una por línea: se piden de golpe y el teléfono las va enseñando, así que si reescribes esto conserva esa forma. Se le dan el día, lo que hay apuntado hoy, lo que viene en la semana y un tema sacado al azar de lo que esta casa hace de verdad. Aquí conviene dejarle prohibido nombrar regalos, ideas y deseos: es la pantalla que se lee con alguien al lado. Vacío, vuelve el encargo de origen.'),
 
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {

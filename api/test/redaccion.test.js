@@ -27,7 +27,7 @@ import {
   componerMaterialDePeriodo,
   componerMaterialDeRegalo,
   configuracionPublica,
-  interpretarChispa,
+  interpretarChispas,
   interpretarFelicitaciones,
   interpretarPropuestas,
   modelosDisponibles,
@@ -713,7 +713,7 @@ test('la frase se compone con lo de hoy, lo que viene y el tema', () => {
     tema: 'Entreno',
   });
 
-  assert.equal(material.titulo, 'La frase de hoy');
+  assert.equal(material.titulo, 'Las frases de hoy');
   assert.deepEqual(material.lineas, [
     'Hoy es martes 14 de Abril',
     'Hoy hay apuntado:',
@@ -750,22 +750,46 @@ test('lo que no está en la instantánea de quien pide no llega al modelo, y se 
   assert.deepEqual(material.omitidos, ['regalo-reservado', 'ajeno']);
 });
 
-test('la frase se queda en la primera, sin comillas y recortada', () => {
-  assert.equal(
-    interpretarChispa('  «Hípica otra vez. El caballo ya os conoce.»  '),
-    'Hípica otra vez. El caballo ya os conoce.',
-  );
-  // El párrafo en el que el modelo explica el chiste se queda fuera.
-  assert.equal(
-    interpretarChispa('Hípica otra vez.\n\nHe usado la ironía porque…'),
-    'Hípica otra vez.',
-  );
+test('la tanda son cinco líneas, sin numeración ni comillas y recortadas', () => {
+  const frases = interpretarChispas([
+    '1. Hípica otra vez. El caballo ya os conoce.',
+    '2. «Miércoles: ni lunes ni viernes.»',
+    '3) Viaje el jueves. La maleta no se hace sola.',
+    '- Agenda vacía. Aprovechad.',
+    '5. ' + 'a'.repeat(400),
+    '6. Esta sobra.',
+  ].join('\n'));
+
+  assert.equal(frases.length, 5);
+  assert.equal(frases[0], 'Hípica otra vez. El caballo ya os conoce.');
+  assert.equal(frases[1], 'Miércoles: ni lunes ni viernes.');
+  assert.equal(frases[3], 'Agenda vacía. Aprovechad.');
   // Dos líneas de teléfono y ni una más.
-  assert.equal(interpretarChispa('a'.repeat(400)).length, 160);
-  assert.equal(interpretarChispa(null), '');
+  assert.equal(frases[4].length, 160);
 });
 
-test('el encargo de la frase prohíbe nombrar regalos, que es la única regla que no es de estilo', () => {
+test('sin nada que interpretar la tanda es vacía, y entonces no se enseña línea', () => {
+  assert.deepEqual(interpretarChispas(null), []);
+  assert.deepEqual(interpretarChispas('   '), []);
+});
+
+test('las ya enseñadas viajan para que la segunda tanda no repita a la primera', () => {
+  const material = componerMaterialDeChispa(CASA, {
+    fecha: '2026-04-14',
+    eventos: ['e1'],
+    tema: 'Entreno',
+    descartadas: ['Hípica otra vez.', '  ', 'Miércoles: ni lunes ni viernes.'],
+  });
+
+  assert.deepEqual(material.lineas.slice(-3), [
+    'Ya has escrito estas hoy, escribe otras distintas:',
+    '  Hípica otra vez.',
+    '  Miércoles: ni lunes ni viernes.',
+  ]);
+});
+
+test('el encargo de la frase pide cinco y prohíbe nombrar regalos', () => {
+  assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /CINCO frases distintas entre sí/);
   assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /no nombres nunca\s+regalos, ideas ni deseos/);
 
   const publica = configuracionPublica({

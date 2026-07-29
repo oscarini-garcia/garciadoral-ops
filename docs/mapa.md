@@ -169,7 +169,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
-- `POST /api/ia/chispa` — la frase con la que abre la pantalla de Hoy
+- `POST /api/ia/chispa` — cinco frases para la pantalla de Hoy
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
 
 ## Workflows
@@ -245,7 +245,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**276** en total.
+**278** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -261,7 +261,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/avisos.test.js` — 23
 - `api/test/cuenta.test.js` — 6
 - `api/test/lio.test.js` — 23
-- `api/test/redaccion.test.js` — 61
+- `api/test/redaccion.test.js` — 63
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11

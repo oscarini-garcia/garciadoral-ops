@@ -94,8 +94,8 @@ export function vaciarCola(hastaOrden) {
 
 export function olvidarTodo() {
   // Los últimos elegidos son de quien tiene la sesión, igual que la
-  // instantánea: cambiar de persona en este dispositivo no puede dejarlos. Y la
-  // frase del día, por lo mismo: está escrita para quien se va.
+  // instantánea: cambiar de persona en este dispositivo no puede dejarlos. Y las
+  // frases del día, por lo mismo: están escritas para quien se va.
   olvidarUltimos();
   try {
     localStorage.removeItem(CLAVE_CHISPA);
@@ -173,36 +173,42 @@ function olvidarUltimos() {
   }
 }
 
-// ------------------------------------------------------ La frase de este día --
+// ----------------------------------------------------- Las frases de este día --
 
 const CLAVE_CHISPA = 'agenda.chispa';
 
 /**
- * La frase del día, guardada con el día al que pertenece.
+ * Las frases del día, con el día al que pertenecen y por cuál se va.
  *
- * Aquí y no en el registro porque no es del hogar: cada uno recibe la suya,
- * compuesta de lo que ese uno puede ver. Y con la fecha dentro en lugar de una
- * clave por día, que es lo que hace que no haya nada que barrer: la de ayer no
- * se borra, se deja de reconocer.
+ * Aquí y no en el registro porque no son del hogar: cada uno recibe las suyas,
+ * compuestas de lo que ese uno puede ver. Y con la fecha dentro en lugar de una
+ * clave por día, que es lo que hace que no haya nada que barrer: las de ayer no
+ * se borran, se dejan de reconocer.
+ *
+ * Vienen de cinco en cinco y se enseñan de una en una, así que hay que guardar
+ * también por dónde va: sin el índice, cerrar la aplicación volvería a la
+ * primera y las cuatro restantes no se verían nunca.
  *
  * Es un capricho, así que no se defiende de nada: sin sitio en el almacén se
- * pierde y al día siguiente se vuelve a pedir.
+ * pierden y al día siguiente se vuelven a pedir.
  */
 export function chispaGuardada(fecha) {
   try {
     const guardada = JSON.parse(localStorage.getItem(CLAVE_CHISPA) || 'null');
-    return guardada && guardada.fecha === fecha && typeof guardada.frase === 'string'
-      ? guardada.frase
-      : null;
+    if (!guardada || guardada.fecha !== fecha) return null;
+    const frases = (guardada.frases || []).filter((f) => typeof f === 'string' && f);
+    if (!frases.length) return null;
+    const cual = Number.isInteger(guardada.cual) ? guardada.cual : 0;
+    return { frases, cual: Math.min(Math.max(cual, 0), frases.length - 1) };
   } catch {
     return null;
   }
 }
 
-export function guardarChispa(fecha, frase) {
+export function guardarChispa(fecha, frases, cual = 0) {
   try {
-    localStorage.setItem(CLAVE_CHISPA, JSON.stringify({ fecha, frase }));
+    localStorage.setItem(CLAVE_CHISPA, JSON.stringify({ fecha, frases, cual }));
   } catch {
-    /* sin sitio, mañana se vuelve a pedir */
+    /* sin sitio, mañana se vuelven a pedir */
   }
 }

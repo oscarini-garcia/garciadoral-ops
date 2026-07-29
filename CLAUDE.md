@@ -227,8 +227,12 @@ pendiente. El hook lo inyecta al final del mapa.
   (`agenda.chispa` en `localStorage`, con su fecha dentro, que es lo que hace que
   no haya nada que barrer: la de ayer no se borra, se deja de reconocer). Pedirla
   en cada apertura la cambiaría al volver de la pestaña de al lado y dejaría de
-  ser la frase *del día*; se toca y se cambia, que es la única manera de pedir
-  otra. **Cada uno recibe la suya**, compuesta de su propia instantánea, y por
+  ser la frase *del día*; se toca y pasa a la siguiente. **Vienen de cinco en
+  cinco y se enseñan de una en una**, así que el guardado lleva también por cuál
+  se va —sin el índice, cerrar la aplicación volvería a la primera y las otras
+  cuatro no se verían nunca—: cuesta lo mismo que pedir una, el toque contesta en
+  el acto, y al gastar las cinco se pide otra tanda con las ya enseñadas dentro
+  para que no repita. **Cada uno recibe la suya**, compuesta de su propia instantánea, y por
   eso la regla de ocultación se cumple sola: una sola para toda la casa habría
   obligado a inventar una instantánea «pública» que no existe. La maquinaria es
   la de los otros cuatro —mismo freno por minuto, misma cadena de modelos,

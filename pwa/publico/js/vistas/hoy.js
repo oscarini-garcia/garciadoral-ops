@@ -135,9 +135,12 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
  * broma a destiempo; delante de lo demás, porque los días con peticiones son los
  * menos y el resto queda justo bajo el saludo, que es donde se pidió.
  *
- * **Una al día y guardada en el teléfono.** Es lo que la hace la frase *del
- * día*: pedida en cada apertura cambiaría al volver de la pestaña de al lado y
- * dejaría de ser nada. Se toca y se cambia, que es la única manera de pedir otra.
+ * **Cinco de golpe, de una en una y guardadas en el teléfono.** Lo primero es lo
+ * que la hace la frase *del día*: pedida en cada apertura cambiaría al volver de
+ * la pestaña de al lado y dejaría de ser nada. Lo segundo es lo que hace que
+ * tocarla conteste en el acto: la siguiente ya está aquí, y solo al gastar las
+ * cinco se pide otra tanda —diciéndole al modelo cuáles ha escrito ya, para que
+ * la segunda no repita a la primera—.
  *
  * Sin frase no hay hueco, ni rótulo, ni mensaje: sin clave de Anthropic puesta
  * esta línea no existe, igual que no existe el botón de la IA al compartir.
@@ -149,8 +152,8 @@ function laChispa(dia, ctx) {
   // de esta tarde no pida la frase con la instantánea de esta mañana.
   chispa.apuntar(dia, ctx);
 
-  const guardada = chispaGuardada(iso(dia));
-  if (guardada !== null) chispa.escribir(guardada);
+  const guardadas = chispaGuardada(iso(dia));
+  if (guardadas) chispa.poner(guardadas.frases, guardadas.cual);
   else chispa.pedir();
 
   return chispa.nodo;
@@ -173,14 +176,23 @@ function construirChispa() {
   const nodo = el('button', { class: 'hoy-chispa', type: 'button', hidden: true });
   let dia = null;
   let ctx = null;
+  let frases = [];
+  let cual = 0;
   let pidiendo = false;
 
-  const escribir = (frase) => {
+  const escribir = () => {
+    const frase = frases[cual] || '';
     nodo.textContent = frase;
     nodo.hidden = !frase;
     nodo.dataset.estado = 'lista';
     nodo.setAttribute('aria-label', frase ? `${frase}. Tocar para otra.` : '');
     nodo.setAttribute('title', 'Otra frase');
+  };
+
+  const poner = (lista, desde = 0) => {
+    frases = lista;
+    cual = desde;
+    escribir();
   };
 
   const pedir = async () => {
@@ -192,22 +204,37 @@ function construirChispa() {
 
     const fecha = iso(dia);
     const { eventos, proximos } = loQueHayAlrededor(dia, ctx);
-    const frase = await escribirLaChispa(fecha, eventos, proximos);
+    // Las que ya se han enseñado hoy viajan con la petición: sin ellas, la
+    // segunda tanda es la primera otra vez con otras palabras.
+    const nuevas = await escribirLaChispa(fecha, eventos, proximos, frases);
     pidiendo = false;
 
     // Solo se guarda lo que ha salido. Un día sin clave o sin cobertura no
-    // escribe una frase vacía en el almacén: se vuelve a intentar al abrir.
-    if (frase) guardarChispa(fecha, frase);
-    escribir(frase);
+    // escribe una tanda vacía en el almacén: se vuelve a intentar al abrir, y
+    // mientras tanto se queda lo que hubiera.
+    if (!nuevas.length) { escribir(); return; }
+    guardarChispa(fecha, nuevas, 0);
+    poner(nuevas, 0);
   };
 
-  nodo.onclick = () => { toque(); pedir(); };
+  /** Tocar enseña la siguiente de la tanda, y solo al gastarla pide otra. */
+  const siguiente = () => {
+    if (cual + 1 < frases.length) {
+      cual += 1;
+      guardarChispa(iso(dia), frases, cual);
+      escribir();
+      return;
+    }
+    pedir();
+  };
+
+  nodo.onclick = () => { toque(); siguiente(); };
 
   return {
     nodo,
-    escribir,
+    poner,
     pedir,
-    apuntar: (cual, contexto) => { dia = cual; ctx = contexto; },
+    apuntar: (cuando, contexto) => { dia = cuando; ctx = contexto; },
   };
 }
 
