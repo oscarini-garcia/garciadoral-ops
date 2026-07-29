@@ -54,6 +54,8 @@ tener que recorrer la aplicación entera cada vez.
   derivarEstados
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
+- **ical.js** — Parser de iCalendar (RFC 5545), reducido a lo que un calendario de viajes necesita…
+  ZONA · parsearICal
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
@@ -75,6 +77,8 @@ tener que recorrer la aplicación entera cada vez.
   Rechazo · TOPE_PENDIENTES · purgarCaducadas · solicitudPorApple · anotarLlegada
   contarPendientes · pendientes · registrarSolicitud · retirarSolicitud · rechazarSolicitud
   …y 1 más
+- **viajes.js** — El calendario de viajes: descarga del feed, reconciliación y sello.
+  CALENDARIO_VIAJES · idDeViaje · reconciliarViajes · sincronizarViajes
 - **visibilidad.js** — Función de visibilidad, aplicada en el servidor antes de transmitir.
   destinatariosDeIdea · destinatariosDeRegalo · destinatariosDeEvento · visible
   visiblePublicamente
@@ -163,6 +167,7 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/solicitudes` — bandeja de quien espera (administradores)
 - `POST /api/solicitudes/resolver` — aprueba o rechaza (administradores)
 - `GET  /api/registro` — registro completo para el generador del plan semanal
+- `POST /api/viajes/sincronizar` — descarga el calendario de viajes ahora (servicio)
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
@@ -188,6 +193,8 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
 - **`specs/autenticacion.md`**
   `api/src/index.js` §7 · `api/src/solicitudes.js` §2, §9 · `pwa/publico/js/native.js` §8
   `pwa/publico/js/sesion.js` §8
+- **`specs/calendario-viajes.md`**
+  `api/src/ical.js` §4 · `api/src/index.js` §5.1 · `api/src/viajes.js`
 - **`specs/despachador.md`**
   `scripts/agenda/__init__.py` §8 · `scripts/agenda/modelo.py` §5
   `scripts/agenda/semana.py` §8 · `scripts/callmebot.py` §6 · `scripts/despachar.py`
@@ -242,10 +249,11 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 `APNS_CLAVE_ID` · `APNS_CLAVE_P8` · `APNS_ENTORNO` · `APNS_TOPICO` · `APPLE_AUD_IOS`
 `APPLE_AUD_WEB` · `APPLE_CLAVE_ID` · `APPLE_CLAVE_P8` · `APPLE_EQUIPO` · `DB`
 `ORIGENES_PERMITIDOS` · `REDIRECCION_WEB` · `SESION_SECRETO` · `TOKEN_SERVICIO`
+`VIAJES_ICAL_URL`
 
 ## Pruebas
 
-**278** en total.
+**298** en total.
 
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
@@ -260,6 +268,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/apns.test.js` — 11
 - `api/test/avisos.test.js` — 23
 - `api/test/cuenta.test.js` — 6
+- `api/test/ical.test.js` — 10
 - `api/test/lio.test.js` — 23
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
@@ -268,6 +277,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/redaccion.test.js` — 13
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
+- `api/test/viajes.test.js` — 10
 - `api/test/visibilidad.test.js` — 11
 
 Lo que ejecuta la integración continua:

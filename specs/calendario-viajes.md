@@ -179,3 +179,27 @@ Las decisiones que este documento dejaba abiertas quedan resueltas:
 5. **Alcance: solo el calendario de viajes.** El modelo admite varias fuentes, pero no se conecta ni se generaliza ninguna otra por ahora. Si en el futuro se añade un calendario escolar o deportivo, cada uno se asociará a su tipo de evento por defecto sin cambios en este diseño; se revisará entonces.
 
 No restan decisiones abiertas en esta iteración.
+
+---
+
+## 11. Realización
+
+La integración se implementa dentro del Worker, que es donde vive el registro
+canónico y desde donde manda la spec descargar el feed (apartado 5.1):
+
+- **Descarga y reconciliación** en `api/src/viajes.js`, sobre el parser sin
+  dependencias `api/src/ical.js`. El disparador es un **cron del propio Worker**
+  (`[triggers]` en `api/wrangler.toml`, `scheduled()` en `api/src/index.js`),
+  diario; más una ruta `POST /api/viajes/sincronizar`, autenticada con el token
+  de servicio, para el "sincronizar ahora" de Ajustes.
+- **El identificador del evento se deriva del UID** (`idDeViaje`), de modo que
+  el "identificador externo" del apartado 6.1 y el `id` interno son el mismo: el
+  emoji propio, que vive en la fila del evento, sobrevive a las sincronizaciones
+  sin necesidad de una tabla de solapa aparte.
+- **Detección de cambios por comparación de contenido**, no por `SEQUENCE`: los
+  feeds de Google no lo pueblan de forma fiable. El importador solo reescribe
+  —y con ello resella la última modificación— cuando algún campo de contenido
+  difiere, y **nunca toca el emoji**.
+- **La fuente es única y sembrada** por `api/migraciones/0014_viajes.sql`; no hay
+  pantalla de gestión de calendarios (apartado 10). El secreto `VIAJES_ICAL_URL`
+  se registra en el despliegue (`docs/despliegue-cloudflare.md` §2.2).

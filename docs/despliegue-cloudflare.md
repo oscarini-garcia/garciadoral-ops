@@ -127,6 +127,38 @@ sala de espera— y que se registran en el paso
 4.5, porque salen de la cuenta de Apple Developer. Todo lo demás funciona sin
 ellos.
 
+### 2.2 El calendario de viajes (opcional)
+
+Si quiere que los viajes de un calendario de Google aparezcan en la agenda, un
+secreto más: **`VIAJES_ICAL_URL`**, la dirección privada del feed iCal
+(`specs/calendario-viajes.md`). En Google Calendar es *Configuración del
+calendario → Integrar calendario → Dirección secreta en formato iCal*, la que
+acaba en `basic.ics`. Es una credencial —quien la tiene lee el calendario—, por
+eso es secreto y no una variable, y por eso no está en el repositorio.
+
+```bash
+wrangler secret put VIAJES_ICAL_URL   # pegue la URL privada entera, la de basic.ics
+```
+
+El cron diario del Worker (declarado en `[triggers]` de `api/wrangler.toml`) la
+descarga, reconcilia los viajes en el registro y sella la última sincronización.
+Sin este secreto el cron no hace nada y no pasa nada más: todo lo demás funciona
+igual. Si la URL se filtra, se restablece en Google y se vuelve a registrar aquí;
+el `id` del calendario no cambia, así que los viajes ya importados siguen su
+curso. Puede comprobar la URL antes de registrarla:
+
+```bash
+curl -sSL -o /tmp/viajes.ics -w 'HTTP %{http_code} · %{size_download} bytes\n' "$VIAJES_ICAL_URL"
+grep -c 'BEGIN:VEVENT' /tmp/viajes.ics
+```
+
+Y forzar una sincronización sin esperar al cron, con el token de servicio:
+
+```bash
+curl -sS -X POST https://<su-worker>.workers.dev/api/viajes/sincronizar \
+  -H "Authorization: Bearer $TOKEN_SERVICIO"
+```
+
 La **clave de Anthropic**, en cambio, no es un secreto del Worker: se guarda en
 la base de datos desde *Ajustes → Inteligencia artificial*, dentro de la propia
 aplicación y solo para administradores. Es lo que enciende las tres cosas que la

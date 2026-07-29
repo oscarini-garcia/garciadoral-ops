@@ -42,6 +42,10 @@ APNS_ENTORNO = "produccion"
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:
 #   SESION_SECRETO  · clave con la que este Worker firma las sesiones
 #   TOKEN_SERVICIO  · credencial del generador del plan semanal (AGENDA_TOKEN)
+#   VIAJES_ICAL_URL · URL privada del feed iCal del calendario de viajes. Es una
+#                     credencial (quien la tiene lee el calendario), por eso es
+#                     secreto y no una var. Sin ella, el cron no hace nada y no
+#                     pasa nada más (calendario-viajes.md §8). Rotable en Google.
 #
 # Y los tres de la revocación ante Apple, que se usan en las dos bajas: la de una
 # cuenta y la de una solicitud sin aprobar. Sin
@@ -59,6 +63,14 @@ APNS_ENTORNO = "produccion"
 # reaprovecha de arriba. Consulte docs/despliegue-cloudflare.md §4.6.
 #   APNS_CLAVE_P8   · contenido del fichero .p8 de la clave de APNs
 #   APNS_CLAVE_ID   · identificador de esa clave (Key ID)
+
+# El calendario de viajes se sincroniza con un cron del propio Worker: una vez
+# al día, minuto y hora desplazados de :00 a propósito, proporcionado a que
+# Google regenera el feed cada varias horas (`specs/calendario-viajes.md` §5.4).
+# La descarga la hace el servidor, no el dispositivo (§5.1). El feed es un
+# secreto —`VIAJES_ICAL_URL`, con `wrangler secret put`— y no va en este fichero.
+[triggers]
+crons = ["17 5 * * *"]
 
 [observability]
 enabled = true
