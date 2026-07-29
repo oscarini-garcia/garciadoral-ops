@@ -264,9 +264,14 @@ class Regalo:
 class Paseo:
     """Un turno de Lío que ya no se deriva del cuadro.
 
-    Existe cuando alguien marcó que lo sacó o cuando se acordó un cambio para
-    ese día. Desde entonces manda sobre el cuadro semanal, que es lo que hace
-    que cambiar el reparto no reescriba el pasado.
+    Existe cuando alguien marcó que lo sacó, cuando se acordó un cambio para ese
+    día, o cuando se contestó que no salió. Desde entonces manda sobre el cuadro
+    semanal, que es lo que hace que cambiar el reparto no reescriba el pasado.
+
+    **Que no salió se guarda con `hecho_en` y sin `hecho_por_id`**: hay
+    respuesta, pero no hay quien lo sacara. Es lo único que distingue no haber
+    salido —que se sabe— de no haberlo apuntado, que es no saberlo y no tiene
+    fila ninguna.
     """
 
     id: str

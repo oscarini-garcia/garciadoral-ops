@@ -30,7 +30,7 @@ import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
 import {
   TURNOS, cogerTurno, desmarcar, genteDeCasa, hayLio, inicialesDe, inicioDeVentana,
-  marcarHecho, nombreDeTurno, pedirCambio, resolverPropuesta, retirarPropuesta,
+  marcarHecho, marcarNoHecho, nombreDeTurno, pedirCambio, resolverPropuesta, retirarPropuesta,
   rotuloDeTurno, turnoDe, turnosDe,
 } from '../lio.js';
 
@@ -487,7 +487,12 @@ export function abrirLioDelDia(fecha, ctx) {
 export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
   // Marcar solo cuando la ventana ha abierto: a las cuatro de la tarde nadie
   // puede decir que ha sacado al perro en el turno de noche.
-  const puedeMarcar = turno.estado !== 'hecho' && !turno.trato && turno.empezado;
+  const contestado = turno.estado === 'hecho' || turno.estado === 'no-hecho';
+  const puedeMarcar = !contestado && !turno.trato && turno.empezado;
+  // Y el «no» solo sobre lo propio que ya venció: decir que otro no sacó al
+  // perro es una afirmación sobre lo que hizo otro, y antes de que la ventana
+  // cierre todavía se está a tiempo.
+  const puedeNegar = puedeMarcar && turno.mio && turno.estado === 'sin-marcar';
   const rotulo = rezagado
     ? `Ayer por la ${turno.turno.nombre.toLowerCase()}`
     : nombreDeTurno(turno.turno);
@@ -528,13 +533,32 @@ export function filaDeTurno(turno, ctx, { rezagado = false } = {}) {
         ctx.refrescar();
       },
     }, [icono('visto')]));
-  } else if (turno.estado === 'hecho') {
-    // Hecho es un visto suelto, sin caja: no es una casilla que se desmarque
-    // —eso se hace entrando en el turno— sino la marca de que ya pasó.
+
+    // La otra respuesta, al lado. La pantalla pregunta «¿sacaste a Lío?» y hasta
+    // ahora solo admitía que sí: quien no lo hubiera sacado no tenía manera de
+    // decirlo. Preguntar y dejar contestar una sola cosa es preguntar a medias.
+    if (puedeNegar) {
+      fila.append(el('button', {
+        class: 'lio-aspa', type: 'button',
+        'aria-label': `No lo saqué: ${rotulo.toLowerCase()}`,
+        title: 'No, no salió',
+        onclick: async () => {
+          toque();
+          await marcarNoHecho(ctx.vista.datos, turno);
+          avisar('Anotado: ese turno no salió');
+          ctx.refrescar();
+        },
+      }, [icono('cerrar')]));
+    }
+  } else if (contestado) {
+    // Contestado es un signo suelto, sin caja: no es una casilla que se
+    // desmarque —eso se hace entrando en el turno— sino la marca de que ya pasó.
+    const hecho = turno.estado === 'hecho';
     fila.append(el('span', {
-      class: 'lio-hecho empujar', role: 'img',
-      'aria-label': 'Ya está', title: 'Ya está',
-    }, [icono('visto')]));
+      class: hecho ? 'lio-hecho empujar' : 'lio-nada empujar', role: 'img',
+      'aria-label': hecho ? 'Ya está' : 'No salió',
+      title: hecho ? 'Ya está' : 'No salió',
+    }, [icono(hecho ? 'visto' : 'cerrar')]));
   }
   return fila;
 }
@@ -578,6 +602,9 @@ export function resumenDeTurno(estado, ctx) {
     return estado.hechoPorId === yo
       ? `lo sacaste tú${cuando}`
       : `lo sacó ${ctx.vista.nombre(estado.hechoPorId)}${cuando}`;
+  }
+  if (estado.estado === 'no-hecho') {
+    return estado.mio ? 'no lo sacaste' : `no lo sacó ${ctx.vista.nombre(estado.asignadoId)}`;
   }
   if (estado.estado === 'sin-asignar') return 'sin nadie';
   if (estado.estado === 'sin-marcar') {
@@ -627,8 +654,10 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
 
     const acciones = el('div', { class: 'acciones' });
 
-    if (estado.estado === 'hecho') {
-      if (estado.hechoPorId === yo) {
+    if (estado.estado === 'hecho' || estado.estado === 'no-hecho') {
+      // Deshacer lo contestado, sea el sí o el no. Lo propio y nada más: quitar
+      // de la lista a quien dijo que lo sacó sería desdecir a otro.
+      if (estado.hechoPorId === yo || (estado.estado === 'no-hecho' && estado.mio)) {
         acciones.append(el('button', {
           class: 'boton crecer', type: 'button',
           onclick: () => hecho(() => desmarcar(estado), 'Deshecho'),
@@ -638,13 +667,31 @@ export function abrirTurnoDeLio(fecha, turnoId, ctx) {
       // La ventana está abierta o ya pasó: aquí sí cabe decir que el perro
       // salió. Mientras el día está vivo se escribe en el acto aunque el turno
       // fuera de otro; si ya venció, se le pregunta a quien lo tenía.
+      // Cuando hay dos respuestas, el verbo principal deja de estirarse: con
+      // «Sí, lo saqué», «No salió» y «Cancelar» en la misma línea, estirar el
+      // primero le partía su propio texto en dos renglones. Los tres a su ancho
+      // caben en 350 puntos, medido.
+      const negable = estado.mio && estado.estado === 'sin-marcar';
       acciones.append(el('button', {
-        class: 'boton crecer', type: 'button',
+        class: negable ? 'boton' : 'boton crecer', type: 'button',
         onclick: () => hecho(
           () => marcarHecho(ctx.vista.datos, estado),
           (resultado) => dichoDeMarcar(resultado, ctx),
         ),
       }, [verboDeMarcar(estado)]));
+
+      // Y la otra respuesta. La pantalla pregunta «¿sacaste a Lío?» y hasta ahora
+      // solo admitía que sí: quien no lo hubiera sacado no tenía manera de
+      // decirlo, y el turno se quedaba en «nadie marcó», que no es lo mismo.
+      if (negable) {
+        acciones.append(el('button', {
+          class: 'boton', type: 'button',
+          onclick: () => hecho(
+            () => marcarNoHecho(ctx.vista.datos, estado),
+            'Anotado: ese turno no salió',
+          ),
+        }, ['No salió']));
+      }
     } else if (!estado.mio && estado.asignadoId) {
       // Un turno que aún no ha empezado y que es de otro: se le coge y ya está.
       acciones.append(el('button', {

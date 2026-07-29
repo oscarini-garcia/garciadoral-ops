@@ -208,7 +208,12 @@ pendiente. El hook lo inyecta al final del mapa.
   sobre el cuadro. Eso es lo que hace que cambiar el reparto cambie el futuro y
   no reescriba el pasado; si algún día se toca `lio.js`, esa es la regla que hay
   que no romper —y está en los tres sitios a la vez: `pwa/publico/js/lio.js`,
-  `api/src/lio.js` y `scripts/agenda/lio.py`—. **Y el cuadro tiene vigencia: es la lista de los que ha habido, con el instante
+  `api/src/lio.js` y `scripts/agenda/lio.py`—. **Y a «¿sacaste a Lío?» se puede contestar que no**: el aspa al lado del visto en
+  la fila de Hoy, «No salió» en la hoja, y solo sobre el turno propio. Sin marcar
+  es no saberlo; no haber salido es saber que no. Se guarda con `hecho_en` y sin
+  `hecho_por_id`, que es una combinación que no escribe ninguna otra operación,
+  así que no llevó columna nueva.
+  **Y el cuadro tiene vigencia: es la lista de los que ha habido, con el instante
   desde el que valió cada uno**, porque con uno solo cambiar el reparto reescribía
   hacia atrás los días que nadie marcó. Cada turno se deriva del que gobernaba al
   abrirse su ventana; guardar añade versión salvo que entre dos guardados no se

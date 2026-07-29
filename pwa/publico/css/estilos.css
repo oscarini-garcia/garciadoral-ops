@@ -501,6 +501,12 @@ button { background: none; border: 0; cursor: pointer; }
   background: transparent; border-color: var(--aviso); border-style: dashed; color: var(--aviso);
 }
 .lio-marca[data-estado="sin-asignar"] { background: transparent; color: var(--ink-faint); }
+/* Contestado que no salió: ni relleno como lo hecho ni de aviso como lo que
+   sigue sin contestar. Es un turno resuelto, y lo que dice es que ese día el
+   perro no salió; el trazo continuo y apagado lo separa de las dos cosas. */
+.lio-marca[data-estado="no-hecho"] {
+  background: transparent; border-color: var(--line); color: var(--ink-faint);
+}
 
 /* El turno propio se dice con el fondo y no con un anillo alrededor. El anillo
    se salía de la pastilla y llamaba más la atención que el estado del turno,
@@ -569,6 +575,9 @@ button { background: none; border: 0; cursor: pointer; }
   background: var(--paper-2); padding: 9px 12px;
 }
 .lio-fila[data-estado="hecho"] { background: var(--tinta-suave); border-color: transparent; }
+/* Contestado que no salió: sin tinte, porque no hay nada que celebrar, pero
+   tampoco nada pendiente. */
+.lio-fila[data-estado="no-hecho"] { background: transparent; }
 
 /* Lo de ayer que se quedó sin marcar se distingue por lo que dice —«Ayer por la
    mañana» y la pregunta debajo—, no por un recuadro de color. El borde de aviso
@@ -613,6 +622,22 @@ button { background: none; border: 0; cursor: pointer; }
    eso ya pasó. Es el mismo signo que lleva una idea ya seleccionada. */
 .lio-hecho { flex: none; display: grid; place-items: center; width: 34px; color: var(--tinta); }
 .lio-hecho .icono-svg svg { width: 19px; height: 19px; }
+
+/* El «no» de la pregunta de Hoy, al lado del visto: la misma casilla redonda,
+   porque son las dos respuestas a lo mismo y tienen que pesar igual. Una
+   pregunta con una sola contestación posible no es una pregunta. */
+.lio-aspa {
+  flex: none; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--paper);
+  color: var(--ink-faint); cursor: pointer; margin-left: 8px;
+}
+.lio-aspa:hover { color: var(--regalo); border-color: var(--regalo); }
+.lio-aspa .icono-svg svg { width: 16px; height: 16px; }
+/* Y contestado que no, el aspa suelta y apagada: ya está resuelto, y no es una
+   casilla que se desmarque de un toque. */
+.lio-nada { flex: none; display: grid; place-items: center; width: 34px; color: var(--ink-faint); }
+.lio-nada .icono-svg svg { width: 17px; height: 17px; }
 
 /* -------------------------------------------------------- Vista de semana -- */
 
