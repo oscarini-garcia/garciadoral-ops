@@ -131,8 +131,10 @@ pendiente. El hook lo inyecta al final del mapa.
   rato sin subir— lo dice **una línea en la subcabecera de Hoy**, y solo cuando
   pasa; y la demostración conserva **pastilla escrita permanente** en la cabecera,
   porque es lo único que cambia el significado de todo lo que se ve. **Y cuando falla dice por qué**: el estado
-  guarda el motivo —«la API respondió 500», «no se ha podido contactar con la
-  API»— y lo escriben Ajustes y el `title` de esa línea. Antes se tiraba, y el
+  guarda el motivo —«la API respondió 500», «no se pudo abrir la conexión segura
+  con la API»— y lo escriben Ajustes y el `title` de esa línea. **Ese renglón se
+  toca y se copia**, con el mensaje crudo del navegador dentro: un error de TLS no
+  se transcribe a mano desde un teléfono. Antes se tiraba, y el
   panel acababa diciendo «no se ha podido: sin sincronizar», que es la misma
   frase dos veces.
 - **Los comentarios ya no están enchufados a medias.** La lista de tipos vive en
