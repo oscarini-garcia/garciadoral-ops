@@ -1007,23 +1007,43 @@ function turnoDelCuadro(cuadro, turno, dia, casa, vueltas) {
  * la clave, el modelo o la instrucción.
  */
 /**
- * El calendario de viajes en Ajustes: cuándo se sincronizó por última vez y un
- * botón para traerlo ahora. El contenido de los viajes se corrige en Google
- * (`specs/calendario-viajes.md`); esta pantalla no edita nada, solo dispara la
- * descarga que hace el servidor y refresca la instantánea al terminar.
+ * El calendario de viajes en Ajustes: cuándo se sincronizó por última vez, un
+ * botón para traerlo ahora y un panel de diagnóstico. El contenido de los
+ * viajes se corrige en Google (`specs/calendario-viajes.md`); esta pantalla no
+ * edita nada, solo dispara la descarga que hace el servidor y muestra en qué
+ * quedó, que es lo que hace falta cuando «no sale nada» para saber por qué:
+ *
+ * - **calendario ausente de la instantánea** → falta la migración 0014, o el
+ *   Worker desplegado no lleva el cambio que lo transmite;
+ * - **estado `sin-configurar`** → el secreto `VIAJES_ICAL_URL` no llegó al Worker;
+ * - **estado `sin-calendario`** → la fila del calendario no está sembrada;
+ * - **`ok` con 0 altas y 0 viajes cargados** → el feed no trajo eventos;
+ * - **viajes cargados pero ninguno a la vista** → son de fechas ya pasadas.
  */
 function bloqueDeViajes(seccion) {
   const calendario = () =>
     (instantanea().calendarios_externos || []).find((c) => c.id === 'cal-viajes');
+  const importados = () =>
+    (instantanea().eventos || []).filter((e) => e.origen === 'importado');
 
-  const textoDeEstado = () => {
-    const sello = calendario()?.ultima_sincronizacion;
-    return sello ? `Última sincronización: ${formatearHace(new Date(sello))}.` : 'Todavía sin sincronizar.';
+  const diagnostico = el('pre', { class: 'traza' });
+  const pintar = (ultimoIntento) => {
+    const cal = calendario();
+    const viajes = importados();
+    const fechas = viajes.map((e) => e.inicio).filter(Boolean).sort();
+    const lineas = [
+      `Calendario en la instantánea: ${cal ? 'sí' : 'NO — ¿migración 0014 aplicada y Worker desplegado?'}`,
+      cal ? `  última sincronización: ${cal.ultima_sincronizacion || 'nunca'}` : null,
+      `Viajes importados cargados: ${viajes.length}`,
+      fechas.length ? `  fechas: de ${fechas[0]} a ${fechas[fechas.length - 1]}` : null,
+      `Versión de la app: ${VERSION_APP}`,
+      ultimoIntento ? `Último intento: ${ultimoIntento}` : null,
+    ].filter((linea) => linea !== null);
+    diagnostico.textContent = lineas.join('\n');
   };
+  pintar();
 
-  const linea = el('p', { class: 'pista', texto: textoDeEstado() });
   const boton = el('button', { class: 'boton crecer', type: 'button' }, ['Sincronizar ahora']);
-
   boton.onclick = async () => {
     const antes = boton.textContent;
     boton.disabled = true;
@@ -1031,6 +1051,7 @@ function bloqueDeViajes(seccion) {
     try {
       const resultado = await refrescarViajes();
       await sincronizar();
+      pintar(JSON.stringify(resultado));
       if (resultado.estado === 'ok') {
         const cambios = (resultado.altas || 0) + (resultado.cambios || 0) + (resultado.bajas || 0);
         avisar(cambios
@@ -1039,8 +1060,8 @@ function bloqueDeViajes(seccion) {
       } else {
         avisar(`No se ha podido sincronizar (${resultado.estado}).`);
       }
-      linea.textContent = textoDeEstado();
     } catch (error) {
+      pintar(`error: ${error.message}`);
       avisar(`No se ha podido sincronizar: ${error.message}`);
     } finally {
       boton.disabled = false;
@@ -1048,7 +1069,7 @@ function bloqueDeViajes(seccion) {
     }
   };
 
-  seccion.append(linea, el('div', { class: 'acciones' }, [boton]));
+  seccion.append(diagnostico, el('div', { class: 'acciones' }, [boton]));
 }
 
 function bloqueDeRedaccion(seccion) {
