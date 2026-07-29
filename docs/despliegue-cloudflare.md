@@ -197,6 +197,15 @@ repetir sin consecuencias. Quedan fuera dos clases de fichero:
   se escribe el nombre del fichero, se lanza una vez, y se deja vacío en
   adelante. Si el nombre no existe, el workflow para antes de tocar nada.
 
+  **Pedir una que ya estaba no cuesta el despliegue.** El paso va antes de
+  desplegar —el código nuevo puede necesitar la columna—, así que cortarse ahí
+  dejaría el Worker sin subir; y equivocarse es fácil, porque lo único que dice
+  cuáles faltan es una lista escrita a mano en `CLAUDE.md`. Cuando la base
+  contesta `duplicate column name` o `already exists`, el workflow lo anota, sigue
+  y despliega. Cualquier otro fallo de SQL sí para. Si te sale ese aviso, quita
+  esa migración de la lista de pendientes: es la única manera de que no vuelva a
+  pasar.
+
 Sin el secreto, el workflow falla en el paso de desplegar y no toca nada: el
 despliegue sigue siendo el de siempre, `npm run desplegar`.
 

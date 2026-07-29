@@ -250,18 +250,18 @@ pendiente. El hook lo inyecta al final del mapa.
   turno a turno. La atadura que tenía —que el aviso de pedirte un cambio no podía
   empujarse— **se ha levantado**: eso son ahora los avisos remotos, y Lío suena
   entero.
-- **Quedan dos migraciones por aplicar, y las dos son de un solo uso.**
-  `0012_apunte_hecho.unavez.sql` añade la casilla de la lista de la compra —sin
-  ella, tachar algo de «Llevar» lo rechaza la base— y
-  `0013_avisos_push.unavez.sql` añade el token del aparato —sin ella no hay dónde
-  guardarlo y el interruptor de Avisos no llega a encenderse—. Las dos llevan
-  `ALTER TABLE`, así que **no se pueden repetir**: se escribe su nombre en el
-  campo de la migración de un solo uso al desplegar la API, una en cada pasada.
-  Las once anteriores están puestas, incluidas
-  las tres `.unavez` —los círculos (`0005`), el género (`0006`) y la `0009`, que
-  rehizo `comentario` para quitarle el `CHECK`—, que no se vuelven a pedir porque
-  no se pueden repetir: el `ALTER TABLE` falla si la columna ya está, y rehacer una
-  tabla dos veces es copiar y tirar sin motivo. El paquete que las llevó todas
+- **No queda ninguna migración por aplicar.** Las trece están puestas, incluidas
+  las cinco `.unavez` —los círculos (`0005`), el género (`0006`), la `0009` que
+  rehizo `comentario` para quitarle el `CHECK`, la `0012` de la casilla de la
+  lista de la compra y la `0013` del token del aparato—. **Estas dos últimas
+  estuvieron apuntadas aquí como pendientes después de aplicarse**, y esa mentira
+  costó tres despliegues en rojo: quien se fía de esta lista vuelve a pedirlas y
+  el `ALTER TABLE` contesta `duplicate column name`. Si una `.unavez` se repite
+  ahora, el despliegue lo dice y **sigue** en lugar de cortarse, pero **este
+  apartado hay que actualizarlo al aplicar una**, que es lo único que impide que
+  vuelva a pasar. Ninguna de las cinco se vuelve a pedir porque no se pueden
+  repetir: el `ALTER TABLE` falla si la columna ya está, y rehacer una tabla dos
+  veces es copiar y tirar sin motivo. El paquete que las llevó todas
   juntas —`todas-las-pendientes.unavez.sql`, con su prueba— se borró al aplicarse,
   que era lo previsto: valía para una sola noche y las numeradas son las que
   cuentan la historia. **Al escribir una nueva**: corriente si se puede repetir
