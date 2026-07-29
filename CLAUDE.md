@@ -238,9 +238,12 @@ pendiente. El hook lo inyecta al final del mapa.
   la de los otros cuatro —mismo freno por minuto, misma cadena de modelos,
   instrucción editable en Ajustes (`ia.chispa`)—; lo suyo es el material y
   **el tema al azar**, sacado de los tipos de evento que la casa usa de verdad,
-  que es lo que salva los días vacíos. Dos reglas que no son de estilo: el
-  encargo **prohíbe nombrar regalos, ideas y deseos** aunque el material nunca se
-  los dé, porque esta es la pantalla que se lee con alguien al lado; y
+  que es lo que salva los días vacíos. **El tono se le marca a mano** —ironía seca, insinuar en vez de
+  decir, y prohibidos los tacos y las exclamaciones—, porque sin decírselo no lo
+  acierta: la primera tanda de verdad trajo un taco puesto para dar énfasis. Dos
+  reglas más que no son de estilo: el encargo **prohíbe nombrar regalos, ideas y
+  deseos** aunque el material nunca se los dé, porque esta es la pantalla que se
+  lee con alguien al lado; y
   `/api/ia/chispa` **contesta 200 con la frase vacía** en vez de 503 cuando algo
   falla, porque nadie ha pedido nada y no hay a quién darle el error: la línea
   sencillamente no aparece. Está en `specs/ux.md` §6.5 y el porqué de cada

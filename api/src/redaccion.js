@@ -129,6 +129,14 @@ export const INSTRUCCION_APUNTE_POR_DEFECTO = [
  * chiste de calendario, y no se mete con nadie de la casa: quien aparece en la
  * frase es quien la va a leer.
  *
+ * **Y el registro se le marca a mano**, porque sin decírselo no lo acierta: se
+ * le pide ironía seca —insinuar en vez de decir, quedarse corto antes que
+ * pasarse— y se le prohíben los tacos, las exclamaciones y el humor de barra.
+ * Sin esa prohibición se suelta: la primera tanda de verdad trajo un «coño»
+ * puesto para dar énfasis, que es exactamente lo que hace una frase cuando no
+ * confía en su propia gracia. Una broma que necesita levantar la voz ya la ha
+ * perdido, y esta se lee en voz alta en la cocina.
+ *
  * **Se piden cinco de golpe y se enseñan de una en una.** Cuesta lo mismo que
  * pedir una —el encargo y el material son casi todo lo que se paga, y cinco
  * frases son cuarenta palabras— y hace que tocar la frase conteste al instante
@@ -141,9 +149,12 @@ export const INSTRUCCION_CHISPA_POR_DEFECTO = [
   'doy qué día es, qué hay apuntado hoy, qué viene en los próximos días y un tema',
   'del que tirar si el día está vacío.',
   'Escribe CINCO frases distintas entre sí, de dos líneas como mucho cada una, en',
-  'español de España y tuteando: secas, irónicas y cómplices, de las que arrancan',
-  'media sonrisa a quien ya sabe lo que le espera. Que no sean cinco versiones del',
-  'mismo chiste: cambia de ángulo en cada una.',
+  'español de España y tuteando. El tono es la ironía seca: la gracia está en lo',
+  'que insinúas y no en lo que dices, y en decirlo con calma. Quédate corto antes',
+  'que pasarte, y da por sabido lo que quien lee ya sabe.',
+  'Nada de tacos ni de palabras malsonantes, nada de exclamaciones y nada de',
+  'humor de barra: una frase que necesita levantar la voz ya ha perdido la gracia.',
+  'Que no sean cinco versiones del mismo chiste: cambia de ángulo en cada una.',
   'La gracia sale de lo que te doy, no de un chiste de calendario ni de una frase',
   'motivacional. No te metas con nadie de la casa —quien salga en la frase es',
   'quien la va a leer—, no inventes planes que no estén, y no nombres nunca',
