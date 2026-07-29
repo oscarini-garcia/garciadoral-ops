@@ -261,7 +261,11 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/avisos.test.js` — 23
 - `api/test/cuenta.test.js` — 6
 - `api/test/lio.test.js` — 23
-- `api/test/redaccion.test.js` — 63
+- `api/test/redaccion-chispa.test.js` — 9
+- `api/test/redaccion-cumple.test.js` — 10
+- `api/test/redaccion-dia.test.js` — 17
+- `api/test/redaccion-regalo.test.js` — 14
+- `api/test/redaccion.test.js` — 13
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitudes.test.js` — 14
 - `api/test/visibilidad.test.js` — 11
