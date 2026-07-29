@@ -372,6 +372,8 @@ La barra pasa a cinco entradas —Hoy, Agenda, Regalos, Gente, Sitios—, que es
 
 El panel completo de Ajustes se queda donde estaba, con el relato de las fases apilado. Son dos lecturas distintas de lo mismo: aquí cabe una línea y va la de ahora, y allí se apilan y se leen como lo que ha ido pasando.
 
+**Y bajo el saludo, la frase del día**, que es lo único de la aplicación que no sirve para nada. Dos líneas con guasa sobre lo que hay apuntado —o sobre no haber nada, que es lo más frecuente—, escritas por el modelo, una al día y guardadas en el teléfono: pedirla en cada apertura la cambiaría al volver de la pestaña de al lado y dejaría de ser la frase *del día*. Se toca y se cambia, que es la única manera de pedir otra. Va en cursiva y en serifa porque es una voz y no un dato, y sin caja, sin rótulo y sin icono: una broma dentro de un recuadro con borde pide que la tomes en serio. Su sitio es detrás de lo que espera respuesta y delante de todo lo demás —una broma por encima de lo único que aguarda a alguien es una broma a destiempo, y los días con peticiones son los menos—. Sin clave de Anthropic puesta no hay línea, ni hueco, ni disculpa. La única regla suya que no es de estilo: **el encargo le prohíbe nombrar regalos, ideas y deseos**, aunque el material nunca se los dé, porque esta es la pantalla que se lee con alguien al lado. El porqué de cada decisión está en `specs/propuesta-frase-del-dia.html`.
+
 **Y por arriba, lo de Lío**: primero lo que espera respuesta y después los dos turnos del día. Es el primer bloque que se le añade a esta pantalla y no es estacional, sino de todos los días: marcar que se ha sacado al perro es el gesto que se repite dos veces cada día, y su sitio es donde abre la aplicación. Cómo funciona está en el §10.3.
 
 ---

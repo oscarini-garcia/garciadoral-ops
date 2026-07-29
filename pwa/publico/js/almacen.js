@@ -94,8 +94,14 @@ export function vaciarCola(hastaOrden) {
 
 export function olvidarTodo() {
   // Los últimos elegidos son de quien tiene la sesión, igual que la
-  // instantánea: cambiar de persona en este dispositivo no puede dejarlos.
+  // instantánea: cambiar de persona en este dispositivo no puede dejarlos. Y la
+  // frase del día, por lo mismo: está escrita para quien se va.
   olvidarUltimos();
+  try {
+    localStorage.removeItem(CLAVE_CHISPA);
+  } catch {
+    /* nada que hacer */
+  }
   return transaccion(['documentos', 'cola'], 'readwrite', (tx) => {
     tx.objectStore('documentos').clear();
     tx.objectStore('cola').clear();
@@ -164,5 +170,39 @@ export function recordarElegidos(clave, ids = []) {
 function olvidarUltimos() {
   for (const clave of Object.keys(localStorage)) {
     if (clave.startsWith(PREFIJO_ULTIMOS)) localStorage.removeItem(clave);
+  }
+}
+
+// ------------------------------------------------------ La frase de este día --
+
+const CLAVE_CHISPA = 'agenda.chispa';
+
+/**
+ * La frase del día, guardada con el día al que pertenece.
+ *
+ * Aquí y no en el registro porque no es del hogar: cada uno recibe la suya,
+ * compuesta de lo que ese uno puede ver. Y con la fecha dentro en lugar de una
+ * clave por día, que es lo que hace que no haya nada que barrer: la de ayer no
+ * se borra, se deja de reconocer.
+ *
+ * Es un capricho, así que no se defiende de nada: sin sitio en el almacén se
+ * pierde y al día siguiente se vuelve a pedir.
+ */
+export function chispaGuardada(fecha) {
+  try {
+    const guardada = JSON.parse(localStorage.getItem(CLAVE_CHISPA) || 'null');
+    return guardada && guardada.fecha === fecha && typeof guardada.frase === 'string'
+      ? guardada.frase
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function guardarChispa(fecha, frase) {
+  try {
+    localStorage.setItem(CLAVE_CHISPA, JSON.stringify({ fecha, frase }));
+  } catch {
+    /* sin sitio, mañana se vuelve a pedir */
   }
 }

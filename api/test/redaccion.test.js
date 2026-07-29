@@ -15,20 +15,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  INSTRUCCION_CHISPA_POR_DEFECTO,
   INSTRUCCION_FELICITACION_POR_DEFECTO,
   INSTRUCCION_POR_DEFECTO,
   INSTRUCCION_REGALO_POR_DEFECTO,
   MODELOS_DE_RESERVA,
   cadenaDeModelos,
   componerMaterial,
+  componerMaterialDeChispa,
   componerMaterialDeFelicitacion,
   componerMaterialDePeriodo,
   componerMaterialDeRegalo,
   configuracionPublica,
+  interpretarChispa,
   interpretarFelicitaciones,
   interpretarPropuestas,
   modelosDisponibles,
   redactar,
+  temasDeLaCasa,
 } from '../src/redaccion.js';
 
 // --------------------------------------------------------------- Utilidades --
@@ -672,4 +676,100 @@ test('sin clave configurada no se llama a nadie', async () => {
 
   assert.equal(resultado.texto, null);
   assert.equal(buscar.llamadas.length, 0);
+});
+
+// ----------------------------------------------------- La frase de cada día --
+
+const CASA = {
+  tipos_evento: [
+    { id: 'entreno', nombre: 'Entreno' },
+    { id: 'viaje', nombre: 'Viaje' },
+    { id: 'otro', nombre: 'Otro' },
+  ],
+  eventos: [
+    { id: 'e1', titulo: 'Entreno de hípica', inicio: '2026-04-14T18:00:00', jornada_completa: 0, tipo_id: 'entreno' },
+    { id: 'e2', titulo: 'Entreno de hípica', inicio: '2026-04-21T18:00:00', jornada_completa: 0, tipo_id: 'entreno' },
+    { id: 'e3', titulo: 'Viaje a la sierra', inicio: '2026-04-16T00:00:00', jornada_completa: 1, tipo_id: 'viaje' },
+    { id: 'e4', titulo: 'Recoger un paquete', inicio: '2026-04-15T10:00:00', jornada_completa: 0, tipo_id: 'otro' },
+  ],
+  lio_cuadro: [{ version: 1 }],
+};
+
+test('los temas salen de lo que la casa usa, por cuánto lo usa, y «otro» no cuenta', () => {
+  const temas = temasDeLaCasa(CASA);
+
+  assert.deepEqual(temas, ['Entreno', 'Viaje', 'sacar al perro']);
+});
+
+test('sin perro no se habla del perro', () => {
+  assert.deepEqual(temasDeLaCasa({ ...CASA, lio_cuadro: [], paseos: [] }), ['Entreno', 'Viaje']);
+});
+
+test('la frase se compone con lo de hoy, lo que viene y el tema', () => {
+  const material = componerMaterialDeChispa(CASA, {
+    fecha: '2026-04-14',
+    eventos: ['e1'],
+    proximos: ['e4', 'e3'],
+    tema: 'Entreno',
+  });
+
+  assert.equal(material.titulo, 'La frase de hoy');
+  assert.deepEqual(material.lineas, [
+    'Hoy es martes 14 de Abril',
+    'Hoy hay apuntado:',
+    '  18:00 · Entreno de hípica',
+    'En los próximos días:',
+    '  10:00 · Recoger un paquete',
+    '  todo el día · Viaje a la sierra',
+    'Si el día da poco de sí, tira de este tema: Entreno',
+  ]);
+});
+
+test('un día vacío se le cuenta como vacío, que es de lo que va la frase', () => {
+  const material = componerMaterialDeChispa(CASA, { fecha: '2026-04-14', tema: 'Viaje' });
+
+  assert.deepEqual(material.lineas, [
+    'Hoy es martes 14 de Abril',
+    'Hoy no hay nada apuntado.',
+    'Si el día da poco de sí, tira de este tema: Viaje',
+  ]);
+});
+
+test('lo que no está en la instantánea de quien pide no llega al modelo, y se anota', () => {
+  const material = componerMaterialDeChispa(CASA, {
+    fecha: '2026-04-14',
+    eventos: ['e1', 'regalo-reservado'],
+    proximos: ['ajeno'],
+  });
+
+  assert.deepEqual(material.lineas, [
+    'Hoy es martes 14 de Abril',
+    'Hoy hay apuntado:',
+    '  18:00 · Entreno de hípica',
+  ]);
+  assert.deepEqual(material.omitidos, ['regalo-reservado', 'ajeno']);
+});
+
+test('la frase se queda en la primera, sin comillas y recortada', () => {
+  assert.equal(
+    interpretarChispa('  «Hípica otra vez. El caballo ya os conoce.»  '),
+    'Hípica otra vez. El caballo ya os conoce.',
+  );
+  // El párrafo en el que el modelo explica el chiste se queda fuera.
+  assert.equal(
+    interpretarChispa('Hípica otra vez.\n\nHe usado la ironía porque…'),
+    'Hípica otra vez.',
+  );
+  // Dos líneas de teléfono y ni una más.
+  assert.equal(interpretarChispa('a'.repeat(400)).length, 160);
+  assert.equal(interpretarChispa(null), '');
+});
+
+test('el encargo de la frase prohíbe nombrar regalos, que es la única regla que no es de estilo', () => {
+  assert.match(INSTRUCCION_CHISPA_POR_DEFECTO, /no nombres nunca\s+regalos, ideas ni deseos/);
+
+  const publica = configuracionPublica({
+    ...CONFIGURACION, chispa: INSTRUCCION_CHISPA_POR_DEFECTO, guardada_en: null,
+  });
+  assert.equal(publica.chispa, INSTRUCCION_CHISPA_POR_DEFECTO);
 });

@@ -220,6 +220,28 @@ pendiente. El hook lo inyecta al final del mapa.
   web lleva su copia en `pwa/publico/js/version.js`, así que **al subir la
   versión del OTA hay que subir también esa**. `tests/test_version.py` falla si
   se separan.
+- **La frase del día es el quinto encargo de IA**, y el único que nadie pide: los
+  otros cuatro contestan a un toque y este sale solo al abrir Hoy, bajo el
+  saludo. Dos líneas con guasa sobre lo que hay apuntado —o sobre no haber nada,
+  que es lo más frecuente—, **una al día y guardada en el teléfono**
+  (`agenda.chispa` en `localStorage`, con su fecha dentro, que es lo que hace que
+  no haya nada que barrer: la de ayer no se borra, se deja de reconocer). Pedirla
+  en cada apertura la cambiaría al volver de la pestaña de al lado y dejaría de
+  ser la frase *del día*; se toca y se cambia, que es la única manera de pedir
+  otra. **Cada uno recibe la suya**, compuesta de su propia instantánea, y por
+  eso la regla de ocultación se cumple sola: una sola para toda la casa habría
+  obligado a inventar una instantánea «pública» que no existe. La maquinaria es
+  la de los otros cuatro —mismo freno por minuto, misma cadena de modelos,
+  instrucción editable en Ajustes (`ia.chispa`)—; lo suyo es el material y
+  **el tema al azar**, sacado de los tipos de evento que la casa usa de verdad,
+  que es lo que salva los días vacíos. Dos reglas que no son de estilo: el
+  encargo **prohíbe nombrar regalos, ideas y deseos** aunque el material nunca se
+  los dé, porque esta es la pantalla que se lee con alguien al lado; y
+  `/api/ia/chispa` **contesta 200 con la frase vacía** en vez de 503 cuando algo
+  falla, porque nadie ha pedido nada y no hay a quién darle el error: la línea
+  sencillamente no aparece. Está en `specs/ux.md` §6.5 y el porqué de cada
+  decisión, en `specs/propuesta-frase-del-dia.html`. Queda abierto **si debería
+  poder apagarse desde Ajustes sin borrar la clave**, que hoy no se puede.
 - **Lío está construido**, y es el primer módulo que no cuelga de la agenda.
   Los turnos —mañana de 6 a 10, noche de 20 a 24— **se derivan de un cuadro de
   catorce casillas** que vive en `configuracion` y que solo editan los

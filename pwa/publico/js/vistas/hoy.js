@@ -3,10 +3,10 @@
  *
  * Es la síntesis que `specs/ux.md` §11 dejaba apuntada entre la opción B y la
  * D: la pantalla compuesta pasa a ser el inicio y la semana queda justo detrás,
- * en la pestaña siguiente, sin renunciar a su marco fijo. De momento compone
- * dos cosas —a quién saluda y qué hay para hoy— y deja el sitio hecho para los
- * bloques estacionales, que son los que le darán forma en diciembre. Está en
- * `specs/ux.md` §6.5.
+ * en la pestaña siguiente, sin renunciar a su marco fijo. Compone a quién
+ * saluda, la frase del día, lo de Lío y qué hay para hoy, y deja el sitio hecho
+ * para los bloques estacionales, que son los que le darán forma en diciembre.
+ * Está en `specs/ux.md` §6.5.
  *
  * **El saludo ocupa la línea del título**, igual que en la agenda la ocupa el
  * periodo. Escribir «Hoy» arriba y saludar debajo diría dos veces lo mismo
@@ -22,7 +22,8 @@
 import { el, vaciar, abrirHoja, avisar } from '../ui.js';
 import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia, sumarDias } from '../semana.js';
 import { comprobarActualizacion, esNativo, toque, versionInstalada } from '../native.js';
-import { estado } from '../sincronizacion.js';
+import { escribirLaChispa, estado } from '../sincronizacion.js';
+import { chispaGuardada, guardarChispa } from '../almacen.js';
 import { VERSION_APP } from '../version.js';
 import {
   abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDePropuesta,
@@ -45,9 +46,14 @@ let versionEnUso = null;
  */
 let pie = null;
 
+/** Lo mismo que el pie, y por lo mismo: la pantalla se repinta con cada
+ *  sincronización y la frase no puede desaparecer y volver mientras se pide. */
+let chispa = null;
+
 export function reiniciarHoy() {
   versionEnUso = null;
   pie = null;
+  chispa = null;
 }
 
 /**
@@ -112,10 +118,97 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
   // gesto que se hace dos veces al día. Después ya viene lo que se venía a leer.
   pantalla.append(
     ...bandaDePeticiones(ctx),
+    laChispa(dia, ctx),
     ...bloqueDeLio(dia, ctx),
     bloqueDelDia(dia, ctx),
     pieDeVersion(),
   );
+}
+
+// ------------------------------------------------------- La frase del día --
+
+/**
+ * Dos líneas con guasa sobre el día, escritas por el modelo.
+ *
+ * Va detrás de las peticiones de Lío y delante de todo lo demás. Detrás, porque
+ * una broma por encima de lo único de esta pantalla que espera respuesta es una
+ * broma a destiempo; delante de lo demás, porque los días con peticiones son los
+ * menos y el resto queda justo bajo el saludo, que es donde se pidió.
+ *
+ * **Una al día y guardada en el teléfono.** Es lo que la hace la frase *del
+ * día*: pedida en cada apertura cambiaría al volver de la pestaña de al lado y
+ * dejaría de ser nada. Se toca y se cambia, que es la única manera de pedir otra.
+ *
+ * Sin frase no hay hueco, ni rótulo, ni mensaje: sin clave de Anthropic puesta
+ * esta línea no existe, igual que no existe el botón de la IA al compartir.
+ */
+function laChispa(dia, ctx) {
+  if (!chispa) chispa = construirChispa();
+
+  // El contexto se renueva en cada repintado, que es lo que hace que el toque
+  // de esta tarde no pida la frase con la instantánea de esta mañana.
+  chispa.apuntar(dia, ctx);
+
+  const guardada = chispaGuardada(iso(dia));
+  if (guardada !== null) chispa.escribir(guardada);
+  else chispa.pedir();
+
+  return chispa.nodo;
+}
+
+/** Lo de hoy y lo que viene en la semana, en identificadores: el título, la hora
+ *  y el sitio los pone el Worker desde la instantánea filtrada de quien pide. */
+function loQueHayAlrededor(dia, ctx) {
+  const idsDe = (desde, hasta) => [...new Set(
+    instanciasEn(ctx.vista.datos, desde, hasta).map((instancia) => instancia.evento.id),
+  )];
+  const hoyMismo = idsDe(dia, dia);
+  return {
+    eventos: hoyMismo,
+    proximos: idsDe(sumarDias(dia, 1), sumarDias(dia, 7)).filter((id) => !hoyMismo.includes(id)),
+  };
+}
+
+function construirChispa() {
+  const nodo = el('button', { class: 'hoy-chispa', type: 'button', hidden: true });
+  let dia = null;
+  let ctx = null;
+  let pidiendo = false;
+
+  const escribir = (frase) => {
+    nodo.textContent = frase;
+    nodo.hidden = !frase;
+    nodo.dataset.estado = 'lista';
+    nodo.setAttribute('aria-label', frase ? `${frase}. Tocar para otra.` : '');
+    nodo.setAttribute('title', 'Otra frase');
+  };
+
+  const pedir = async () => {
+    if (pidiendo || !ctx) return;
+    pidiendo = true;
+    // Mientras llega no se enseña nada nuevo: lo que hubiera se queda puesto y
+    // se apaga un poco. Un «pensando…» ocuparía la línea para no decir nada.
+    if (!nodo.hidden) nodo.dataset.estado = 'pidiendo';
+
+    const fecha = iso(dia);
+    const { eventos, proximos } = loQueHayAlrededor(dia, ctx);
+    const frase = await escribirLaChispa(fecha, eventos, proximos);
+    pidiendo = false;
+
+    // Solo se guarda lo que ha salido. Un día sin clave o sin cobertura no
+    // escribe una frase vacía en el almacén: se vuelve a intentar al abrir.
+    if (frase) guardarChispa(fecha, frase);
+    escribir(frase);
+  };
+
+  nodo.onclick = () => { toque(); pedir(); };
+
+  return {
+    nodo,
+    escribir,
+    pedir,
+    apuntar: (cual, contexto) => { dia = cual; ctx = contexto; },
+  };
 }
 
 // ---------------------------------------------------------------- Lío --

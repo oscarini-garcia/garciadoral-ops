@@ -28,6 +28,7 @@
  *   POST   /api/sitio/apuntar · cinco apuntes para un sitio y una clase
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
+ *   POST   /api/ia/chispa   · la frase con la que abre la pantalla de Hoy
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
  */
 
@@ -68,15 +69,18 @@ import {
   componerMaterial,
   componerMaterialDePeriodo,
   componerMaterialDeApunte,
+  componerMaterialDeChispa,
   componerMaterialDeFelicitacion,
   componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
+  interpretarChispa,
   interpretarFelicitaciones,
   interpretarPropuestas,
   leerConfiguracion,
   modelosDisponibles,
   redactar,
+  temasDeLaCasa,
 } from './redaccion.js';
 
 const TIPOS_JSON = { 'content-type': 'application/json; charset=utf-8' };
@@ -693,6 +697,51 @@ async function apuntarEnUnSitio(peticion, env) {
   return json({ propuestas, modelo: resultado.modelo });
 }
 
+/**
+ * La frase con la que abre la pantalla de Hoy.
+ *
+ * El quinto encargo, y el único que no nace de un toque: la pide la pantalla al
+ * abrirse el primer día. Por eso es también el único que **contesta 200 con la
+ * frase vacía** en vez de 503 cuando algo falla —no hay clave puesta, ningún
+ * modelo responde, el freno por minuto salta—. Un error aquí no tiene a quién
+ * dárselo: nadie ha pedido nada, así que la línea sencillamente no aparece y la
+ * pantalla queda como estaba.
+ *
+ * El tema se sortea aquí y no en el teléfono para que salga de lo que la casa
+ * usa de verdad, que es un dato del registro y no del dispositivo.
+ */
+async function escribirLaChispa(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { fecha, eventos = [], proximos = [] } = await peticion.json().catch(() => ({}));
+  if (!fecha) return json({ error: 'falta la fecha' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  if (!configuracion.clave) return json({ frase: '' });
+  if (!(await cabeUnaMas(env.DB, lector.id))) return json({ frase: '' });
+
+  const instantanea = componerInstantanea(await leerRegistro(env.DB), lector);
+  const temas = temasDeLaCasa(instantanea);
+  const material = componerMaterialDeChispa(instantanea, {
+    fecha,
+    eventos,
+    proximos,
+    tema: temas.length ? temas[Math.floor(Math.random() * temas.length)] : null,
+  });
+
+  if (material.omitidos.length) {
+    console.warn('chispa con identificadores sin resolver', JSON.stringify(material.omitidos));
+  }
+
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.chispa, tope: 200,
+  });
+
+  const frase = interpretarChispa(resultado.texto);
+  if (!frase) console.warn('chispa fallida', JSON.stringify(resultado.intentos));
+
+  return json({ frase, modelo: frase ? resultado.modelo : null });
+}
+
 async function leerAjustesDeIa(peticion, env) {
   await administradorAutenticado(peticion, env);
   const configuracion = await leerConfiguracion(env.DB);
@@ -703,10 +752,10 @@ async function leerAjustesDeIa(peticion, env) {
 async function guardarAjustesDeIa(peticion, env) {
   const administrador = await administradorAutenticado(peticion, env);
   const {
-    clave, modelo, instruccion, regalo, felicitacion, apunte,
+    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa,
   } = await peticion.json().catch(() => ({}));
   const configuracion = await guardarConfiguracion(env.DB, administrador, {
-    clave, modelo, instruccion, regalo, felicitacion, apunte,
+    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa,
   });
   return json(configuracionPublica(configuracion));
 }
@@ -769,6 +818,7 @@ const RUTAS = [
   ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],
+  ['POST', '/api/ia/chispa', escribirLaChispa],
   ['POST', '/api/ia/probar', probarLaRedaccion],
 ];
 

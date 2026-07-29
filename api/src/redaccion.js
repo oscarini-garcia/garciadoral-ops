@@ -1,6 +1,7 @@
 /**
  * Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un
- * regalo y felicitar un cumpleaños.
+ * regalo, felicitar un cumpleaños, apuntar cosas de un sitio y escribir la frase
+ * con la que abre la pantalla de Hoy.
  *
  * La llamada sale de aquí y no del teléfono por tres motivos, en orden de
  * importancia: la clave es una credencial de pago del hogar y no debe viajar a
@@ -18,11 +19,17 @@
  * y va explicada donde se compone: es lo que quien pide acaba de escribir en su
  * propio formulario, y vuelve a su propia pantalla.
  *
- * Los tres encargos son el mismo mecanismo con instrucciones distintas, y cada
+ * Los cinco encargos son el mismo mecanismo con instrucciones distintas, y cada
  * uno se puede reescribir desde Ajustes. Lo que cambia entre ellos es el
  * material: de un día se le cuentan los eventos; de un regalo, lo que se sabe de
  * quien lo recibe; de una felicitación, **solo lo que esa persona ya sabe de sí
- * misma**, porque el texto se le manda a ella.
+ * misma**, porque el texto se le manda a ella; de un sitio, lo que ya hay
+ * apuntado allí; y de la frase del día, lo de hoy, lo que viene y un tema al
+ * azar de los que esta casa usa.
+ *
+ * El quinto se sale del molde en una cosa: es el único que nadie pide —sale solo
+ * al abrir Hoy—, y por eso es también el único que se calla cuando falla en vez
+ * de contar por qué.
  */
 
 const ANTHROPIC = 'https://api.anthropic.com/v1';
@@ -106,6 +113,37 @@ export const INSTRUCCION_APUNTE_POR_DEFECTO = [
   'En español de España, sin emojis, sin viñetas y sin comillas.',
 ].join(' ');
 
+/**
+ * El encargo de la frase del día, que es el quinto y el único que nadie ha
+ * pedido: los otros cuatro contestan a un toque, y este aparece solo al abrir.
+ *
+ * De ahí sus dos reglas raras. **Dos líneas y se acaba**, porque lo que sale sin
+ * que nadie lo llame no tiene derecho a ocupar media pantalla. Y **prohibido
+ * nombrar regalos, ideas y deseos** aunque el material nunca se los dé: el
+ * modelo no los ve, pero podría inventárselos —«seguro que ya le has comprado
+ * algo»—, y esta es la única pantalla de la aplicación que alguien lee con otro
+ * al lado. Una broma sobre un regalo delante de quien lo recibe es exactamente
+ * el fallo que el resto del sistema existe para impedir.
+ *
+ * La gracia sale de lo que hay apuntado y del tema que se le pasa, no de un
+ * chiste de calendario, y no se mete con nadie de la casa: quien aparece en la
+ * frase es quien la va a leer.
+ */
+export const INSTRUCCION_CHISPA_POR_DEFECTO = [
+  'Escribes la frase con la que una familia abre su agenda por la mañana. Te doy',
+  'qué día es, qué hay apuntado hoy, qué viene en los próximos días y un tema del',
+  'que tirar si el día está vacío.',
+  'Escribe UNA sola frase de dos líneas como mucho, en español de España y',
+  'tuteando: seca, irónica y cómplice, de las que arrancan media sonrisa a quien',
+  'ya sabe lo que le espera.',
+  'La gracia sale de lo que te doy, no de un chiste de calendario ni de una frase',
+  'motivacional. No te metas con nadie de la casa —quien salga en la frase es',
+  'quien la va a leer—, no inventes planes que no estén, y no nombres nunca',
+  'regalos, ideas ni deseos, ni siquiera de pasada.',
+  'Sin saludo, sin emojis, sin comillas y sin explicar nada: responde solo con la',
+  'frase.',
+].join(' ');
+
 const MAXIMO_EVENTOS = 20;
 // Un periodo da para más, pero no para todo: un mes cargado son cuarenta o
 // cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
@@ -125,6 +163,10 @@ const PROPUESTAS_POR_TANDA = 5;
 const MAXIMO_OMITIDOS = 10;
 const LIMITE_POR_MINUTO = 6;
 const TOPE_DE_SALIDA = 400;
+// Dos líneas en un teléfono. Se recorta aquí y no en el CSS: una frase cortada
+// con puntos suspensivos es peor que una frase corta, y el sitio que ocupa lo
+// tiene que saber la pantalla antes de pintarlo.
+const TOPE_DE_CHISPA = 160;
 
 const NOMBRES_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = [
@@ -141,6 +183,7 @@ const CLAVES = {
   regalo: 'ia.regalo',
   felicitacion: 'ia.felicitacion',
   apunte: 'ia.apunte',
+  chispa: 'ia.chispa',
 };
 
 export async function leerConfiguracion(db) {
@@ -158,6 +201,7 @@ export async function leerConfiguracion(db) {
     regalo: filas.get(CLAVES.regalo)?.valor || INSTRUCCION_REGALO_POR_DEFECTO,
     felicitacion: filas.get(CLAVES.felicitacion)?.valor || INSTRUCCION_FELICITACION_POR_DEFECTO,
     apunte: filas.get(CLAVES.apunte)?.valor || INSTRUCCION_APUNTE_POR_DEFECTO,
+    chispa: filas.get(CLAVES.chispa)?.valor || INSTRUCCION_CHISPA_POR_DEFECTO,
   };
 }
 
@@ -178,6 +222,7 @@ export function configuracionPublica(configuracion) {
     regalo: configuracion.regalo,
     felicitacion: configuracion.felicitacion,
     apunte: configuracion.apunte,
+    chispa: configuracion.chispa,
   };
 }
 
@@ -569,6 +614,93 @@ export function componerMaterialDeApunte(
   }
 
   return { titulo: `Apuntes para ${lugar.nombre}`, lineas };
+}
+
+/**
+ * De qué puede ir la frase cuando el día está vacío, que en esta casa es la
+ * mayoría de los días.
+ *
+ * Sale de los tipos de evento que la casa **usa de verdad** —contando lo que hay
+ * apuntado, no el catálogo entero—, más el perro si lo hay. Una lista escrita a
+ * mano aquí envejecería sin que nadie se diera cuenta: el día que dejen de ir a
+ * hípica, «hípica» seguiría saliendo en las frases durante años.
+ */
+export function temasDeLaCasa(instantanea) {
+  const nombres = new Map((instantanea.tipos_evento || []).map((t) => [t.id, t.nombre]));
+  const cuenta = new Map();
+  for (const evento of instantanea.eventos || []) {
+    if (!evento.tipo_id || evento.tipo_id === 'otro') continue;
+    cuenta.set(evento.tipo_id, (cuenta.get(evento.tipo_id) || 0) + 1);
+  }
+
+  const temas = [...cuenta.keys()]
+    .sort((a, b) => cuenta.get(b) - cuenta.get(a))
+    .map((id) => nombres.get(id) || id)
+    .slice(0, MAXIMO_POR_LISTA);
+
+  if ((instantanea.lio_cuadro || []).length || (instantanea.paseos || []).length) {
+    temas.push('sacar al perro');
+  }
+  return temas;
+}
+
+/**
+ * Lo que se le cuenta al modelo para escribir la frase del día.
+ *
+ * Lo de hoy y lo que viene, por el mismo camino que el resto: el dispositivo
+ * manda identificadores —que es donde se expanden las repeticiones— y aquí se
+ * resuelven contra la instantánea filtrada de quien pide. Lo que no reconozca
+ * vuelve en `omitidos`, como en los demás encargos.
+ *
+ * Y un `tema` sacado al azar de `temasDeLaCasa`, que es lo único de este
+ * material que no es un dato: sin él, los días vacíos —la mayoría— darían todos
+ * la misma frase sobre no tener nada que hacer.
+ */
+export function componerMaterialDeChispa(
+  instantanea,
+  { fecha, eventos = [], proximos = [], tema = null } = {},
+) {
+  const visibles = visiblesDe(instantanea);
+  const omitidos = [];
+
+  const resolver = (ids, tope) => {
+    const lineas = [];
+    for (const id of ids.slice(0, tope)) {
+      const evento = visibles.get(id);
+      if (evento) lineas.push(`  ${lineaDe(evento)}`);
+      else if (omitidos.length < MAXIMO_OMITIDOS) omitidos.push(id);
+    }
+    return lineas;
+  };
+
+  const lineas = [`Hoy es ${formatearFecha(fecha)}`];
+
+  const hoy = resolver(eventos, MAXIMO_EVENTOS);
+  lineas.push(...(hoy.length ? ['Hoy hay apuntado:', ...hoy] : ['Hoy no hay nada apuntado.']));
+
+  const viene = resolver(proximos, MAXIMO_EVENTOS);
+  if (viene.length) lineas.push('En los próximos días:', ...viene);
+
+  if (tema) lineas.push(`Si el día da poco de sí, tira de este tema: ${tema}`);
+
+  return { titulo: 'La frase de hoy', lineas, omitidos };
+}
+
+/**
+ * La frase, recortada a lo que cabe.
+ *
+ * El modelo obedece casi siempre, pero cuando no obedece lo hace de dos maneras
+ * conocidas: entrecomilla la frase o añade un párrafo explicando el chiste. Lo
+ * primero se limpia, lo segundo se corta por el primer salto de línea doble.
+ * Devuelve cadena vacía si no queda nada, y entonces la línea no se enseña.
+ */
+export function interpretarChispa(texto) {
+  const primera = String(texto || '').trim().split(/\n\s*\n/)[0] || '';
+  return primera
+    .replace(/\s+/g, ' ')
+    .replace(/^["“«']+|["”»']+$/g, '')
+    .trim()
+    .slice(0, TOPE_DE_CHISPA);
 }
 
 /**
