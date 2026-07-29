@@ -126,7 +126,7 @@ pendiente. El hook lo inyecta al final del mapa.
   descartado vuelva. Solo llega a su dueño. Se escribe al abrir el hilo, al
   descartar y al vaciar.
 - **La cabecera ya no lleva el punto de sincronización**: se fue a Ajustes, a un
-  apartado propio, con la fecha de la última correcta en palabras y la línea que
+  apartado propio y por debajo de «La aplicación», con la fecha de la última correcta en palabras y la línea que
   es a la vez el dato y el verbo. Lo que había que no perder —que algo lleve un
   rato sin subir— lo dice **una línea en la subcabecera de Hoy**, y solo cuando
   pasa; y la demostración conserva **pastilla escrita permanente** en la cabecera,

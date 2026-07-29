@@ -838,12 +838,6 @@ function abrirAjustes() {
       cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
     }
 
-    // Apartado propio y no dentro de «La aplicación»: ahí viven la versión y lo
-    // legal, que son de la instalación, y esto es de los datos. Es lo que uno
-    // viene a mirar cuando sospecha que algo que escribió no ha llegado, y
-    // mezclarlas obligaría a abrir un apartado que se llama otra cosa.
-    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion));
-
     // Aquí y no al arrancar. Preguntar por los avisos nada más entrar es lo que
     // más permisos consigue y lo que peor sienta, y un «no» de esos no se
     // recupera desde la aplicación: hay que ir a los Ajustes de iOS. En este
@@ -854,6 +848,13 @@ function abrirAjustes() {
       dentro.append(bloqueDeVersion());
       dentro.append(bloqueLegal());
     }));
+
+    // Debajo de «La aplicación», y no encima. Sigue siendo apartado propio
+    // —ahí viven la versión y lo legal, que son de la instalación, y esto es de
+    // los datos—, pero es lo que menos veces se abre: se viene aquí cuando ya se
+    // sospecha que algo no ha llegado, y hasta entonces solo estorbaba por
+    // delante de lo que sí se busca, que es qué versión hay puesta.
+    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion));
 
     cuerpo.append(acordeon('Tu cuenta', (dentro) => {
       dentro.append(el('div', { class: 'acciones' }, [
