@@ -1331,9 +1331,13 @@ function bloqueDeNotas(evento) {
   const cambiaHuso = vuelo.husoSalida && vuelo.husoLlegada && vuelo.husoSalida !== vuelo.husoLlegada;
   const conHuso = (hora, huso) => (cambiaHuso && huso ? `${hora} ${huso}` : hora);
 
+  // El código y no la ciudad: el título ya dice «París → Barcelona», y
+  // repetirlo aquí sería decir dos veces lo mismo en cuatro centímetros. La
+  // ciudad solo sale cuando no hay código, para que el lado no quede mudo.
   const polo = (codigo, ciudad, hora, huso, lado) => el('div', { class: lado ? `polo ${lado}` : 'polo' }, [
-    codigo ? el('span', { class: 'code', texto: codigo }) : null,
-    ciudad ? el('span', { class: 'city', texto: ciudad }) : null,
+    codigo
+      ? el('span', { class: 'code', texto: codigo })
+      : (ciudad ? el('span', { class: 'code sin-codigo', texto: ciudad }) : null),
     el('span', { class: 'time', texto: conHuso(hora, huso) }),
   ].filter(Boolean));
 
