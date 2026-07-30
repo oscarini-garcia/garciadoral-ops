@@ -345,13 +345,23 @@ export function crearVista(instantanea) {
       if (!evento) return { emoji: EMOJI_POR_DEFECTO, titulo: '' };
       const titulo = evento.titulo || '';
       const propio = titulo.match(EMOJI_INICIAL);
-      if (propio) return { emoji: propio[1], titulo: titulo.slice(propio[0].length) || titulo };
+
+      // Un vuelo importado se nombra por sus ciudades —«París → Barcelona»— y no
+      // por los códigos de aeropuerto que trae Flighty en el título: el código
+      // se lee de un vistazo pero no dice a dónde vas.
+      //
+      // Se resuelve **antes** de mirar si el título empieza por un emoji. Cuando
+      // eso se hacía después, un título con el avión delante salía de aquí por
+      // la otra puerta y se quedaba sin traducir: el detalle enseñaba la ficha
+      // bien, con los códigos, y encima el título en códigos también.
+      const deVuelo = tituloDeVuelo(evento);
+
+      if (propio) {
+        return { emoji: propio[1], titulo: deVuelo || titulo.slice(propio[0].length) || titulo };
+      }
       return {
         emoji: evento.emoji || tipos.get(evento.tipo_id)?.emoji || EMOJI_POR_DEFECTO,
-        // Un vuelo importado se nombra por sus ciudades —«París → Barcelona»— y no
-        // por los códigos de aeropuerto que trae Flighty en el título: el código
-        // se lee de un vistazo pero no dice a dónde vas.
-        titulo: tituloDeVuelo(evento) || titulo,
+        titulo: deVuelo || titulo,
       };
     },
 

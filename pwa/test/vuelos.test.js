@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { presentarVuelo, tituloDeVuelo } from '../publico/js/modelo.js';
+import { crearVista, presentarVuelo, tituloDeVuelo } from '../publico/js/modelo.js';
 
 /** Las notas tal como las escribe Flighty. */
 const NOTAS = 'Air France 1248 Paris to Barcelona ↗ 19:03 CEST ↘ 20:46 CEST '
@@ -79,4 +79,31 @@ test('lo que no es un vuelo conserva su título', () => {
 
 test('con códigos que no están en la tabla se cae a lo que digan las notas', () => {
   assert.equal(tituloDeVuelo(vuelo('ZZZ→QQQ · XX 1')), 'Paris → Barcelona');
+});
+
+/** La vista mínima para preguntarle por la cara de un evento. */
+const vista = () => crearVista({
+  personas: [{ id: 'p1', nombre: 'Óscar', tiene_cuenta: true, rol: 'administrador' }],
+  tipos_evento: [{ id: 'viaje', nombre: 'Viaje', emoji: '✈️' }],
+  eventos: [], ideas: [], ocasiones: [], regalos: [], comentarios: [], categorias: [],
+  yo: 'p1',
+});
+
+test('el título se traduce aunque venga con el avión delante', () => {
+  // El caso que se vio en la pantalla: el detalle enseñaba la ficha bien, con
+  // los códigos, y el título también en códigos, porque un título que empieza
+  // por emoji salía de `caraDe` sin pasar por la traducción.
+  const cara = vista().caraDe({
+    origen: 'importado', tipo_id: 'viaje', titulo: '✈️ CDG→BCN • AF 1248', notas: NOTAS,
+  });
+  assert.equal(cara.emoji, '✈️');
+  assert.equal(cara.titulo, 'París → Barcelona · AF 1248');
+});
+
+test('un evento de la casa conserva su emoji y su título', () => {
+  const cara = vista().caraDe({
+    origen: 'manual', tipo_id: 'viaje', titulo: '🎂 Cumpleaños de la abuela', notas: '',
+  });
+  assert.equal(cara.emoji, '🎂');
+  assert.equal(cara.titulo, 'Cumpleaños de la abuela');
 });
