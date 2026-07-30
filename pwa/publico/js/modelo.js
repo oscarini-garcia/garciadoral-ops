@@ -197,15 +197,29 @@ export function analizarVuelo(notas) {
  * Va aparte del parseo de las notas a propósito: el título basta para nombrar el
  * vuelo por sus ciudades, y así se sigue nombrando bien aunque las notas vengan
  * vacías o con otro formato.
+ *
+ * **No se enumera qué hay entre los dos códigos ni delante del número.** Se
+ * probó con una lista de separadores —flecha, guion, barra— y lo que llegó fue
+ * otro: entre los códigos una flecha larga y antes del número un `•` en vez del
+ * `·` que se esperaba, así que el vuelo se quedó sin reconocer y la pantalla lo
+ * enseñó al revés, con el código en el título y la ciudad dentro. Vale
+ * cualquier cosa que no sea letra ni número.
+ *
+ * Lo que sí se exige es que **los dos códigos estén en la tabla de
+ * aeropuertos**: es lo que impide que un título cualquiera con dos palabras de
+ * tres letras en mayúscula se lea como si fuera un vuelo.
  */
 function rutaDelTitulo(titulo) {
   const texto = String(titulo || '');
-  const codigos = texto.match(/\b([A-Z]{3})\b\s*(?:→|->|–|-|—|\/)\s*\b([A-Z]{3})\b/);
+  const codigos = texto.match(/\b([A-Z]{3})\b[^A-Za-z0-9]+\b([A-Z]{3})\b/);
   if (!codigos) return null;
+  if (!ciudadDeAeropuerto(codigos[1]) || !ciudadDeAeropuerto(codigos[2])) return null;
+
+  const resto = texto.slice(codigos.index + codigos[0].length);
   return {
     codigoOrigen: codigos[1],
     codigoDestino: codigos[2],
-    numero: (texto.split('·')[1] || '').trim() || null,
+    numero: resto.replace(/^[^A-Za-z0-9]+/, '').trim() || null,
   };
 }
 

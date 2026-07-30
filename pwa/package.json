@@ -1,10 +1,11 @@
 {
   "name": "agenda-familiar",
-  "version": "1.39.1",
+  "version": "1.39.2",
   "private": true,
   "type": "module",
   "description": "Agenda Familiar — aplicación web y cáscara iOS con actualizaciones OTA",
   "scripts": {
+    "test": "node --test 'test/*.test.js'",
     "preparar": "python3 ../herramientas/preparar-pwa.py",
     "servir": "npx http-server publico -p 8788 -c-1",
     "sync:ios": "npm run preparar && cap sync ios && npm run patch:ios",

@@ -176,6 +176,13 @@ jobs:
         working-directory: api
         run: node --test 'test/*.test.js'
 
+      # Las de la aplicación son pocas y muy concretas: lo que se lee de un
+      # calendario ajeno, cuyo formato cambia sin avisar y no lo comprueba nadie
+      # más. El resto de la PWA se prueba mirándola.
+      - name: Ejecutar las pruebas de la aplicación
+        working-directory: pwa
+        run: node --test 'test/*.test.js'
+
       # Lo que sirve la API y lo que lee el generador del plan son el mismo
       # documento: si sus formas divergen, el plan del domingo deja de salir.
       - name: Comprobar que el formato del registro es el mismo en las dos piezas
