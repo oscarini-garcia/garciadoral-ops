@@ -1350,7 +1350,9 @@ function bloqueDeNotas(evento) {
 
   const filas = [embarque];
   if (vuelo.enlaceFlighty) {
-    filas.push(el('a', { class: 'boton fantasma', href: vuelo.enlaceFlighty }, ['Abrir en Flighty']));
+    // Enlace y no botón: abrir el vuelo en su aplicación es una salida lateral,
+    // no el verbo de esta pantalla. Un botón la anunciaría como si lo fuera.
+    filas.push(el('a', { class: 'enlace-discreto', href: vuelo.enlaceFlighty }, ['Abrir en Flighty']));
   }
   return el('div', { class: 'grupo' }, filas);
 }

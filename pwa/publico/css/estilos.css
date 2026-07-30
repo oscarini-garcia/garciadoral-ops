@@ -1195,11 +1195,10 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .tramo .via::after { content: "✈"; position: absolute; right: -2px; top: -9px; font-size: 13px; color: var(--tinta); }
 
-/* Botón de contorno, para una acción secundaria como abrir el vuelo en su app. */
-.boton.fantasma {
-  display: inline-flex; align-items: center; align-self: flex-start; width: fit-content;
-  background: transparent; color: var(--tinta); border: 1px solid var(--tinta); text-decoration: none;
-}
+/* Cuando el enlace discreto es un enlace de verdad y no un botón, hay que darle
+   la caja: `min-height` no le llega a un elemento en línea, y sin ella el área
+   que se toca es la altura del renglón. */
+a.enlace-discreto { display: inline-flex; align-items: center; align-self: flex-start; }
 
 .opciones { display: flex; flex-wrap: wrap; gap: 7px; }
 .opcion {
