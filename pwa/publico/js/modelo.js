@@ -10,6 +10,8 @@
  * pretende ocultar (spec funcional §9).
  */
 
+import { ciudadDeAeropuerto } from './aeropuertos.js';
+
 export const EMOJI_POR_DEFECTO = '📌';
 
 /**
@@ -189,31 +191,53 @@ export function analizarVuelo(notas) {
 }
 
 /**
- * Presentación completa de un vuelo importado: junta lo que dicen las notas
- * —ciudades, horas, duración, huso, enlace— con lo que dice el título de
- * Flighty —los códigos de aeropuerto y el número de vuelo, «CDG→BCN · AF 1248»—.
- * Devuelve `null` si el evento no es un vuelo reconocible. Es presentación, no
- * dato: el contenido se corrige en el calendario de origen (calendario-viajes §9).
+ * Los dos códigos de aeropuerto y el número de vuelo que Flighty escribe en el
+ * título —«CDG→BCN · AF 1248»—, o `null` si el título no tiene esa forma.
+ *
+ * Va aparte del parseo de las notas a propósito: el título basta para nombrar el
+ * vuelo por sus ciudades, y así se sigue nombrando bien aunque las notas vengan
+ * vacías o con otro formato.
+ */
+function rutaDelTitulo(titulo) {
+  const texto = String(titulo || '');
+  const codigos = texto.match(/\b([A-Z]{3})\b\s*(?:→|->|–|-|—|\/)\s*\b([A-Z]{3})\b/);
+  if (!codigos) return null;
+  return {
+    codigoOrigen: codigos[1],
+    codigoDestino: codigos[2],
+    numero: (texto.split('·')[1] || '').trim() || null,
+  };
+}
+
+/**
+ * Presentación completa de un vuelo importado: junta lo que dice el título
+ * —los códigos de aeropuerto y el número de vuelo— con lo que dicen las notas
+ * —horas, duración, huso y enlace—. Devuelve `null` si el evento no es un vuelo
+ * reconocible. Es presentación, no dato: el contenido se corrige en el
+ * calendario de origen (calendario-viajes §9).
+ *
+ * **La ciudad sale de la tabla de aeropuertos**, no de las notas: la tabla la
+ * dice en castellano —«Londres», no «London»— y acierta con los aeropuertos que
+ * no están en la ciudad que anuncian. Lo de las notas queda de reserva.
  */
 export function presentarVuelo(evento) {
   if (!evento || evento.origen !== 'importado') return null;
+  const ruta = rutaDelTitulo(evento.titulo);
   const vuelo = analizarVuelo(evento.notas);
-  if (!vuelo) return null;
-
-  const titulo = String(evento.titulo || '');
-  const codigos = titulo.match(/\b([A-Z]{3})\b\s*(?:→|->|–|-|—)\s*\b([A-Z]{3})\b/);
-  const numero = (titulo.split('·')[1] || '').trim() || null;
+  if (!ruta && !vuelo) return null;
 
   return {
-    ...vuelo,
-    codigoOrigen: codigos ? codigos[1] : null,
-    codigoDestino: codigos ? codigos[2] : null,
-    numero,
+    ...(vuelo || {}),
+    codigoOrigen: ruta?.codigoOrigen || null,
+    codigoDestino: ruta?.codigoDestino || null,
+    numero: ruta?.numero || null,
+    origen: ciudadDeAeropuerto(ruta?.codigoOrigen) || vuelo?.origen || null,
+    destino: ciudadDeAeropuerto(ruta?.codigoDestino) || vuelo?.destino || null,
   };
 }
 
 /** El título de un vuelo en nombres de ciudad —«París → Barcelona · AF 1248»—,
- *  o `null` si el evento no es un vuelo. El código IATA del título se lee de un
+ *  o `null` si el evento no es un vuelo. El código de aeropuerto se lee de un
  *  vistazo pero no dice a dónde vas; la ciudad, sí. */
 export function tituloDeVuelo(evento) {
   const vuelo = presentarVuelo(evento);

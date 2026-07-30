@@ -85,6 +85,8 @@ tener que recorrer la aplicación entera cada vez.
 
 ### `pwa/publico/js/` · La aplicación
 
+- **aeropuertos.js** — De código de aeropuerto a ciudad.
+  AEROPUERTOS · ciudadDeAeropuerto
 - **almacen.js** — Almacén local.
   guardarDocumento · leerDocumento · guardarInstantanea · leerInstantanea · encolarCambio
   leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 5 más
@@ -145,6 +147,8 @@ tener que recorrer la aplicación entera cada vez.
 
 ### `herramientas/` · Utilidades de desarrollo
 
+- **aeropuertos.py** — Genera la tabla de códigos de aeropuerto que la aplicación usa para nombrar un vuelo.
+  limpiar · leer_csv · componer · main
 - **mapa.py** — Mapa del repositorio, derivado del propio código.
   primera_frase · docstring_js · simbolos_python · simbolos_js · modulos · rutas_del_worker
   workflows · referencias_a_specs · variables_de_entorno · pruebas · …y 7 más
@@ -255,8 +259,9 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**299** en total.
+**303** en total.
 
+- `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
 - `tests/test_lio.py` — 22
