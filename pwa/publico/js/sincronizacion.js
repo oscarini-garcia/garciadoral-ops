@@ -431,6 +431,25 @@ export async function escribirLaChispa(fecha, eventos = [], proximos = [], desca
   }
 }
 
+/**
+ * Una tanda de cinco frases dichas por Lío, para su bloque de Hoy.
+ *
+ * Solo viajan la fecha y las que ya se han enseñado hoy: los turnos, de quién
+ * son y la racha los deriva el Worker de su propia instantánea, que es donde
+ * viven. Se calla igual que la del día cuando algo falla.
+ */
+export async function escribirLoDeLio(fecha, descartadas = []) {
+  try {
+    const { frases } = await peticion('/api/ia/lio', {
+      method: 'POST',
+      body: JSON.stringify({ fecha, descartadas }),
+    });
+    return frases || [];
+  } catch {
+    return [];
+  }
+}
+
 /** Los ajustes de la redacción. Reservados a administradores por el Worker. */
 // ---------------------------------------------------------- Avisos remotos --
 

@@ -95,13 +95,9 @@ export function vaciarCola(hastaOrden) {
 export function olvidarTodo() {
   // Los últimos elegidos son de quien tiene la sesión, igual que la
   // instantánea: cambiar de persona en este dispositivo no puede dejarlos. Y las
-  // frases del día, por lo mismo: están escritas para quien se va.
+  // frases del día y las de Lío, por lo mismo: están escritas para quien se va.
   olvidarUltimos();
-  try {
-    localStorage.removeItem(CLAVE_CHISPA);
-  } catch {
-    /* nada que hacer */
-  }
+  olvidarFrases();
   return transaccion(['documentos', 'cola'], 'readwrite', (tx) => {
     tx.objectStore('documentos').clear();
     tx.objectStore('cola').clear();
@@ -175,15 +171,16 @@ function olvidarUltimos() {
 
 // ----------------------------------------------------- Las frases de este día --
 
-const CLAVE_CHISPA = 'agenda.chispa';
+const PREFIJO_FRASES = 'agenda.frases.';
 
 /**
- * Las frases del día, con el día al que pertenecen y por cuál se va.
+ * Las frases de hoy de una voz, con el día al que pertenecen y por cuál se va.
  *
- * Aquí y no en el registro porque no son del hogar: cada uno recibe las suyas,
- * compuestas de lo que ese uno puede ver. Y con la fecha dentro en lugar de una
- * clave por día, que es lo que hace que no haya nada que barrer: las de ayer no
- * se borran, se dejan de reconocer.
+ * Hay dos voces —la frase del día y la de Lío— y cada una guarda la suya, de ahí
+ * la clave. Aquí y no en el registro porque no son del hogar: cada uno recibe
+ * las suyas, compuestas de lo que ese uno puede ver. Y con la fecha dentro en
+ * lugar de una clave por día, que es lo que hace que no haya nada que barrer:
+ * las de ayer no se borran, se dejan de reconocer.
  *
  * Vienen de cinco en cinco y se enseñan de una en una, así que hay que guardar
  * también por dónde va: sin el índice, cerrar la aplicación volvería a la
@@ -192,23 +189,29 @@ const CLAVE_CHISPA = 'agenda.chispa';
  * Es un capricho, así que no se defiende de nada: sin sitio en el almacén se
  * pierden y al día siguiente se vuelven a pedir.
  */
-export function chispaGuardada(fecha) {
+export function frasesGuardadas(voz, fecha) {
   try {
-    const guardada = JSON.parse(localStorage.getItem(CLAVE_CHISPA) || 'null');
-    if (!guardada || guardada.fecha !== fecha) return null;
-    const frases = (guardada.frases || []).filter((f) => typeof f === 'string' && f);
+    const guardadas = JSON.parse(localStorage.getItem(PREFIJO_FRASES + voz) || 'null');
+    if (!guardadas || guardadas.fecha !== fecha) return null;
+    const frases = (guardadas.frases || []).filter((f) => typeof f === 'string' && f);
     if (!frases.length) return null;
-    const cual = Number.isInteger(guardada.cual) ? guardada.cual : 0;
+    const cual = Number.isInteger(guardadas.cual) ? guardadas.cual : 0;
     return { frases, cual: Math.min(Math.max(cual, 0), frases.length - 1) };
   } catch {
     return null;
   }
 }
 
-export function guardarChispa(fecha, frases, cual = 0) {
+export function guardarFrases(voz, fecha, frases, cual = 0) {
   try {
-    localStorage.setItem(CLAVE_CHISPA, JSON.stringify({ fecha, frases, cual }));
+    localStorage.setItem(PREFIJO_FRASES + voz, JSON.stringify({ fecha, frases, cual }));
   } catch {
     /* sin sitio, mañana se vuelven a pedir */
+  }
+}
+
+function olvidarFrases() {
+  for (const clave of Object.keys(localStorage)) {
+    if (clave.startsWith(PREFIJO_FRASES) || clave === 'agenda.chispa') localStorage.removeItem(clave);
   }
 }

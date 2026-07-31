@@ -1112,6 +1112,9 @@ function formularioDeRedaccion(ajustes) {
   const chispa = el('textarea', { rows: '5', spellcheck: 'false' });
   chispa.value = ajustes.chispa || '';
 
+  const lio = el('textarea', { rows: '5', spellcheck: 'false' });
+  lio.value = ajustes.lio || '';
+
   const traza = el('pre', { class: 'traza', hidden: true });
   const contar = (texto, clase = 'traza') => {
     traza.className = clase;
@@ -1148,6 +1151,7 @@ function formularioDeRedaccion(ajustes) {
         felicitacion: felicitacion.value.trim(),
         apunte: apunte.value.trim(),
         chispa: chispa.value.trim(),
+        lio: lio.value.trim(),
       });
       clave.value = '';
       clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
@@ -1170,7 +1174,7 @@ function formularioDeRedaccion(ajustes) {
   return [
     el('p', {
       class: 'pista',
-      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son cinco, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio y la frase con la que abre Hoy.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son seis, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio, la frase con la que abre Hoy y lo que dice Lío en su bloque.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
@@ -1192,10 +1196,13 @@ function formularioDeRedaccion(ajustes) {
     el('h4', { class: 'subtitulo-ajuste', texto: 'La frase con la que abre Hoy' }),
     campo('Instrucción', chispa, 'El único encargo que nadie pide: sale solo al abrir, una vez al día, y se pasa a la siguiente tocándola. También en tandas de cinco, una por línea: se piden de golpe y el teléfono las va enseñando, así que si reescribes esto conserva esa forma. Se le dan el día, lo que hay apuntado hoy, lo que viene en la semana y un tema sacado al azar de lo que esta casa hace de verdad. Aquí es donde se sube o se baja el nivel de guasa, y donde conviene dejarle prohibidos los tacos y las exclamaciones —sin decírselo se suelta— y prohibido nombrar regalos, ideas y deseos, que es la pantalla que se lee con alguien al lado. Vacío, vuelve el encargo de origen.'),
 
+    el('h4', { class: 'subtitulo-ajuste', texto: 'La voz de Lío' }),
+    campo('Instrucción', lio, 'El único encargo que habla en primera persona: el que se queja es el perro. También en tandas de cinco, una por línea. Se le dan los dos turnos de hoy, de quién son, cuáles quedaron sin marcar y los días seguidos que lleva saliendo. Conviene dejarle claro que se queja pero no riñe de verdad —quien lo lee es quien no marcó, y lo lee desayunando— y que no invente quién lo sacó, que eso es un dato. Vacío, vuelve el encargo de origen.'),
+
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {
       class: 'pista',
-      texto: 'Guardar los guarda los cinco. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+      texto: 'Guardar los guarda los seis. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
     }),
     traza,
   ];

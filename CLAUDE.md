@@ -249,6 +249,21 @@ pendiente. El hook lo inyecta al final del mapa.
   sencillamente no aparece. Está en `specs/ux.md` §6.5 y el porqué de cada
   decisión, en `specs/propuesta-frase-del-dia.html`. Queda abierto **si debería
   poder apagarse desde Ajustes sin borrar la clave**, que hoy no se puede.
+- **Lío tiene voz, y es el sexto encargo de IA** (`ia.lio`). Una frase suya dentro
+  de su bloque de Hoy, bajo el rótulo y encima de los turnos, en primera persona.
+  **Dentro del grupo y no encima**: fuera del rótulo sería otra frase del día, y
+  ya hay una. Comparte maquinaria entera con la chispa —cinco de golpe, de una en
+  una, `agenda.frases.<voz>` en `localStorage`, se toca y pasa—, de ahí que
+  `construirVoz` sirva a las dos. Lo suyo es el material, que es el único que se
+  **deriva** en vez de leerse: el turno sale de la regla de siempre —manda la
+  fila de `paseo` si existe, y si no el cuadro que gobernaba al abrirse la
+  ventana—, con `cuadroEn` e `inicioDeVentana`, que ya usaba `avisos.js`. No es
+  una cuarta copia de la regla; es la que hay, llamada desde `redaccion.js`. **La
+  idea es de `lio-ops`**, la otra aplicación del perro, que no está en uso y se
+  queda en inspiración: allí Lío tenía siete frases fijas y era lo mejor que
+  tenía. Se le prohíbe reñir de verdad y inventar quién lo sacó. Queda abierto
+  **si debería callarse los días que no hay nada que contar**, que hoy habla
+  siempre.
 - **Lío está construido**, y es el primer módulo que no cuelga de la agenda.
   Los turnos —mañana de 6 a 10, noche de 20 a 24— **se derivan de un cuadro de
   catorce casillas** que vive en `configuracion` y que solo editan los
