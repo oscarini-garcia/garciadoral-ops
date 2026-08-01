@@ -822,7 +822,7 @@ function abrirAjustes() {
     // de dejarte mirar. Nadie llega aquí sabiendo eso: se llega porque algo no
     // está como se esperaba, y «¿han subido mis datos?» y «¿tengo la versión
     // buena?» son la misma pregunta hecha a capas distintas.
-    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion, { abierta: true }));
+    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion, { abierta: true, icono: 'sincronizar' }));
 
     // Los demás empiezan plegados. Ajustes es una lista de cosas que casi nunca
     // se tocan: enseñarlas todas abiertas obliga a leerlas enteras para
@@ -834,18 +834,18 @@ function abrirAjustes() {
       );
       tema.addEventListener('change', () => aplicarTema(tema.value));
       dentro.append(campo('Tema', tema));
-    }));
+    }, { icono: 'aspecto' }));
 
     // El cuadro de Lío es el reparto de la casa, no una preferencia de quien
     // mira: cambiarlo por sorpresa reordena la semana de otras tres personas, y
     // por eso lo edita quien administra. Un cambio de un día suelto no pasa por
     // aquí, sino por el turno mismo, que se le pide al otro y él acepta.
     if (ctx.vista?.esAdministrador() && !demostracion) {
-      cuerpo.append(acordeon('🐾 Lío', cuadroDeLio));
+      cuerpo.append(acordeon('Lío', cuadroDeLio, { icono: 'huella' }));
     }
 
     if (ctx.vista?.esAdministrador() && !demostracion) {
-      cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion));
+      cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion, { icono: 'destello' }));
     }
 
     // Los viajes vienen de un calendario de Google, y su única palanca desde
@@ -853,21 +853,21 @@ function abrirAjustes() {
     // servidor; esto solo la dispara, y por eso —como Lío y la IA— es de quien
     // administra (`specs/calendario-viajes.md` §9).
     if (ctx.vista?.esAdministrador() && !demostracion) {
-      cuerpo.append(acordeon('✈️ Viajes', bloqueDeViajes));
+      cuerpo.append(acordeon('Viajes', bloqueDeViajes, { icono: 'avion' }));
     }
 
     // Aquí y no al arrancar. Preguntar por los avisos nada más entrar es lo que
     // más permisos consigue y lo que peor sienta, y un «no» de esos no se
     // recupera desde la aplicación: hay que ir a los Ajustes de iOS. En este
     // apartado lo enciende quien ha venido a buscarlo.
-    if (!demostracion) cuerpo.append(acordeon('Avisos', bloqueDeAvisos));
+    if (!demostracion) cuerpo.append(acordeon('Avisos', bloqueDeAvisos, { icono: 'campana' }));
 
     // Las ideas sobre la aplicación viven aquí y no en una pestaña porque son
     // sobre la herramienta y no sobre el trabajo, que es la misma razón por la
     // que están aquí la versión y la actualización.
-    if (!demostracion) cuerpo.append(acordeon('Mejoras', bloqueDeMejoras));
+    if (!demostracion) cuerpo.append(acordeon('Mejoras', bloqueDeMejoras, { icono: 'bombilla' }));
 
-    cuerpo.append(acordeon('La aplicación', bloqueLegal));
+    cuerpo.append(acordeon('La aplicación', bloqueLegal, { icono: 'documento' }));
 
     cuerpo.append(acordeon('Tu cuenta', (dentro) => {
       dentro.append(el('div', { class: 'acciones' }, [
@@ -885,7 +885,7 @@ function abrirAjustes() {
           onclick: () => confirmarBaja(),
         }, ['Eliminar mi cuenta']));
       }
-    }));
+    }, { icono: 'persona' }));
   }, [
     // Salir de aquí se hacía tocando fuera de la hoja, que es la convención de
     // la plataforma pero no se ve. Con los apartados plegados la hoja es corta y

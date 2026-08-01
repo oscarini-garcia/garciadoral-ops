@@ -103,6 +103,34 @@ const ICONOS = {
   visto: '<path d="m5 12.5 4.5 4.5L19 7"/>',
   informacion: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/>'
     + '<path d="M12 7.6v.1" stroke-width="2.4"/>',
+
+  // Los nueve de los apartados de Ajustes. Antes eran dos emoji sueltos —🐾 en
+  // Lío y ✈️ en Viajes—, heredados de donde salió cada módulo; con siete filas
+  // sin nada delante eso se leía como un descuido. Dibujados aquí valen dos
+  // cosas que un emoji no da: siguen el tema, porque heredan el color, y son
+  // del mismo autor que los de la barra, de modo que comparten grosor y
+  // perspectiva. El de la IA no está en esta lista porque ya estaba: es
+  // `destello`, y ya significa eso en otras cuatro pantallas.
+  sincronizar: '<path d="M20.5 12a8.5 8.5 0 0 1-15 5.4"/><path d="M3.5 12a8.5 8.5 0 0 1 15-5.4"/>'
+    + '<path d="M18.5 2.9v3.7h-3.7"/><path d="M5.5 21.1v-3.7h3.7"/>',
+  // Medio círculo relleno: es la figura del contraste, y sirve igual para
+  // «claro», «oscuro» y «como el sistema» sin decantarse por ninguno.
+  aspecto: '<circle cx="12" cy="12" r="8.6"/>'
+    + '<path d="M12 3.4a8.6 8.6 0 0 0 0 17.2z" fill="currentColor" stroke="none"/>',
+  // Cuatro dedos y la almohadilla, separados a propósito: pegados se apelmazan
+  // en una mancha a los diecisiete puntos a los que se dibuja de verdad.
+  huella: '<ellipse cx="6.5" cy="10" rx="1.6" ry="2"/><ellipse cx="10.1" cy="7.7" rx="1.6" ry="2.1"/>'
+    + '<ellipse cx="13.9" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="17.5" cy="10" rx="1.6" ry="2"/>'
+    + '<path d="M12 13.1c2.6 0 4.6 1.9 4.6 4.1 0 1.7-1.3 2.7-2.8 2.7-.7 0-1.2-.3-1.8-.3s-1.1.3-1.8.3'
+    + 'c-1.5 0-2.8-1-2.8-2.7 0-2.2 2-4.1 4.6-4.1z"/>',
+  avion: '<path d="M12 2.9c.85 0 1.35.85 1.35 1.95v4.5l6.9 3.95v2.1l-6.9-2.05v3.8l2.2 1.7v1.55L12 19.3'
+    + 'l-3.55 1.1v-1.55l2.2-1.7v-3.8L3.75 15.4v-2.1l6.9-3.95v-4.5C10.65 3.75 11.15 2.9 12 2.9z"/>',
+  campana: '<path d="M18 9.4a6 6 0 1 0-12 0c0 4.4-1.6 6.1-1.6 6.1h15.2S18 13.8 18 9.4z"/>'
+    + '<path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/>',
+  bombilla: '<path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/>',
+  documento: '<path d="M6.2 3.6h7.3L18 8.1v12.3H6.2z"/><path d="M13.5 3.6v4.5H18"/>'
+    + '<path d="M9.1 13h6M9.1 16.4h4"/>',
+  persona: '<circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/>',
 };
 
 export function icono(nombre) {
@@ -203,13 +231,17 @@ export const hayHojaAbierta = () => Boolean(cerrarActual);
  * buscador del navegador abre por su cuenta el apartado donde encuentra algo.
  * Nada de eso saldría gratis con un `div` y una clase.
  */
-export function acordeon(titulo, construir, { abierta = false, nota = null } = {}) {
+export function acordeon(titulo, construir, { abierta = false, nota = null, icono: dibujo = null } = {}) {
   const cuerpo = el('div', { class: 'acordeon-cuerpo' });
   construir(cuerpo);
   return el('details', { class: 'acordeon', open: abierta }, [
     // La nota va en el propio rótulo para que el apartado plegado siga diciendo
     // algo: «el próximo, Marta en seis días» ahorra desplegarlo solo para verlo.
     el('summary', {}, [
+      // La moneda solo aparece donde se pide, que hoy es Ajustes. Una lista de
+      // apartados que son cosas —Deseos, Ideas, Cumpleaños— no la necesita: allí
+      // el rótulo ya nombra lo que hay dentro, y aquí nombra dónde se toca.
+      dibujo ? el('span', { class: 'acordeon-moneda', 'aria-hidden': 'true' }, [icono(dibujo)]) : null,
       el('span', { texto: titulo }),
       nota ? el('span', { class: 'acordeon-nota', texto: nota }) : null,
     ]),

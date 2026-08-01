@@ -321,6 +321,24 @@ pendiente. El hook lo inyecta al final del mapa.
   sea sencillamente no le sale ese renglón. «✈️ Viajes» se queda sin botón y con
   su diagnóstico, que es otra cosa. La idea es de `meeting-ops-air`, que copió
   esta pantalla y luego la mejoró.
+  **Y los nueve apartados llevan ahora moneda**, la figura de los Ajustes del
+  sistema: el dibujo en blanco sobre una pastilla de tinta. Antes solo dos
+  llevaban algo delante —🐾 Lío y ✈️ Viajes—, y no por ninguna decisión sino
+  heredado de donde salió cada módulo, de modo que la columna se leía como un
+  descuido. Los emoji se van: los dibuja iOS, no siguen el tema y varios
+  —✈️ el primero— salen a trazo monocromo sin el selector de variación, que es
+  el fallo que ya dio 🏖 en Sitios. Los ocho nuevos están en `ICONOS` de
+  `js/ui.js`, sobre la misma rejilla de 24 y con el mismo grosor que los de la
+  barra; el noveno es `destello`, que ya existía y ya significaba «esto lo
+  escribe la IA». **La moneda va en tinta, la misma para las nueve**: un color
+  por apartado sería un arco iris que esta aplicación no usa en ningún sitio.
+  No cuesta alto —la moneda mide 28 puntos y la fila ya tenía 44 de área de
+  toque—, y solo aparece donde se pide: `acordeon` la dibuja si le pasan
+  `icono`, así que los apartados de Regalos y Ocasiones siguen sin ella. Las
+  cinco formas que se estudiaron están en
+  `specs/prototipo-iconos-de-ajustes.html`. Lo que **no** se ha tocado es el
+  🐾 de Hoy, del carril de la semana y de la hoja del turno: ahí el emoji
+  distingue al perro dentro de una lista de otras cosas, que es otro trabajo.
 - **Las mejoras son ideas sobre la propia aplicación**, apuntadas desde el móvil
   y guardadas en `mejora`. **No se llaman «idea» a propósito**: aquí una idea es
   una idea de regalo y está en el centro del modelo de ocultación, y compartir el
