@@ -141,6 +141,43 @@ if (existsSync(rutaPlist)) {
   }
 }
 
+// 4 bis) El nombre que se ve bajo el icono.
+//
+// Capacitor escribe `appName` en el Info.plist **al generar** el proyecto, y
+// `cap sync` no lo renombra después: cambiar `capacitor.config.json` en un
+// proyecto ya creado no tiene ningún efecto, y el teléfono sigue enseñando el
+// nombre viejo. Eso costó un rechazo de la App Store por la directriz 2.3.8,
+// que exige que el nombre de la tienda y el del dispositivo se parezcan.
+//
+// Se sincroniza aquí, en cada `sync:ios`, para que la única fuente sea
+// `capacitor.config.json` y no un campo de Xcode que nadie recuerda haber
+// tocado —y que además se perdería en el siguiente `cap add ios`, porque
+// `ios/` no se versiona—.
+if (existsSync(rutaPlist)) {
+  const { appName } = JSON.parse(readFileSync('capacitor.config.json', 'utf8'));
+  const plist = readFileSync(rutaPlist, 'utf8');
+  const clave = /(<key>CFBundleDisplayName<\/key>\s*<string>)([^<]*)(<\/string>)/;
+  const puesto = plist.match(clave)?.[2];
+
+  if (!appName) {
+    console.warn('[patch-ios] ⚠ capacitor.config.json no tiene appName; el nombre se queda como está.');
+  } else if (puesto === appName) {
+    console.log(`[patch-ios] El nombre ya era «${appName}».`);
+  } else if (puesto !== undefined) {
+    writeFileSync(rutaPlist, plist.replace(clave, `$1${appName}$3`));
+    console.log(`[patch-ios] Nombre en pantalla: «${puesto}» → «${appName}» ✅`);
+  } else {
+    const cierre = plist.lastIndexOf('</dict>');
+    if (cierre === -1) {
+      console.warn('[patch-ios] ⚠ Info.plist no tiene la forma esperada; ponga el nombre en Xcode.');
+    } else {
+      const declaracion = `\t<key>CFBundleDisplayName</key>\n\t<string>${appName}</string>\n`;
+      writeFileSync(rutaPlist, plist.slice(0, cierre) + declaracion + plist.slice(cierre));
+      console.log(`[patch-ios] Nombre en pantalla declarado: «${appName}» ✅`);
+    }
+  }
+}
+
 // 5) Los avisos remotos: el entitlement y el reenvío del token.
 //
 // Es lo único de todo el módulo de avisos que no puede llegar por OTA. Las
