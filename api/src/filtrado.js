@@ -94,6 +94,11 @@ export function componerInstantanea(registro, observador) {
     lugares,
     apuntes,
     votos,
+    // Sin filtrar por destinatario, porque una mejora no lo tiene: es sobre la
+    // aplicación y no hay de quién ocultarla. Lo único que se le pide a quien la
+    // recibe es tener cuenta, que es lo mismo que decir «usa esto»: a quien no
+    // la tiene no le sirve de nada una idea sobre una pantalla que no abre.
+    mejoras: observador.tiene_cuenta ? registro.mejoras || [] : [],
     // Lo visto no se recorta por visibilidad sino por dueño: las filas de otra
     // persona no le dicen nada a esta, y mandarlas contaría además qué ha
     // mirado cada uno, que no es asunto de nadie.

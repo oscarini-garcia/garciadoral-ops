@@ -17,10 +17,10 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
 } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
-import { crearVista } from './modelo.js';
+import { crearVista, nuevoId } from './modelo.js';
 import {
-  darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardarAjustesDeIa, iniciar,
-  instantanea, leerAjustesDeIa, probarRedaccion, refrescarViajes, sincronizar, suscribir,
+  darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardar, guardarAjustesDeIa, iniciar,
+  instantanea, leerAjustesDeIa, probarRedaccion, refrescarViajes, retirar, sincronizar, suscribir,
 } from './sincronizacion.js';
 import {
   cargarConfiguracion,
@@ -816,9 +816,17 @@ function abrirAjustes() {
       }));
     }
 
-    // Todos empiezan plegados. Ajustes es una lista de cosas que casi nunca se
-    // tocan: enseñarlas todas abiertas obliga a leerlas enteras para encontrar
-    // la única que se venía a buscar.
+    // Uno solo abierto, y es este. Eran tres apartados —«La aplicación» con
+    // «Buscar actualización», «Sincronización» con su línea, y «✈️ Viajes» con
+    // su botón—, y entre los tres obligaban a acertar cuál era tu problema antes
+    // de dejarte mirar. Nadie llega aquí sabiendo eso: se llega porque algo no
+    // está como se esperaba, y «¿han subido mis datos?» y «¿tengo la versión
+    // buena?» son la misma pregunta hecha a capas distintas.
+    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion, { abierta: true }));
+
+    // Los demás empiezan plegados. Ajustes es una lista de cosas que casi nunca
+    // se tocan: enseñarlas todas abiertas obliga a leerlas enteras para
+    // encontrar la única que se venía a buscar.
     cuerpo.append(acordeon('Aspecto', (dentro) => {
       const tema = seleccion(
         [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
@@ -854,17 +862,12 @@ function abrirAjustes() {
     // apartado lo enciende quien ha venido a buscarlo.
     if (!demostracion) cuerpo.append(acordeon('Avisos', bloqueDeAvisos));
 
-    cuerpo.append(acordeon('La aplicación', (dentro) => {
-      dentro.append(bloqueDeVersion());
-      dentro.append(bloqueLegal());
-    }));
+    // Las ideas sobre la aplicación viven aquí y no en una pestaña porque son
+    // sobre la herramienta y no sobre el trabajo, que es la misma razón por la
+    // que están aquí la versión y la actualización.
+    if (!demostracion) cuerpo.append(acordeon('Mejoras', bloqueDeMejoras));
 
-    // Debajo de «La aplicación», y no encima. Sigue siendo apartado propio
-    // —ahí viven la versión y lo legal, que son de la instalación, y esto es de
-    // los datos—, pero es lo que menos veces se abre: se viene aquí cuando ya se
-    // sospecha que algo no ha llegado, y hasta entonces solo estorbaba por
-    // delante de lo que sí se busca, que es qué versión hay puesta.
-    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion));
+    cuerpo.append(acordeon('La aplicación', bloqueLegal));
 
     cuerpo.append(acordeon('Tu cuenta', (dentro) => {
       dentro.append(el('div', { class: 'acciones' }, [
@@ -1043,33 +1046,125 @@ function bloqueDeViajes(seccion) {
   };
   pintar();
 
-  const boton = el('button', { class: 'boton crecer', type: 'button' }, ['Sincronizar ahora']);
-  boton.onclick = async () => {
-    const antes = boton.textContent;
-    boton.disabled = true;
-    boton.textContent = 'Sincronizando…';
-    try {
-      const resultado = await refrescarViajes();
-      await sincronizar();
-      pintar(JSON.stringify(resultado));
-      if (resultado.estado === 'ok') {
-        const cambios = (resultado.altas || 0) + (resultado.cambios || 0) + (resultado.bajas || 0);
-        avisar(cambios
-          ? `Viajes al día: ${resultado.altas} nuevos, ${resultado.cambios} cambios, ${resultado.bajas} retirados.`
-          : 'Viajes al día, sin cambios.');
-      } else {
-        avisar(`No se ha podido sincronizar (${resultado.estado}).`);
-      }
-    } catch (error) {
-      pintar(`error: ${error.message}`);
-      avisar(`No se ha podido sincronizar: ${error.message}`);
-    } finally {
-      boton.disabled = false;
-      boton.textContent = antes;
+  // Sin botón: traer los viajes ahora es una de las tres cosas que hace
+  // «Comprobar ahora» en Sincronización, y tenerlo dos veces obligaba a elegir
+  // cuál de los dos era el bueno. Lo que queda aquí es el diagnóstico, que es de
+  // quien administra y no de quien se pregunta si está todo al día.
+  seccion.append(diagnostico);
+}
+
+/**
+ * Ideas sobre la propia aplicación, apuntadas desde el móvil.
+ *
+ * Llegan andando por la calle, que es donde se usa esto y donde no está el
+ * ordenador. Sin un sitio donde dejarlas, lo único que se podía hacer con una
+ * era acordarse hasta volver a sentarse, que es un filtro que conserva las que
+ * se te ocurren dos veces y pierde las demás.
+ *
+ * **Y son una fila, no una nota en este teléfono.** La versión fácil habría sido
+ * `localStorage` —sin tabla, sin migración y sin despliegue para un cuaderno—,
+ * y es la que `meeting-ops-air` construyó primero y luego deshizo, con el
+ * argumento que nos ahorra repetirlo: sobre una idea de la aplicación se actúa
+ * en otra máquina, y una nota que esa máquina no puede leer es una nota sobre la
+ * que se actúa cuando alguien se acuerda de copiarla. El transporte era una
+ * persona. Aquí es peor todavía, porque quien lee este repositorio no ve el
+ * teléfono de nadie.
+ *
+ * Viaja por el contrato que ya hay —`guardar('mejora', …)` y la cola de
+ * siempre—, y no por una ruta propia: una ruta propia haría esperar a esta
+ * pantalla, o pediría su propia cola, reintento e idempotencia, que es el motor
+ * de sincronización escrito una segunda vez para un cuaderno.
+ *
+ * No pasa por la visibilidad: una mejora no tiene destinatario, así que no hay
+ * de quién ocultarla. La ven los cuatro.
+ */
+function bloqueDeMejoras(seccion) {
+  const lista = el('div', { class: 'grupo' });
+
+  const pintar = () => {
+    const mejoras = (instantanea()?.mejoras || [])
+      .filter((m) => m.activo !== 0 && m.activo !== false)
+      .sort((a, b) => String(b.creado_en || '').localeCompare(String(a.creado_en || '')));
+
+    vaciar(lista);
+    if (!mejoras.length) {
+      lista.append(el('p', { class: 'pista', texto: 'Todavía no hay ninguna.' }));
+      return;
     }
+    for (const mejora of mejoras) lista.append(filaDeMejora(mejora, pintar));
   };
 
-  seccion.append(diagnostico, el('div', { class: 'acciones' }, [boton]));
+  const abrirFormulario = (mejora = null) => {
+    const texto = el('textarea', { rows: '4', spellcheck: 'true' });
+    texto.value = mejora?.texto || '';
+
+    abrirHoja(mejora ? 'Mejora' : 'Apuntar una idea', (cuerpo) => {
+      cuerpo.append(campo('Qué se te ha ocurrido', texto));
+
+      const verbos = [
+        el('button', {
+          class: 'boton crecer', type: 'button',
+          onclick: async () => {
+            const dicho = texto.value.trim();
+            if (!dicho) { avisar('Escribe algo'); texto.focus(); return; }
+            await guardar('mejora', mejora?.id || nuevoId(), {
+              texto: dicho,
+              autor_id: sesionActual?.persona?.id || null,
+            });
+            cerrarHoja();
+            pintar();
+          },
+        }, [mejora ? 'Guardar' : 'Apuntar']),
+      ];
+
+      // Copiar se queda, y es de la mejora y no de la lista: una idea se pega en
+      // la conversación que va sobre esa idea, y eso no es sincronizar.
+      if (mejora) {
+        verbos.push(el('button', {
+          class: 'boton', 'data-tono': 'discreto', type: 'button',
+          onclick: async () => {
+            avisar(await copiar(mejora.texto) ? 'Copiada' : 'No se ha podido copiar');
+          },
+        }, ['Copiar']));
+      }
+
+      cuerpo.append(el('div', { class: 'acciones' }, verbos));
+
+      if (mejora) {
+        cuerpo.append(el('button', {
+          class: 'boton', 'data-tono': 'peligro', type: 'button',
+          onclick: async () => {
+            if (!confirm('¿Quitar esta mejora?')) return;
+            await retirar('mejora', mejora.id);
+            cerrarHoja();
+            pintar();
+          },
+        }, ['Quitar']));
+      }
+    });
+  };
+
+  pintar();
+  seccion.append(
+    lista,
+    el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button', onclick: () => abrirFormulario(),
+      }, ['Apuntar una idea']),
+    ]),
+  );
+
+  function filaDeMejora(mejora, alVolver) {
+    const quien = (instantanea()?.personas || []).find((p) => p.id === mejora.autor_id)?.nombre || null;
+    const cuando = String(mejora.creado_en || '').slice(0, 10);
+    return el('button', {
+      class: 'tarjeta', type: 'button', onclick: () => abrirFormulario(mejora),
+    }, [
+      // El texto entero y sin recortar: es lo único que la fila tiene que decir.
+      el('p', { class: 'mejora-texto', texto: mejora.texto }),
+      el('p', { class: 'mejora-firma', texto: [quien, cuando].filter(Boolean).join(' · ') }),
+    ]);
+  }
 }
 
 function bloqueDeRedaccion(seccion) {
@@ -1112,6 +1207,9 @@ function formularioDeRedaccion(ajustes) {
   const chispa = el('textarea', { rows: '5', spellcheck: 'false' });
   chispa.value = ajustes.chispa || '';
 
+  const lio = el('textarea', { rows: '5', spellcheck: 'false' });
+  lio.value = ajustes.lio || '';
+
   const traza = el('pre', { class: 'traza', hidden: true });
   const contar = (texto, clase = 'traza') => {
     traza.className = clase;
@@ -1148,6 +1246,7 @@ function formularioDeRedaccion(ajustes) {
         felicitacion: felicitacion.value.trim(),
         apunte: apunte.value.trim(),
         chispa: chispa.value.trim(),
+        lio: lio.value.trim(),
       });
       clave.value = '';
       clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
@@ -1170,7 +1269,7 @@ function formularioDeRedaccion(ajustes) {
   return [
     el('p', {
       class: 'pista',
-      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son cinco, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio y la frase con la que abre Hoy.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son seis, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio, la frase con la que abre Hoy y lo que dice Lío en su bloque.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
@@ -1192,10 +1291,13 @@ function formularioDeRedaccion(ajustes) {
     el('h4', { class: 'subtitulo-ajuste', texto: 'La frase con la que abre Hoy' }),
     campo('Instrucción', chispa, 'El único encargo que nadie pide: sale solo al abrir, una vez al día, y se pasa a la siguiente tocándola. También en tandas de cinco, una por línea: se piden de golpe y el teléfono las va enseñando, así que si reescribes esto conserva esa forma. Se le dan el día, lo que hay apuntado hoy, lo que viene en la semana y un tema sacado al azar de lo que esta casa hace de verdad. Aquí es donde se sube o se baja el nivel de guasa, y donde conviene dejarle prohibidos los tacos y las exclamaciones —sin decírselo se suelta— y prohibido nombrar regalos, ideas y deseos, que es la pantalla que se lee con alguien al lado. Vacío, vuelve el encargo de origen.'),
 
+    el('h4', { class: 'subtitulo-ajuste', texto: 'La voz de Lío' }),
+    campo('Instrucción', lio, 'El único encargo que habla en primera persona: el que se queja es el perro. También en tandas de cinco, una por línea. Se le dan los dos turnos de hoy, de quién son, cuáles quedaron sin marcar y los días seguidos que lleva saliendo. Conviene dejarle claro que se queja pero no riñe de verdad —quien lo lee es quien no marcó, y lo lee desayunando— y que no invente quién lo sacó, que eso es un dato. Vacío, vuelve el encargo de origen.'),
+
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {
       class: 'pista',
-      texto: 'Guardar los guarda los cinco. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+      texto: 'Guardar los guarda los seis. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
     }),
     traza,
   ];
@@ -1359,6 +1461,8 @@ function informeDelFallo(situacion) {
 
 function bloqueDeSincronizacion(dentro) {
   const progreso = el('ul', { class: 'progreso' });
+  const linea = el('p', { class: 'pista' });
+  const version = el('p', { class: 'pista' });
 
   const paso = (texto, estadoPaso) => el('li', { 'data-estado': estadoPaso }, [
     el('span', {
@@ -1387,8 +1491,6 @@ function bloqueDeSincronizacion(dentro) {
     return renglon;
   };
 
-  const linea = el('button', { class: 'linea-verbo', type: 'button' });
-
   const escribirLinea = () => {
     const situacion = estado();
     linea.textContent = situacion.ultima
@@ -1396,85 +1498,39 @@ function bloqueDeSincronizacion(dentro) {
       : 'Todavía no se ha podido actualizar.';
   };
 
-  linea.onclick = async () => {
-    vaciar(progreso).append(paso('Sincronizando…', 'curso'));
-    try {
-      await sincronizar();
-    } catch {
-      /* el estado lo cuenta abajo, con su motivo */
+  /**
+   * Qué versión hay puesta.
+   *
+   * En el navegador no hay bundle que actualizar —la versión es la que sirva
+   * Pages en cada recarga—, así que se dice y ya: prometer una comprobación que
+   * solo puede contestar «aquí no hay nada que actualizar» sería ruido.
+   */
+  const escribirVersion = () => {
+    if (!esNativo()) {
+      version.textContent = 'Estás en la versión web, que se actualiza sola al recargar.';
+      return;
     }
-    const situacion = estado();
-    vaciar(progreso);
-    if (situacion.estado === 'al-dia') {
-      progreso.append(paso('Subido lo que había pendiente', 'hecho'));
-      progreso.append(paso('Traída y guardada la última copia', 'hecho'));
-    } else {
-      // Con el motivo cuando lo hay: «no se ha podido: sin sincronizar» decía la
-      // misma cosa dos veces y dejaba a quien mira sin nada que hacer.
-      const dicho = situacion.motivo || TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
-      progreso.append(pasoQueSeCopia(`No se ha podido: ${dicho}`, informeDelFallo(situacion)));
-    }
-    escribirLinea();
-  };
-
-  escribirLinea();
-  dentro.append(linea, progreso);
-}
-
-/**
- * Versión instalada y comprobación manual, solo dentro de la cáscara.
- *
- * La comprobación automática ya ocurre al arrancar; este botón existe para
- * poder forzarla cuando alguien pregunta si tiene lo último. La actualización
- * se aplica al volver a abrir la aplicación, nunca a media sesión.
- */
-function bloqueDeVersion() {
-  const linea = el('p', { class: 'pista' });
-  const progreso = el('ul', { class: 'progreso' });
-
-  const ponerVersion = () => {
-    linea.textContent = 'Comprobando la versión…';
-    versionInstalada().then((version) => {
-      linea.textContent = version
-        ? `Versión instalada: ${version}.`
-        : 'Versión instalada: la de origen.';
+    version.textContent = 'Comprobando la versión…';
+    versionInstalada().then((cual) => {
+      version.textContent = cual ? `Versión instalada: ${cual}.` : 'Versión instalada: la de origen.';
     });
   };
-
-  // En el navegador no hay bundle que actualizar: la versión es la que sirva
-  // Pages en cada recarga, y ofrecer un botón que solo puede responder «aquí no
-  // hay nada que actualizar» sería ruido.
-  if (!esNativo()) {
-    return el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: 'Aplicación' }),
-      el('p', { class: 'pista', texto: 'Estás en la versión web, que se actualiza sola al recargar.' }),
-    ]);
-  }
-  ponerVersion();
-
-  const paso = (texto, estado) => el('li', { 'data-estado': estado }, [
-    el('span', {
-      class: 'progreso-marca',
-      texto: { hecho: '✓', curso: '·', fallo: '×' }[estado] || '·',
-    }),
-    texto,
-  ]);
 
   // Cada fase cierra la anterior, de modo que la lista se lee de arriba abajo
   // como lo que ha ido pasando y no como una promesa de lo que pasará.
   const RELATO = {
     comprobando: () => [paso('Buscando si hay versión nueva…', 'curso')],
-    'al-dia': ({ version }) => [
+    'al-dia': ({ version: cual }) => [
       paso('Buscada la última versión', 'hecho'),
-      paso(`Ya tienes lo último${version ? ` (${version})` : ''}`, 'hecho'),
+      paso(`Ya tienes lo último${cual ? ` (${cual})` : ''}`, 'hecho'),
     ],
-    'hay-version': ({ version }) => [
+    'hay-version': ({ version: cual }) => [
       paso('Buscada la última versión', 'hecho'),
-      paso(`Hay una versión nueva: ${version}`, 'hecho'),
+      paso(`Hay una versión nueva: ${cual}`, 'hecho'),
     ],
-    descargando: ({ version, porcentaje }) => [
+    descargando: ({ version: cual, porcentaje }) => [
       paso('Buscada la última versión', 'hecho'),
-      paso(`Hay una versión nueva: ${version}`, 'hecho'),
+      paso(`Hay una versión nueva: ${cual}`, 'hecho'),
       paso(
         porcentaje === undefined || porcentaje === null
           ? 'Descargando…'
@@ -1482,49 +1538,121 @@ function bloqueDeVersion() {
         'curso',
       ),
     ],
-    instalando: ({ version }) => [
+    instalando: ({ version: cual }) => [
       paso('Buscada la última versión', 'hecho'),
-      paso(`Hay una versión nueva: ${version}`, 'hecho'),
+      paso(`Hay una versión nueva: ${cual}`, 'hecho'),
       paso('Descargada', 'hecho'),
       paso('Instalando…', 'curso'),
     ],
-    descargada: ({ version }) => [
+    descargada: ({ version: cual }) => [
       paso('Buscada la última versión', 'hecho'),
-      paso(`Versión ${version} instalada`, 'hecho'),
+      paso(`Versión ${cual} instalada`, 'hecho'),
       paso('Se aplicará al volver a abrir la aplicación', 'hecho'),
     ],
     'sin-manifiesto': () => [paso('No he podido leer si hay versión nueva', 'fallo')],
     error: ({ detalle }) => [paso(`No he podido actualizar: ${detalle || 'error'}`, 'fallo')],
-    'no-aplica': () => [paso('Aquí no hay nada que actualizar', 'hecho')],
+    'no-aplica': () => [],
   };
 
-  const boton = el('button', {
-    class: 'boton', 'data-tono': 'discreto', type: 'button',
-    onclick: async () => {
-      boton.disabled = true;
-      boton.textContent = 'Actualizando…';
+  /**
+   * Un botón, y hace las tres en el orden que importa.
+   *
+   * Los datos primero, porque es lo que se suele querer decir y es de lo que se
+   * pinta el punto; los viajes en medio, porque son datos también y llegan de
+   * fuera; el bundle al final, porque es lo único que no se aplica hasta volver
+   * a abrir. Todo en una sola lista, que se lee de arriba abajo como lo que ha
+   * ido pasando.
+   *
+   * Lo que ya está escrito se conserva y lo nuevo se añade detrás: sin eso, cada
+   * fase borraría el relato de la anterior y el botón contaría solo su último
+   * tercio.
+   */
+  const boton = el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button' }, ['Comprobar ahora']);
+  let ocupado = false;
 
-      const contar = (avance) => {
+  boton.onclick = async () => {
+    if (ocupado) return;
+    ocupado = true;
+    boton.disabled = true;
+    boton.textContent = 'Comprobando…';
+
+    const contado = [];
+    const contar = (...renglones) => {
+      contado.push(...renglones);
+      vaciar(progreso).append(...contado);
+    };
+
+    contar(paso('Subiendo lo pendiente y trayendo lo nuevo…', 'curso'));
+    try {
+      await sincronizar();
+    } catch {
+      /* el estado lo cuenta abajo, con su motivo */
+    }
+    const situacion = estado();
+    contado.pop();
+    if (situacion.estado === 'al-dia') {
+      contar(paso('Subido lo que había pendiente', 'hecho'), paso('Traída y guardada la última copia', 'hecho'));
+    } else {
+      const dicho = situacion.motivo || TEXTO_SINCRONIZACION[situacion.estado] || situacion.estado;
+      contar(pasoQueSeCopia(`No se ha podido: ${dicho}`, informeDelFallo(situacion)));
+    }
+    escribirLinea();
+
+    // Los viajes solo los puede traer quien administra, porque la descarga la
+    // hace el servidor y esta ruta es suya (`specs/calendario-viajes.md` §9).
+    // A quien no lo sea no se le cuenta un renglón que no puede tener: no es un
+    // error, sencillamente no está.
+    if (puedeRefrescarViajes()) {
+      contar(paso('Trayendo el calendario de viajes…', 'curso'));
+      try {
+        const resultado = await refrescarViajes();
+        contado.pop();
+        contar(paso(resumenDeViajes(resultado), 'hecho'));
+      } catch (error) {
+        contado.pop();
+        contar(paso(`No se ha podido traer el calendario: ${error.message || 'error'}`, 'fallo'));
+      }
+    }
+
+    // Y el bundle. En el navegador `comprobarActualizacion` contesta
+    // `no-aplica` y su relato queda vacío, de modo que la última palabra la
+    // tiene la sincronización.
+    if (esNativo()) {
+      const yaContado = contado.length;
+      const pintar = (avance) => {
         const construir = RELATO[avance.fase];
         if (!construir) return;
-        vaciar(progreso).append(...construir(avance));
+        contado.length = yaContado;
+        contar(...construir(avance));
       };
+      const resultado = await comprobarActualizacion({ alAvanzar: pintar });
+      pintar(resultado);
+      if (resultado.estado === 'descargada') escribirVersion();
+    }
 
-      const resultado = await comprobarActualizacion({ alAvanzar: contar });
-      contar(resultado);
+    ocupado = false;
+    boton.disabled = false;
+    boton.textContent = 'Comprobar ahora';
+  };
 
-      boton.disabled = false;
-      boton.textContent = 'Buscar actualización';
-      if (resultado.estado === 'descargada') ponerVersion();
-    },
-  }, ['Buscar actualización']);
+  escribirLinea();
+  escribirVersion();
+  dentro.append(linea, version, boton, progreso);
+}
 
-  return el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: 'Aplicación' }),
-    linea,
-    boton,
-    progreso,
-  ]);
+/** Lo que trajo la descarga, en un renglón. Sin cambios se dice, que es lo más
+ *  frecuente y es una respuesta tan buena como cualquier otra. */
+function resumenDeViajes(resultado) {
+  if (resultado?.estado !== 'ok') return `Calendario de viajes: ${resultado?.estado || 'sin respuesta'}`;
+  const cambios = (resultado.altas || 0) + (resultado.cambios || 0) + (resultado.bajas || 0);
+  return cambios
+    ? `Calendario de viajes: ${resultado.altas || 0} nuevos, ${resultado.cambios || 0} cambios, ${resultado.bajas || 0} retirados`
+    : 'Calendario de viajes: sin cambios';
+}
+
+/** Si esta persona puede disparar la descarga del calendario de viajes. */
+function puedeRefrescarViajes() {
+  return sesionActual?.persona?.rol === 'administrador' && estado().estado !== 'demostracion';
 }
 
 function aplicarTema(valor) {

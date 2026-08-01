@@ -22,8 +22,8 @@
 import { el, vaciar, abrirHoja, avisar } from '../ui.js';
 import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia, sumarDias } from '../semana.js';
 import { comprobarActualizacion, esNativo, toque, versionInstalada } from '../native.js';
-import { escribirLaChispa, estado } from '../sincronizacion.js';
-import { chispaGuardada, guardarChispa } from '../almacen.js';
+import { escribirLaChispa, escribirLoDeLio, estado } from '../sincronizacion.js';
+import { frasesGuardadas, guardarFrases } from '../almacen.js';
 import { VERSION_APP } from '../version.js';
 import {
   abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDePropuesta,
@@ -49,11 +49,13 @@ let pie = null;
 /** Lo mismo que el pie, y por lo mismo: la pantalla se repinta con cada
  *  sincronización y la frase no puede desaparecer y volver mientras se pide. */
 let chispa = null;
+let vozDeLio = null;
 
 export function reiniciarHoy() {
   versionEnUso = null;
   pie = null;
   chispa = null;
+  vozDeLio = null;
 }
 
 /**
@@ -146,13 +148,22 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
  * esta línea no existe, igual que no existe el botón de la IA al compartir.
  */
 function laChispa(dia, ctx) {
-  if (!chispa) chispa = construirChispa();
+  if (!chispa) {
+    chispa = construirVoz({
+      voz: 'chispa',
+      clase: 'hoy-chispa',
+      pedirTanda: ({ fecha, dia: cuando, ctx: contexto, frases }) => {
+        const { eventos, proximos } = loQueHayAlrededor(cuando, contexto);
+        return escribirLaChispa(fecha, eventos, proximos, frases);
+      },
+    });
+  }
 
   // El contexto se renueva en cada repintado, que es lo que hace que el toque
   // de esta tarde no pida la frase con la instantánea de esta mañana.
   chispa.apuntar(dia, ctx);
 
-  const guardadas = chispaGuardada(iso(dia));
+  const guardadas = frasesGuardadas('chispa', iso(dia));
   if (guardadas) chispa.poner(guardadas.frases, guardadas.cual);
   else chispa.pedir();
 
@@ -172,8 +183,8 @@ function loQueHayAlrededor(dia, ctx) {
   };
 }
 
-function construirChispa() {
-  const nodo = el('button', { class: 'hoy-chispa', type: 'button', hidden: true });
+function construirVoz({ voz, clase, pedirTanda }) {
+  const nodo = el('button', { class: clase, type: 'button', hidden: true });
   let dia = null;
   let ctx = null;
   let frases = [];
@@ -203,17 +214,16 @@ function construirChispa() {
     if (!nodo.hidden) nodo.dataset.estado = 'pidiendo';
 
     const fecha = iso(dia);
-    const { eventos, proximos } = loQueHayAlrededor(dia, ctx);
     // Las que ya se han enseñado hoy viajan con la petición: sin ellas, la
     // segunda tanda es la primera otra vez con otras palabras.
-    const nuevas = await escribirLaChispa(fecha, eventos, proximos, frases);
+    const nuevas = await pedirTanda({ fecha, dia, ctx, frases });
     pidiendo = false;
 
     // Solo se guarda lo que ha salido. Un día sin clave o sin cobertura no
     // escribe una tanda vacía en el almacén: se vuelve a intentar al abrir, y
     // mientras tanto se queda lo que hubiera.
     if (!nuevas.length) { escribir(); return; }
-    guardarChispa(fecha, nuevas, 0);
+    guardarFrases(voz, fecha, nuevas, 0);
     poner(nuevas, 0);
   };
 
@@ -221,7 +231,7 @@ function construirChispa() {
   const siguiente = () => {
     if (cual + 1 < frases.length) {
       cual += 1;
-      guardarChispa(iso(dia), frases, cual);
+      guardarFrases(voz, iso(dia), frases, cual);
       escribir();
       return;
     }
@@ -306,6 +316,7 @@ function bloqueDeLio(dia, ctx) {
 
   const grupo = el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: '🐾 Lío' }),
+    laVozDeLio(dia, ctx),
   ]);
 
   for (const turno of turnosDe(ctx.vista.datos, dia)) grupo.append(filaDeTurno(turno, ctx));
@@ -317,6 +328,37 @@ function bloqueDeLio(dia, ctx) {
   }
 
   return [grupo];
+}
+
+/**
+ * Lo que dice Lío de su propio día, debajo de su rótulo y encima de sus turnos.
+ *
+ * La idea es de `lio-ops`, la aplicación del perro que se quedó en inspiración:
+ * allí Lío tenía voz propia y era lo mejor que tenía. Aquí, además, hay de dónde
+ * sacarla, porque los turnos son datos: quién lo tiene hoy, qué quedó sin marcar
+ * y cuántos días seguidos ha salido.
+ *
+ * Misma maquinaria que la frase del día —cinco de golpe, de una en una, guardadas
+ * con su fecha, y se toca para pasar— y mismo silencio cuando no hay nada que
+ * decir. Va dentro del grupo y no encima porque **es de Lío y no de la
+ * pantalla**: fuera del rótulo sería otra frase del día, y ya hay una.
+ */
+function laVozDeLio(dia, ctx) {
+  if (!vozDeLio) {
+    vozDeLio = construirVoz({
+      voz: 'lio',
+      clase: 'lio-voz',
+      pedirTanda: ({ fecha, frases }) => escribirLoDeLio(fecha, frases),
+    });
+  }
+
+  vozDeLio.apuntar(dia, ctx);
+
+  const guardadas = frasesGuardadas('lio', iso(dia));
+  if (guardadas) vozDeLio.poner(guardadas.frases, guardadas.cual);
+  else vozDeLio.pedir();
+
+  return vozDeLio.nodo;
 }
 
 // ------------------------------------------------------------ Lo de hoy --

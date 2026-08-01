@@ -1,7 +1,7 @@
 /**
  * Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un
- * regalo, felicitar un cumpleaños, apuntar cosas de un sitio y escribir la frase
- * con la que abre la pantalla de Hoy.
+ * regalo, felicitar un cumpleaños, apuntar cosas de un sitio, escribir la frase
+ * con la que abre la pantalla de Hoy y hablar por boca del perro.
  *
  * La llamada sale de aquí y no del teléfono por tres motivos, en orden de
  * importancia: la clave es una credencial de pago del hogar y no debe viajar a
@@ -19,18 +19,20 @@
  * y va explicada donde se compone: es lo que quien pide acaba de escribir en su
  * propio formulario, y vuelve a su propia pantalla.
  *
- * Los cinco encargos son el mismo mecanismo con instrucciones distintas, y cada
+ * Los seis encargos son el mismo mecanismo con instrucciones distintas, y cada
  * uno se puede reescribir desde Ajustes. Lo que cambia entre ellos es el
  * material: de un día se le cuentan los eventos; de un regalo, lo que se sabe de
  * quien lo recibe; de una felicitación, **solo lo que esa persona ya sabe de sí
  * misma**, porque el texto se le manda a ella; de un sitio, lo que ya hay
  * apuntado allí; y de la frase del día, lo de hoy, lo que viene y un tema al
- * azar de los que esta casa usa.
+ * azar de los que esta casa usa; y de la voz de Lío, sus turnos y su racha.
  *
  * El quinto se sale del molde en una cosa: es el único que nadie pide —sale solo
  * al abrir Hoy—, y por eso es también el único que se calla cuando falla en vez
  * de contar por qué.
  */
+
+import { IDS_TURNO, TURNOS, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
 
 const ANTHROPIC = 'https://api.anthropic.com/v1';
 const VERSION_API = '2023-06-01';
@@ -163,6 +165,38 @@ export const INSTRUCCION_CHISPA_POR_DEFECTO = [
   'frase entera, sin saludo, sin emojis, sin comillas y sin explicar nada.',
 ].join(' ');
 
+/**
+ * El encargo de la voz de Lío, que es el sexto y el único que habla en primera
+ * persona.
+ *
+ * La idea viene de `lio-ops`, la aplicación del perro que se quedó en el camino:
+ * allí Lío tenía voz propia —siete frases fijas, «Llevo despierto desde las
+ * 6:12. Solo lo menciono.»— y era lo mejor que tenía. Aquí sí hay de dónde
+ * sacarlas, porque los turnos son datos y no adornos.
+ *
+ * Lo suyo frente a la frase del día: **el que habla es el perro**, y por eso el
+ * reproche va de mentira. Quien lee la frase es casi siempre quien no marcó su
+ * turno, y esta pantalla se ve en el desayuno: si Lío riñe de verdad, deja de
+ * tener gracia y pasa a ser un recado con voz de dibujo animado. Se le prohíbe
+ * además inventar quién sacó a quién, que sería una acusación falsa delante de
+ * toda la casa.
+ */
+export const INSTRUCCION_LIO_POR_DEFECTO = [
+  'Eres Lío, un caniche toy negro que vive en esta casa y que tiene opiniones',
+  'firmes sobre los horarios. Te doy cómo va tu día: los dos turnos de paseo, de',
+  'quién son, cuáles están marcados y cuáles no, y cuántos días seguidos has',
+  'salido.',
+  'Escribe CINCO frases distintas entre sí, de una o dos líneas cada una, en',
+  'primera persona y en español de España: digno, algo ofendido y muy irónico,',
+  'como quien lleva razón y ha decidido no insistir demasiado.',
+  'La gracia sale de lo que te doy y no de chistes de perros en general. Puedes',
+  'quejarte, pero nunca riñes de verdad: quien lee esto es de tu familia y lo lee',
+  'desayunando. No inventes quién te sacó ni cuándo —eso es un dato y lo tienes—,',
+  'no nombres regalos ni sorpresas, y no uses emojis ni exclamaciones.',
+  'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada línea una',
+  'frase entera, sin comillas y sin explicar nada.',
+].join(' ');
+
 const MAXIMO_EVENTOS = 20;
 // Un periodo da para más, pero no para todo: un mes cargado son cuarenta o
 // cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
@@ -186,6 +220,9 @@ const TOPE_DE_SALIDA = 400;
 // con puntos suspensivos es peor que una frase corta, y el sitio que ocupa lo
 // tiene que saber la pantalla antes de pintarlo.
 const TOPE_DE_CHISPA = 160;
+// Más de un mes de racha no dice nada nuevo, y recorrer un año de filas por una
+// broma es trabajo tirado.
+const MAXIMO_RACHA = 31;
 
 const NOMBRES_DIA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = [
@@ -203,6 +240,7 @@ const CLAVES = {
   felicitacion: 'ia.felicitacion',
   apunte: 'ia.apunte',
   chispa: 'ia.chispa',
+  lio: 'ia.lio',
 };
 
 export async function leerConfiguracion(db) {
@@ -221,6 +259,7 @@ export async function leerConfiguracion(db) {
     felicitacion: filas.get(CLAVES.felicitacion)?.valor || INSTRUCCION_FELICITACION_POR_DEFECTO,
     apunte: filas.get(CLAVES.apunte)?.valor || INSTRUCCION_APUNTE_POR_DEFECTO,
     chispa: filas.get(CLAVES.chispa)?.valor || INSTRUCCION_CHISPA_POR_DEFECTO,
+    lio: filas.get(CLAVES.lio)?.valor || INSTRUCCION_LIO_POR_DEFECTO,
   };
 }
 
@@ -242,6 +281,7 @@ export function configuracionPublica(configuracion) {
     felicitacion: configuracion.felicitacion,
     apunte: configuracion.apunte,
     chispa: configuracion.chispa,
+    lio: configuracion.lio,
   };
 }
 
@@ -715,6 +755,97 @@ export function componerMaterialDeChispa(
   }
 
   return { titulo: 'Las frases de hoy', lineas, omitidos };
+}
+
+/**
+ * Lo que se le cuenta a Lío de su propio día.
+ *
+ * Se deriva aquí y no llega del teléfono, igual que el resto de los materiales:
+ * el cuadro y las filas de `paseo` vienen en la instantánea, y el turno sale de
+ * la misma regla de siempre —**manda la fila si existe, y si no, el cuadro que
+ * gobernaba al abrirse la ventana**—, con `cuadroEn` e `inicioDeVentana`, que ya
+ * usa `avisos.js`. No es una copia nueva de la regla: es la que hay, llamada
+ * desde otro sitio.
+ *
+ * La racha son los días seguidos hasta ayer en que salió al menos una vez. Es lo
+ * único de aquí que no está en ninguna pantalla, y es justamente lo que le da a
+ * Lío algo de lo que presumir.
+ */
+export function componerMaterialDeLio(instantanea, { fecha, ahora = new Date() } = {}) {
+  const versiones = normalizarVersiones(instantanea.lio_cuadro);
+  const nombre = (id) => (instantanea.personas || []).find((p) => p.id === id)?.nombre || null;
+
+  const deUnDia = (dia) => IDS_TURNO.map((turnoId) => {
+    const fila = (instantanea.paseos || []).find(
+      (paseo) => paseo.activo !== 0 && paseo.fecha === dia && paseo.turno === turnoId,
+    );
+    const cuadro = cuadroEn(versiones, inicioDeVentana(dia, turnoId));
+    const asignadoId = fila ? fila.asignado_id || null : cuadro[turnoId]?.[indiceDeDia(dia)] || null;
+    return {
+      turnoId,
+      nombre: TURNOS.find((t) => t.id === turnoId)?.nombre || turnoId,
+      asignado: nombre(asignadoId),
+      hechoPor: nombre(fila?.hecho_por_id),
+      // Fila con respuesta y sin quien lo sacara: eso es un «no salió» dicho a
+      // propósito, que no es lo mismo que no haber marcado.
+      noSalio: Boolean(fila?.hecho_en && !fila?.hecho_por_id),
+      vencido: ahora >= new Date(inicioDeVentana(dia, turnoId).getTime() + 4 * 60 * 60 * 1000),
+    };
+  });
+
+  const cuenta = (turno) => {
+    if (turno.hechoPor) {
+      return turno.hechoPor === turno.asignado || !turno.asignado
+        ? `${turno.nombre}: salió, con ${turno.hechoPor}`
+        : `${turno.nombre}: salió con ${turno.hechoPor}, y le tocaba a ${turno.asignado}`;
+    }
+    if (turno.noSalio) return `${turno.nombre}: no salió, y le tocaba a ${turno.asignado || 'nadie'}`;
+    if (!turno.asignado) return `${turno.nombre}: sin asignar`;
+    return turno.vencido
+      ? `${turno.nombre}: le tocaba a ${turno.asignado} y nadie lo marcó`
+      : `${turno.nombre}: le toca a ${turno.asignado}, todavía no ha llegado`;
+  };
+
+  const lineas = [`Hoy es ${formatearFecha(fecha)}`, 'Tus turnos de hoy:'];
+  lineas.push(...deUnDia(fecha).map((turno) => `  ${cuenta(turno)}`));
+
+  const ayer = restarUnDia(fecha);
+  const deAyer = deUnDia(ayer).filter((turno) => turno.hechoPor || turno.noSalio);
+  if (deAyer.length) lineas.push('Ayer:', ...deAyer.map((turno) => `  ${cuenta(turno)}`));
+
+  const racha = rachaHasta(instantanea, ayer);
+  if (racha) lineas.push(`Llevas ${racha} ${racha === 1 ? 'día seguido' : 'días seguidos'} saliendo al menos una vez`);
+
+  return { titulo: 'La voz de Lío', lineas, omitidos: [] };
+}
+
+/** Lunes en 0, como en el resto del sistema. */
+function indiceDeDia(fechaIso) {
+  const [anno, mes, dia] = String(fechaIso).split('-').map(Number);
+  return (new Date(Date.UTC(anno, (mes || 1) - 1, dia || 1)).getUTCDay() + 6) % 7;
+}
+
+function restarUnDia(fechaIso) {
+  const [anno, mes, dia] = String(fechaIso).split('-').map(Number);
+  const antes = new Date(Date.UTC(anno, (mes || 1) - 1, (dia || 1) - 1));
+  return antes.toISOString().slice(0, 10);
+}
+
+/** Días seguidos, hacia atrás, con al menos un paseo hecho. Se para en el
+ *  primero que no lo tenga, y no mira más allá de un mes. */
+function rachaHasta(instantanea, desde) {
+  const hechos = new Set(
+    (instantanea.paseos || [])
+      .filter((paseo) => paseo.activo !== 0 && paseo.hecho_por_id)
+      .map((paseo) => paseo.fecha),
+  );
+  let dia = desde;
+  let cuenta = 0;
+  while (hechos.has(dia) && cuenta < MAXIMO_RACHA) {
+    cuenta += 1;
+    dia = restarUnDia(dia);
+  }
+  return cuenta;
 }
 
 /**

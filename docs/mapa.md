@@ -63,8 +63,8 @@ tener que recorrer la aplicación entera cada vez.
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo,…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
-  INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO · leerConfiguracion
-  configuracionPublica · guardarConfiguracion · …y 14 más
+  INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
+  INSTRUCCION_LIO_POR_DEFECTO · leerConfiguracion · configuracionPublica · …y 16 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
   aplicarCambio
@@ -118,7 +118,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 12 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 13 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -180,6 +180,7 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
 - `POST /api/ia/chispa` — cinco frases para la pantalla de Hoy
+- `POST /api/ia/lio` — cinco frases dichas por el perro
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
 
 ## Workflows
@@ -259,7 +260,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**303** en total.
+**314** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -277,9 +278,11 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 10
 - `api/test/lio.test.js` — 23
+- `api/test/mejoras.test.js` — 3
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
 - `api/test/redaccion-dia.test.js` — 17
+- `api/test/redaccion-lio.test.js` — 8
 - `api/test/redaccion-regalo.test.js` — 14
 - `api/test/redaccion.test.js` — 13
 - `api/test/sitios.test.js` — 5

@@ -32,6 +32,7 @@ const PLURAL = {
   apunte: 'apuntes',
   voto: 'votos',
   visto: 'vistos',
+  mejora: 'mejoras',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -424,6 +425,25 @@ export async function escribirLaChispa(fecha, eventos = [], proximos = [], desca
     const { frases } = await peticion('/api/ia/chispa', {
       method: 'POST',
       body: JSON.stringify({ fecha, eventos, proximos, descartadas }),
+    });
+    return frases || [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Una tanda de cinco frases dichas por Lío, para su bloque de Hoy.
+ *
+ * Solo viajan la fecha y las que ya se han enseñado hoy: los turnos, de quién
+ * son y la racha los deriva el Worker de su propia instantánea, que es donde
+ * viven. Se calla igual que la del día cuando algo falla.
+ */
+export async function escribirLoDeLio(fecha, descartadas = []) {
+  try {
+    const { frases } = await peticion('/api/ia/lio', {
+      method: 'POST',
+      body: JSON.stringify({ fecha, descartadas }),
     });
     return frases || [];
   } catch {

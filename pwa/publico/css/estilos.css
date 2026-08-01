@@ -450,6 +450,20 @@ button { background: none; border: 0; cursor: pointer; }
   text-wrap: pretty;
 }
 .hoy-chispa[data-estado="pidiendo"] { opacity: .45; }
+
+/* Y la voz de Lío, dentro de su grupo y debajo del rótulo. Misma cursiva, pero
+   sangrada y un punto más pequeña: la de arriba habla de la pantalla y esta
+   habla desde dentro del bloque, con el perro por sujeto. */
+.lio-voz {
+  font-family: var(--serif); font-style: italic;
+  font-size: 14.5px; line-height: 1.45; color: var(--ink-soft);
+  text-align: left; padding: 0 0 8px 2px; width: 100%;
+  text-wrap: pretty;
+}
+.lio-voz[data-estado="pidiendo"] { opacity: .45; }
+@media (prefers-reduced-motion: no-preference) {
+  .lio-voz { transition: opacity .18s ease; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .hoy-chispa { transition: opacity .18s ease; }
 }

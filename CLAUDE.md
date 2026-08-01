@@ -249,6 +249,21 @@ pendiente. El hook lo inyecta al final del mapa.
   sencillamente no aparece. Está en `specs/ux.md` §6.5 y el porqué de cada
   decisión, en `specs/propuesta-frase-del-dia.html`. Queda abierto **si debería
   poder apagarse desde Ajustes sin borrar la clave**, que hoy no se puede.
+- **Lío tiene voz, y es el sexto encargo de IA** (`ia.lio`). Una frase suya dentro
+  de su bloque de Hoy, bajo el rótulo y encima de los turnos, en primera persona.
+  **Dentro del grupo y no encima**: fuera del rótulo sería otra frase del día, y
+  ya hay una. Comparte maquinaria entera con la chispa —cinco de golpe, de una en
+  una, `agenda.frases.<voz>` en `localStorage`, se toca y pasa—, de ahí que
+  `construirVoz` sirva a las dos. Lo suyo es el material, que es el único que se
+  **deriva** en vez de leerse: el turno sale de la regla de siempre —manda la
+  fila de `paseo` si existe, y si no el cuadro que gobernaba al abrirse la
+  ventana—, con `cuadroEn` e `inicioDeVentana`, que ya usaba `avisos.js`. No es
+  una cuarta copia de la regla; es la que hay, llamada desde `redaccion.js`. **La
+  idea es de `lio-ops`**, la otra aplicación del perro, que no está en uso y se
+  queda en inspiración: allí Lío tenía siete frases fijas y era lo mejor que
+  tenía. Se le prohíbe reñir de verdad y inventar quién lo sacó. Queda abierto
+  **si debería callarse los días que no hay nada que contar**, que hoy habla
+  siempre.
 - **Lío está construido**, y es el primer módulo que no cuelga de la agenda.
   Los turnos —mañana de 6 a 10, noche de 20 a 24— **se derivan de un cuadro de
   catorce casillas** que vive en `configuracion` y que solo editan los
@@ -295,7 +310,36 @@ pendiente. El hook lo inyecta al final del mapa.
   turno a turno. La atadura que tenía —que el aviso de pedirte un cambio no podía
   empujarse— **se ha levantado**: eso son ahora los avisos remotos, y Lío suena
   entero.
-- **No queda ninguna migración por aplicar.** Las trece están puestas, incluidas
+- **Ajustes junta ahora sync, versión y viajes en un solo apartado**, que se
+  llama «Sincronización», va el primero y es el único abierto de origen. Eran
+  tres —«La aplicación» con «Buscar actualización», «Sincronización» con su
+  línea y «✈️ Viajes» con su botón— y entre los tres **obligaban a acertar cuál
+  era tu problema antes de dejarte mirar**; nadie llega ahí sabiendo eso. Un solo
+  botón, «Comprobar ahora», hace las tres en el orden que importa —datos,
+  viajes, bundle— y las cuenta en una sola lista que se lee de arriba abajo. Los
+  viajes solo los trae quien administra, porque la ruta es suya, y a quien no lo
+  sea sencillamente no le sale ese renglón. «✈️ Viajes» se queda sin botón y con
+  su diagnóstico, que es otra cosa. La idea es de `meeting-ops-air`, que copió
+  esta pantalla y luego la mejoró.
+- **Las mejoras son ideas sobre la propia aplicación**, apuntadas desde el móvil
+  y guardadas en `mejora`. **No se llaman «idea» a propósito**: aquí una idea es
+  una idea de regalo y está en el centro del modelo de ocultación, y compartir el
+  nombre habría hecho que cada consulta tuviera que decir de cuál habla. Y por lo
+  mismo **no pasan por `visible()`**: no tienen destinatario, así que no hay de
+  quién ocultarlas —lo único que se pide para recibirlas es tener cuenta—.
+  Viajan por el contrato que ya hay, `guardar('mejora', …)` y la cola de siempre,
+  y no por una ruta propia: una ruta propia haría esperar a la pantalla o pediría
+  su propia cola, reintento e idempotencia, que es el motor de sincronización
+  escrito dos veces para un cuaderno. Eso último no es teoría: `meeting-ops-air`
+  las hizo primero en `localStorage` y lo deshizo, porque **sobre una idea de la
+  aplicación se actúa en otra máquina**, y una nota que esa máquina no puede leer
+  se atiende cuando alguien se acuerda de copiarla.
+- **Queda una migración por aplicar: la `0015_mejoras.sql`.** Es corriente
+  —`CREATE TABLE IF NOT EXISTS`—, así que basta con marcar la casilla de las
+  migraciones al desplegar la API; no hace falta escribir su nombre en el campo
+  de al lado. **Y hay que tachar esta línea al aplicarla**, que es lo único que
+  impide que se vuelva a pedir.
+- **Las catorce anteriores están puestas**, incluidas
   las cinco `.unavez` —los círculos (`0005`), el género (`0006`), la `0009` que
   rehizo `comentario` para quitarle el `CHECK`, la `0012` de la casilla de la
   lista de la compra y la `0013` del token del aparato—. **Estas dos últimas

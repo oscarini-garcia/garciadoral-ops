@@ -31,6 +31,7 @@
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
+ *   POST   /api/ia/lio      · cinco frases dichas por el perro
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
  */
 
@@ -74,6 +75,7 @@ import {
   componerMaterialDeApunte,
   componerMaterialDeChispa,
   componerMaterialDeFelicitacion,
+  componerMaterialDeLio,
   componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
@@ -784,6 +786,45 @@ async function escribirLaChispa(peticion, env) {
   return json({ frases, modelo: frases.length ? resultado.modelo : null });
 }
 
+/**
+ * Las cinco frases que dice Lío en su bloque de Hoy.
+ *
+ * Hermana de la frase del día y con sus mismas costumbres: cinco de golpe para
+ * que el toque conteste en el acto, y 200 con la lista vacía cuando algo falla,
+ * porque tampoco esto lo ha pedido nadie.
+ *
+ * Solo para quien es de casa: los turnos del perro no salen de la instantánea de
+ * quien no lo es, así que el material vendría vacío y la llamada sería un gasto
+ * sin destinatario.
+ */
+async function escribirLoDeLio(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { fecha, descartadas = [] } = await peticion.json().catch(() => ({}));
+  if (!fecha) return json({ error: 'falta la fecha' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  if (!configuracion.clave) return json({ frases: [] });
+  if (!(await cabeUnaMas(env.DB, lector.id))) return json({ frases: [] });
+
+  const instantanea = componerInstantanea(await leerRegistro(env.DB), lector);
+  if (!(instantanea.lio_cuadro || []).length) return json({ frases: [] });
+
+  const material = componerMaterialDeLio(instantanea, { fecha });
+  if (descartadas.length) {
+    material.lineas.push('Ya has dicho estas hoy, di otras distintas:');
+    material.lineas.push(...descartadas.slice(0, 30).map((frase) => `  ${String(frase).trim()}`));
+  }
+
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.lio, tope: 700,
+  });
+
+  const frases = interpretarChispas(resultado.texto);
+  if (!frases.length) console.warn('voz de Lío fallida', JSON.stringify(resultado.intentos));
+
+  return json({ frases, modelo: frases.length ? resultado.modelo : null });
+}
+
 async function leerAjustesDeIa(peticion, env) {
   await administradorAutenticado(peticion, env);
   const configuracion = await leerConfiguracion(env.DB);
@@ -794,10 +835,10 @@ async function leerAjustesDeIa(peticion, env) {
 async function guardarAjustesDeIa(peticion, env) {
   const administrador = await administradorAutenticado(peticion, env);
   const {
-    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa,
+    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa, lio,
   } = await peticion.json().catch(() => ({}));
   const configuracion = await guardarConfiguracion(env.DB, administrador, {
-    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa,
+    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa, lio,
   });
   return json(configuracionPublica(configuracion));
 }
@@ -863,6 +904,7 @@ const RUTAS = [
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],
   ['POST', '/api/ia/chispa', escribirLaChispa],
+  ['POST', '/api/ia/lio', escribirLoDeLio],
   ['POST', '/api/ia/probar', probarLaRedaccion],
 ];
 
