@@ -1,0 +1,466 @@
+<meta charset="utf-8">
+<title>Eventos de varios días, de quién es un viaje, y la fecha que propone el «+»</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --radio: 12px;
+    --toque: 44px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 70ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 16px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 72ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.gana { border-left-color: var(--regalo); }
+
+  ul { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; max-width: 72ch; }
+  ul strong { color: var(--ink); }
+
+  .opciones { display: flex; flex-direction: column; gap: 11px; }
+  .opcion {
+    border: 1px solid var(--line); border-radius: 12px; padding: 13px 16px;
+    display: flex; flex-direction: column; gap: 6px; background: var(--paper-2);
+  }
+  .opcion h3 { font-family: var(--sans); font-size: 15.5px; font-weight: 600; }
+  .opcion p { font-size: 14.5px; color: var(--ink-soft); max-width: 72ch; }
+  .opcion[data-recomendada] { border-color: var(--tinta); border-left-width: 3px; }
+  .letra { font-family: var(--mono); color: var(--tinta); }
+
+  /* Las maquetas: piezas de la aplicación de verdad. */
+  .par { display: flex; flex-wrap: wrap; gap: 20px; }
+  .lado { display: flex; flex-direction: column; gap: 8px; flex: 1 1 290px; min-width: 270px; max-width: 360px; }
+  .lado > .rotulo { color: var(--ink-faint); }
+  .tel {
+    border: 1px solid var(--line); border-radius: 18px; background: var(--paper);
+    box-shadow: var(--sombra); padding: 13px 15px 15px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .dia-rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+    border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-top: 5px;
+  }
+  .dia-rotulo:first-child { margin-top: 0; }
+  .linea {
+    display: flex; align-items: baseline; gap: 9px;
+    padding: 7px 0; border-bottom: 1px solid var(--line);
+  }
+  .linea:last-child { border-bottom: 0; }
+  .linea-emoji { flex: none; font-size: 15px; }
+  .linea-titulo { font-size: 15px; flex: 1; min-width: 0; }
+  .linea-hora { flex: none; font-family: var(--mono); font-size: 12px; color: var(--ink-faint); }
+  .cont { color: var(--ink-faint); }
+  .tramo {
+    flex: none; font-family: var(--mono); font-size: 10.5px;
+    color: var(--tinta); background: var(--tinta-suave);
+    border-radius: 5px; padding: 1px 5px;
+  }
+  .barra {
+    flex: none; width: 3px; align-self: stretch; border-radius: 2px;
+    background: var(--tinta); opacity: .55;
+  }
+  .campo { display: flex; flex-direction: column; gap: 5px; }
+  .campo > label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .caja {
+    min-height: var(--toque); border: 1px solid var(--line); border-radius: 10px;
+    background: var(--paper-2); display: flex; align-items: center; padding: 0 12px;
+    font-size: 15.5px;
+  }
+  .caja.vacia { color: var(--ink-faint); }
+  .pista { font-size: 12.5px; color: var(--ink-faint); }
+  .duo { display: flex; gap: 9px; }
+  .duo .campo { flex: 1; }
+  .duenyo {
+    flex: none; font-size: 11px; color: var(--ink-soft);
+    background: var(--paper-3); border-radius: 5px; padding: 1px 6px;
+  }
+</style>
+
+<div class="doc">
+
+<header class="portada">
+  <p class="rotulo">Propuesta · Agenda</p>
+  <h1>Eventos de varios días, de quién es un viaje, y la fecha que propone el «+»</h1>
+  <p>
+    Cuatro peticiones que caen en la misma pantalla. La primera es más pequeña de
+    lo que parece y la segunda esconde una decisión que no es de dibujo.
+  </p>
+</header>
+
+<section class="parte">
+  <p class="rotulo">Lo primero, porque cambia el tamaño de todo</p>
+  <h2>Un evento de varios días ya funciona. Lo que falta es poder escribirlo</h2>
+  <p>
+    La tabla <code>evento</code> tiene <code>fin</code> desde la primera
+    migración. <code>repartirPorDia</code> en <code>semana.js</code> ya coloca una
+    instancia en <strong>todos los días que ocupa</strong>, marca los posteriores
+    al primero como <code>continuacion</code>, los ordena arriba del día y les
+    quita la hora. La tarjeta ya les escribe <strong>«(cont.)»</strong> detrás del
+    título, y el plan de WhatsApp ya los trata aparte.
+  </p>
+  <p>
+    Nada de eso se ve nunca <strong>porque el formulario no escribe
+    <code>fin</code></strong>. El único que lo escribe hoy es el importador de
+    viajes, así que la mecánica está viva y probada solo en los vuelos.
+  </p>
+  <div class="nota">
+    <p>
+      O sea: <strong>«que venga una amiga tres días» es un campo en el
+      formulario</strong>, no un modelo nuevo ni un reparto nuevo. Lo que sí hay
+      que decidir es cómo se pide y cómo se marca, que es lo que sigue.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">1 · Cómo se pide</p>
+  <h2>Duración o fecha de fin</h2>
+
+  <div class="opciones">
+    <div class="opcion" data-recomendada>
+      <h3><span class="letra">A</span> · Un segundo campo de fecha, «Hasta», junto al «Cuándo»</h3>
+      <p>
+        Dos casillas de fecha en la misma fila. Vacía significa un día, que es el
+        caso normal y no pide nada. Es lo que hace el calendario del sistema, se
+        entiende sin leer la etiqueta, y sirve igual para tres días que para dos
+        semanas de agosto.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">B</span> · «¿Cuántos días?», un número</h3>
+      <p>
+        Más corto de escribir para lo de tres días —tecleas un 3— y peor para todo
+        lo demás: para unas vacaciones del 8 al 24 hay que contar. Y obliga a
+        decidir si el número incluye el primer día, que es la clase de pregunta
+        que una casilla de fecha no plantea.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">C</span> · Los dos: «Hasta», y debajo unos atajos «2 · 3 · 7 días»</h3>
+      <p>
+        Lo de A con la comodidad de B encima. Cuesta una fila más en un formulario
+        que ya tiene diez campos, y los atajos son tres botones que se usan la
+        mitad de las veces.
+      </p>
+    </div>
+  </div>
+
+  <div class="par">
+    <div class="lado">
+      <p class="rotulo">A · Hasta, al lado del cuándo</p>
+      <div class="tel">
+        <div class="campo"><label>Qué</label><div class="caja">Se queda Julia a dormir</div></div>
+        <div class="duo">
+          <div class="campo"><label>Cuándo</label><div class="caja">01/08/2026</div></div>
+          <div class="campo"><label>Hasta</label><div class="caja vacia">—</div></div>
+        </div>
+        <p class="pista">Déjalo vacío si es de un día.</p>
+      </div>
+    </div>
+    <div class="lado">
+      <p class="rotulo">B · Cuántos días</p>
+      <div class="tel">
+        <div class="campo"><label>Qué</label><div class="caja">Se queda Julia a dormir</div></div>
+        <div class="campo"><label>Cuándo</label><div class="caja">01/08/2026</div></div>
+        <div class="campo"><label>Cuántos días</label><div class="caja">3</div></div>
+        <p class="pista">¿Incluye el primero? Hay que decirlo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>Y dónde va el campo.</strong> El formulario tiene dos niveles: la
+      hoja rápida pide «Qué» y «Cuándo», y el resto está detrás de «Más opciones».
+      Propongo que <strong>«Hasta» vaya arriba, con el «Cuándo»</strong>: es la
+      otra mitad del cuándo, y escondido detrás del desplegable no lo encuentra
+      quien no sepa ya que existe. Vacío no ocupa ni pregunta nada.
+    </p>
+  </div>
+
+  <div class="nota pega">
+    <p>
+      <strong>Un agujero que hay que tapar de paso.</strong> Hoy el formulario no
+      manda <code>fin</code>, y como <code>guardar</code> escribe los campos que
+      le llegan, editar un evento que tuviera fin <em>no</em> lo borra —pero
+      tampoco lo enseña—. Con el campo puesto, editar pasa a escribir
+      <code>fin</code> siempre, y eso hay que hacerlo bien para que abrir y
+      guardar sin tocar nada no acorte unas vacaciones.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">2 · Cómo se ve que dura</p>
+  <h2>La marca de los días de en medio</h2>
+  <p>
+    Hoy los días posteriores llevan <strong>«(cont.)»</strong> pegado al título.
+    Funciona, pero es una abreviatura entre paréntesis dentro del nombre del
+    evento, y en una línea de 38 puntos se come sitio del título justo cuando el
+    título es lo único que hay.
+  </p>
+
+  <div class="opciones">
+    <div class="opcion" data-recomendada>
+      <h3><span class="letra">A</span> · «2/3» en el hueco de la hora</h3>
+      <p>
+        Los días de continuación no tienen hora, así que ese hueco está vacío. Un
+        <code>2/3</code> en versalita dice a la vez que sigue y por dónde va, sin
+        tocar el título. El primer día conserva su hora, o «todo el día» si no la
+        tiene.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">B</span> · Una barra vertical a la izquierda</h3>
+      <p>
+        Un filete de tinta que recorre la línea, como el lomo de un tramo. Se ve
+        de un vistazo que algo se prolonga y no cuesta ni una letra, pero no dice
+        cuántos días quedan y añade un elemento gráfico que esta aplicación no usa
+        en ninguna lista.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">C</span> · El rango en el primer día y nada en los demás</h3>
+      <p>
+        «1–3 ago» donde iría la hora, y los días siguientes sin marca ninguna. Lo
+        más limpio de los tres y el que peor contesta la pregunta que se hace al
+        mirar el jueves: <em>¿esto de hoy es el principio o el final?</em>
+      </p>
+    </div>
+  </div>
+
+  <div class="par">
+    <div class="lado">
+      <p class="rotulo">Hoy</p>
+      <div class="tel">
+        <p class="dia-rotulo">Sábado 1</p>
+        <div class="linea"><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span><span class="linea-hora">19:00</span></div>
+        <p class="dia-rotulo">Domingo 2</p>
+        <div class="linea"><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir <span class="cont">(cont.)</span></span></div>
+        <p class="dia-rotulo">Lunes 3</p>
+        <div class="linea"><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir <span class="cont">(cont.)</span></span></div>
+      </div>
+    </div>
+    <div class="lado">
+      <p class="rotulo">A · el tramo donde la hora</p>
+      <div class="tel">
+        <p class="dia-rotulo">Sábado 1</p>
+        <div class="linea"><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span><span class="linea-hora">19:00</span></div>
+        <p class="dia-rotulo">Domingo 2</p>
+        <div class="linea"><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span><span class="tramo">2/3</span></div>
+        <p class="dia-rotulo">Lunes 3</p>
+        <div class="linea"><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span><span class="tramo">3/3</span></div>
+      </div>
+    </div>
+    <div class="lado">
+      <p class="rotulo">B · la barra</p>
+      <div class="tel">
+        <p class="dia-rotulo">Sábado 1</p>
+        <div class="linea"><span class="barra"></span><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span><span class="linea-hora">19:00</span></div>
+        <p class="dia-rotulo">Domingo 2</p>
+        <div class="linea"><span class="barra"></span><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span></div>
+        <p class="dia-rotulo">Lunes 3</p>
+        <div class="linea"><span class="barra"></span><span class="linea-emoji">🏠</span><span class="linea-titulo">Se queda Julia a dormir</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>Y en la hoja del evento, el rango entero.</strong> Hoy dice la fecha
+      del día por el que se ha entrado —«domingo 2 de agosto»— y calla que va del
+      1 al 3. Con fin, esa línea pasa a decir <strong>«del 1 al 3 de agosto ·
+      3 días»</strong>, que es lo que se ha venido a mirar. Va en las tres
+      opciones: no es alternativa de ninguna.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">3 · De quién es el viaje</p>
+  <h2>Los vuelos de Flighty son de Óscar, y hoy no lo dice nadie</h2>
+  <p>
+    Un viaje importado llega con <code>origen = 'importado'</code> y su
+    <code>calendario_id</code>, y <strong>nada más</strong>:
+    <code>persona_origen_id</code> se queda vacío y no hay ningún participante. En
+    la agenda de los cuatro aparece «Madrid → Bolonia» sin dueño, y quien lo mira
+    tiene que saberse de memoria de quién es el Flighty.
+  </p>
+
+  <div class="opciones">
+    <div class="opcion" data-recomendada>
+      <h3><span class="letra">A</span> · El calendario tiene dueño, y cada evento lo hereda</h3>
+      <p>
+        Una columna <code>persona_id</code> en <code>calendario_externo</code>: el
+        feed <em>es</em> de alguien, y eso no cambia vuelo a vuelo. Se escribe una
+        vez al dar de alta el calendario y no toca la importación. La pantalla lee
+        el calendario del evento y escribe el nombre.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">B</span> · El importador escribe <code>persona_origen_id</code> en cada vuelo</h3>
+      <p>
+        Reutiliza la columna que ya existe y que ya usa el cumpleaños derivado.
+        <strong>Pero enciende los avisos:</strong> <code>esMio()</code> mira
+        justamente ese campo, así que a Óscar le empezaría a sonar el teléfono con
+        cada cambio de cada vuelo. Puede que sea lo que quieres; puede que no.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">C</span> · Óscar como protagonista del evento</h3>
+      <p>
+        Sale ya en «Quién va» sin tocar ni el modelo ni la pantalla. Y arrastra lo
+        que un protagonista significa aquí: <strong>gobierna a quién se le ocultan
+        los regalos</strong> de ese evento y qué ideas se proponen. Un vuelo de
+        trabajo pasaría a ser una ocasión de regalo en potencia, que no es lo que
+        es.
+      </p>
+    </div>
+  </div>
+
+  <div class="par">
+    <div class="lado">
+      <p class="rotulo">Hoy</p>
+      <div class="tel">
+        <p class="dia-rotulo">Jueves 6</p>
+        <div class="linea"><span class="linea-emoji">✈️</span><span class="linea-titulo">Madrid → Bolonia</span><span class="linea-hora">07:40</span></div>
+      </div>
+    </div>
+    <div class="lado">
+      <p class="rotulo">Con dueño</p>
+      <div class="tel">
+        <p class="dia-rotulo">Jueves 6</p>
+        <div class="linea"><span class="linea-emoji">✈️</span><span class="linea-titulo">Madrid → Bolonia</span><span class="duenyo">Óscar</span><span class="linea-hora">07:40</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>Con A, el nombre no cabe siempre en la línea de la semana</strong>
+      —38 puntos de alto y un título que ya se recorta—, así que ahí iría solo en
+      la vista de lista y en la hoja del evento, que es donde se pregunta de quién
+      es. En el carril de la semana el avión ya distingue el vuelo de lo demás.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">4 · La fecha que propone el «+»</p>
+  <h2>Hoy propone hoy, mires la semana que mires</h2>
+  <p>
+    El botón flotante llama a <code>abrirFormularioEvento(ctx)</code> sin fecha, y
+    el formulario cae a <code>hoy()</code>. Si estás mirando la semana que viene y
+    tocas «+», el evento nace en la de esta.
+  </p>
+
+  <div class="opciones">
+    <div class="opcion" data-recomendada>
+      <h3><span class="letra">A</span> · El primer día del periodo, salvo que el periodo contenga hoy</h3>
+      <p>
+        Mirando septiembre, propone el 1 de septiembre; mirando este mes, propone
+        hoy. Es lo que uno espera de las dos maneras: en un periodo que no es el
+        de ahora, el principio; en el de ahora, el día en que estás. La lista, que
+        no es un periodo sino una cuerda que arranca en hoy, propone hoy siempre.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3><span class="letra">B</span> · Siempre el primer día del periodo</h3>
+      <p>
+        Más simple de explicar y de escribir. Y peor el 90 % de las veces, que es
+        cuando estás mirando esta semana: propondría el lunes pasado.
+      </p>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>Y la hoja de un día ya lo hace bien</strong>: al crear desde dentro
+      de un día concreto, la fecha viene puesta. Esto solo arregla el «+» de la
+      pestaña, que es el que no sabía dónde estabas.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Qué pido</p>
+  <h2>Cuatro letras</h2>
+  <p>
+    Mi recomendación es <strong>A, A, A y A</strong>: campo «Hasta» junto al
+    «Cuándo», el tramo «2/3» donde iría la hora, el dueño en el calendario, y el
+    «+» proponiendo el principio del periodo salvo que el periodo sea este.
+  </p>
+  <p>
+    Lo único que lleva migración es el dueño del calendario, una columna. Lo
+    demás es pantalla.
+  </p>
+</section>
+
+</div>
