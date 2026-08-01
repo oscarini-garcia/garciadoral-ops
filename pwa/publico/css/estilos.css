@@ -346,7 +346,7 @@ button { background: none; border: 0; cursor: pointer; }
    desplazamiento del documento. */
 .tabbar {
   flex: none; z-index: 30;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-top: 1px solid var(--line);
@@ -1149,14 +1149,20 @@ button { background: none; border: 0; cursor: pointer; }
 /* La moneda del rótulo, solo en Ajustes. Es la figura de los Ajustes del
    sistema —el dibujo en blanco sobre una pastilla de color— y se le da a los
    nueve apartados o a ninguno: con dos puestos y siete sin nada, la columna se
-   leía como un descuido. Va en tinta, la misma para las nueve: un color por
+   leía como un descuido. Va en tinta, la misma para las ocho: un color por
    apartado sería un arco iris que esta aplicación no usa en ningún otro sitio.
 
-   El dibujo hereda el color del papel, así que en oscuro se invierte solo. */
+   **Y en tinta suave, no en tinta.** A fondo pleno, ocho monedas seguidas
+   cantaban: convertían la columna izquierda en lo más fuerte de una pantalla
+   que se abre dos veces al año, y esta aplicación está escrita al revés —papel,
+   serifa, y la tinta guardada para lo que se puede tocar—. El par
+   `--tinta-suave` con el dibujo en `--tinta` es el que ya usa la aplicación
+   para decir «esto es de aquí» sin levantar la voz, y sirve a los dos temas sin
+   una regla aparte: en oscuro los dos valores se invierten solos. */
 .acordeon-moneda {
   flex: none; display: grid; place-items: center;
   width: 28px; height: 28px; border-radius: 8px;
-  background: var(--tinta); color: var(--paper);
+  background: var(--tinta-suave); color: var(--tinta);
 }
 .acordeon-moneda .icono-svg svg { width: 17px; height: 17px; }
 

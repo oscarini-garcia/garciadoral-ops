@@ -424,7 +424,10 @@ function prepararInterfaz() {
   document.getElementById('acceso').hidden = true;
   document.getElementById('aplicacion').hidden = false;
 
-  for (const boton of document.querySelectorAll('.tab')) {
+  // Solo las que son pestaña: el sexto botón de la barra es Ajustes, que abre
+  // una hoja y no cambia de sección, y sin este filtro el clic le pondría a
+  // `pestana` un valor que no existe.
+  for (const boton of document.querySelectorAll('.tab[data-pestana]')) {
     // Quien vuelve a entrar después de cerrar sesión lo hace por Hoy, y la
     // barra tiene que estar de acuerdo con eso: el marcado la deja en Hoy, pero
     // en memoria podía haber quedado otra de la sesión anterior.
@@ -433,7 +436,7 @@ function prepararInterfaz() {
 
     boton.onclick = () => {
       pestana = boton.dataset.pestana;
-      for (const otro of document.querySelectorAll('.tab')) otro.removeAttribute('aria-current');
+      for (const otro of document.querySelectorAll('.tab[data-pestana]')) otro.removeAttribute('aria-current');
       boton.setAttribute('aria-current', 'page');
       document.getElementById('pantalla').scrollTo(0, 0);
       refrescar();
@@ -848,17 +851,9 @@ function abrirAjustes() {
       }));
     }
 
-    // Uno solo abierto, y es este. Eran tres apartados —«La aplicación» con
-    // «Buscar actualización», «Sincronización» con su línea, y «✈️ Viajes» con
-    // su botón—, y entre los tres obligaban a acertar cuál era tu problema antes
-    // de dejarte mirar. Nadie llega aquí sabiendo eso: se llega porque algo no
-    // está como se esperaba, y «¿han subido mis datos?» y «¿tengo la versión
-    // buena?» son la misma pregunta hecha a capas distintas.
-    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion, { abierta: true, icono: 'sincronizar' }));
-
-    // Los demás empiezan plegados. Ajustes es una lista de cosas que casi nunca
-    // se tocan: enseñarlas todas abiertas obliga a leerlas enteras para
-    // encontrar la única que se venía a buscar.
+    // Aspecto va el primero por ser el más corto y el único que no habla de una
+    // avería: un desplegable de tres opciones que se cambia y se cierra. Deja
+    // debajo el resto de la lista sin haberla empujado.
     cuerpo.append(acordeon('Aspecto', (dentro) => {
       const tema = seleccion(
         [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
@@ -868,6 +863,20 @@ function abrirAjustes() {
       dentro.append(campo('Tema', tema));
     }, { icono: 'aspecto' }));
 
+    // Uno solo abierto, y es este. Eran tres apartados —«La aplicación» con
+    // «Buscar actualización», «Sincronización» con su línea, y «✈️ Viajes» con
+    // su botón—, y entre los tres obligaban a acertar cuál era tu problema antes
+    // de dejarte mirar. Nadie llega aquí sabiendo eso: se llega porque algo no
+    // está como se esperaba, y «¿han subido mis datos?» y «¿tengo la versión
+    // buena?» son la misma pregunta hecha a capas distintas. Sigue siendo el
+    // abierto de origen aunque ya no sea el primero: lo que decide eso es a qué
+    // se viene, no el orden.
+    if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion, { abierta: true, icono: 'sincronizar' }));
+
+    // Los demás empiezan plegados. Ajustes es una lista de cosas que casi nunca
+    // se tocan: enseñarlas todas abiertas obliga a leerlas enteras para
+    // encontrar la única que se venía a buscar.
+    //
     // El cuadro de Lío es el reparto de la casa, no una preferencia de quien
     // mira: cambiarlo por sorpresa reordena la semana de otras tres personas, y
     // por eso lo edita quien administra. Un cambio de un día suelto no pasa por
@@ -899,8 +908,12 @@ function abrirAjustes() {
     // que están aquí la versión y la actualización.
     if (!demostracion) cuerpo.append(acordeon('Mejoras', bloqueDeMejoras, { icono: 'bombilla' }));
 
-    cuerpo.append(acordeon('La aplicación', bloqueLegal, { icono: 'documento' }));
-
+    // «La aplicación» se retiró: era un apartado entero —rótulo, moneda y
+    // solapa— para dos enlaces de una línea, y desde que «Buscar actualización»
+    // se fue a Sincronización no le quedaba nada más. Los dos enlaces bajan aquí,
+    // al pie de «Tu cuenta», que es de lo que hablan: qué se hace con tus datos y
+    // a quién se escribe. Hacen falta el día que se use la ficha de la App Store
+    // (`docs/despliegue-cloudflare.md` §8.4), y no cuestan un apartado.
     cuerpo.append(acordeon('Tu cuenta', (dentro) => {
       dentro.append(el('div', { class: 'acciones' }, [
         el('button', {
@@ -917,6 +930,8 @@ function abrirAjustes() {
           onclick: () => confirmarBaja(),
         }, ['Eliminar mi cuenta']));
       }
+
+      dentro.append(bloqueLegal());
     }, { icono: 'persona' }));
   }, [
     // Salir de aquí se hacía tocando fuera de la hoja, que es la convención de
