@@ -1577,6 +1577,30 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 }
 .llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
 
+/* ----------------------------------------------------------------- Mejoras --
+
+   Ideas sobre la propia aplicación, en Ajustes. La fila tiene dos destinos —el
+   visto la da por hecha, el texto la abre—, que es la misma repartición que la
+   lista de la compra de un sitio, y por eso el visto es el mismo dibujo con la
+   misma medida. */
+.tarjeta.mejora { flex-direction: row; align-items: flex-start; gap: 11px; }
+.mejora-visto {
+  flex: none; margin-top: 1px;
+  width: 21px; height: 21px; border-radius: 6px;
+  border: 1.5px solid var(--line);
+  display: grid; place-items: center;
+  color: var(--paper); background: transparent;
+}
+.mejora-visto .icono-svg svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.tarjeta.mejora[data-hecha="si"] .mejora-visto { background: var(--tinta); border-color: var(--tinta); }
+.mejora-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+.mejora-texto { font-size: 15px; line-height: 1.4; }
+/* Lo hecho se tacha y se apaga, y además baja al final de la lista: lo que
+   falta tiene que quedar arriba, que es a lo que se entra. */
+.tarjeta.mejora[data-hecha="si"] .mejora-texto { text-decoration: line-through; color: var(--ink-faint); }
+.mejora-firma { font-size: 12.5px; color: var(--ink-faint); }
+.mejora-firma:empty { display: none; }
+
 /* ------------------------------------------------------------------ Avisos --
 
    Dos grupos y una diferencia que no es de forma: lo de arriba se contesta y lo

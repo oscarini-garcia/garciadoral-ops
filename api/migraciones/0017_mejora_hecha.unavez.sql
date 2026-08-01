@@ -1,0 +1,13 @@
+-- Una mejora se puede dar por hecha.
+--
+-- Hasta ahora el único final de una mejora era quitarla, y quitar se lee como
+-- «me equivoqué» y no como «ya está». Con cuatro personas apuntando y otro
+-- haciéndolas, la lista solo crecía y nadie sabía cuáles estaban puestas ya.
+--
+-- Es la columna de un apunte de Sitios, con el mismo nombre y el mismo tipo,
+-- porque es el mismo gesto: la casilla de la lista de la compra, que tacha y
+-- baja al final lo tachado. No lleva quién ni cuándo a propósito —eso sería un
+-- registro de trabajo, y esto es una lista de la compra—.
+--
+-- Va en `.unavez` porque `ALTER TABLE` no se puede repetir.
+ALTER TABLE mejora ADD COLUMN hecho INTEGER NOT NULL DEFAULT 0;

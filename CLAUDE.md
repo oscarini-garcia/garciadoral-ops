@@ -381,6 +381,32 @@ pendiente. El hook lo inyecta al final del mapa.
   las hizo primero en `localStorage` y lo deshizo, porque **sobre una idea de la
   aplicación se actúa en otra máquina**, y una nota que esa máquina no puede leer
   se atiende cuando alguien se acuerda de copiarla.
+  **Y una mejora se puede dar por hecha**, que era el agujero: el único final era
+  quitarla, y quitar se lee como «me equivoqué» y no como «ya está». Es la
+  casilla de «Llevar» —tacha, baja al final lo tachado, y lo que falta queda
+  arriba—, con la columna `hecho` que ya usa un apunte y **sin quién ni cuándo a
+  propósito**: eso sería un registro de trabajo y esto es una lista de la compra.
+  **La pantalla dice ahora que las ve toda la casa**, que era la pregunta que no
+  se contestaba en ningún sitio, y **el rótulo lleva las que faltan**; el número
+  se escribe desde el bloque y no se pasa hecho, porque una mejora se marca sin
+  cerrar la hoja y con una cadena el rótulo se quedaba con el de cuando se abrió
+  Ajustes —de ahí que `acordeon` acepte un nodo en `nota`—. La firma pasa a la
+  regla de `firmaDeApunte`: quién la puso y **el cuándo solo si ya no es de hoy**,
+  en palabras y no en ISO. Y hay **un tope de 2000 caracteres, cortado en el
+  dispositivo y rechazado en el Worker**: sin él un pegado largo entra en la
+  instantánea de los cuatro y se descarga en cada sincronización, para siempre.
+  Quitar sigue llamándose Quitar y no Borrar —lo que hace es `activo = 0`— pero
+  la pregunta dice ya a quién afecta, porque cualquiera puede quitar la de
+  cualquiera y eso hay que decirlo antes y no descubrirlo después. La comparación
+  entera con las *roadmap notes* de las que salieron está en
+  `specs/propuesta-mejoras.html`. Queda abierto **cómo llega una mejora a donde
+  se actúa**: quien las hace lee este repositorio y no la instantánea, así que el
+  transporte sigue siendo una persona —justo lo que `meeting-ops-air` se quitó de
+  encima, porque su Mac lee la misma base y aquí no hay tal Mac—. Y se decidió
+  que **se apuntan solo desde Ajustes**: el atajo desde la pantalla que te
+  molesta quitaría roce, pero metería un verbo de la herramienta entre los del
+  trabajo, y «+» en esta aplicación ha significado siempre un evento, un regalo o
+  un sitio.
 - **Ya no hay lista de migraciones pendientes, y no debe volver a haberla.** La
   base lleva ahora su propio registro —la tabla `migracion`, sembrada por la
   `0016` con las catorce que estaban puestas ese día— y el despliegue de la API
