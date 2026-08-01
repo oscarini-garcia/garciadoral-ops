@@ -732,6 +732,15 @@ button { background: none; border: 0; cursor: pointer; }
 .linea-hora { flex: 0 0 auto; font-family: var(--mono); font-size: 13px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .linea[data-continuacion="si"] .linea-titulo { color: var(--ink-soft); }
 .linea-banda { flex: 0 0 3px; align-self: stretch; border-radius: 2px; background: var(--tinta); opacity: .55; }
+/* Por qué día de cuántos va lo que dura más de uno. Ocupa el hueco de la hora,
+   que en un día de continuación está vacío, y sustituye al «(cont.)» que se
+   pegaba detrás del título. En pastilla y no suelto porque comparte sitio con la
+   hora y las dos cosas se leen distinto: una es un momento y la otra, una cuenta. */
+.linea-tramo {
+  flex: 0 0 auto; font-family: var(--mono); font-size: 11px;
+  color: var(--tinta); background: var(--tinta-suave);
+  border-radius: 5px; padding: 1px 5px; font-variant-numeric: tabular-nums;
+}
 .desbordamiento { font-size: 14px; color: var(--tinta); text-align: left; min-height: 26px; }
 
 /* Vista de mes */
@@ -975,6 +984,13 @@ button { background: none; border: 0; cursor: pointer; }
 /* --------------------------------------------------------------- Formulario -- */
 
 .campo { display: flex; flex-direction: column; gap: 6px; }
+/* Dos campos en la misma fila, a partes iguales. Es lo que hace que «Cuándo» y
+   «Hasta» se lean como una sola pregunta con dos mitades y no como dos
+   preguntas seguidas. `min-width: 0` porque una casilla de fecha trae su propio
+   ancho mínimo y sin esto desborda la hoja en un teléfono estrecho. */
+.duo { display: flex; gap: 10px; }
+.duo > .campo { flex: 1 1 0; min-width: 0; }
+.duo > .campo input { width: 100%; }
 .campo > label { font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint); }
 .campo input, .campo select, .campo textarea {
   min-height: var(--toque);

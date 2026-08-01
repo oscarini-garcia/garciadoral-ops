@@ -56,8 +56,8 @@ import {
 } from './lio.js';
 import { nuevoPieDeVersion, pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
-  abrirDetalleEvento, abrirFormularioEvento, abrirTurnoDeLio, bloqueDePropuesta, pintarAgenda,
-  reiniciarAgenda, tituloDeAgenda,
+  abrirDetalleEvento, abrirFormularioEvento, abrirTurnoDeLio, bloqueDePropuesta, fechaQuePropone,
+  pintarAgenda, reiniciarAgenda, tituloDeAgenda,
 } from './vistas/semana.js';
 import {
   abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
@@ -78,7 +78,7 @@ const PESTANAS = {
   // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
   // único de esa pantalla que cambia. Por eso su título es una función: cambia
   // al pasar de semana, y con las demás pestañas no cambia nunca.
-  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx) },
+  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx, { fecha: fechaQuePropone() }) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => nuevoDesdeRegalos(ctx) },
   // La pestaña se llama Gente en la barra; la clave conserva el nombre del
   // módulo que la pinta, que es de donde sale. Y va sin botón flotante: la

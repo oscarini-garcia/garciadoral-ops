@@ -112,7 +112,7 @@ tener que recorrer la aplicación entera cada vez.
   HORIZONTE_RECORDATORIOS_DIAS · …y 8 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
-  soloFecha · iso · isoConHora · sumarDias · …y 15 más
+  soloFecha · iso · isoConHora · sumarDias · …y 16 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
   codigoDeAutorizacion · eliminarLaCuenta
@@ -139,9 +139,9 @@ tener que recorrer la aplicación entera cada vez.
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
   …y 3 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
-  reiniciarAgenda · tituloDeAgenda · pintarAgenda · abrirLioDelDia · filaDeTurno
-  resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta · abrirDia
-  …y 3 más
+  reiniciarAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone · abrirLioDelDia
+  filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta
+  …y 4 más
 - **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
   reiniciarSitios · tituloDeSitios · nuevoDesdeSitios · pintarSitios · abrirApunte
 

@@ -401,6 +401,44 @@ pendiente. El hook lo inyecta al final del mapa.
   molesta quitaría roce, pero metería un verbo de la herramienta entre los del
   trabajo, y «+» en esta aplicación ha significado siempre un evento, un regalo o
   un sitio.
+- **Un evento puede durar varios días, y eso ya estaba medio hecho.** La tabla
+  tenía `fin` desde la primera migración y `repartirPorDia` ya colocaba la
+  instancia en todos los días que ocupa; lo que faltaba era **poder escribirlo**,
+  porque el formulario nunca mandaba `fin` y el único que lo escribía era el
+  importador de vuelos. Ahora hay una casilla **«Hasta» al lado del «Cuándo»**, y
+  arriba y no detrás de «Más opciones»: es la otra mitad del cuándo, y escondida
+  no la encuentra quien no sepa ya que existe. Vacía es un evento de un día, y un
+  «hasta» igual al día **se guarda sin fin**, para que la agenda no tenga que
+  distinguir dos formas del mismo caso.
+  **Y el «(cont.)» se retiró**: los días de continuación llevan ahora **`2/3` en
+  el hueco de la hora**, que en esos días está vacío. Dice dos cosas donde aquel
+  decía una —que sigue y por dónde va— y no le quita sitio al título, que en una
+  línea de 38 puntos es lo único que hay. **El tramo se cuenta sobre la instancia
+  entera y no sobre los días que se miran**: una semana que empieza el lunes con
+  un evento que arrancó el sábado dice «3/5», no «1/3». Eso es lo que prueba
+  `pwa/test/tramos.test.js`. El primer día se queda con su hora si la tiene, y si
+  no —una jornada completa— dice `1/3`. La lista es al revés: enseña el evento
+  **una sola vez**, en su día de arranque, así que ahí lo que hace falta no es el
+  tramo sino **«3 días»**, y eso va en el pie de la tarjeta. La hoja del evento
+  dice el rango entero —«sábado 1 – lunes 3 de Agosto · 3 días»— en vez de la
+  fecha del día por el que se entró.
+- **Un calendario externo tiene dueño, y por eso un vuelo dice de quién es.** Un
+  viaje importado llegaba con `origen` y `calendario_id` y nada más, de modo que
+  en la agenda de los cuatro salía «Madrid → Bolonia» sin decir de quién era. El
+  dueño va en `calendario_externo.persona_id` y no en cada evento por dos
+  razones: **es verdad** —el feed es de alguien y eso no cambia vuelo a vuelo— y
+  **`persona_origen_id` habría encendido los avisos**, porque es lo que mira
+  `esMio()`, y a su dueño le sonaría el teléfono con cada cambio de cada vuelo.
+  Se escribe «de Óscar» en la tarjeta de la lista y en la hoja del evento, no en
+  la línea de la semana: allí la fila mide 38 puntos y el título ya se recorta.
+  La `0018` se lo pone al de viajes **buscando por nombre**, porque el
+  identificador de una persona lo pone cada base; si no encuentra a nadie deja
+  `NULL`, que es lo que había, y entonces no se escribe dueño.
+- **El «+» de la barra propone el día del periodo que se está mirando**, salvo
+  que ese periodo contenga hoy, y entonces hoy. Antes proponía hoy siempre, así
+  que crear desde la semana que viene nacía en la de esta. La lista propone hoy
+  sin más: no es un periodo sino una cuerda que arranca ahí. El porqué de las
+  cuatro decisiones está en `specs/propuesta-eventos-de-varios-dias.html`.
 - **Ya no hay lista de migraciones pendientes, y no debe volver a haberla.** La
   base lleva ahora su propio registro —la tabla `migracion`, sembrada por la
   `0016` con las catorce que estaban puestas ese día— y el despliegue de la API

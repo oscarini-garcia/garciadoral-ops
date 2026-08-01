@@ -22,7 +22,7 @@ import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible } from '../m
 import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
-  isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
+  isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias, tramoDe,
 } from '../semana.js';
 import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
 import { bloqueDeComentarios } from '../comentarios.js';
@@ -161,6 +161,25 @@ function diasDelPeriodo() {
   const primero = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
   const cuantos = new Date(ancla.getFullYear(), ancla.getMonth() + 1, 0).getDate();
   return Array.from({ length: cuantos }, (_, i) => sumarDias(primero, i));
+}
+
+/**
+ * Qué día propone el «+» de la pestaña.
+ *
+ * El primer día del periodo que se está mirando, salvo que ese periodo contenga
+ * hoy, y entonces hoy. Es lo que uno espera de las dos maneras: mirando
+ * septiembre, el 1 de septiembre; mirando este mes, el día en que estás. Antes
+ * proponía hoy siempre, así que crear desde la semana que viene nacía en la de
+ * esta y había que corregir la fecha a mano.
+ *
+ * La lista propone hoy sin más: no es un periodo sino una cuerda que arranca
+ * justamente ahí.
+ */
+export function fechaQuePropone() {
+  if (modo === 'lista') return hoy();
+  const dias = diasDelPeriodo();
+  const ahora = hoy();
+  return dias.some((dia) => iso(dia) === iso(ahora)) ? ahora : dias[0];
 }
 
 /** El rótulo de lo que se comparte. No sirve `tituloDeAgenda`: en la lista dice
@@ -873,6 +892,7 @@ const mayuscula = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
 
 function lineaDeEvento(aparicion, ctx) {
   const hora = horaDe(aparicion);
+  const tramo = tramoDe(aparicion);
   const cara = ctx.vista.caraDe(aparicion.evento);
   return el('button', {
     class: 'linea', type: 'button',
@@ -883,8 +903,12 @@ function lineaDeEvento(aparicion, ctx) {
     aparicion.instancia.inicio.getTime() !== aparicion.instancia.fin.getTime()
       ? el('span', { class: 'linea-banda' }) : null,
     el('span', { class: 'linea-emoji', texto: cara.emoji }),
-    el('span', { class: 'linea-titulo', texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
+    // Sin «(cont.)» detrás: eso lo dice ahora el tramo, en el hueco de la hora,
+    // que en un día de continuación está vacío. Aquel comía sitio del título
+    // justo cuando el título es lo único que se lee.
+    el('span', { class: 'linea-titulo', texto: cara.titulo }),
     hora ? el('span', { class: 'linea-hora', texto: hora }) : null,
+    tramo ? el('span', { class: 'linea-tramo', texto: tramo }) : null,
   ]);
 }
 
@@ -1118,8 +1142,25 @@ function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
   const hora = horaDe(aparicion);
   const cara = ctx.vista.caraDe(aparicion.evento);
   const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
+
+  // La lista enseña un evento largo una sola vez, en su día de arranque, así que
+  // aquí lo que hace falta no es «2/3» sino cuánto dura. En la semana y en el
+  // mes es al revés: allí sale un día tras otro y lo que se pregunta es por
+  // dónde va.
+  const finDelEvento = aparicion.evento.fin ? parsearMomento(aparicion.evento.fin) : null;
+  const dias = finDelEvento
+    ? Math.round((soloFecha(finDelEvento) - soloFecha(aparicion.instancia.inicio)) / 86400000) + 1
+    : 1;
+
+  // De quién es, cuando viene de un calendario con dueño. Aquí y no en la línea
+  // de la semana: allí la fila mide 38 puntos y el título ya se recorta, y el
+  // avión ya distingue el vuelo de lo demás.
+  const duenyo = ctx.vista.duenyoDelCalendario?.(aparicion.evento) || null;
+
   const pie = [
     conFecha ? formatearFechaLarga(aparicion.dia) : null,
+    dias > 1 ? `${dias} días` : null,
+    duenyo ? `de ${duenyo.nombre}` : null,
     aparicion.evento.ubicacion,
     participantes.length ? participantes.join(', ') : null,
   ].filter(Boolean).join(' · ');
@@ -1238,16 +1279,34 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
     + (evento.jornada_completa ? '' : ` · ${horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false })}`)
     + (evento.ubicacion ? `\n${evento.ubicacion}` : '');
 
+  // Lo que dura más de un día dice su tramo entero y no el día por el que se
+  // ha entrado. «Domingo 2 de agosto» era verdad y contestaba media pregunta:
+  // quien abre un evento de varios días quiere saber hasta cuándo.
+  const finDelEvento = evento.fin ? parsearMomento(evento.fin) : null;
+  const dias = finDelEvento
+    ? Math.round((soloFecha(finDelEvento) - soloFecha(inicio)) / 86400000) + 1
+    : 1;
+  const cuando = dias > 1
+    ? `${formatearFechaLarga(inicio)} – ${formatearFechaLarga(finDelEvento)}`
+    : formatearFechaLarga(aparicion ? aparicion.dia : inicio);
+
+  // De quién es, cuando viene de un calendario que tiene dueño. Un vuelo
+  // importado no lo decía en ningún sitio y había que saberse de memoria de
+  // quién es el feed.
+  const duenyo = ctx.vista.duenyoDelCalendario?.(evento) || null;
+
   abrirHoja(cara.titulo, (cuerpo) => {
     cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
       el('span', { style: 'font-size:26px', texto: cara.emoji }),
       el('div', {}, [
-        el('p', { texto: formatearFechaLarga(aparicion ? aparicion.dia : inicio) }),
+        el('p', { texto: cuando }),
         el('p', {
           class: 'pista',
           texto: [
+            dias > 1 ? `${dias} días` : null,
             evento.jornada_completa ? 'Todo el día' : horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false }),
             ctx.vista.tipoEvento(evento.tipo_id)?.nombre,
+            duenyo ? `de ${duenyo.nombre}` : null,
             evento.ubicacion,
           ].filter(Boolean).join(' · '),
         }),
@@ -1422,6 +1481,9 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     titulo: existente?.titulo || '',
     dia: iso(inicio),
     hora: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : '',
+    // El último día, inclusive, que es lo que significa «hasta» cuando lo dice
+    // una persona. Vacío es un evento de un día, que es el caso normal.
+    hasta: existente?.fin ? iso(parsearMomento(existente.fin)) : '',
     tipo_id: existente?.tipo_id || 'otro',
     ubicacion: existente?.ubicacion || '',
     notas: existente?.notas || '',
@@ -1454,7 +1516,23 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
   abrirHoja(existente ? 'Editar evento' : 'Nuevo evento', (cuerpo) => {
     const titulo = entrada({ value: borrador.titulo, autofocus: true });
     const dia = el('input', { type: 'date', value: borrador.dia });
-    cuerpo.append(campo('Qué', titulo), campo('Cuándo', dia));
+
+    // «Hasta» va aquí y no detrás de «Más opciones»: es la otra mitad del
+    // cuándo, y escondido no lo encuentra quien no sepa ya que existe. Vacío no
+    // pregunta nada, que es lo que tiene que pasar el 90 % de las veces.
+    const hasta = el('input', { type: 'date', value: borrador.hasta, min: borrador.dia });
+    dia.addEventListener('change', () => {
+      hasta.min = dia.value;
+      // Un «hasta» que se queda por detrás del día ya no dice nada: se cae solo
+      // en vez de esperar a que el guardado lo reproche.
+      if (hasta.value && hasta.value < dia.value) hasta.value = '';
+    });
+
+    cuerpo.append(
+      campo('Qué', titulo),
+      el('div', { class: 'duo' }, [campo('Cuándo', dia), campo('Hasta', hasta)]),
+      el('p', { class: 'pista', texto: 'Deja «Hasta» vacío si es de un día. Con fecha, el evento sale en la agenda todos los días que dura.' }),
+    );
 
     const avanzado = el('div', { class: 'hoja-seccion', hidden: !existente });
     const conmutador = el('button', {
@@ -1500,12 +1578,27 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
           if (!titulo.value.trim()) { avisar('Ponle un título'); titulo.focus(); return; }
+          if (hasta.value && hasta.value < dia.value) {
+            avisar('«Hasta» no puede ir antes del día');
+            hasta.focus();
+            return;
+          }
+          // Un «hasta» igual al día es un evento de un día escrito de dos
+          // maneras: se guarda como lo que es, sin fin, para que la agenda no
+          // tenga que distinguir dos formas del mismo caso.
+          const finEscrito = hasta.value && hasta.value > dia.value ? hasta.value : null;
           const jornadaCompleta = !hora.value;
           const momento = parsearMomento(jornadaCompleta ? dia.value : `${dia.value}T${hora.value}:00`);
           const campos = {
             titulo: titulo.value.trim(),
             tipo_id: tipo.value,
             inicio: jornadaCompleta ? dia.value : isoConHora(momento),
+            // El fin lleva la misma hora que el inicio: para el reparto por días
+            // solo cuenta su fecha, y con la hora puesta la duración que guarda
+            // el evento es la de verdad y no una de madrugada.
+            fin: finEscrito
+              ? (jornadaCompleta ? finEscrito : `${finEscrito}T${hora.value}:00`)
+              : null,
             jornada_completa: jornadaCompleta ? 1 : 0,
             ubicacion: lugar.value.trim(),
             notas: notas.value.trim(),
