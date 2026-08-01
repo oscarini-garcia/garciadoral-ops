@@ -47,7 +47,7 @@ tener que recorrer la aplicación entera cada vez.
 - **apple.js** — Verificación del token de identidad de Sign in with Apple.
   base64urlADatos · verificarTokenDeApple
 - **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
-  CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · empujar
+  CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · empujarSolicitud · empujar
 - **comentables.js** — Qué cosas admiten comentario, en un solo sitio.
   COMENTABLES · esComentable · comentariosVisibles
 - **derivar.js** — Estados que nadie mantiene a mano.
@@ -131,9 +131,9 @@ tener que recorrer la aplicación entera cada vez.
 ### `pwa/publico/js/vistas/` · Las cinco secciones de la aplicación
 
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
-  reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
+  reiniciarFamilia · pintarFamilia · abrirBandeja · abrirFicha · abrirFormularioPersona
 - **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
-  reiniciarHoy · tituloDeHoy · pintarHoy
+  reiniciarHoy · tituloDeHoy · pintarHoy · nuevoPieDeVersion
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · marcaDeSeleccionada
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
@@ -260,7 +260,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**314** en total.
+**318** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -286,6 +286,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/redaccion-regalo.test.js` — 14
 - `api/test/redaccion.test.js` — 13
 - `api/test/sitios.test.js` — 5
+- `api/test/solicitud-aviso.test.js` — 4
 - `api/test/solicitudes.test.js` — 14
 - `api/test/viajes.test.js` — 10
 - `api/test/visibilidad.test.js` — 12
