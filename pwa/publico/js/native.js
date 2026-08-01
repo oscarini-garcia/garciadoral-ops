@@ -247,12 +247,20 @@ export async function autorizacionDeAppleNativa({ appleClienteWeb, redireccion }
   return {
     identityToken: response?.identityToken ?? null,
     authorizationCode: response?.authorizationCode ?? null,
+    nombre: nombreDe(response?.givenName, response?.familyName),
   };
 }
 
-export async function tokenDeAppleNativo(configuracion) {
-  const autorizacion = await autorizacionDeAppleNativa(configuracion);
-  return autorizacion?.identityToken ?? null;
+/**
+ * El nombre que Apple entrega en la **primera** autorización, y solo en ella.
+ *
+ * No viaja en el token: llega suelto en la respuesta y hay que recogerlo ahí
+ * mismo. Devuelve `null` si Apple no lo dio, que es lo normal a partir de la
+ * segunda vez.
+ */
+export function nombreDe(nombre, apellidos) {
+  const completo = [nombre, apellidos].filter(Boolean).join(' ').trim();
+  return completo || null;
 }
 
 // ---------------------------------------------- Recordatorios locales --

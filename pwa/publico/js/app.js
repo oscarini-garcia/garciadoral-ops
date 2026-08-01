@@ -151,7 +151,7 @@ function mostrarAcceso(mensaje = null) {
       if (respuesta.estado !== 'activa') {
         acceso.hidden = true;
         guardarSesion({ espera: respuesta.token_espera });
-        return pintarEspera(respuesta.token_espera, respuesta);
+        return pintarEspera(respuesta.token_espera, respuesta, respuesta.nombre_apple);
       }
 
       // Se descarta cualquier instantánea anterior: el almacén local pertenece
@@ -204,14 +204,21 @@ const TEXTO_ESPERA = {
   },
 };
 
-function pintarEspera(token, situacion) {
+function pintarEspera(token, situacion, nombreDeApple = null) {
   document.getElementById('aplicacion').hidden = true;
   document.getElementById('acceso').hidden = true;
   document.getElementById('espera').hidden = false;
 
   const marco = vaciar(document.getElementById('esperaMarco'));
 
-  if (situacion.estado === 'sin_solicitud') return pintarFormulario(marco, token, situacion);
+  if (situacion.estado === 'sin_solicitud') {
+    // Si Apple acaba de dar el nombre, no hay nada que preguntar: se pide el
+    // acceso con él y esta persona ve directamente que su solicitud está hecha.
+    // Volver a pedir un dato que Sign in with Apple ya ha entregado es lo que
+    // rechaza la directriz 4 de la App Store, y además sobra.
+    if (nombreDeApple) return pedirAccesoSinPreguntar(marco, token, situacion, nombreDeApple);
+    return pintarFormulario(marco, token, situacion);
+  }
 
   const texto = TEXTO_ESPERA[situacion.estado] || TEXTO_ESPERA.pendiente;
   marco.append(
@@ -246,14 +253,39 @@ function pintarEspera(token, situacion) {
 }
 
 /**
+ * Pide el acceso con el nombre que Apple acaba de dar, sin preguntar nada.
+ *
+ * Es el camino normal de quien entra por primera vez. Si algo falla se cae al
+ * formulario, para que un fallo de red no deje a nadie en una pantalla sin
+ * salida.
+ */
+async function pedirAccesoSinPreguntar(marco, token, situacion, nombre) {
+  marco.append(
+    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
+    el('h1', { texto: `Un momento, ${nombre.split(' ')[0]}.` }),
+    el('p', { class: 'acceso-texto', texto: 'Estamos enviando tu solicitud.' }),
+  );
+
+  try {
+    const resultado = await pedirEntrar(configuracion, token, nombre);
+    pintarEspera(token, resultado);
+  } catch {
+    pintarFormulario(vaciar(marco), token, situacion, nombre);
+  }
+}
+
+/**
  * El formulario de la sala de espera: un campo, el nombre.
  *
- * Se pide a mano porque Apple no lo da de forma fiable —solo llega en la
- * primerísima autorización y nunca en el token—, y porque es lo único que
- * identifica a quien pide entrar cuando ha elegido ocultar su correo.
+ * Es el camino de excepción. Apple solo entrega el nombre en la primerísima
+ * autorización y nunca en el token, de modo que quien ya hubiera autorizado la
+ * aplicación antes —o quien retiró su solicitud y vuelve— llega sin él, y hay
+ * que preguntarlo: es lo único que identifica a esa persona ante quien decide
+ * si entra, sobre todo si ha elegido ocultar su correo.
  */
-function pintarFormulario(marco, token, situacion) {
+function pintarFormulario(marco, token, situacion, sugerido = null) {
   const nombre = entrada({ placeholder: 'Marta Ruiz', autocomplete: 'name' });
+  if (sugerido) nombre.value = sugerido;
 
   marco.append(
     el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),

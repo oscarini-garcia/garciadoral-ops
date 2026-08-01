@@ -20,7 +20,7 @@
  * audiencias y devuelve la misma persona.
  */
 
-import { autorizacionDeAppleNativa, esNativo, tokenDeAppleNativo } from './native.js';
+import { autorizacionDeAppleNativa, esNativo, nombreDe } from './native.js';
 
 const SDK = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/es_ES/appleid.auth.js';
 
@@ -67,12 +67,8 @@ async function autorizacionPorLaWeb(configuracion) {
   return {
     identityToken: respuesta?.authorization?.id_token ?? null,
     authorizationCode: respuesta?.authorization?.code ?? null,
+    nombre: nombreDe(respuesta?.user?.name?.firstName, respuesta?.user?.name?.lastName),
   };
-}
-
-async function tokenPorLaWeb(configuracion) {
-  const autorizacion = await autorizacionPorLaWeb(configuracion);
-  return autorizacion?.identityToken ?? null;
 }
 
 /**
@@ -92,9 +88,10 @@ export async function entrarConApple(configuracion) {
   }
 
   const plataforma = esNativo() ? 'ios' : 'web';
-  const idToken = esNativo()
-    ? await tokenDeAppleNativo(configuracion)
-    : await tokenPorLaWeb(configuracion);
+  const autorizacion = esNativo()
+    ? await autorizacionDeAppleNativa(configuracion)
+    : await autorizacionPorLaWeb(configuracion);
+  const idToken = autorizacion?.identityToken ?? null;
 
   if (!idToken) {
     throw new Error(
@@ -112,7 +109,11 @@ export async function entrarConApple(configuracion) {
 
   const datos = await canje.json().catch(() => ({}));
   if (!canje.ok) throw new Error(datos.error || `La API respondió ${canje.status}.`);
-  return datos;
+
+  // El nombre que Apple acaba de dar viaja con la respuesta para que nadie
+  // tenga que teclearlo. Solo llega en la primera autorización, así que este es
+  // el único momento en que se puede recoger.
+  return { ...datos, nombre_apple: autorizacion?.nombre ?? null };
 }
 
 // ------------------------------------------------------- Sala de espera --
