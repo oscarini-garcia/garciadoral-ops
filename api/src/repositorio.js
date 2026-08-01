@@ -42,7 +42,7 @@ const CAMPOS = {
   apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'hecho', 'autor_id', 'activo'],
   voto: ['apunte_id', 'persona_id', 'activo'],
   visto: ['persona_id', 'objeto_tipo', 'objeto_id', 'hasta'],
-  mejora: ['texto', 'autor_id', 'activo'],
+  mejora: ['texto', 'hecho', 'autor_id', 'activo'],
 };
 
 /** Campos cuyo conflicto se conserva para revisión en lugar de descartarse en
@@ -50,6 +50,9 @@ const CAMPOS = {
 const CAMPOS_DE_COORDINACION = { regalo: ['responsable_id', 'estado'] };
 
 const bool = (valor) => valor === 1 || valor === true;
+
+/** Lo que cabe en una mejora. El mismo número que corta el dispositivo. */
+export const TOPE_DE_MEJORA = 2000;
 
 async function filas(db, sql, ...parametros) {
   const { results } = await db.prepare(sql).bind(...parametros).all();
@@ -210,7 +213,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     votos: votos.map((v) => ({ ...v, activo: bool(v.activo) })),
     // Las mejoras son sobre la aplicación y no sobre la casa, así que no tienen
     // destinatario y no pasan por la visibilidad: las ve quien tiene cuenta.
-    mejoras: mejoras.map((m) => ({ ...m, activo: bool(m.activo) })),
+    mejoras: mejoras.map((m) => ({ ...m, hecho: bool(m.hecho), activo: bool(m.activo) })),
     // Lo visto no se recorta por visibilidad sino por dueño, y eso lo hace
     // `filtrado.js`: las filas de una persona no le sirven de nada a otra.
     vistos,
@@ -376,6 +379,15 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
         `llegaron: ${intrusos.join(', ')}`,
       );
     }
+  }
+
+  // Una mejora es un cuaderno, no un adjunto. Sin tope, un pegado largo —un
+  // correo entero, un volcado— entra en la instantánea de los cuatro y se
+  // descarga en cada sincronización, para siempre. El dispositivo ya corta por
+  // el mismo número; esto es lo que hace que siga siendo verdad cuando el que
+  // escribe no es esta aplicación.
+  if (tipo === 'mejora' && typeof campos.texto === 'string' && campos.texto.length > TOPE_DE_MEJORA) {
+    throw new Rechazo(`una mejora son ${TOPE_DE_MEJORA} caracteres como mucho`);
   }
 
   // Un regalo entregado no admite modificación de destinatario ni de ocasión (§4).

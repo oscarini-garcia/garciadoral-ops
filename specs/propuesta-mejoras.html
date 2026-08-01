@@ -1,0 +1,481 @@
+<meta charset="utf-8">
+<title>Las mejoras, leídas contra las de meeting-ops-air</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --radio: 12px;
+    --toque: 44px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 68ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 16px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 70ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.gana { border-left-color: var(--regalo); }
+
+  ul { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+  ul strong { color: var(--ink); }
+
+  /* Los cambios, numerados porque van en orden de lo que más pesa. */
+  .cambios { display: flex; flex-direction: column; gap: 14px; counter-reset: cambio; }
+  .cambio {
+    display: grid; grid-template-columns: 34px 1fr; gap: 14px; align-items: start;
+    border-top: 1px solid var(--line); padding-top: 14px;
+  }
+  .cambio::before {
+    counter-increment: cambio; content: counter(cambio);
+    font-family: var(--mono); font-size: 13px; color: var(--tinta);
+    border: 1px solid var(--line); border-radius: 8px;
+    display: grid; place-items: center; height: 30px; background: var(--paper-2);
+  }
+  .cambio-cuerpo { display: flex; flex-direction: column; gap: 7px; }
+  .cambio-cuerpo p { color: var(--ink-soft); max-width: 70ch; }
+  .cambio-cuerpo h3 { font-family: var(--sans); font-size: 16px; font-weight: 600; }
+  .coste { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); }
+
+  /* Antes y después, con las piezas de verdad. */
+  .par { display: flex; flex-wrap: wrap; gap: 22px; }
+  .lado { display: flex; flex-direction: column; gap: 8px; flex: 1 1 300px; min-width: 280px; max-width: 400px; }
+  .lado > .rotulo { color: var(--ink-faint); }
+  .tel {
+    border: 1px solid var(--line); border-radius: 18px; background: var(--paper);
+    box-shadow: var(--sombra); padding: 14px 16px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .tarjeta {
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: var(--radio);
+    padding: 13px 15px; display: flex; flex-direction: column; gap: 6px; text-align: left;
+  }
+  .mejora-texto { font-size: 15px; line-height: 1.4; }
+  .mejora-firma { font-size: 12.5px; color: var(--ink-faint); }
+  .mejora-firma.mala { font-family: var(--mono); }
+  .ap-cabeza {
+    display: flex; align-items: center; gap: 10px; min-height: var(--toque);
+    font-size: 16.5px; font-weight: 500; border-bottom: 1px solid var(--line); padding-bottom: 4px;
+  }
+  .moneda {
+    flex: none; display: grid; place-items: center; width: 28px; height: 28px;
+    border-radius: 8px; background: var(--tinta-suave); color: var(--tinta);
+  }
+  .moneda svg { width: 17px; height: 17px; }
+  .ap-nota { margin-left: auto; font-size: 13px; font-weight: 400; color: var(--ink-faint); }
+  .flecha {
+    flex: none; width: 9px; height: 9px; margin-left: 8px;
+    border-right: 1.8px solid var(--ink-faint); border-bottom: 1.8px solid var(--ink-faint);
+    transform: rotate(45deg) translate(-2px, -2px);
+  }
+  .pista { font-size: 13px; color: var(--ink-faint); }
+  .boton {
+    min-height: var(--toque); border-radius: 10px; border: 1px solid var(--line);
+    background: var(--paper-2); color: var(--ink); font-size: 15px;
+    display: grid; place-items: center; padding: 0 14px;
+  }
+  .boton[data-tono="tinta"] { background: var(--tinta); color: var(--paper); border-color: transparent; }
+  .boton[data-tono="hecho"] { background: var(--tinta-suave); color: var(--tinta); border-color: transparent; }
+  .acciones { display: flex; gap: 9px; }
+  .acciones .boton { flex: 1; }
+
+  .opciones { display: flex; flex-direction: column; gap: 10px; }
+  .opcion {
+    border: 1px solid var(--line); border-radius: 12px; padding: 13px 15px;
+    display: flex; flex-direction: column; gap: 5px; background: var(--paper-2);
+  }
+  .opcion h3 { font-family: var(--sans); font-size: 15.5px; font-weight: 600; }
+  .opcion p { font-size: 14.5px; color: var(--ink-soft); max-width: 70ch; }
+  .opcion[data-recomendada] { border-color: var(--tinta); border-left-width: 3px; }
+</style>
+
+<div class="doc">
+
+<header class="portada">
+  <p class="rotulo">Propuesta · Ajustes › Mejoras</p>
+  <h1>Las mejoras, leídas contra las de <code>meeting-ops-air</code></h1>
+  <p>
+    Allí se llaman <em>roadmap notes</em> y están en <code>pwa/public/js/roadmap.js</code>,
+    con su porqué en <code>specs/ux.md</code> §4. Nuestras mejoras nacieron
+    copiando esa pieza, así que lo grueso ya coincide y no hay nada que
+    re-discutir: viven en un apartado plegado de Ajustes y no en una pestaña,
+    viajan por el contrato de sincronización que ya hay y no por una ruta propia,
+    salen las más nuevas primero, la fila enseña el texto entero sin recortar, y
+    editar, copiar y quitar son verbos de la hoja de la mejora y no de la lista.
+  </p>
+  <p>
+    Lo que sigue es lo que <strong>no</strong> coincide. Son siete cosas
+    pequeñas y dos preguntas de flujo que aquí se plantean y allí no, porque
+    allí escribe una persona y aquí escriben cuatro.
+  </p>
+</header>
+
+<section class="parte">
+  <p class="rotulo">Lo que traigo</p>
+  <h2>Siete cosas, en orden de lo que pesan</h2>
+
+  <div class="cambios">
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>La pantalla no dice en ningún sitio que las ve toda la casa</h3>
+        <p>
+          Allí la línea bajo el botón dice «<em>The Mac reads the same list</em>»,
+          y esa frase existe exactamente para contestar «¿esto dónde va?». Aquí la
+          pregunta es más fuerte y no se contesta: una mejora que apuntas se le
+          aparece a los otros tres, y nada de lo que hay en la pantalla lo insinúa.
+          Con el texto entero de la fila y la firma de quien la puso se deduce
+          <em>después</em>, mirando las de los demás; antes de escribir la primera,
+          no.
+        </p>
+        <p>
+          Una línea apagada al pie del apartado: <strong>«Las ve toda la casa.»</strong>
+          Y cuando no hay ninguna, la que ya está —«Todavía no hay ninguna»— pasa a
+          decir de qué va: «Ideas sobre esta aplicación. Las ve toda la casa.»
+        </p>
+        <p class="coste">una línea de texto</p>
+      </div>
+    </div>
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>La fecha va en ISO, que no es como escribe fechas esta aplicación</h3>
+        <p>
+          La firma de una mejora sale hoy como <code>Óscar · 2026-08-01</code>.
+          Allí es correcto —es la única pieza de esa aplicación con lista fechada—;
+          aquí tenemos <code>formatearHace</code> desde siempre y una regla propia
+          que ya resolvió esto en Sitios: <strong>el cuándo solo se escribe si ya no
+          es de hoy</strong> (<code>firmaDeApunte</code> en <code>sitios.js</code>).
+          Una mejora apuntada hace diez minutos no necesita fecha; la de marzo, sí.
+        </p>
+        <p class="coste">reusar <code>formatearHace</code> · ninguna pieza nueva</p>
+      </div>
+    </div>
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>Nada limita la longitud, ni aquí ni en el Worker</h3>
+        <p>
+          Allí hay un tope de 2000 caracteres puesto en los dos sitios, y el Worker
+          rechaza con un <code>Rejection</code> lo que se pase. Aquí no hay tope en
+          ninguno de los dos: <code>api/src/repositorio.js</code> solo tiene la lista
+          de columnas. Un pegado largo —un correo entero, un volcado— entra en la
+          <strong>instantánea de los cuatro</strong> y se descarga en cada
+          sincronización, para siempre.
+        </p>
+        <p>
+          El mismo tope de 2000, cortado en el dispositivo y comprobado en el
+          Worker. No es una regla de estilo: es lo único que separa el cuaderno de
+          un adjunto.
+        </p>
+        <p class="coste">una constante en los dos lados</p>
+      </div>
+    </div>
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>La confirmación de quitar no dice a quién afecta</h3>
+        <p>
+          Hoy pregunta «¿Quitar esta mejora?» y quita la de cualquiera, porque no
+          hay comprobación de autoría en ninguno de los dos lados. <strong>Eso está
+          bien</strong>: es una lista de la casa y no un cuaderno personal, igual que
+          la lista de la compra de un sitio. Lo que está mal es que la frase no lo
+          diga. Allí dicen «<em>It goes from both machines</em>» por la misma razón.
+        </p>
+        <p>
+          «¿Quitar esta mejora? Se va de la lista de toda la casa.» El verbo se
+          queda en <strong>Quitar</strong> y no pasa a <em>Borrar</em>: lo que
+          hacemos es marcar <code>activo = 0</code>, la fila se queda, y «Borrar»
+          prometería otra cosa.
+        </p>
+        <p class="coste">una frase</p>
+      </div>
+    </div>
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>El recuento no se ve sin desplegar</h3>
+        <p>
+          El <code>acordeon</code> ya sabe llevar nota en el rótulo plegado —lo usan
+          Regalos con «<em>4</em>» y Ocasiones con «<em>el próximo, Marta en seis
+          días</em>»—. Mejoras no la pasa, así que hay que abrir el apartado para
+          saber si hay algo dentro. Allí no lo tienen porque su acordeón no puede.
+        </p>
+        <p class="coste">un argumento</p>
+      </div>
+    </div>
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>«Copiada» debería salir en el botón, no flotando</h3>
+        <p>
+          Hoy lanzamos un aviso flotante. Allí la palabra se escribe en el propio
+          botón durante dos segundos, y la razón que dan es buena: <strong>la
+          respuesta se quiere donde el dedo ya está</strong>. Nuestra hoja también
+          sobrevive al repintado, así que el mismo truco vale sin trampa.
+        </p>
+        <p class="coste">cuatro líneas</p>
+      </div>
+    </div>
+
+    <div class="cambio">
+      <div class="cambio-cuerpo">
+        <h3>El área no coge el foco al abrir</h3>
+        <p>
+          Allí sí, con treinta milisegundos de espera para que la hoja haya
+          terminado de subir. Apuntar una idea es el gesto que más se repite de
+          este apartado y hoy cuesta un toque de más.
+        </p>
+        <p class="coste">una línea</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Cómo queda</p>
+  <h2>La fila y el rótulo, antes y después</h2>
+
+  <div class="par">
+    <div class="lado">
+      <p class="rotulo">Hoy</p>
+      <div class="tel">
+        <div class="ap-cabeza">
+          <span class="moneda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/></svg></span>
+          Mejoras<span class="flecha"></span>
+        </div>
+        <div class="tarjeta">
+          <p class="mejora-texto">Que la semana empiece en lunes de verdad</p>
+          <p class="mejora-firma mala">Óscar · 2026-08-01</p>
+        </div>
+        <div class="tarjeta">
+          <p class="mejora-texto">Poder marcar el turno de Lío desde la pantalla de bloqueo</p>
+          <p class="mejora-firma mala">Marta · 2026-03-14</p>
+        </div>
+        <div class="acciones"><span class="boton" data-tono="tinta">Apuntar una idea</span></div>
+      </div>
+    </div>
+
+    <div class="lado">
+      <p class="rotulo">Propuesto</p>
+      <div class="tel">
+        <div class="ap-cabeza">
+          <span class="moneda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/></svg></span>
+          Mejoras<span class="ap-nota">2</span><span class="flecha"></span>
+        </div>
+        <div class="tarjeta">
+          <p class="mejora-texto">Que la semana empiece en lunes de verdad</p>
+          <p class="mejora-firma">Óscar</p>
+        </div>
+        <div class="tarjeta">
+          <p class="mejora-texto">Poder marcar el turno de Lío desde la pantalla de bloqueo</p>
+          <p class="mejora-firma">Marta, el 14 de marzo</p>
+        </div>
+        <div class="acciones"><span class="boton" data-tono="tinta">Apuntar una idea</span></div>
+        <p class="pista">Las ve toda la casa.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <p>
+      La de Óscar es de hoy y por eso no lleva cuándo; la de Marta es de marzo y
+      sí. Es la regla de <code>firmaDeApunte</code>, la misma que ya gobierna la
+      firma de un apunte de Sitios, y lo que gana no es sitio: es que una fecha
+      escrita <em>solo cuando dice algo</em> se lee, y una columna de fechas
+      iguales no.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Lo que no traigo</p>
+  <h2>Dos cosas suyas que aquí no valen</h2>
+  <ul>
+    <li>
+      <strong>El estado sin sesión.</strong> Allí, si no has entrado, el apartado
+      lo dice en vez de enseñar una lista vacía, porque una lista vacía se lee
+      como «se han perdido». Aquí no aplica: sin sesión no hay Ajustes, y en la
+      demostración el apartado sencillamente no sale.
+    </li>
+    <li>
+      <strong>La adopción de las notas locales.</strong> Ellos tuvieron un bundle
+      con las notas en <code>localStorage</code> y tuvieron que rescatarlas en el
+      primer arranque. Nuestras mejoras nacieron ya en <code>D1</code>, así que no
+      hay nada que rescatar. Es la mitad de <code>roadmap.js</code> que no tenemos
+      que escribir.
+    </li>
+  </ul>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Flujo · la pregunta que aquí sí existe</p>
+  <h2>¿Una mejora se termina alguna vez?</h2>
+  <p>
+    Hoy el único final es Quitar, y Quitar se lee como «me equivoqué», no como
+    «ya está». Allí eso basta porque escribe una persona y esa persona es la que
+    las hace. Aquí escriben cuatro y las hace otro, de modo que la lista solo
+    crece y nadie sabe cuáles están puestas ya. La de «que la semana empiece en
+    lunes» puede llevar seis meses hecha y seguir ahí.
+  </p>
+
+  <div class="opciones">
+    <div class="opcion" data-recomendada>
+      <h3>A · Un visto, y lo hecho baja al final</h3>
+      <p>
+        Igual que «Llevar» en Sitios: tocar el visto la marca, lo marcado se
+        escribe apagado y se va abajo, y lo que falta queda arriba. Sin fecha,
+        sin quién y sin apartado nuevo — se deshace tocando otra vez. Es un
+        campo booleano y una regla de orden, y reusa un gesto que en esta casa ya
+        está aprendido.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3>B · Nada: Quitar es el cierre</h3>
+      <p>
+        Lo de <code>meeting-ops-air</code>, y defendible: quien la apuntó la quita
+        cuando la ve puesta. Cuesta cero y falla el día que alguien no se acuerde
+        de quitar la suya, que con cuatro personas es todos los días.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3>C · Tres estados, con «en marcha» en medio</h3>
+      <p>
+        Contesta también «¿alguien está con esto?». Pero pide una pastilla, un
+        selector y una pantalla que lo enseñe, y es el ciclo del regalo otra vez
+        para una lista que hoy tiene tres líneas. Lo apunto para descartarlo por
+        escrito, no para hacerlo.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Flujo · la otra</p>
+  <h2>¿Se apunta desde donde te molesta, o solo desde Ajustes?</h2>
+  <p>
+    Una mejora se te ocurre <em>usando</em> la pantalla que te molesta, y llegar
+    a apuntarla son cuatro toques —abrir Ajustes, desplegar Mejoras, Apuntar,
+    escribir— y salir de donde estabas. Ese roce es exactamente el que hace que la
+    idea no se apunte.
+  </p>
+
+  <div class="opciones">
+    <div class="opcion" data-recomendada>
+      <h3>A · Dejarlo en Ajustes y no tocar nada</h3>
+      <p>
+        Con cuatro personas y una lista de tres líneas, el roce todavía no ha
+        costado ninguna idea que sepamos. Y el sitio es el correcto: es sobre la
+        herramienta y no sobre el trabajo, que es la razón por la que está ahí y
+        no en una pestaña.
+      </p>
+    </div>
+    <div class="opcion">
+      <h3>B · Un atajo desde la propia pantalla</h3>
+      <p>
+        Una entrada más en el botón flotante de cada pestaña, o un gesto. Quita el
+        roce y a cambio mete un verbo de la herramienta en medio de los verbos del
+        trabajo, que es lo que el botón flotante nunca ha hecho: allí «+» significa
+        «un evento», «un regalo», «un sitio», nunca «una queja sobre la aplicación».
+      </p>
+    </div>
+  </div>
+
+  <div class="nota pega">
+    <p>
+      <strong>Y una que no es de pantallas.</strong> Las mejoras se apuntan para
+      que alguien las haga, y quien las hace lee este repositorio, no la
+      instantánea. Hoy la única manera de que una mejora llegue a donde se actúa
+      es que alguien la lea en el teléfono y la escriba aquí — que es el mismo
+      «transporte es una persona» que <code>meeting-ops-air</code> se quitó de
+      encima al llevarlas a D1. Ellos lo resolvieron porque su Mac lee la misma
+      base; aquí no hay tal Mac. Es la pregunta que este documento no contesta.
+    </p>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Decidido</p>
+  <h2>A y A, y las siete están puestas</h2>
+  <p>
+    <strong>Una mejora se cierra con el visto de «Llevar»</strong> —tacha, baja al
+    final lo tachado, y lo que falta queda arriba—, y <strong>se apuntan solo
+    desde Ajustes</strong>. Las siete cosas de arriba van con ellas.
+  </p>
+  <p>
+    Dos cosas salieron al construirlo y no estaban en este documento. La primera:
+    <strong>el recuento del rótulo mentía</strong> hasta cerrar y reabrir Ajustes,
+    porque una mejora se marca sin salir de la hoja y la nota se pasaba ya
+    escrita; ahora <code>acordeon</code> acepta un nodo y lo escribe el bloque.
+    La segunda: <strong><code>.mejora-texto</code> y <code>.mejora-firma</code> no
+    existían en el CSS</strong> —la fila se venía dibujando con los estilos por
+    defecto desde que se construyó—, así que entran ahora con el resto.
+  </p>
+  <p>
+    Lo que sigue abierto es lo de la nota de más abajo: <strong>cómo llega una
+    mejora a donde se actúa</strong>. Eso no lo arregla ninguna pantalla.
+  </p>
+</section>
+
+</div>
