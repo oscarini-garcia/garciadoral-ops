@@ -410,18 +410,24 @@ pendiente. El hook lo inyecta al final del mapa.
   no la encuentra quien no sepa ya que existe. Vacía es un evento de un día, y un
   «hasta» igual al día **se guarda sin fin**, para que la agenda no tenga que
   distinguir dos formas del mismo caso.
-  **Y el «(cont.)» se retiró**: los días de continuación llevan ahora **`2/3` en
-  el hueco de la hora**, que en esos días está vacío. Dice dos cosas donde aquel
-  decía una —que sigue y por dónde va— y no le quita sitio al título, que en una
-  línea de 38 puntos es lo único que hay. **El tramo se cuenta sobre la instancia
-  entera y no sobre los días que se miran**: una semana que empieza el lunes con
-  un evento que arrancó el sábado dice «3/5», no «1/3». Eso es lo que prueba
-  `pwa/test/tramos.test.js`. El primer día se queda con su hora si la tiene, y si
-  no —una jornada completa— dice `1/3`. La lista es al revés: enseña el evento
-  **una sola vez**, en su día de arranque, así que ahí lo que hace falta no es el
-  tramo sino **«3 días»**, y eso va en el pie de la tarjeta. La hoja del evento
-  dice el rango entero —«sábado 1 – lunes 3 de Agosto · 3 días»— en vez de la
-  fecha del día por el que se entró.
+  **La marca de los días de en medio es «(cont.)»**, detrás del título. Se probó
+  a cambiarla por `2/3` en el hueco de la hora —decía además por dónde va— y se
+  volvió atrás: dos cifras y una barra piden descifrarse, y lo que hace falta
+  saber de un vistazo es solo que eso de hoy viene de antes. El primer día se
+  queda con su hora; los que siguen no la repiten, porque repetirla diría que
+  empieza tres veces.
+  **Y la lista reparte por días igual que la semana**, que era lo que se pedía
+  desde el principio. Enseñaba el evento una sola vez, en su día de arranque, y
+  eso dejaba mintiendo justo a la pantalla a la que se le pregunta si hoy hay
+  alguien en casa. En su tarjeta va además **«3 días»**, que es lo que la línea
+  de la semana no tiene sitio para decir. La hoja del evento dice el rango entero
+  —«sábado 1 – lunes 3 de Agosto · 3 días»— en vez de la fecha del día por el que
+  se entró. Lo que sostiene todo esto es `pwa/test/varios-dias.test.js`, y lo que
+  prueba es lo único que no se ve mirando: que un día es continuación **aunque su
+  primer día caiga fuera de lo que se está mirando**.
+  **Las dos casillas van una debajo de otra**, no en la misma fila: una casilla
+  de fecha trae su propio ancho mínimo —el navegador dibuja `dd/mm/aaaa` dentro—
+  y a 390 puntos las dos juntas se aprietan hasta cortar el texto.
 - **Un calendario externo tiene dueño, y por eso un vuelo dice de quién es.** Un
   viaje importado llegaba con `origen` y `calendario_id` y nada más, de modo que
   en la agenda de los cuatro salía «Madrid → Bolonia» sin decir de quién era. El

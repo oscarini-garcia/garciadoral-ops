@@ -112,7 +112,7 @@ tener que recorrer la aplicación entera cada vez.
   HORIZONTE_RECORDATORIOS_DIAS · …y 8 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
-  soloFecha · iso · isoConHora · sumarDias · …y 16 más
+  soloFecha · iso · isoConHora · sumarDias · …y 15 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
   codigoDeAutorizacion · eliminarLaCuenta
