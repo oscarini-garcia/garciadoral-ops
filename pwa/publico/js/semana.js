@@ -276,8 +276,14 @@ export function repartirPorDia(instancias, dias) {
   const reparto = new Map(dias.map((dia) => [iso(dia), []]));
 
   for (const instancia of instancias) {
-    let cursor = soloFecha(instancia.inicio);
+    const primero = soloFecha(instancia.inicio);
     const ultimo = soloFecha(instancia.fin);
+    // Cuántos días ocupa en total y por cuál va. Se cuenta sobre la instancia
+    // entera y no sobre los días que se están mirando: si la semana empieza el
+    // miércoles, un evento que arrancó el lunes sigue siendo «3/5» y no «1/3».
+    const cuantos = Math.round((ultimo - primero) / 86400000) + 1;
+
+    let cursor = primero;
     while (cursor <= ultimo) {
       const clave = iso(cursor);
       if (reparto.has(clave)) {
@@ -285,7 +291,10 @@ export function repartirPorDia(instancias, dias) {
           instancia,
           evento: instancia.evento,
           dia: new Date(cursor),
-          continuacion: soloFecha(instancia.inicio) < cursor,
+          continuacion: primero < cursor,
+          tramo: cuantos > 1
+            ? { cual: Math.round((cursor - primero) / 86400000) + 1, de: cuantos }
+            : null,
         });
       }
       cursor = sumarDias(cursor, 1);
@@ -306,4 +315,22 @@ function orden(aparicion) {
 export function horaDe(aparicion) {
   if (aparicion.evento.jornada_completa || aparicion.continuacion) return null;
   return formatearHora(aparicion.instancia.inicio);
+}
+
+/**
+ * Por qué día de cuántos va, para lo que dura más de uno: «2/3».
+ *
+ * Va en el hueco de la hora, que en un día de continuación está vacío, y
+ * sustituye al «(cont.)» que se pegaba detrás del título. Dice dos cosas donde
+ * aquel decía una —que sigue, y por dónde va— y no le quita sitio al nombre, que
+ * en una línea de 38 puntos es lo único que hay.
+ *
+ * El primer día se queda con su hora si la tiene: la pregunta de ese día es a
+ * qué hora empieza, no cuánto dura, y eso último lo contesta entera la hoja del
+ * evento.
+ */
+export function tramoDe(aparicion) {
+  if (!aparicion.tramo) return null;
+  if (!aparicion.continuacion && horaDe(aparicion)) return null;
+  return `${aparicion.tramo.cual}/${aparicion.tramo.de}`;
 }

@@ -374,6 +374,21 @@ export function crearVista(instantanea) {
       return Boolean(tipos.get(evento.tipo_id)?.lleva_regalos);
     },
 
+    /**
+     * De quién es un evento que viene de un calendario externo.
+     *
+     * El dueño está en el calendario y no en el evento: un feed **es** de
+     * alguien y eso no cambia vuelo a vuelo. Y a propósito no se escribe en
+     * `persona_origen_id`, que es lo que mira `esMio()`: ponerlo ahí haría sonar
+     * el teléfono con cada cambio de cada vuelo, que no es lo que se pedía.
+     */
+    duenyoDelCalendario(evento) {
+      if (!evento?.calendario_id) return null;
+      const calendario = (instantanea.calendarios_externos || [])
+        .find((c) => c.id === evento.calendario_id);
+      return calendario?.persona_id ? api.persona(calendario.persona_id) : null;
+    },
+
     protagonistas: (evento) => (evento?.participantes || []).filter((p) => p.rol === 'protagonista').map((p) => p.persona_id),
     participantes: (evento) => (evento?.participantes || []).map((p) => p.persona_id),
 
