@@ -1,13 +1,18 @@
 {
   "appId": "com.garciadoral.ops",
-  "appName": "Agenda",
+  "appName": "GarciaDoral Ops",
   "webDir": "publico",
   "ios": {
     "scrollEnabled": true,
     "contentInset": "never"
   },
   "plugins": {
-    "CapacitorHttp": { "enabled": true },
-    "CapacitorUpdater": { "autoUpdate": false, "resetWhenUpdate": true }
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "resetWhenUpdate": true
+    }
   }
 }
