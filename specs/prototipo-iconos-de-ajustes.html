@@ -1,0 +1,456 @@
+<meta charset="utf-8">
+<title>Los rótulos de Ajustes: cinco maneras de ponerles icono</title>
+
+<style>
+  /* Los mismos valores de pwa/publico/css/estilos.css, para que lo que se ve
+     aquí sea lo que saldrá en el teléfono y no una aproximación. */
+  :root {
+    color-scheme: light dark;
+    --paper:      #FBF9F5;
+    --paper-2:    #F2EFE8;
+    --paper-3:    #EAE6DC;
+    --ink:        #1C2B33;
+    --ink-soft:   #5F7280;
+    --ink-faint:  #93A3AD;
+    --line:       #E2DED4;
+    --tinta:      #0E6E62;
+    --tinta-suave:#DCEDE9;
+    --regalo:     #8E3B5E;
+    --aviso:      #A8641B;
+    --sombra:     0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, Menlo, Consolas, monospace;
+    --radio: 12px;
+    --toque: 44px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="claro"], :root[data-theme="light"] {
+    --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
+    --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+    --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
+    --regalo: #8E3B5E; --aviso: #A8641B;
+  }
+  :root[data-theme="oscuro"], :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 28px 20px 80px;
+  }
+  .doc { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 29px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 17px; }
+  p { margin: 0; }
+  strong { font-weight: 600; }
+  code { font-family: var(--mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+
+  .rotulo { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint); }
+  .portada { display: flex; flex-direction: column; gap: 11px; }
+  .portada p, .parte > p { color: var(--ink-soft); max-width: 66ch; }
+  .parte { border-top: 2px solid var(--ink); padding-top: 14px; display: flex; flex-direction: column; gap: 14px; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 15px 17px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+  .nota.pega { border-left-color: var(--aviso); }
+  .nota.gana { border-left-color: var(--regalo); }
+
+  ul { margin: 0; padding-left: 20px; color: var(--ink-soft); display: flex; flex-direction: column; gap: 5px; }
+  ul strong { color: var(--ink); }
+
+  /* --------------------------------------------------------- Las maquetas -- */
+
+  .fila-opciones { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+
+  .opcion { display: flex; flex-direction: column; gap: 11px; flex: 1 1 320px; min-width: 300px; max-width: 380px; }
+  .opcion-cabeza { display: flex; flex-direction: column; gap: 4px; }
+  .opcion-cabeza p { color: var(--ink-soft); font-size: 14.5px; }
+
+  /* El teléfono: la hoja de Ajustes a 360 puntos, que es el ancho medido. */
+  .tel {
+    width: 360px; max-width: 100%;
+    border: 1px solid var(--line); border-radius: 22px;
+    background: var(--paper); box-shadow: var(--sombra); overflow: hidden;
+  }
+  .tel-cabecera {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 13px 18px 10px; border-bottom: 1px solid var(--line);
+  }
+  .tel-cabecera h4 { margin: 0; font-family: var(--serif); font-size: 20px; font-weight: 500; }
+  .tel-cabecera span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+  .tel-cuerpo { padding: 6px 18px 20px; }
+  .pista { font-size: 13px; color: var(--ink-faint); padding: 8px 0 4px; }
+
+  /* Los apartados, calcados de `.acordeon` en estilos.css. */
+  .ap { border-top: 1px solid var(--line); }
+  .ap:last-of-type { border-bottom: 1px solid var(--line); }
+  .ap-cabeza {
+    display: flex; align-items: center; gap: 10px;
+    min-height: var(--toque); padding: 4px 0;
+    font-size: 16.5px; font-weight: 500;
+  }
+  .ap-cabeza .flecha {
+    margin-left: auto; flex: none; width: 9px; height: 9px;
+    border-right: 1.8px solid var(--ink-faint); border-bottom: 1.8px solid var(--ink-faint);
+    transform: rotate(45deg) translate(-2px, -2px);
+  }
+  .ap-cuerpo { padding: 2px 0 15px; color: var(--ink-soft); font-size: 14.5px; }
+
+  /* El icono de trazo: la misma rejilla de 24 y el mismo grosor que los de la
+     barra inferior y los de `ICONOS` en js/ui.js. Hereda el color. */
+  .ic { flex: none; display: block; width: 21px; height: 21px; }
+
+  /* ---- A · emoji ---- */
+  .a .emo { flex: none; font-size: 17px; width: 21px; text-align: center; }
+
+  /* ---- B · trazo en tinta ---- */
+  .b .ic { color: var(--ink); }
+
+  /* ---- C · trazo apagado ---- */
+  .c .ic { color: var(--ink-faint); width: 19px; height: 19px; }
+
+  /* ---- D · moneda de color ---- */
+  .d .moneda {
+    flex: none; display: grid; place-items: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--tinta); color: var(--paper);
+  }
+  .d .moneda .ic { width: 17px; height: 17px; }
+  .d .ap-cabeza { gap: 11px; }
+
+  /* ---- E · ninguno ---- */
+
+  .medida { font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint); }
+
+  /* El muestrario de los nueve dibujos, a tamaño grande. */
+  .muestrario { display: flex; flex-wrap: wrap; gap: 18px; }
+  .muestra {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    width: 104px; padding: 14px 6px;
+    border: 1px solid var(--line); border-radius: var(--radio); background: var(--paper-2);
+  }
+  .muestra .ic { width: 30px; height: 30px; color: var(--ink); }
+  .muestra span { font-size: 12px; color: var(--ink-soft); text-align: center; line-height: 1.3; }
+</style>
+
+<div class="doc">
+
+<header class="portada">
+  <p class="rotulo">Prototipo · Ajustes</p>
+  <h1>Los rótulos de Ajustes: cinco maneras de ponerles icono</h1>
+  <p>
+    Hoy la hoja de Ajustes tiene nueve apartados y solo dos llevan algo delante:
+    <strong>🐾 Lío</strong> y <strong>✈️ Viajes</strong>. No los llevan porque se
+    decidiera nada: los heredaron de donde salieron —el emoji del perro venía del
+    carril de la semana, y el del avión, del tipo de evento—. El resultado es una
+    columna en la que dos filas están sangradas y siete no, y eso se lee como un
+    descuido antes que como una jerarquía.
+  </p>
+  <p>
+    Hay dos formas de arreglarlo, y las cinco maquetas de abajo son las variantes
+    de esas dos: <strong>ponérselo a las nueve</strong> (A, B, C, D) o
+    <strong>quitárselo a las dos</strong> (E).
+  </p>
+</header>
+
+<section class="parte">
+  <p class="rotulo">Lo que hay que tener en cuenta</p>
+  <h2>Tres cosas que deciden esto antes que el gusto</h2>
+  <ul>
+    <li>
+      <strong>Quien no administra ve seis apartados, no nueve.</strong> Lío, la IA
+      y Viajes solo salen a los administradores. La columna de iconos tiene que
+      aguantar las dos alturas sin quedar coja.
+    </li>
+    <li>
+      <strong>Un emoji no es un dibujo de la aplicación: es el del sistema.</strong>
+      Lo pinta iOS a su manera, en color, sin seguir el tema claro/oscuro ni la
+      tinta. Y varios de los que harían falta —✈️, entre ellos— necesitan el
+      selector de variación para no salir a trazo monocromo; en esta misma
+      aplicación eso ya obligó a escribir <code>emojiVisible</code> cuando pasó
+      con 🏖 en Sitios.
+    </li>
+    <li>
+      <strong>El icono de trazo ya es la lengua de la casa.</strong> Los cinco de
+      la barra inferior y los nueve de <code>ICONOS</code> en <code>js/ui.js</code>
+      están dibujados sobre la misma rejilla de 24 con el mismo grosor de 1,8 y
+      heredan el color, así que siguen el tema solos. Uno de los nueve que harían
+      falta —el destello de la IA— <strong>ya existe</strong> y ya significa eso
+      en otras cuatro pantallas.
+    </li>
+  </ul>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Las cinco</p>
+  <h2>A · Emoji en las nueve</h2>
+  <p>Lo más barato: nueve caracteres y ni una línea de CSS.</p>
+
+  <div class="fila-opciones">
+    <div class="opcion a">
+      <div class="opcion-cabeza">
+        <h3>A · Emoji en las nueve</h3>
+        <p>Nueve caracteres. Cero código. Y nueve dibujos que no son nuestros.</p>
+      </div>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Ajustes</h4><span>A</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Sesión iniciada como Óscar.</p>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">🔄</span>Sincronización<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">🎨</span>Aspecto<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">🐾</span>Lío<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">✨</span>Inteligencia artificial<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">✈️</span>Viajes<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">🔔</span>Avisos<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">💡</span>Mejoras<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">📄</span>La aplicación<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="emo">👤</span>Tu cuenta<span class="flecha"></span></div></div>
+        </div>
+      </div>
+      <p class="medida">Nueve caracteres · ni una línea de CSS</p>
+    </div>
+
+    <div class="opcion b">
+      <div class="opcion-cabeza">
+        <h3>B · Trazo, en tinta</h3>
+        <p>La lengua de la casa, a la misma tinta que el rótulo que acompañan.</p>
+      </div>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Ajustes</h4><span>B</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Sesión iniciada como Óscar.</p>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 0 1-15 5.4"/><path d="M3.5 12a8.5 8.5 0 0 1 15-5.4"/><path d="M18.5 2.9v3.7h-3.7"/><path d="M5.5 21.1v-3.7h3.7"/></svg>
+            Sincronización<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 0 0 17.2z" fill="currentColor" stroke="none"/></svg>
+            Aspecto<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="6.5" cy="10" rx="1.6" ry="2"/><ellipse cx="10.1" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="13.9" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="17.5" cy="10" rx="1.6" ry="2"/><path d="M12 13.1c2.6 0 4.6 1.9 4.6 4.1 0 1.7-1.3 2.7-2.8 2.7-.7 0-1.2-.3-1.8-.3s-1.1.3-1.8.3c-1.5 0-2.8-1-2.8-2.7 0-2.2 2-4.1 4.6-4.1z"/></svg>
+            Lío<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor" stroke-width="1"/></svg>
+            Inteligencia artificial<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.9c.85 0 1.35.85 1.35 1.95v4.5l6.9 3.95v2.1l-6.9-2.05v3.8l2.2 1.7v1.55L12 19.3l-3.55 1.1v-1.55l2.2-1.7v-3.8L3.75 15.4v-2.1l6.9-3.95v-4.5C10.65 3.75 11.15 2.9 12 2.9z"/></svg>
+            Viajes<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.4a6 6 0 1 0-12 0c0 4.4-1.6 6.1-1.6 6.1h15.2S18 13.8 18 9.4z"/><path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/></svg>
+            Avisos<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/></svg>
+            Mejoras<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.6h7.3L18 8.1v12.3H6.2z"/><path d="M13.5 3.6v4.5H18"/><path d="M9.1 13h6M9.1 16.4h4"/></svg>
+            La aplicación<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/></svg>
+            Tu cuenta<span class="flecha"></span></div></div>
+        </div>
+      </div>
+      <p class="medida">Ocho dibujos nuevos en <code>ICONOS</code> · el noveno ya está</p>
+    </div>
+
+    <div class="opcion c">
+      <div class="opcion-cabeza">
+        <h3>C · Trazo, apagado</h3>
+        <p>Los mismos dibujos, al gris de la flecha que ya hay al otro lado.</p>
+      </div>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Ajustes</h4><span>C</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Sesión iniciada como Óscar.</p>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 0 1-15 5.4"/><path d="M3.5 12a8.5 8.5 0 0 1 15-5.4"/><path d="M18.5 2.9v3.7h-3.7"/><path d="M5.5 21.1v-3.7h3.7"/></svg>
+            Sincronización<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 0 0 17.2z" fill="currentColor" stroke="none"/></svg>
+            Aspecto<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="6.5" cy="10" rx="1.6" ry="2"/><ellipse cx="10.1" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="13.9" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="17.5" cy="10" rx="1.6" ry="2"/><path d="M12 13.1c2.6 0 4.6 1.9 4.6 4.1 0 1.7-1.3 2.7-2.8 2.7-.7 0-1.2-.3-1.8-.3s-1.1.3-1.8.3c-1.5 0-2.8-1-2.8-2.7 0-2.2 2-4.1 4.6-4.1z"/></svg>
+            Lío<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor" stroke-width="1"/></svg>
+            Inteligencia artificial<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.9c.85 0 1.35.85 1.35 1.95v4.5l6.9 3.95v2.1l-6.9-2.05v3.8l2.2 1.7v1.55L12 19.3l-3.55 1.1v-1.55l2.2-1.7v-3.8L3.75 15.4v-2.1l6.9-3.95v-4.5C10.65 3.75 11.15 2.9 12 2.9z"/></svg>
+            Viajes<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.4a6 6 0 1 0-12 0c0 4.4-1.6 6.1-1.6 6.1h15.2S18 13.8 18 9.4z"/><path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/></svg>
+            Avisos<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/></svg>
+            Mejoras<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.6h7.3L18 8.1v12.3H6.2z"/><path d="M13.5 3.6v4.5H18"/><path d="M9.1 13h6M9.1 16.4h4"/></svg>
+            La aplicación<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/></svg>
+            Tu cuenta<span class="flecha"></span></div></div>
+        </div>
+      </div>
+      <p class="medida">Lo mismo que B · más una regla de color</p>
+    </div>
+
+    <div class="opcion d">
+      <div class="opcion-cabeza">
+        <h3>D · Moneda de color</h3>
+        <p>Lo que hacen los Ajustes de iOS: el dibujo en blanco sobre una pastilla.</p>
+      </div>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Ajustes</h4><span>D</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Sesión iniciada como Óscar.</p>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 0 1-15 5.4"/><path d="M3.5 12a8.5 8.5 0 0 1 15-5.4"/><path d="M18.5 2.9v3.7h-3.7"/><path d="M5.5 21.1v-3.7h3.7"/></svg>
+            </span>Sincronización<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 0 0 17.2z" fill="currentColor" stroke="none"/></svg>
+            </span>Aspecto<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="6.5" cy="10" rx="1.6" ry="2"/><ellipse cx="10.1" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="13.9" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="17.5" cy="10" rx="1.6" ry="2"/><path d="M12 13.1c2.6 0 4.6 1.9 4.6 4.1 0 1.7-1.3 2.7-2.8 2.7-.7 0-1.2-.3-1.8-.3s-1.1.3-1.8.3c-1.5 0-2.8-1-2.8-2.7 0-2.2 2-4.1 4.6-4.1z"/></svg>
+            </span>Lío<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor" stroke-width="1"/></svg>
+            </span>Inteligencia artificial<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.9c.85 0 1.35.85 1.35 1.95v4.5l6.9 3.95v2.1l-6.9-2.05v3.8l2.2 1.7v1.55L12 19.3l-3.55 1.1v-1.55l2.2-1.7v-3.8L3.75 15.4v-2.1l6.9-3.95v-4.5C10.65 3.75 11.15 2.9 12 2.9z"/></svg>
+            </span>Viajes<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.4a6 6 0 1 0-12 0c0 4.4-1.6 6.1-1.6 6.1h15.2S18 13.8 18 9.4z"/><path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/></svg>
+            </span>Avisos<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/></svg>
+            </span>Mejoras<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.6h7.3L18 8.1v12.3H6.2z"/><path d="M13.5 3.6v4.5H18"/><path d="M9.1 13h6M9.1 16.4h4"/></svg>
+            </span>La aplicación<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza"><span class="moneda">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/></svg>
+            </span>Tu cuenta<span class="flecha"></span></div></div>
+        </div>
+      </div>
+      <p class="medida">Lo mismo que B · más la pastilla · +5 puntos de alto por fila</p>
+    </div>
+
+    <div class="opcion e">
+      <div class="opcion-cabeza">
+        <h3>E · Ninguno</h3>
+        <p>La otra manera de arreglar lo mismo: se van 🐾 y ✈️ y no entra nada.</p>
+      </div>
+      <div class="tel">
+        <div class="tel-cabecera"><h4>Ajustes</h4><span>E</span></div>
+        <div class="tel-cuerpo">
+          <p class="pista">Sesión iniciada como Óscar.</p>
+          <div class="ap"><div class="ap-cabeza">Sincronización<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Aspecto<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Lío<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Inteligencia artificial<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Viajes<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Avisos<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Mejoras<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">La aplicación<span class="flecha"></span></div></div>
+          <div class="ap"><div class="ap-cabeza">Tu cuenta<span class="flecha"></span></div></div>
+        </div>
+      </div>
+      <p class="medida">Dos caracteres menos · nada más</p>
+    </div>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Los nueve dibujos</p>
+  <h2>A tamaño grande, para verles el trazo</h2>
+  <p>
+    Los de B, C y D son los mismos: cambia el color y la caja, no el dibujo. Están
+    sobre la rejilla de 24 con grosor 1,8, que es la de la barra inferior.
+  </p>
+  <div class="muestrario">
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 0 1-15 5.4"/><path d="M3.5 12a8.5 8.5 0 0 1 15-5.4"/><path d="M18.5 2.9v3.7h-3.7"/><path d="M5.5 21.1v-3.7h3.7"/></svg><span>Sincronización</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 3.4a8.6 8.6 0 0 0 0 17.2z" fill="currentColor" stroke="none"/></svg><span>Aspecto</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="6.5" cy="10" rx="1.6" ry="2"/><ellipse cx="10.1" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="13.9" cy="7.7" rx="1.6" ry="2.1"/><ellipse cx="17.5" cy="10" rx="1.6" ry="2"/><path d="M12 13.1c2.6 0 4.6 1.9 4.6 4.1 0 1.7-1.3 2.7-2.8 2.7-.7 0-1.2-.3-1.8-.3s-1.1.3-1.8.3c-1.5 0-2.8-1-2.8-2.7 0-2.2 2-4.1 4.6-4.1z"/></svg><span>Lío</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor" stroke-width="1"/></svg><span>IA<br><small>ya existe</small></span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.9c.85 0 1.35.85 1.35 1.95v4.5l6.9 3.95v2.1l-6.9-2.05v3.8l2.2 1.7v1.55L12 19.3l-3.55 1.1v-1.55l2.2-1.7v-3.8L3.75 15.4v-2.1l6.9-3.95v-4.5C10.65 3.75 11.15 2.9 12 2.9z"/></svg><span>Viajes</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.4a6 6 0 1 0-12 0c0 4.4-1.6 6.1-1.6 6.1h15.2S18 13.8 18 9.4z"/><path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/></svg><span>Avisos</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/></svg><span>Mejoras</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.6h7.3L18 8.1v12.3H6.2z"/><path d="M13.5 3.6v4.5H18"/><path d="M9.1 13h6M9.1 16.4h4"/></svg><span>La aplicación</span></div>
+    <div class="muestra"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/></svg><span>Tu cuenta</span></div>
+  </div>
+</section>
+
+<section class="parte">
+  <p class="rotulo">Qué gana y qué pierde cada una</p>
+  <h2>Lo que no se ve en la maqueta</h2>
+
+  <div class="nota pega">
+    <p>
+      <strong>A pierde por una razón que ya conocemos.</strong> Un emoji no
+      sigue el tema: en oscuro sigue siendo un dibujo de colores planos sobre
+      papel negro. Y varios de los que hacen falta —✈️ el primero— salen a trazo
+      monocromo si no se les pega el selector de variación, que es exactamente el
+      fallo que 🏖 dio en Sitios y por el que existe <code>emojiVisible</code>.
+      Además obliga a elegir nueve dibujos de nueve autores distintos: la huella
+      del perro y el avión de Apple no comparten ni grosor ni perspectiva.
+    </p>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>D es la de iOS, y ese es su problema aquí.</strong> Nueve monedas
+      de tinta seguidas convierten la columna izquierda en lo más fuerte de la
+      pantalla, y esta aplicación está escrita al revés: papel, serifa y la tinta
+      guardada para lo que se puede tocar. Además sube cada fila unos cinco
+      puntos, que en nueve apartados son casi cincuenta.
+    </p>
+  </div>
+
+  <div class="nota">
+    <p>
+      <strong>E no es una respuesta perezosa.</strong> Nueve rótulos escritos se
+      leen de un vistazo, y el icono de un apartado de Ajustes no dice nada que
+      su nombre no diga ya. Pero deja la hoja más plana que cualquier otra
+      pantalla de la aplicación, y quita el único sitio donde 🐾 aparecía sin que
+      nadie se quejara.
+    </p>
+  </div>
+
+  <div class="nota gana">
+    <p>
+      <strong>La recomendación es C.</strong> Son los dibujos de la casa, siguen
+      el tema solos porque heredan el color, y van al mismo gris que la flecha
+      que ya está al otro lado de cada fila: así el icono <em>enmarca</em> el
+      rótulo en vez de competir con él. La diferencia con B es solo una regla de
+      color, de modo que si en el teléfono se ven demasiado lavados se sube a
+      tinta sin rehacer nada.
+    </p>
+    <p>
+      Y una consecuencia que no es de estilo: al pasar 🐾 y ✈️ a trazo, la hoja
+      de Ajustes deja de depender de cómo dibuje iOS un emoji, que es una cosa
+      menos que puede romperse en una actualización del sistema.
+    </p>
+  </div>
+</section>
+
+</div>
