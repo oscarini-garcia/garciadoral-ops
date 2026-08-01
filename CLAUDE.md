@@ -493,3 +493,14 @@ abrirlos aparte.
 cualquier otro documento que nazca junto al código—, basta con guardar los
 ficheros en el repositorio y resumir el resultado en la conversación. Si en algún
 caso concreto quiero ver uno de esos documentos renderizado, lo pediré.
+
+## Los bloques que se copian y se pegan
+
+Un bloque de comandos es para pegarlo en una terminal, no para leerlo. **Sin
+comentarios dentro**: ni `#` explicando qué hace cada línea, ni texto entre las
+órdenes. Lo que haya que explicar va fuera del bloque, en prosa, antes o después.
+
+Un comentario dentro de un bloque de comandos se pega junto con el resto, ensucia
+el historial de la shell y obliga a leer para saber dónde termina lo que hay que
+copiar. Si un bloque necesita comentarse línea a línea, es que son dos bloques
+con una frase en medio.
