@@ -666,23 +666,29 @@ persona recibe dos identificadores y aparece dos veces en la bandeja.
 
 La primera persona administradora no puede aprobarse a sí misma, así que su
 vínculo sí se escribe a mano. Pulse **Entrar con Apple**, envíe la solicitud, y
-lea de la base de datos el identificador que Apple le ha asignado:
+ejecute:
 
 ```bash
-wrangler d1 execute agenda-familiar --remote --command "
-  SELECT identificador_apple, correo, nombre_declarado FROM solicitud_acceso"
+herramientas/aprobar-solicitud.sh
 ```
 
-Con esa cadena, vincúlese a la ficha que creó en el paso 3 y borre la solicitud:
+Sin argumentos solo enseña quién está esperando. Con el identificador de la
+ficha, aprueba:
 
 ```bash
-wrangler d1 execute agenda-familiar --remote --command "
-  UPDATE persona SET identificador_apple = '000123.a1b2c3…' WHERE id = 'p-oscar';
-  DELETE FROM solicitud_acceso WHERE identificador_apple = '000123.a1b2c3…'"
+herramientas/aprobar-solicitud.sh p-oscar
 ```
+
+Enseña a quién va a vincular, pide confirmación, escribe el identificador de
+Apple en la ficha y borra la solicitud —que es lo mismo que hace la aplicación al
+aprobar—. Con `--simulacro` enseña las dos sentencias sin ejecutarlas, y si hay
+más de una persona esperando exige decir cuál con su identificador: aprobar «la
+pendiente» cuando hay dos es dejar que el orden de llegada decida a quién se le
+abre la puerta.
 
 Vuelva a entrar y ya estará dentro. A partir de aquí, todo lo demás se hace
-desde la aplicación.
+desde la aplicación: en **Gente** aparece «Hay N personas esperando» y allí se
+elige el rol y si se vincula a una ficha que ya exista.
 
 ### 6.2 Si no queda ningún administrador
 
