@@ -168,6 +168,33 @@ jobs:
           AGENDA_PATH: datos/agenda.ejemplo.json
         run: python3 scripts/plan_semanal.py --simulacro --fecha 2026-07-26
 
+      # Una migración corriente tiene que poder pasarse dos veces sin tocar nada,
+      # porque el despliegue las recorre todas y el registro es lo único que las
+      # separa. Si alguna dejara de serlo, el día que el registro se pierda —una
+      # base restaurada, un entorno nuevo— el error saldría en producción y no
+      # aquí. Las de un solo uso quedan fuera: para eso está su sufijo.
+      - name: Comprobar que las migraciones corrientes se pueden repetir
+        run: |
+          set -euo pipefail
+          malas=0
+          for ruta in api/migraciones/*.sql; do
+            case "$ruta" in
+              # Los catálogos son la excepción de siempre, y el despliegue ya los
+              # salta por su nombre: van con `INSERT OR REPLACE` a propósito,
+              # porque son la semilla y no una migración de esquema.
+              *0002_catalogos.sql) continue;;
+              *.unavez.sql)        continue;;
+            esac
+            # `INSERT OR IGNORE` sí vale: repetirlo no escribe nada.
+            sospechoso=$(grep -inE '^[[:space:]]*(alter table|drop |insert into|insert or replace)' "$ruta" || true)
+            if [ -n "$sospechoso" ]; then
+              echo "::error file=$ruta::Esta migración no parece repetible. Renómbrala a .unavez.sql o reescríbela con IF NOT EXISTS / INSERT OR IGNORE."
+              echo "$sospechoso"
+              malas=1
+            fi
+          done
+          [ "$malas" -eq 0 ] || exit 1
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
