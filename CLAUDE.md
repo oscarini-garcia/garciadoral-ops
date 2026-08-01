@@ -334,32 +334,32 @@ pendiente. El hook lo inyecta al final del mapa.
   las hizo primero en `localStorage` y lo deshizo, porque **sobre una idea de la
   aplicación se actúa en otra máquina**, y una nota que esa máquina no puede leer
   se atiende cuando alguien se acuerda de copiarla.
-- **Queda una migración por aplicar: la `0015_mejoras.sql`.** Es corriente
-  —`CREATE TABLE IF NOT EXISTS`—, así que basta con marcar la casilla de las
-  migraciones al desplegar la API; no hace falta escribir su nombre en el campo
-  de al lado. **Y hay que tachar esta línea al aplicarla**, que es lo único que
-  impide que se vuelva a pedir.
-- **Las catorce anteriores están puestas**, incluidas
-  las cinco `.unavez` —los círculos (`0005`), el género (`0006`), la `0009` que
-  rehizo `comentario` para quitarle el `CHECK`, la `0012` de la casilla de la
-  lista de la compra y la `0013` del token del aparato—. **Estas dos últimas
-  estuvieron apuntadas aquí como pendientes después de aplicarse**, y esa mentira
-  costó tres despliegues en rojo: quien se fía de esta lista vuelve a pedirlas y
-  el `ALTER TABLE` contesta `duplicate column name`. Si una `.unavez` se repite
-  ahora, el despliegue lo dice y **sigue** en lugar de cortarse, pero **este
-  apartado hay que actualizarlo al aplicar una**, que es lo único que impide que
-  vuelva a pasar. Ninguna de las cinco se vuelve a pedir porque no se pueden
-  repetir: el `ALTER TABLE` falla si la columna ya está, y rehacer una tabla dos
-  veces es copiar y tirar sin motivo. El paquete que las llevó todas
-  juntas —`todas-las-pendientes.unavez.sql`, con su prueba— se borró al aplicarse,
-  que era lo previsto: valía para una sola noche y las numeradas son las que
-  cuentan la historia. **Al escribir una nueva**: corriente si se puede repetir
-  —`CREATE TABLE IF NOT EXISTS`, un `UPDATE` que la segunda vez no encuentre nada—
-  y entonces basta con marcar la casilla al desplegar; `.unavez` si lleva
-  `ALTER TABLE`, reparte datos o rehace una tabla, y entonces hay que escribir su
-  nombre en el campo de al lado. Y que **termine en una sentencia y no en
-  comentarios**: lo que quede detrás del último `;` se lo lleva `wrangler` a un
-  aviso que no avisa de nada.
+- **Ya no hay lista de migraciones pendientes, y no debe volver a haberla.** La
+  base lleva ahora su propio registro —la tabla `migracion`, sembrada por la
+  `0016` con las catorce que estaban puestas ese día— y el despliegue de la API
+  **aplica solo lo que no conste ahí, en cada empujón a `main` y sin casilla**.
+  Escribir una migración es dejar el `.sql` en `api/migraciones/`; no hay que
+  anotarla en ningún sitio ni acordarse de marcar nada. Esto sustituye a una
+  lista escrita a mano que mintió dos veces —la `0012` y la `0013` se quedaron
+  apuntadas como pendientes después de aplicarse— y costó tres despliegues en
+  rojo: quien se fiaba de ella volvía a pedirlas y el `ALTER TABLE` contestaba
+  `duplicate column name`. **Si alguna vez vuelves a leer aquí una lista de
+  pendientes, sobra: pregúntale a la tabla.**
+  Lo que sí hay que seguir respetando al escribir una: **corriente si se puede
+  repetir** —`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`— y **`.unavez` si
+  lleva `ALTER TABLE`, reparte datos o rehace una tabla. Y eso ya no depende de
+  que alguien se acuerde: `pruebas.yml` rechaza un `.sql` sin `.unavez` que lleve
+  `ALTER TABLE`, `DROP`, `INSERT INTO` o `INSERT OR REPLACE`. El registro hace
+  que en la práctica cada fichero se pase una sola vez, pero la regla sigue en
+  pie para el día que el registro no esté: una base restaurada o un entorno
+  nuevo los recorre todos.
+  `0002_catalogos.sql` es la única excepción permanente y va por su nombre en los
+  dos sitios: es la semilla, va con `INSERT OR REPLACE` y volver a pasarla
+  pisaría los catálogos que se hayan tocado desde la aplicación. Y para volver a
+  aplicar una a mano —lo único que queda del disparo manual— está el campo
+  «forzar» del workflow.
+  Y que **termine en una sentencia y no en comentarios**: lo que quede detrás del
+  último `;` se lo lleva `wrangler` a un aviso que no avisa de nada.
 - **La pantalla de Gente está decidida y construida**: tres círculos
   —Familia (los cuatro de casa, cerrado), Familia Extendida y Amigos—, con
   conmutador y sin avatares, el parentesco relativo a quien mira y el género

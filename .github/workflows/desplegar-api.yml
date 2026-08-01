@@ -14,16 +14,13 @@ name: desplegar la API
 # Sin el primero el workflow falla en el paso de desplegar y no toca nada.
 
 on:
-  # Con la casilla de las migraciones, para poder lanzarlo desde el navegador
-  # del móvil cuando una versión trae tablas nuevas.
+  # Sin casilla de migraciones: las que falten se aplican solas en cada
+  # despliegue, que es lo que el registro hace barato. Lo único que queda a mano
+  # es volver a pasar una que ya estaba, para el día que haga falta.
   workflow_dispatch:
     inputs:
-      migrar:
-        description: 'Aplicar también las migraciones de esquema'
-        type: boolean
-        default: false
-      migracion_unica:
-        description: 'Y además, esta migración de un solo uso (p. ej. 0009_comentario_sin_check.unavez.sql)'
+      forzar:
+        description: 'Volver a aplicar esta migración aunque ya conste (p. ej. 0010_sitios.sql)'
         type: string
         default: ''
   push:
@@ -62,65 +59,61 @@ jobs:
         working-directory: api
         run: node --test 'test/*.test.js'
 
-      # Solo a petición, y solo las que se pueden repetir. Se escriben con
-      # `CREATE TABLE IF NOT EXISTS`, de modo que aplicarlas de nuevo no toca lo
-      # que ya está, y por eso la casilla se puede marcar sin pensar.
+      # Las migraciones que falten, y solo las que falten.
       #
-      # Quedan fuera dos clases de fichero, las dos porque volver a pasarlas sí
-      # tocaría algo: los catálogos (0002), que van con `INSERT OR REPLACE` y
-      # pisarían lo cambiado desde la aplicación; y las de un solo uso, marcadas
-      # con `.unavez.sql`, que llevan `ALTER TABLE` —falla si la columna ya
-      # está— o reparten datos existentes. Esas se piden por su nombre en el
-      # campo de al lado, a conciencia y una vez.
-      - name: Migraciones de esquema
-        if: inputs.migrar
+      # Antes iban detrás de una casilla, y aplicarlas era un paso aparte que
+      # alguien tenía que acordarse de dar: el empujón a `main` subía el Worker
+      # solo, y entre el código nuevo y su tabla había una ventana que duraba lo
+      # que tardara esa persona en enterarse. La última vez duró una noche.
+      #
+      # Ahora corren siempre, porque el registro las hace baratas: se pregunta a
+      # la base qué se ha aplicado ya y se pasa únicamente lo que no está. Un
+      # despliegue sin migraciones nuevas cuesta una consulta.
+      #
+      # Y con eso se caen las dos ceremonias que había alrededor. La lista de
+      # pendientes de `CLAUDE.md` deja de hacer falta —mentía, y esa mentira
+      # costó tres despliegues en rojo—, y las `.unavez` dejan de pedirse por su
+      # nombre: el registro sabe cuáles han pasado, que era lo único que aquel
+      # campo intentaba recordar.
+      #
+      # El único fichero que sigue fuera es `0002_catalogos.sql`, y por lo de
+      # siempre: va con `INSERT OR REPLACE` y volver a pasarlo pisaría los
+      # catálogos que se hayan tocado desde la aplicación. Se siembra como
+      # aplicado y no se vuelve a mirar.
+      - name: Migraciones que falten
         working-directory: api
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FORZAR: ${{ inputs.forzar }}
         run: |
           set -euo pipefail
-          for fichero in migraciones/*.sql; do
-            case "$fichero" in
-              *0002_catalogos.sql) echo "· $fichero (catálogos: se salta)"; continue;;
-              *.unavez.sql)        echo "· $fichero (de un solo uso: se salta)"; continue;;
-            esac
-            echo "→ $fichero"
-            npx --yes wrangler@4 d1 execute agenda-familiar --remote --yes --file="$fichero"
-          done
+          d1() { npx --yes wrangler@4 d1 execute agenda-familiar --remote --yes "$@"; }
 
-      # La de un solo uso, por su nombre. Se comprueba que exista antes de nada:
-      # un nombre mal escrito tiene que parar el despliegue, no pasar de largo
-      # dejando la base a medias y el Worker nuevo hablando con ella.
-      - name: Migración de un solo uso
-        if: inputs.migracion_unica != ''
-        working-directory: api
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          FICHERO: ${{ inputs.migracion_unica }}
-        run: |
-          set -euo pipefail
-          ruta="migraciones/$(basename "$FICHERO")"
-          test -f "$ruta" || { echo "No existe $ruta"; exit 1; }
-          echo "→ $ruta"
+          # El registro, primero y siempre: es idempotente, y sin él no hay a
+          # quién preguntar. Su propia siembra dice qué había aplicado el día que
+          # se escribió.
+          echo "→ migraciones/0016_registro.sql (el registro)"
+          d1 --file=migraciones/0016_registro.sql > /dev/null
 
-          # Repetir una `.unavez` no puede costar el despliegue. Este paso va
-          # antes de desplegar —el código nuevo puede necesitar la columna—, así
-          # que cortarse aquí deja el Worker sin subir; y pedir una que ya estaba
-          # es el error más fácil de cometer, porque lo único que dice cuáles
-          # faltan es una lista escrita a mano. Se distingue: «ya estaba» se
-          # cuenta y se sigue, y cualquier otro fallo de SQL para, que es lo que
-          # tiene que hacer.
-          salida=$(npx --yes wrangler@4 d1 execute agenda-familiar --remote --yes --file="$ruta" 2>&1) && codigo=0 || codigo=$?
-          echo "$salida"
-          if [ "$codigo" -ne 0 ]; then
-            if echo "$salida" | grep -qiE 'duplicate column name|already exists'; then
-              echo "::notice file=$ruta::Esa migración ya estaba aplicada. Se sigue con el despliegue; quita su nombre de la lista de pendientes en CLAUDE.md."
-            else
-              exit "$codigo"
+          aplicadas=$(d1 --json --command "SELECT fichero FROM migracion" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                const m = s.match(/"fichero"\s*:\s*"([^"]+)"/g) || [];
+                console.log(m.map((x) => x.slice(x.indexOf(":") + 1).trim().slice(1, -1)).join("\n"));
+              })')
+
+          ya() { printf '%s\n' "$aplicadas" | grep -Fxq "$1"; }
+
+          for ruta in migraciones/*.sql; do
+            fichero=$(basename "$ruta")
+            if [ "$fichero" != "$FORZAR" ] && ya "$fichero"; then
+              echo "· $fichero (ya estaba)"
+              continue
             fi
-          fi
+            echo "→ $fichero"
+            d1 --file="$ruta"
+            d1 --command "INSERT OR IGNORE INTO migracion (fichero) VALUES ('$fichero')" > /dev/null
+          done
 
       - name: Desplegar el Worker
         working-directory: api
