@@ -108,7 +108,7 @@ tener que recorrer la aplicación entera cada vez.
   PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 14 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
-  autorizacionDeAppleNativa · tokenDeAppleNativo · programarRecordatorios
+  autorizacionDeAppleNativa · nombreDe · programarRecordatorios
   HORIZONTE_RECORDATORIOS_DIAS · …y 8 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
