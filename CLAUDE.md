@@ -346,6 +346,14 @@ pendiente. El hook lo inyecta al final del mapa.
   **El orden lo abre Aspecto y no Sincronización**, que es el más corto y el
   único que no habla de una avería; Sincronización va detrás y sigue siendo el
   abierto de origen, porque lo que decide eso es a qué se viene y no el orden.
+  **Y el tema es un segmentado, no un desplegable.** Un `select` de tres
+  opciones esconde dos detrás de una rueda de iOS que tapa media pantalla, y el
+  tema es lo único de esta hoja cuyo efecto se ve en el sitio: con la rueda
+  encima no se ve nada hasta cerrarla. Es el `.seg` que ya usan Gente, Regalos y
+  la Agenda, aquí a lo ancho del campo —`.campo > .seg`—, y es la misma figura
+  con la que macOS resuelve este mismo ajuste. «Como el sistema» pasó a
+  **«Automático»** porque no hay segmento que sostenga quince caracteres; el
+  valor guardado sigue siendo `auto`.
   **Y «La aplicación» se retiró**: era un apartado entero para dos enlaces de
   una línea, y desde que «Buscar actualización» se fue a Sincronización no le
   quedaba nada más. Privacidad y Ayuda bajan al pie de «Tu cuenta», que es de lo

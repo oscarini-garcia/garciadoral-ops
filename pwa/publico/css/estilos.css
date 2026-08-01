@@ -390,6 +390,13 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
 
+/* Dentro de un campo ocupa el ancho y reparte a partes iguales, como en la
+   pantalla de personas. Ahí es un mando que gobierna lo que hay debajo y se
+   ciñe a sus rótulos; aquí es el valor de un campo, y un control a media fila
+   deja un hueco a la derecha que se lee como si faltara algo. */
+.campo > .seg { display: flex; }
+.campo > .seg button { flex: 1; padding: 6px 8px; }
+
 .paso { display: inline-flex; align-items: center; gap: 4px; }
 .paso button { width: 36px; height: 36px; border-radius: 8px; color: var(--ink-soft); font-size: 19px; }
 .paso button:hover { background: var(--paper-2); }

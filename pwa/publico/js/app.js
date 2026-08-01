@@ -852,15 +852,37 @@ function abrirAjustes() {
     }
 
     // Aspecto va el primero por ser el más corto y el único que no habla de una
-    // avería: un desplegable de tres opciones que se cambia y se cierra. Deja
-    // debajo el resto de la lista sin haberla empujado.
+    // avería: tres opciones que se tocan y se ven en el acto. Deja debajo el
+    // resto de la lista sin haberla empujado.
+    //
+    // Segmentado y no desplegable. Un `select` de tres opciones esconde dos
+    // detrás de una rueda de iOS que tapa media pantalla, y el tema es lo único
+    // de esta hoja cuyo efecto se ve en el sitio: con la rueda encima no se ve
+    // nada hasta cerrarla. Es el mismo `.seg` de Gente, Regalos y la Agenda, y
+    // la misma figura con la que macOS resuelve exactamente este ajuste.
+    //
+    // «Como el sistema» pasa a «Automático» porque no hay segmento que lo
+    // sostenga: quince caracteres al cuerpo del control dejan los otros dos
+    // fuera de la pantalla. El valor guardado sigue siendo `auto`.
     cuerpo.append(acordeon('Aspecto', (dentro) => {
-      const tema = seleccion(
-        [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
-        localStorage.getItem('agenda.tema') || 'auto',
-      );
-      tema.addEventListener('change', () => aplicarTema(tema.value));
-      dentro.append(campo('Tema', tema));
+      const TEMAS = [
+        { valor: 'auto', texto: 'Automático' },
+        { valor: 'claro', texto: 'Claro' },
+        { valor: 'oscuro', texto: 'Oscuro' },
+      ];
+      let puesto = localStorage.getItem('agenda.tema') || 'auto';
+      const seg = el('div', { class: 'seg', role: 'group', 'aria-label': 'Tema de la aplicación' },
+        TEMAS.map(({ valor, texto }) => el('button', {
+          type: 'button',
+          'aria-pressed': valor === puesto ? 'true' : 'false',
+          onclick: (evento) => {
+            puesto = valor;
+            for (const otro of seg.children) otro.setAttribute('aria-pressed', 'false');
+            evento.currentTarget.setAttribute('aria-pressed', 'true');
+            aplicarTema(valor);
+          },
+        }, [texto])));
+      dentro.append(campo('Tema', seg));
     }, { icono: 'aspecto' }));
 
     // Uno solo abierto, y es este. Eran tres apartados —«La aplicación» con
