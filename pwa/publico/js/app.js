@@ -54,7 +54,7 @@ import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana,
   nombreDeTurno, resolverPropuesta, rotuloDeTurno, turnosDe,
 } from './lio.js';
-import { pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
+import { nuevoPieDeVersion, pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
   abrirDetalleEvento, abrirFormularioEvento, abrirTurnoDeLio, bloqueDePropuesta, pintarAgenda,
   reiniciarAgenda, tituloDeAgenda,
@@ -62,7 +62,7 @@ import {
 import {
   abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
 } from './vistas/regalos.js';
-import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
+import { abrirBandeja as abrirBandejaDeSolicitudes, pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import {
   abrirApunte, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
 } from './vistas/sitios.js';
@@ -228,6 +228,8 @@ function pintarEspera(token, situacion, nombreDeApple = null) {
   );
 
   if (situacion.estado === 'pendiente') {
+    if (situacion.nombre) marco.append(lineaDelNombre(token, situacion));
+
     marco.append(el('button', {
       class: 'boton crecer', type: 'button',
       onclick: async (evento) => {
@@ -250,6 +252,61 @@ function pintarEspera(token, situacion, nombreDeApple = null) {
   marco.append(el('button', {
     class: 'enlace-discreto', type: 'button', onclick: () => elegirObservadorDemo(),
   }, ['Ver una demostración mientras tanto']));
+
+  // Quien espera no tiene barra de pestañas ni Ajustes: sin esto no habría
+  // manera de traerse una versión nueva desde aquí, que es justo donde puede
+  // hacer falta si lo que falla es el acceso.
+  marco.append(nuevoPieDeVersion());
+}
+
+/**
+ * Con qué nombre se está esperando, y cómo cambiarlo.
+ *
+ * Existe porque el nombre ya no lo teclea nadie: lo pone Apple y la solicitud
+ * sale sin que quien la manda lo haya visto. Puede llegar a medias, o ser el de
+ * la cuenta y no por el que le conocen en casa, y quien decide solo ve eso.
+ *
+ * Corregirlo es volver a mandar la solicitud: el servidor actualiza la que ya
+ * existe en lugar de crear otra, así que no hace falta nada más.
+ */
+function lineaDelNombre(token, situacion) {
+  const linea = el('p', { class: 'pista' });
+
+  const mostrar = () => {
+    vaciar(linea).append(
+      `La has pedido como ${situacion.nombre}. `,
+      el('button', { class: 'enlace-en-linea', type: 'button', onclick: editar }, ['Cambiar']),
+    );
+  };
+
+  function editar() {
+    const nombre = entrada({ value: situacion.nombre, placeholder: '<tu nombre>', autocomplete: 'name' });
+    const guardarlo = el('button', {
+      class: 'boton', type: 'button',
+      onclick: async () => {
+        const limpio = nombre.value.trim();
+        if (!limpio) { avisar('Falta tu nombre'); return; }
+        guardarlo.disabled = true;
+        guardarlo.textContent = 'Guardando…';
+        try {
+          const resultado = await pedirEntrar(configuracion, token, limpio);
+          situacion.nombre = resultado.nombre || limpio;
+          mostrar();
+          avisar('Nombre corregido');
+        } catch (error) {
+          guardarlo.disabled = false;
+          guardarlo.textContent = 'Guardar';
+          avisar(error.message || 'No se ha podido cambiar.');
+        }
+      },
+    }, ['Guardar']);
+
+    vaciar(linea).append(campo('Tu nombre', nombre), guardarlo);
+    nombre.focus();
+  }
+
+  mostrar();
+  return linea;
 }
 
 /**
@@ -284,7 +341,7 @@ async function pedirAccesoSinPreguntar(marco, token, situacion, nombre) {
  * si entra, sobre todo si ha elegido ocultar su correo.
  */
 function pintarFormulario(marco, token, situacion, sugerido = null) {
-  const nombre = entrada({ placeholder: 'Marta Ruiz', autocomplete: 'name' });
+  const nombre = entrada({ placeholder: '<tu nombre>', autocomplete: 'name' });
   if (sugerido) nombre.value = sugerido;
 
   marco.append(
@@ -621,7 +678,9 @@ function abrirAvisos() {
     if (pendientes.length) {
       cuerpo.append(el('div', { class: 'grupo' }, [
         el('p', { class: 'grupo-titulo', texto: 'Por contestar' }),
-        ...pendientes.map((aviso) => bloqueDePropuesta(aviso.trato, ctx)),
+        ...pendientes.map((aviso) => (aviso.solicitudes
+          ? filaDeSolicitudes(aviso)
+          : bloqueDePropuesta(aviso.trato, ctx))),
       ]));
     }
 
@@ -649,6 +708,27 @@ function abrirAvisos() {
       cuerpo.append(el('p', { class: 'vacio', texto: 'Nada más.' }));
     }
   });
+}
+
+/**
+ * Quien espera a que le dejen entrar. Lleva a la bandeja, que es donde están
+ * los nombres y los verbos; aquí no cabe decidir nada.
+ */
+function filaDeSolicitudes(aviso) {
+  return el('div', { class: 'aviso-fila' }, [
+    el('span', { class: 'aviso-emoji', 'aria-hidden': 'true', texto: aviso.emoji }),
+    el('button', {
+      class: 'aviso-cuerpo', type: 'button',
+      onclick: () => { cerrarHoja(); abrirBandejaDeSolicitudes(ctx); },
+    }, [
+      el('span', {
+        texto: aviso.solicitudes === 1
+          ? 'Alguien quiere entrar en la agenda'
+          : `${aviso.solicitudes} personas quieren entrar en la agenda`,
+      }),
+      el('span', { class: 'aviso-cuando', texto: 'Toca para verlo' }),
+    ]),
+  ]);
 }
 
 function filaDeAviso(aviso) {

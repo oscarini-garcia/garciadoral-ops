@@ -404,6 +404,57 @@ const olvidarToken = (db, aparatoId) => db
  * de `waitUntil`, porque quien acaba de guardar algo no tiene que esperar a que
  * a otro le suene el teléfono.
  */
+/**
+ * Que alguien quiere entrar en la agenda.
+ *
+ * Va por su cuenta y no por `FUENTES` porque una solicitud **no es un cambio de
+ * la agenda**: entra por su propia ruta, con una credencial que no da acceso a
+ * nada, y nunca aparece en el lote que sube la sincronización. Derivarla de ahí
+ * habría sido forzarla a un sitio donde no está.
+ *
+ * Tampoco pasa por la comprobación de visibilidad, y conviene decir por qué: esa
+ * regla existe para no contarle a nadie de casa algo de casa que no le toca, y
+ * aquí lo que se cuenta son los datos que la propia persona acaba de declarar
+ * para que la dejen entrar. Los administradores son exactamente quienes pueden
+ * verlos —son los únicos que pueden hacer algo— y son los únicos que reciben
+ * esto.
+ *
+ * Es urgente a propósito, como las de Lío: alguien está esperando en la puerta y
+ * no puede hacer nada más hasta que se le conteste.
+ */
+export async function empujarSolicitud(env, solicitud, { enviar = enviarAviso } = {}) {
+  if (!hayApnsConfigurado(env)) return { enviados: 0, motivo: 'sin-configurar' };
+
+  const { results: administradores } = await env.DB
+    .prepare(
+      `SELECT id FROM persona
+        WHERE rol = 'administrador' AND tiene_cuenta = 1 AND activa = 1`,
+    )
+    .all();
+
+  const aviso = {
+    titulo: `🔑 ${solicitud.nombre_declarado} quiere entrar`,
+    cuerpo: solicitud.correo
+      ? `${solicitud.correo}${solicitud.correo_privado ? ' · buzón de reenvío de Apple' : ''}`
+      : 'Ha elegido ocultar su correo.',
+    // Insistir actualiza la solicitud en lugar de crear otra, así que el aviso
+    // de la segunda vez sustituye al de la primera en la pantalla de bloqueo.
+    agrupa: `solicitud:${solicitud.id}`,
+    urgente: true,
+    datos: { tipo: 'solicitud', solicitud_id: solicitud.id },
+  };
+
+  let enviados = 0;
+  for (const administrador of administradores || []) {
+    for (const aparato of await aparatosDe(env.DB, administrador.id)) {
+      const resultado = await enviar(env, aparato.token_push, aviso);
+      if (resultado.ok) enviados += 1;
+      else if (resultado.caducado) await olvidarToken(env.DB, aparato.id);
+    }
+  }
+  return { enviados };
+}
+
 export async function empujar(env, registro, actor, cambios) {
   if (!hayApnsConfigurado(env)) return { enviados: 0, motivo: 'sin-configurar' };
 

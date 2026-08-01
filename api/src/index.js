@@ -66,7 +66,7 @@ import {
 import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
-import { empujar } from './avisos.js';
+import { empujar, empujarSolicitud } from './avisos.js';
 import { hayApnsConfigurado } from './apns.js';
 import {
   cabeUnaMas,
@@ -196,12 +196,16 @@ async function abrirSesion(peticion, env) {
     // derecho a saberlo antes de enviarlo.
     correo: email,
     correo_privado: correoPrivado,
+    // Y el nombre con el que ya se pidió, si se pidió. Quien vuelve a abrir la
+    // aplicación cae aquí, y la sala de espera lo enseña para poder corregirlo:
+    // hoy lo pone Apple sola, sin que nadie lo haya visto antes de mandarlo.
+    nombre: solicitud ? solicitud.nombre_declarado : null,
   });
 }
 
 // ------------------------------------------------------------ Sala de espera --
 
-async function pedirEntrar(peticion, env) {
+async function pedirEntrar(peticion, env, ctx) {
   const espera = await enEspera(peticion, env);
   const { nombre } = await peticion.json().catch(() => ({}));
 
@@ -217,7 +221,17 @@ async function pedirEntrar(peticion, env) {
     nombre,
   });
 
-  return json({ estado: solicitud.estado, solicitado_en: solicitud.creado_en });
+  // Que le suene el teléfono a quien puede abrirle la puerta. Va en `waitUntil`
+  // como el resto de los empujones: quien está esperando en la puerta no tiene
+  // que esperar además a que APNs conteste.
+  const empuje = empujarSolicitud(env, solicitud).catch(() => {});
+  if (ctx?.waitUntil) ctx.waitUntil(empuje);
+
+  return json({
+    estado: solicitud.estado,
+    solicitado_en: solicitud.creado_en,
+    nombre: solicitud.nombre_declarado,
+  });
 }
 
 async function estadoDeLaSolicitud(peticion, env) {
@@ -225,7 +239,13 @@ async function estadoDeLaSolicitud(peticion, env) {
   if (await personaPorApple(env.DB, espera.sub)) return json({ estado: 'activa' });
 
   const solicitud = await solicitudPorApple(env.DB, espera.sub);
-  return json({ estado: solicitud ? solicitud.estado : 'sin_solicitud' });
+  // El nombre viaja de vuelta para que la sala de espera pueda enseñarlo: la
+  // solicitud se manda ahora con el que da Apple, sin que nadie lo teclee, y
+  // quien espera tiene derecho a ver con qué nombre está esperando.
+  return json({
+    estado: solicitud ? solicitud.estado : 'sin_solicitud',
+    nombre: solicitud ? solicitud.nombre_declarado : null,
+  });
 }
 
 /**

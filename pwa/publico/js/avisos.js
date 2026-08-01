@@ -37,6 +37,7 @@ import { parsearMomento } from './semana.js';
 /** De dónde puede venir un aviso. Dar de alta un módulo es una línea. */
 const FUENTES = [
   { de: 'lio', clase: 'contestar', buscar: avisosDeLio },
+  { de: 'solicitud', clase: 'contestar', buscar: avisosDeSolicitudes },
   { de: 'comentario', clase: 'nuevo', buscar: avisosDeComentarios },
 ];
 
@@ -101,6 +102,24 @@ function avisosDeLio(ctx) {
  * menos a quien acaba de escribir. Lo de que además tiene que poder verla no hay
  * ni que programarlo: si no la ve, no está en su instantánea.
  */
+/**
+ * Quien espera a que le dejen entrar.
+ *
+ * Va en «Por contestar» y no en «Nuevo», y no lleva aspa, por lo mismo que la
+ * petición de un turno: descartarla dejaría a alguien esperando una respuesta
+ * que ya nadie va a dar, y sin rastro de que existió. Se resuelve o se queda.
+ *
+ * Es un aviso y no uno por persona porque la instantánea solo trae **cuántas**
+ * hay: los nombres y los correos se piden al abrir la bandeja, que es donde se
+ * puede hacer algo con ellos. Quien no administra recibe siempre un cero
+ * —`filtrado.js` se encarga—, así que esta fuente no dice nada en su teléfono.
+ */
+function avisosDeSolicitudes(ctx) {
+  const cuantas = ctx.vista.datos.solicitudes_pendientes || 0;
+  if (!cuantas) return [];
+  return [{ id: 'solicitud:bandeja', emoji: '🔑', solicitudes: cuantas, cuando: null }];
+}
+
 function avisosDeComentarios(ctx) {
   const mios = new Set();
   const porObjeto = new Map();
