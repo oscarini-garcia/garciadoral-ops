@@ -444,7 +444,13 @@ pendiente. El hook lo inyecta al final del mapa.
   `0016` con las catorce que estaban puestas ese día— y el despliegue de la API
   **aplica solo lo que no conste ahí, en cada empujón a `main` y sin casilla**.
   Escribir una migración es dejar el `.sql` en `api/migraciones/`; no hay que
-  anotarla en ningún sitio ni acordarse de marcar nada. Esto sustituye a una
+  anotarla en ningún sitio ni acordarse de marcar nada. **Y eso fue mentira
+  durante tres PR**, porque `api/migraciones/**` no estaba en los `paths` del
+  workflow: un cambio que solo añadía una migración no tocaba `api/src/**` y no
+  disparaba despliegue ninguno, así que la tabla se quedaba sin la columna y la
+  pantalla que la usaba salía en blanco sin decir por qué. Le pasó a la `0018`;
+  a la `0017` no, y solo porque su PR tocaba además el repositorio. Ya está en
+  la lista. Esto sustituye a una
   lista escrita a mano que mintió dos veces —la `0012` y la `0013` se quedaron
   apuntadas como pendientes después de aplicarse— y costó tres despliegues en
   rojo: quien se fiaba de ella volvía a pedirlas y el `ALTER TABLE` contestaba

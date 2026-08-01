@@ -27,6 +27,14 @@ on:
     branches: [main]
     paths:
       - 'api/src/**'
+      # Y las migraciones, que faltaban. Desde que el registro decide qué se
+      # aplica, dejar un `.sql` y mergear tenía que bastar —así está escrito en
+      # CLAUDE.md— y no bastaba: un cambio que solo añade una migración no toca
+      # `api/src/**` y no disparaba nada, de modo que la tabla se quedaba sin la
+      # columna y la pantalla que la usaba salía en blanco sin decir por qué.
+      # Le pasó a la `0018`; a la `0017` no, y solo porque su PR tocaba además
+      # el repositorio.
+      - 'api/migraciones/**'
       - 'api/wrangler.toml'
       - 'api/package.json'
       - '.github/workflows/desplegar-api.yml'
