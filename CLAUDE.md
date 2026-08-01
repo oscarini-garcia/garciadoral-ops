@@ -173,12 +173,6 @@ pendiente. El hook lo inyecta al final del mapa.
   pantalla; lo que no debe volver a pasar es gastar un hueco de la barra en eso.
   `specs/ux.md` §7.3 no habla de esto: es el buscador de personas de Gente, que
   sigue en pie.
-- **Al mergear, di qué versión tiene que estar puesta.** Un número, y dónde
-  mirarlo: la aplicación escribe la suya abajo a la derecha en Hoy. Sin eso, la
-  primera pregunta ante cualquier cosa que no se ve es «¿tengo lo nuevo?», y esa
-  pregunta no se puede contestar desde la pantalla. Con el número delante, si lo
-  que se ve no coincide es que falta el OTA, y si coincide es un fallo y hay que
-  ir a buscarlo.
 - **Al tocar cualquier cosa de `pwa/publico/`, sube dos versiones, no una.**
   Son dos caminos distintos: `VERSION` en `pwa/publico/sw.js` es lo que hace que
   el **navegador** deje de servir los módulos de su caché, y `version` en
@@ -527,6 +521,40 @@ abrirlos aparte.
 cualquier otro documento que nazca junto al código—, basta con guardar los
 ficheros en el repositorio y resumir el resultado en la conversación. Si en algún
 caso concreto quiero ver uno de esos documentos renderizado, lo pediré.
+
+## Cómo se cuenta cada vuelta
+
+Lo que dice la respuesta es lo único que hay hasta que la pantalla lo confirme, y
+una pantalla que todavía no lo confirma se ve igual que una donde no se hizo nada.
+Por eso la forma de contarlo no es cuestión de gusto.
+
+**Al mergear, tres cosas y en este orden.**
+
+1. **Qué ha cambiado, en lista o en tabla.** Una línea por cambio, no un párrafo
+   del que haya que sacarlos.
+2. **Qué versión tiene que estar puesta.** Un número, y dónde mirarlo: la
+   aplicación escribe la suya abajo a la derecha en Hoy. Sin eso, la primera
+   pregunta ante cualquier cosa que no se ve es «¿tengo lo nuevo?», y esa pregunta
+   no se puede contestar desde la pantalla. Con el número delante sí: si lo que se
+   ve no coincide es que falta el OTA, y si coincide es un fallo y hay que ir a
+   buscarlo.
+3. **Qué puede quedar pendiente.** Es lo que más se cae, porque la vuelta que
+   acaba de terminar es justo la que parece terminada.
+
+**Si una vuelta no se ha mergeado, dilo con esas palabras.** Un resumen de trabajo
+hecho se lee como trabajo entregado, y desde el teléfono una rama abierta y una
+fusionada son indistinguibles. Di qué rama, qué PR y de qué está esperando.
+
+**«Dame opciones» significa un artefacto, en línea y con cuatro como mínimo.** No
+una lista en la respuesta: las opciones se comparan mirándolas a la vez, que es
+justo para lo que se renderizan los prototipos y las propuestas de `specs/`. Cada
+opción lleva **letra y número** —`A1`, `C3`— para que decidir quepa en una ficha
+corta y siga siendo inequívoco cuando hay tres preguntas sobre la mesa a la vez.
+El artefacto enseña **lo que he pedido o lo que cambia, y nada más**: las
+decisiones ya tomadas se quedan fuera salvo que sean justo lo que se reabre, o
+salvo que las pida yo — repetir lo ya discutido entierra la única pregunta viva.
+Es la excepción al «no publiques artefactos al implementar» de aquí arriba: pedir
+opciones es pedir verlas.
 
 ## Los bloques que se copian y se pegan
 
