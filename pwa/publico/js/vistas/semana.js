@@ -22,7 +22,7 @@ import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible } from '../m
 import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
-  isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias, tramoDe,
+  isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
 import { bloqueDeComentarios } from '../comentarios.js';
@@ -892,7 +892,6 @@ const mayuscula = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
 
 function lineaDeEvento(aparicion, ctx) {
   const hora = horaDe(aparicion);
-  const tramo = tramoDe(aparicion);
   const cara = ctx.vista.caraDe(aparicion.evento);
   return el('button', {
     class: 'linea', type: 'button',
@@ -903,12 +902,11 @@ function lineaDeEvento(aparicion, ctx) {
     aparicion.instancia.inicio.getTime() !== aparicion.instancia.fin.getTime()
       ? el('span', { class: 'linea-banda' }) : null,
     el('span', { class: 'linea-emoji', texto: cara.emoji }),
-    // Sin «(cont.)» detrás: eso lo dice ahora el tramo, en el hueco de la hora,
-    // que en un día de continuación está vacío. Aquel comía sitio del título
-    // justo cuando el título es lo único que se lee.
-    el('span', { class: 'linea-titulo', texto: cara.titulo }),
+    // «(cont.)» y no «2/3». La cuenta decía más —por dónde va— y se leía peor:
+    // dos cifras y una barra piden descifrarse, y lo que hace falta saber de un
+    // vistazo es solo que eso de hoy viene de antes.
+    el('span', { class: 'linea-titulo', texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
     hora ? el('span', { class: 'linea-hora', texto: hora }) : null,
-    tramo ? el('span', { class: 'linea-tramo', texto: tramo }) : null,
   ]);
 }
 
@@ -1018,16 +1016,29 @@ function vistaLista(ctx) {
 
   // Cada cosa con el día al que pertenece y su orden dentro de él, para que
   // los viajes abran el día, los demás eventos vayan detrás y Lío cierre.
-  const cosas = instanciasEn(ctx.vista.datos, desde, hasta).map((instancia) => ({
-    dia: soloFecha(instancia.inicio),
-    orden: ordenDeEvento(instancia.evento),
-    momento: instancia.inicio,
-    pintar: () => tarjetaDeEvento(
-      { instancia, evento: instancia.evento, dia: soloFecha(instancia.inicio), continuacion: false },
-      ctx,
-      { conFecha: false },
-    ),
-  }));
+  //
+  // Y lo que dura varios días sale **todos** los días que dura, igual que en la
+  // semana y en el mes. Antes salía una sola vez, en su día de arranque, y eso
+  // dejaba la lista mintiendo justo sobre lo que se le pregunta: quien mira el
+  // domingo quiere saber si ese día hay alguien en casa, no si empezó el sábado.
+  // El reparto es el mismo de siempre, sobre los días que la lista abarca.
+  const diasDeLaLista = Array.from(
+    { length: Math.round((hasta - desde) / 86400000) + 1 },
+    (_, i) => sumarDias(desde, i),
+  );
+  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, desde, hasta), diasDeLaLista);
+
+  const cosas = [];
+  for (const dia of diasDeLaLista) {
+    for (const aparicion of reparto.get(iso(dia)) || []) {
+      cosas.push({
+        dia: aparicion.dia,
+        orden: ordenDeEvento(aparicion.evento),
+        momento: aparicion.instancia.inicio,
+        pintar: () => tarjetaDeEvento(aparicion, ctx, { conFecha: false }),
+      });
+    }
+  }
 
   if (conLio) {
     // Los turnos se componen día a día, y solo hasta donde el techo puede
@@ -1171,7 +1182,7 @@ function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
   }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('span', { class: 'linea-emoji', texto: cara.emoji }),
-      el('h3', { texto: cara.titulo }),
+      el('h3', { texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
     ]),
     pie ? el('p', { texto: pie }) : null,
@@ -1528,10 +1539,13 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
       if (hasta.value && hasta.value < dia.value) hasta.value = '';
     });
 
+    // Una debajo de otra y no en la misma fila. A lo ancho no caben: una casilla
+    // de fecha trae su propio ancho mínimo —el navegador dibuja dd/mm/aaaa
+    // dentro—, y a 390 puntos las dos juntas se aprietan hasta cortar el texto.
     cuerpo.append(
       campo('Qué', titulo),
-      el('div', { class: 'duo' }, [campo('Cuándo', dia), campo('Hasta', hasta)]),
-      el('p', { class: 'pista', texto: 'Deja «Hasta» vacío si es de un día. Con fecha, el evento sale en la agenda todos los días que dura.' }),
+      campo('Cuándo', dia),
+      campo('Hasta', hasta, 'Déjalo vacío si es de un día. Con fecha, el evento sale en la agenda todos los días que dura.'),
     );
 
     const avanzado = el('div', { class: 'hoja-seccion', hidden: !existente });
