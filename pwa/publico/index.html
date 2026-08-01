@@ -63,8 +63,9 @@
            programan en el dispositivo y no hay APNs—, y un icono que promete un
            ruido que nunca llega enseña a no fiarse de él.
 
-           Va a la izquierda de los ajustes, que llevan su esquina desde el
-           principio: lo nuevo se mete por dentro y no empuja lo que ya estaba.
+           Se queda solo en la esquina: los ajustes, que la compartían con él,
+           se fueron a la barra de abajo. Aquí arriba no queda más que lo que
+           reclama algo, y por eso la esquina está vacía casi siempre.
 
            Donde estaba el punto de la sincronización, que se fue a Ajustes: su
            estado se mira cuando se sospecha de él, no cien veces al mes. Lo que
@@ -75,13 +76,6 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none"
              stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
-        </svg>
-      </button>
-      <button id="botonAjustes" class="icono-cabecera" type="button" aria-label="Ajustes" title="Ajustes">
-        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20" fill="none"
-             stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-          <circle cx="12" cy="12" r="3.1"/>
-          <path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 1 1-4 0v-.11a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.11a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 1 1 4 0v.11a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.11a1.6 1.6 0 0 0-1.47 1z"/>
         </svg>
       </button>
     </div>
@@ -130,6 +124,23 @@
            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
       </svg>Sitios</button>
+    <!-- Ajustes es el sexto y va aquí, no en la esquina de la cabecera, donde
+         estuvo desde el principio. Arriba a la derecha es lo que peor alcanza el
+         pulgar de una mano sola, y es el sitio que hay que estirarse a tocar
+         justo cuando algo no va. Abajo cuesta un toque cómodo, y de paso deja la
+         cabecera con una sola cosa dentro: el sobre, que solo existe cuando hay
+         algo que contestar.
+
+         No lleva `data-pestana` porque no es una sección: abre la hoja de
+         ajustes y la barra se queda como estaba. Por eso tampoco toma nunca
+         `aria-current`, y se queda en gris mientras la pestaña de verdad está en
+         tinta. -->
+    <button id="botonAjustes" class="tab" aria-label="Ajustes">
+      <svg class="tab-icono" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3.1"/>
+        <path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-1 1.47V21a2 2 0 1 1-4 0v-.11a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-1H3a2 2 0 1 1 0-4h.11a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 1-1.47V3a2 2 0 1 1 4 0v.11a1.6 1.6 0 0 0 1 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47 1H21a2 2 0 1 1 0 4h-.11a1.6 1.6 0 0 0-1.47 1z"/>
+      </svg>Ajustes</button>
   </nav>
 </div>
 

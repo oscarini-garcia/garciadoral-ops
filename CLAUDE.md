@@ -321,24 +321,45 @@ pendiente. El hook lo inyecta al final del mapa.
   sea sencillamente no le sale ese renglón. «✈️ Viajes» se queda sin botón y con
   su diagnóstico, que es otra cosa. La idea es de `meeting-ops-air`, que copió
   esta pantalla y luego la mejoró.
-  **Y los nueve apartados llevan ahora moneda**, la figura de los Ajustes del
-  sistema: el dibujo en blanco sobre una pastilla de tinta. Antes solo dos
-  llevaban algo delante —🐾 Lío y ✈️ Viajes—, y no por ninguna decisión sino
-  heredado de donde salió cada módulo, de modo que la columna se leía como un
-  descuido. Los emoji se van: los dibuja iOS, no siguen el tema y varios
-  —✈️ el primero— salen a trazo monocromo sin el selector de variación, que es
-  el fallo que ya dio 🏖 en Sitios. Los ocho nuevos están en `ICONOS` de
-  `js/ui.js`, sobre la misma rejilla de 24 y con el mismo grosor que los de la
-  barra; el noveno es `destello`, que ya existía y ya significaba «esto lo
-  escribe la IA». **La moneda va en tinta, la misma para las nueve**: un color
-  por apartado sería un arco iris que esta aplicación no usa en ningún sitio.
-  No cuesta alto —la moneda mide 28 puntos y la fila ya tenía 44 de área de
-  toque—, y solo aparece donde se pide: `acordeon` la dibuja si le pasan
-  `icono`, así que los apartados de Regalos y Ocasiones siguen sin ella. Las
-  cinco formas que se estudiaron están en
-  `specs/prototipo-iconos-de-ajustes.html`. Lo que **no** se ha tocado es el
-  🐾 de Hoy, del carril de la semana y de la hoja del turno: ahí el emoji
-  distingue al perro dentro de una lista de otras cosas, que es otro trabajo.
+  **Y los apartados llevan ahora moneda**, la figura de los Ajustes del
+  sistema. Antes solo dos llevaban algo delante —🐾 Lío y ✈️ Viajes—, y no por
+  ninguna decisión sino heredado de donde salió cada módulo, de modo que la
+  columna se leía como un descuido. Los emoji se van: los dibuja iOS, no siguen
+  el tema y varios —✈️ el primero— salen a trazo monocromo sin el selector de
+  variación, que es el fallo que ya dio 🏖 en Sitios. Los dibujos están en
+  `ICONOS` de `js/ui.js`, sobre la misma rejilla de 24 y con el mismo grosor que
+  los de la barra; el de la IA no hubo que dibujarlo, es `destello`, que ya
+  significaba «esto lo escribe la IA». **La moneda va en tinta suave con el
+  dibujo en tinta, no al revés**: a fondo pleno —que es como se construyó
+  primero— ocho monedas seguidas cantaban y convertían la columna izquierda en
+  lo más fuerte de una pantalla que se abre dos veces al año. Es el par que la
+  aplicación ya usa para decir «esto es de aquí» sin levantar la voz, y sirve a
+  los dos temas sin una regla aparte. Un color por apartado, al estilo de iOS,
+  sería un arco iris que esta aplicación no usa en ningún sitio. No cuesta alto
+  —la moneda mide 28 puntos y la fila ya tenía 44 de área de toque—, y solo
+  aparece donde se pide: `acordeon` la dibuja si le pasan `icono`, así que los
+  apartados de Regalos y Ocasiones siguen sin ella. Las cinco formas que se
+  estudiaron están en `specs/prototipo-iconos-de-ajustes.html`. Lo que **no** se
+  ha tocado es el 🐾 de Hoy, del carril de la semana y de la hoja del turno: ahí
+  el emoji distingue al perro dentro de una lista de otras cosas, que es otro
+  trabajo.
+  **El orden lo abre Aspecto y no Sincronización**, que es el más corto y el
+  único que no habla de una avería; Sincronización va detrás y sigue siendo el
+  abierto de origen, porque lo que decide eso es a qué se viene y no el orden.
+  **Y «La aplicación» se retiró**: era un apartado entero para dos enlaces de
+  una línea, y desde que «Buscar actualización» se fue a Sincronización no le
+  quedaba nada más. Privacidad y Ayuda bajan al pie de «Tu cuenta», que es de lo
+  que hablan, y siguen ahí para el día que se use la ficha de la App Store.
+- **El botón de Ajustes se fue de la cabecera a la barra de abajo**, el sexto y
+  a la derecha. Arriba a la derecha es lo que peor alcanza el pulgar de una mano
+  sola, y es justo el sitio al que hay que estirarse cuando algo no va. De paso
+  la cabecera se queda con una sola cosa: el sobre, que solo existe cuando hay
+  algo que contestar, de modo que esa esquina está vacía casi siempre. **No es
+  una pestaña**: no lleva `data-pestana`, abre la hoja y la barra se queda como
+  estaba, y por eso nunca toma `aria-current` y se queda en gris mientras la
+  pestaña de verdad está en tinta. El bucle que cablea las pestañas filtra ahora
+  por `.tab[data-pestana]`; sin ese filtro, tocar Ajustes le pondría a `pestana`
+  un valor que no existe.
 - **Las mejoras son ideas sobre la propia aplicación**, apuntadas desde el móvil
   y guardadas en `mejora`. **No se llaman «idea» a propósito**: aquí una idea es
   una idea de regalo y está en el centro del modelo de ocultación, y compartir el

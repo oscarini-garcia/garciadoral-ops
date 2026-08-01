@@ -104,8 +104,8 @@ const ICONOS = {
   informacion: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/>'
     + '<path d="M12 7.6v.1" stroke-width="2.4"/>',
 
-  // Los nueve de los apartados de Ajustes. Antes eran dos emoji sueltos —🐾 en
-  // Lío y ✈️ en Viajes—, heredados de donde salió cada módulo; con siete filas
+  // Los de los apartados de Ajustes. Antes eran dos emoji sueltos —🐾 en Lío y
+  // ✈️ en Viajes—, heredados de donde salió cada módulo; con las demás filas
   // sin nada delante eso se leía como un descuido. Dibujados aquí valen dos
   // cosas que un emoji no da: siguen el tema, porque heredan el color, y son
   // del mismo autor que los de la barra, de modo que comparten grosor y
@@ -128,8 +128,6 @@ const ICONOS = {
   campana: '<path d="M18 9.4a6 6 0 1 0-12 0c0 4.4-1.6 6.1-1.6 6.1h15.2S18 13.8 18 9.4z"/>'
     + '<path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/>',
   bombilla: '<path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/>',
-  documento: '<path d="M6.2 3.6h7.3L18 8.1v12.3H6.2z"/><path d="M13.5 3.6v4.5H18"/>'
-    + '<path d="M9.1 13h6M9.1 16.4h4"/>',
   persona: '<circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/>',
 };
 
