@@ -66,8 +66,8 @@ tener que recorrer la aplicación entera cada vez.
   INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
   INSTRUCCION_LIO_POR_DEFECTO · leerConfiguracion · configuracionPublica · …y 16 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
-  leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta · administradoresRestantes
-  aplicarCambio
+  TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
+  administradoresRestantes · aplicarCambio
 - **revocacion.js** — Revocación del token de Sign in with Apple al darse de baja.
   hayRevocacionConfigurada · secretoDeCliente · revocarEnApple
 - **sesion.js** — Sesión propia: un JWT HS256 corto que el cliente presenta en cada petición.
@@ -260,7 +260,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**314** en total.
+**315** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -278,7 +278,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 10
 - `api/test/lio.test.js` — 23
-- `api/test/mejoras.test.js` — 3
+- `api/test/mejoras.test.js` — 4
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
 - `api/test/redaccion-dia.test.js` — 17

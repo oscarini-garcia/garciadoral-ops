@@ -390,6 +390,13 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: var(--sombra); }
 
+/* Dentro de un campo ocupa el ancho y reparte a partes iguales, como en la
+   pantalla de personas. Ahí es un mando que gobierna lo que hay debajo y se
+   ciñe a sus rótulos; aquí es el valor de un campo, y un control a media fila
+   deja un hueco a la derecha que se lee como si faltara algo. */
+.campo > .seg { display: flex; }
+.campo > .seg button { flex: 1; padding: 6px 8px; }
+
 .paso { display: inline-flex; align-items: center; gap: 4px; }
 .paso button { width: 36px; height: 36px; border-radius: 8px; color: var(--ink-soft); font-size: 19px; }
 .paso button:hover { background: var(--paper-2); }
@@ -1569,6 +1576,30 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   font-size: 18px; line-height: 1; color: var(--ink-faint);
 }
 .llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
+
+/* ----------------------------------------------------------------- Mejoras --
+
+   Ideas sobre la propia aplicación, en Ajustes. La fila tiene dos destinos —el
+   visto la da por hecha, el texto la abre—, que es la misma repartición que la
+   lista de la compra de un sitio, y por eso el visto es el mismo dibujo con la
+   misma medida. */
+.tarjeta.mejora { flex-direction: row; align-items: flex-start; gap: 11px; }
+.mejora-visto {
+  flex: none; margin-top: 1px;
+  width: 21px; height: 21px; border-radius: 6px;
+  border: 1.5px solid var(--line);
+  display: grid; place-items: center;
+  color: var(--paper); background: transparent;
+}
+.mejora-visto .icono-svg svg { width: 14px; height: 14px; stroke-width: 2.6; }
+.tarjeta.mejora[data-hecha="si"] .mejora-visto { background: var(--tinta); border-color: var(--tinta); }
+.mejora-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+.mejora-texto { font-size: 15px; line-height: 1.4; }
+/* Lo hecho se tacha y se apaga, y además baja al final de la lista: lo que
+   falta tiene que quedar arriba, que es a lo que se entra. */
+.tarjeta.mejora[data-hecha="si"] .mejora-texto { text-decoration: line-through; color: var(--ink-faint); }
+.mejora-firma { font-size: 12.5px; color: var(--ink-faint); }
+.mejora-firma:empty { display: none; }
 
 /* ------------------------------------------------------------------ Avisos --
 

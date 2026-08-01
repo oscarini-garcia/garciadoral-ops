@@ -14,7 +14,7 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, seleccion,
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, icono, seleccion,
 } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista, nuevoId } from './modelo.js';
@@ -852,15 +852,37 @@ function abrirAjustes() {
     }
 
     // Aspecto va el primero por ser el más corto y el único que no habla de una
-    // avería: un desplegable de tres opciones que se cambia y se cierra. Deja
-    // debajo el resto de la lista sin haberla empujado.
+    // avería: tres opciones que se tocan y se ven en el acto. Deja debajo el
+    // resto de la lista sin haberla empujado.
+    //
+    // Segmentado y no desplegable. Un `select` de tres opciones esconde dos
+    // detrás de una rueda de iOS que tapa media pantalla, y el tema es lo único
+    // de esta hoja cuyo efecto se ve en el sitio: con la rueda encima no se ve
+    // nada hasta cerrarla. Es el mismo `.seg` de Gente, Regalos y la Agenda, y
+    // la misma figura con la que macOS resuelve exactamente este ajuste.
+    //
+    // «Como el sistema» pasa a «Automático» porque no hay segmento que lo
+    // sostenga: quince caracteres al cuerpo del control dejan los otros dos
+    // fuera de la pantalla. El valor guardado sigue siendo `auto`.
     cuerpo.append(acordeon('Aspecto', (dentro) => {
-      const tema = seleccion(
-        [{ valor: 'auto', texto: 'Como el sistema' }, { valor: 'claro', texto: 'Claro' }, { valor: 'oscuro', texto: 'Oscuro' }],
-        localStorage.getItem('agenda.tema') || 'auto',
-      );
-      tema.addEventListener('change', () => aplicarTema(tema.value));
-      dentro.append(campo('Tema', tema));
+      const TEMAS = [
+        { valor: 'auto', texto: 'Automático' },
+        { valor: 'claro', texto: 'Claro' },
+        { valor: 'oscuro', texto: 'Oscuro' },
+      ];
+      let puesto = localStorage.getItem('agenda.tema') || 'auto';
+      const seg = el('div', { class: 'seg', role: 'group', 'aria-label': 'Tema de la aplicación' },
+        TEMAS.map(({ valor, texto }) => el('button', {
+          type: 'button',
+          'aria-pressed': valor === puesto ? 'true' : 'false',
+          onclick: (evento) => {
+            puesto = valor;
+            for (const otro of seg.children) otro.setAttribute('aria-pressed', 'false');
+            evento.currentTarget.setAttribute('aria-pressed', 'true');
+            aplicarTema(valor);
+          },
+        }, [texto])));
+      dentro.append(campo('Tema', seg));
     }, { icono: 'aspecto' }));
 
     // Uno solo abierto, y es este. Eran tres apartados —«La aplicación» con
@@ -906,7 +928,19 @@ function abrirAjustes() {
     // Las ideas sobre la aplicación viven aquí y no en una pestaña porque son
     // sobre la herramienta y no sobre el trabajo, que es la misma razón por la
     // que están aquí la versión y la actualización.
-    if (!demostracion) cuerpo.append(acordeon('Mejoras', bloqueDeMejoras, { icono: 'bombilla' }));
+    // Con su recuento en el rótulo, como Regalos y Ocasiones: lo que cuenta son
+    // las que faltan, que es a lo que se entra, y no cuántas se han apuntado en
+    // total. Sin él había que desplegar para saber si hay algo dentro.
+    //
+    // El nodo se crea aquí y lo escribe el bloque, en vez de pasar el número ya
+    // hecho: una mejora se da por hecha sin cerrar la hoja, y con una cadena el
+    // rótulo se quedaba diciendo el número de cuando se abrió Ajustes.
+    if (!demostracion) {
+      const cuenta = el('span', { class: 'acordeon-nota' });
+      cuerpo.append(acordeon('Mejoras', (dentro) => bloqueDeMejoras(dentro, cuenta), {
+        icono: 'bombilla', nota: cuenta,
+      }));
+    }
 
     // «La aplicación» se retiró: era un apartado entero —rótulo, moneda y
     // solapa— para dos enlaces de una línea, y desde que «Buscar actualización»
@@ -1125,24 +1159,55 @@ function bloqueDeViajes(seccion) {
  * No pasa por la visibilidad: una mejora no tiene destinatario, así que no hay
  * de quién ocultarla. La ven los cuatro.
  */
-function bloqueDeMejoras(seccion) {
-  const lista = el('div', { class: 'grupo' });
+/**
+ * Lo que cabe en una mejora.
+ *
+ * El mismo número que comprueba el Worker (`TOPE_DE_MEJORA` en
+ * `api/src/repositorio.js`). Aquí corta antes de guardar y allí rechaza, que es
+ * lo que hace que siga siendo verdad cuando el que escribe no es esta pantalla.
+ */
+const TOPE_DE_MEJORA = 2000;
 
+function bloqueDeMejoras(seccion, cuenta = null) {
+  const lista = el('div', { class: 'grupo' });
+  const alPie = el('p', { class: 'pista' });
+
+  /**
+   * Las de la casa, lo que falta arriba y lo hecho al final.
+   *
+   * Es el orden de «Llevar» en Sitios y por la misma razón: una lista que se
+   * mira para saber qué queda no debe empezar por lo que ya no queda. Dentro de
+   * cada mitad, las más nuevas primero, sobre cuándo se tuvo la idea y no sobre
+   * cuándo se le arregló una errata.
+   */
   const pintar = () => {
     const mejoras = (instantanea()?.mejoras || [])
       .filter((m) => m.activo !== 0 && m.activo !== false)
-      .sort((a, b) => String(b.creado_en || '').localeCompare(String(a.creado_en || '')));
+      .sort((a, b) => (hecha(a) === hecha(b)
+        ? String(b.creado_en || '').localeCompare(String(a.creado_en || ''))
+        : hecha(a) - hecha(b)));
 
     vaciar(lista);
     if (!mejoras.length) {
-      lista.append(el('p', { class: 'pista', texto: 'Todavía no hay ninguna.' }));
+      lista.append(el('p', { class: 'pista', texto: 'Ideas sobre esta aplicación.' }));
+      alPie.textContent = 'Las ve toda la casa.';
+      if (cuenta) cuenta.textContent = '';
       return;
     }
     for (const mejora of mejoras) lista.append(filaDeMejora(mejora, pintar));
+
+    // Lo que quedan por hacer, que es lo que se viene a mirar. Y quién las ve,
+    // que es la pregunta que esta pantalla no contestaba en ningún sitio: una
+    // mejora que apuntas se le aparece a los otros tres y nada lo insinuaba.
+    const quedan = mejoras.filter((m) => !hecha(m)).length;
+    alPie.textContent = quedan
+      ? `${quedan} sin hacer. Las ve toda la casa.`
+      : 'Todas hechas. Las ve toda la casa.';
+    if (cuenta) cuenta.textContent = quedan ? String(quedan) : '';
   };
 
   const abrirFormulario = (mejora = null) => {
-    const texto = el('textarea', { rows: '4', spellcheck: 'true' });
+    const texto = el('textarea', { rows: '4', spellcheck: 'true', maxlength: String(TOPE_DE_MEJORA) });
     texto.value = mejora?.texto || '';
 
     abrirHoja(mejora ? 'Mejora' : 'Apuntar una idea', (cuerpo) => {
@@ -1152,7 +1217,10 @@ function bloqueDeMejoras(seccion) {
         el('button', {
           class: 'boton crecer', type: 'button',
           onclick: async () => {
-            const dicho = texto.value.trim();
+            // Cortado aquí y comprobado en el Worker por el mismo número. Sin
+            // tope, un pegado largo entra en la instantánea de los cuatro y se
+            // descarga en cada sincronización, para siempre.
+            const dicho = texto.value.trim().slice(0, TOPE_DE_MEJORA);
             if (!dicho) { avisar('Escribe algo'); texto.focus(); return; }
             await guardar('mejora', mejora?.id || nuevoId(), {
               texto: dicho,
@@ -1166,13 +1234,22 @@ function bloqueDeMejoras(seccion) {
 
       // Copiar se queda, y es de la mejora y no de la lista: una idea se pega en
       // la conversación que va sobre esa idea, y eso no es sincronizar.
+      //
+      // Y lo dice en su propio botón durante dos segundos, no en un aviso
+      // flotante: la respuesta se quiere donde el dedo ya está. La hoja
+      // sobrevive al repintado de la pantalla de detrás, así que el nodo sigue
+      // ahí cuando vence el plazo.
       if (mejora) {
-        verbos.push(el('button', {
+        const copia = el('button', {
           class: 'boton', 'data-tono': 'discreto', type: 'button',
           onclick: async () => {
-            avisar(await copiar(mejora.texto) ? 'Copiada' : 'No se ha podido copiar');
+            const hecho = await copiar(mejora.texto);
+            copia.textContent = hecho ? 'Copiada' : 'No se ha podido';
+            copia.disabled = true;
+            setTimeout(() => { copia.textContent = 'Copiar'; copia.disabled = false; }, 2000);
           },
-        }, ['Copiar']));
+        }, ['Copiar']);
+        verbos.push(copia);
       }
 
       cuerpo.append(el('div', { class: 'acciones' }, verbos));
@@ -1181,7 +1258,11 @@ function bloqueDeMejoras(seccion) {
         cuerpo.append(el('button', {
           class: 'boton', 'data-tono': 'peligro', type: 'button',
           onclick: async () => {
-            if (!confirm('¿Quitar esta mejora?')) return;
+            // La frase dice a quién afecta. Cualquiera puede quitar la de
+            // cualquiera —es una lista de la casa y no un cuaderno personal, y
+            // por eso no hay comprobación de autoría en ninguno de los dos
+            // lados—, pero eso hay que decirlo antes y no descubrirlo después.
+            if (!confirm('¿Quitar esta mejora? Se va de la lista de toda la casa.')) return;
             await retirar('mejora', mejora.id);
             cerrarHoja();
             pintar();
@@ -1189,6 +1270,11 @@ function bloqueDeMejoras(seccion) {
         }, ['Quitar']));
       }
     });
+
+    // Apuntar una idea es el gesto que más se repite de este apartado, y sin
+    // esto cuesta un toque de más. El plazo es para que la hoja haya terminado
+    // de subir: enfocar mientras se mueve deja el teclado peleando con ella.
+    setTimeout(() => texto.focus(), 60);
   };
 
   pintar();
@@ -1199,19 +1285,62 @@ function bloqueDeMejoras(seccion) {
         class: 'boton crecer', type: 'button', onclick: () => abrirFormulario(),
       }, ['Apuntar una idea']),
     ]),
+    alPie,
   );
 
+  /**
+   * Una mejora, con su visto delante.
+   *
+   * El visto es el de «Llevar» en Sitios: tacha, baja al final lo tachado y se
+   * deshace tocando otra vez. No guarda quién ni cuándo a propósito —eso sería
+   * un registro de trabajo, y esto es una lista de la compra—. Y va aparte del
+   * cuerpo de la tarjeta porque tocar el texto abre la mejora: dos destinos en
+   * una fila, como en la lista de la compra.
+   */
   function filaDeMejora(mejora, alVolver) {
-    const quien = (instantanea()?.personas || []).find((p) => p.id === mejora.autor_id)?.nombre || null;
-    const cuando = String(mejora.creado_en || '').slice(0, 10);
-    return el('button', {
-      class: 'tarjeta', type: 'button', onclick: () => abrirFormulario(mejora),
+    const visto = el('button', {
+      class: 'mejora-visto', type: 'button',
+      'aria-pressed': hecha(mejora) ? 'true' : 'false',
+      'aria-label': hecha(mejora) ? 'Deshacer' : 'Darla por hecha',
+      onclick: async (evento) => {
+        evento.stopPropagation();
+        await guardar('mejora', mejora.id, { hecho: hecha(mejora) ? 0 : 1 });
+        alVolver();
+      },
+    }, [icono('visto')]);
+
+    const cuerpo = el('button', {
+      class: 'mejora-cuerpo', type: 'button', onclick: () => abrirFormulario(mejora),
     }, [
       // El texto entero y sin recortar: es lo único que la fila tiene que decir.
       el('p', { class: 'mejora-texto', texto: mejora.texto }),
-      el('p', { class: 'mejora-firma', texto: [quien, cuando].filter(Boolean).join(' · ') }),
+      el('p', { class: 'mejora-firma', texto: firmaDeMejora(mejora) }),
     ]);
+
+    return el('div', { class: 'tarjeta mejora', 'data-hecha': hecha(mejora) ? 'si' : null },
+      [visto, cuerpo]);
   }
+}
+
+/** Una mejora dada por hecha. El Worker manda booleano y `guardar` deja el 1. */
+function hecha(mejora) {
+  return mejora.hecho === true || mejora.hecho === 1;
+}
+
+/**
+ * Quién la puso y, **solo si ya no es de hoy**, cuándo.
+ *
+ * Es la regla de `firmaDeApunte` en `sitios.js`, y lo que gana no es sitio: una
+ * fecha escrita solo cuando dice algo se lee, y una columna de fechas iguales
+ * no. Antes salía en ISO —`2026-08-01`—, que no es como escribe fechas ninguna
+ * otra pantalla de esta aplicación.
+ */
+function firmaDeMejora(mejora) {
+  const quien = (instantanea()?.personas || []).find((p) => p.id === mejora.autor_id)?.nombre || null;
+  if (!quien) return '';
+  const cuando = formatearHace(mejora.creado_en);
+  const deHoy = !cuando || cuando.startsWith('hoy') || cuando.startsWith('hace') || cuando === 'ahora mismo';
+  return deHoy ? quien : `${quien}, ${cuando}`;
 }
 
 function bloqueDeRedaccion(seccion) {

@@ -241,7 +241,11 @@ export function acordeon(titulo, construir, { abierta = false, nota = null, icon
       // el rótulo ya nombra lo que hay dentro, y aquí nombra dónde se toca.
       dibujo ? el('span', { class: 'acordeon-moneda', 'aria-hidden': 'true' }, [icono(dibujo)]) : null,
       el('span', { texto: titulo }),
-      nota ? el('span', { class: 'acordeon-nota', texto: nota }) : null,
+      // Puede venir ya como nodo, y entonces manda quien lo trajo. Es lo que
+      // hace falta cuando el número cambia sin cerrar la hoja —las mejoras se
+      // dan por hechas ahí mismo—: con una cadena, el rótulo se queda diciendo
+      // el número de cuando se abrió Ajustes.
+      nota instanceof Node ? nota : (nota ? el('span', { class: 'acordeon-nota', texto: nota }) : null),
     ]),
     cuerpo,
   ]);

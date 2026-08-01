@@ -12,6 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { componerInstantanea } from '../src/filtrado.js';
+import { TOPE_DE_MEJORA, aplicarCambio } from '../src/repositorio.js';
 
 const ANA = { id: 'p-ana', nombre: 'Ana', tiene_cuenta: true, rol: 'administrador', circulo: 'familia' };
 const MARTA = { id: 'p-marta', nombre: 'Marta', tiene_cuenta: true, rol: 'miembro', circulo: 'familia' };
@@ -59,4 +60,52 @@ test('sin la tabla todavía aplicada, la instantánea no se cae', () => {
   delete r.mejoras;
 
   assert.deepEqual(componerInstantanea(r, ANA).mejoras, []);
+});
+
+/**
+ * Y el tope de longitud, que es lo único de esta pieza que el Worker tiene que
+ * defender solo.
+ *
+ * El dispositivo corta antes de guardar, pero el que escribe no siempre es esta
+ * pantalla, y sin tope un pegado largo —un correo entero, un volcado— entra en
+ * la instantánea de los cuatro y se descarga en cada sincronización, para
+ * siempre. Se comprueba contra `aplicarCambio` y no contra la constante para
+ * que la prueba falle si algún día el `if` deja de estar en el camino.
+ */
+/**
+ * Base de mentira: apunta lo que se escribiría en vez de escribirlo.
+ *
+ * `first()` devuelve `null` —no hay fila anterior, que es el caso de una mejora
+ * recién apuntada— y `run()` deja constancia, que es lo que permite comprobar
+ * que un rechazo no llega a tocar la base.
+ */
+function baseFalsa(escrituras) {
+  return {
+    prepare(sql) {
+      return {
+        bind: (...args) => ({
+          first: async () => null,
+          run: async () => { escrituras.push({ sql, args }); return { success: true }; },
+          all: async () => ({ results: [] }),
+        }),
+      };
+    },
+  };
+}
+
+test('una mejora más larga que el tope se rechaza, y una del tamaño justo entra', async () => {
+  const escrituras = [];
+  const db = baseFalsa(escrituras);
+
+  const larga = await aplicarCambio(db, ANA, {
+    tipo: 'mejora', id: 'm-larga', campos: { texto: 'a'.repeat(TOPE_DE_MEJORA + 1) },
+  });
+  assert.equal(larga.aplicado, false);
+  assert.match(larga.motivo, /2000 caracteres/);
+  assert.equal(escrituras.length, 0);
+
+  const justa = await aplicarCambio(db, ANA, {
+    tipo: 'mejora', id: 'm-justa', campos: { texto: 'a'.repeat(TOPE_DE_MEJORA) },
+  });
+  assert.equal(justa.aplicado, true);
 });
