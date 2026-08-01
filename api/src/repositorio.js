@@ -42,6 +42,7 @@ const CAMPOS = {
   apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'hecho', 'autor_id', 'activo'],
   voto: ['apunte_id', 'persona_id', 'activo'],
   visto: ['persona_id', 'objeto_tipo', 'objeto_id', 'hasta'],
+  mejora: ['texto', 'autor_id', 'activo'],
 };
 
 /** Campos cuyo conflicto se conserva para revisión en lugar de descartarse en
@@ -90,7 +91,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     ocasiones, participantesOcasion, presupuestos,
     regalos, codestinatarios, comentarios, conflictos,
     paseos, tratos, cuadroLio,
-    lugares, apuntes, votos, vistos, calendarios,
+    lugares, apuntes, votos, vistos, calendarios, mejoras,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -127,6 +128,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filasSiLaTablaEsta(db, `SELECT * FROM voto ${activo('activo')}`),
     filasSiLaTablaEsta(db, 'SELECT * FROM visto'),
     filas(db, 'SELECT * FROM calendario_externo ORDER BY nombre'),
+    filasSiLaTablaEsta(db, `SELECT * FROM mejora ${activo('activo')} ORDER BY creado_en DESC`),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -206,6 +208,9 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     lugares: lugares.map((l) => ({ ...l, activo: bool(l.activo) })),
     apuntes: apuntes.map((a) => ({ ...a, hecho: bool(a.hecho), activo: bool(a.activo) })),
     votos: votos.map((v) => ({ ...v, activo: bool(v.activo) })),
+    // Las mejoras son sobre la aplicación y no sobre la casa, así que no tienen
+    // destinatario y no pasan por la visibilidad: las ve quien tiene cuenta.
+    mejoras: mejoras.map((m) => ({ ...m, activo: bool(m.activo) })),
     // Lo visto no se recorta por visibilidad sino por dueño, y eso lo hace
     // `filtrado.js`: las filas de una persona no le sirven de nada a otra.
     vistos,

@@ -32,6 +32,7 @@ const PLURAL = {
   apunte: 'apuntes',
   voto: 'votos',
   visto: 'vistos',
+  mejora: 'mejoras',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };

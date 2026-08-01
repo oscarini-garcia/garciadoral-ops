@@ -310,7 +310,36 @@ pendiente. El hook lo inyecta al final del mapa.
   turno a turno. La atadura que tenía —que el aviso de pedirte un cambio no podía
   empujarse— **se ha levantado**: eso son ahora los avisos remotos, y Lío suena
   entero.
-- **No queda ninguna migración por aplicar.** Las trece están puestas, incluidas
+- **Ajustes junta ahora sync, versión y viajes en un solo apartado**, que se
+  llama «Sincronización», va el primero y es el único abierto de origen. Eran
+  tres —«La aplicación» con «Buscar actualización», «Sincronización» con su
+  línea y «✈️ Viajes» con su botón— y entre los tres **obligaban a acertar cuál
+  era tu problema antes de dejarte mirar**; nadie llega ahí sabiendo eso. Un solo
+  botón, «Comprobar ahora», hace las tres en el orden que importa —datos,
+  viajes, bundle— y las cuenta en una sola lista que se lee de arriba abajo. Los
+  viajes solo los trae quien administra, porque la ruta es suya, y a quien no lo
+  sea sencillamente no le sale ese renglón. «✈️ Viajes» se queda sin botón y con
+  su diagnóstico, que es otra cosa. La idea es de `meeting-ops-air`, que copió
+  esta pantalla y luego la mejoró.
+- **Las mejoras son ideas sobre la propia aplicación**, apuntadas desde el móvil
+  y guardadas en `mejora`. **No se llaman «idea» a propósito**: aquí una idea es
+  una idea de regalo y está en el centro del modelo de ocultación, y compartir el
+  nombre habría hecho que cada consulta tuviera que decir de cuál habla. Y por lo
+  mismo **no pasan por `visible()`**: no tienen destinatario, así que no hay de
+  quién ocultarlas —lo único que se pide para recibirlas es tener cuenta—.
+  Viajan por el contrato que ya hay, `guardar('mejora', …)` y la cola de siempre,
+  y no por una ruta propia: una ruta propia haría esperar a la pantalla o pediría
+  su propia cola, reintento e idempotencia, que es el motor de sincronización
+  escrito dos veces para un cuaderno. Eso último no es teoría: `meeting-ops-air`
+  las hizo primero en `localStorage` y lo deshizo, porque **sobre una idea de la
+  aplicación se actúa en otra máquina**, y una nota que esa máquina no puede leer
+  se atiende cuando alguien se acuerda de copiarla.
+- **Queda una migración por aplicar: la `0015_mejoras.sql`.** Es corriente
+  —`CREATE TABLE IF NOT EXISTS`—, así que basta con marcar la casilla de las
+  migraciones al desplegar la API; no hace falta escribir su nombre en el campo
+  de al lado. **Y hay que tachar esta línea al aplicarla**, que es lo único que
+  impide que se vuelva a pedir.
+- **Las catorce anteriores están puestas**, incluidas
   las cinco `.unavez` —los círculos (`0005`), el género (`0006`), la `0009` que
   rehizo `comentario` para quitarle el `CHECK`, la `0012` de la casilla de la
   lista de la compra y la `0013` del token del aparato—. **Estas dos últimas
