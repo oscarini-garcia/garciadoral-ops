@@ -1145,6 +1145,20 @@ button { background: none; border: 0; cursor: pointer; }
 /* Lo que el apartado sigue diciendo con la solapa bajada: cuántas fechas hay en
    marcha, o quién es el próximo que cumple. Va apagado y a la derecha, pegado a
    la flecha, para que se lea como una nota del rótulo y no como parte de él. */
+/* La moneda del rótulo, solo en Ajustes. Es la figura de los Ajustes del
+   sistema —el dibujo en blanco sobre una pastilla de color— y se le da a los
+   nueve apartados o a ninguno: con dos puestos y siete sin nada, la columna se
+   leía como un descuido. Va en tinta, la misma para las nueve: un color por
+   apartado sería un arco iris que esta aplicación no usa en ningún otro sitio.
+
+   El dibujo hereda el color del papel, así que en oscuro se invierte solo. */
+.acordeon-moneda {
+  flex: none; display: grid; place-items: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--tinta); color: var(--paper);
+}
+.acordeon-moneda .icono-svg svg { width: 17px; height: 17px; }
+
 .acordeon-nota {
   margin-left: auto; padding-left: 10px;
   font-size: 13px; font-weight: 400; color: var(--ink-faint);
