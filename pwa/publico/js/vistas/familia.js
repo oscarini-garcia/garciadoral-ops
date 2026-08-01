@@ -382,7 +382,7 @@ function bloqueDeSolicitudes(ctx) {
   ]);
 }
 
-async function abrirBandeja(ctx) {
+export async function abrirBandeja(ctx) {
   abrirHoja('Quién quiere entrar', (cuerpo) => {
     cuerpo.append(el('p', { class: 'pista', texto: 'Cargando…' }));
 

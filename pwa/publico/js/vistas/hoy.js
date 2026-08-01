@@ -449,6 +449,20 @@ function pieDeVersion() {
   return pie;
 }
 
+/**
+ * Otro pie igual, para la sala de espera.
+ *
+ * Se construye uno nuevo y no se reaprovecha el de aquí porque un nodo solo
+ * puede estar en un sitio, y la sala de espera vacía su marco cada vez que se
+ * repinta. Comparten el `versionEnUso` que ya se haya averiguado, que es lo
+ * único que merece la pena no volver a preguntar.
+ *
+ * Allí importa más que aquí: quien espera a que le aprueben no tiene barra de
+ * pestañas ni Ajustes, así que sin esto no tendría forma de traerse una versión
+ * nueva —justo cuando lo que falla puede ser el propio acceso—.
+ */
+export const nuevoPieDeVersion = () => construirPie();
+
 function construirPie() {
   const boton = el('button', { class: 'version', type: 'button' });
   let temporizador = null;
