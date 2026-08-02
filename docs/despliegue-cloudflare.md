@@ -644,13 +644,13 @@ Y dos cosas que **sí** dependen de esto, que es donde se pierde el tiempo:
 Nadie se vincula a mano: cada persona lo pide desde la aplicación y un
 administrador lo aprueba desde la aplicación.
 
-1. La persona abre la web (o la app), pulsa **Entrar con Apple** y escribe su
+1. La persona abre la web (o la app), pulsa **Continuar con Apple** y escribe su
    nombre en la pantalla que aparece.
 2. En el dispositivo de un administrador, la pantalla de **Familia** muestra
    *Hay N personas esperando*.
 3. Ahí se ve quién dice ser y con qué correo, y se elige: darle acceso —creando
    una ficha nueva o **vinculándola a una que ya exista**— o rechazar.
-4. Esa persona vuelve a pulsar **Entrar con Apple** y ya está dentro.
+4. Esa persona vuelve a pulsar **Continuar con Apple** y ya está dentro.
 
 El paso 3 tiene una trampa que conviene no pisar. Si quien pide entrar ya
 figuraba en el registro sin cuenta —la abuela, que cumple años y recibe
@@ -665,7 +665,7 @@ persona recibe dos identificadores y aparece dos veces en la bandeja.
 ### 6.1 La primera vez: vincularse uno mismo
 
 La primera persona administradora no puede aprobarse a sí misma, así que su
-vínculo sí se escribe a mano. Pulse **Entrar con Apple**, envíe la solicitud, y
+vínculo sí se escribe a mano. Pulse **Continuar con Apple**, envíe la solicitud, y
 ejecute:
 
 ```bash
@@ -970,7 +970,7 @@ un «no pudimos verificar la eliminación de cuenta» sin que nada esté mal.
 
 #### El obstáculo de verdad: el revisor no puede entrar
 
-Aquí el alta la aprueba una persona. Quien pulsa «Entrar con Apple» por primera
+Aquí el alta la aprueba una persona. Quien pulsa «Continuar con Apple» por primera
 vez deja una solicitud y se queda en la sala de espera, y eso es exactamente lo
 que le va a pasar al equipo de revisión. Sin más, es un rechazo por la directriz
 2.1 con el texto de siempre: «no pudimos acceder a la funcionalidad de la
@@ -1372,7 +1372,7 @@ error visible: es arruinar una sorpresa.
       verificar que llega.
 - [ ] En la app de iOS, subir la versión de `pwa/package.json`, mergear y
       comprobar que el cambio entra al abrirla por segunda vez.
-- [ ] Entrar con Apple **desde el navegador** y **desde el teléfono**, con la
+- [ ] Continuar con Apple **desde el navegador** y **desde el teléfono**, con la
       misma cuenta, y comprobar que caen en la misma persona. Si el teléfono pide
       vincular un identificador distinto, el Services ID no tiene ese App ID como
       *Primary* (paso 4.2) y hay que corregirlo antes de dar de alta a nadie más.
