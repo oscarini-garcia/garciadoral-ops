@@ -433,7 +433,11 @@ export async function empujarSolicitud(env, solicitud, { enviar = enviarAviso } 
     .all();
 
   const aviso = {
-    titulo: `🔑 ${solicitud.nombre_declarado} quiere entrar`,
+    // Sin nombre no es un caso raro: Apple solo lo entrega en la primerísima
+    // autorización, y pedirlo a cambio de dejar entrar es lo que rechaza la
+    // directriz 4. El correo del renglón de abajo es lo que queda para decir
+    // quién llama, que es lo mismo que ve la bandeja.
+    titulo: `🔑 ${solicitud.nombre_declarado || 'Alguien'} quiere entrar`,
     cuerpo: solicitud.correo
       ? `${solicitud.correo}${solicitud.correo_privado ? ' · buzón de reenvío de Apple' : ''}`
       : 'Ha elegido ocultar su correo.',

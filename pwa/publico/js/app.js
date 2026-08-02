@@ -212,12 +212,12 @@ function pintarEspera(token, situacion, nombreDeApple = null) {
   const marco = vaciar(document.getElementById('esperaMarco'));
 
   if (situacion.estado === 'sin_solicitud') {
-    // Si Apple acaba de dar el nombre, no hay nada que preguntar: se pide el
-    // acceso con él y esta persona ve directamente que su solicitud está hecha.
-    // Volver a pedir un dato que Sign in with Apple ya ha entregado es lo que
-    // rechaza la directriz 4 de la App Store, y además sobra.
-    if (nombreDeApple) return pedirAccesoSinPreguntar(marco, token, situacion, nombreDeApple);
-    return pintarFormulario(marco, token, situacion);
+    // Nunca se pregunta nada aquí, haya dado Apple el nombre o no. Pedir después
+    // de Sign in with Apple un dato que el marco de Apple ya entrega es lo que
+    // rechaza la directriz 4 de la App Store, y el nombre solo llega en la
+    // primerísima autorización: un formulario «solo para cuando falte» acaba
+    // siendo el formulario de todo el mundo a partir de la segunda vez.
+    return pedirAccesoSinPreguntar(marco, token, situacion, nombreDeApple);
   }
 
   const texto = TEXTO_ESPERA[situacion.estado] || TEXTO_ESPERA.pendiente;
@@ -228,7 +228,7 @@ function pintarEspera(token, situacion, nombreDeApple = null) {
   );
 
   if (situacion.estado === 'pendiente') {
-    if (situacion.nombre) marco.append(lineaDelNombre(token, situacion));
+    marco.append(lineaDelNombre(token, situacion));
 
     marco.append(el('button', {
       class: 'boton crecer', type: 'button',
@@ -266,6 +266,11 @@ function pintarEspera(token, situacion, nombreDeApple = null) {
  * sale sin que quien la manda lo haya visto. Puede llegar a medias, o ser el de
  * la cuenta y no por el que le conocen en casa, y quien decide solo ve eso.
  *
+ * **Y puede no llegar**, que es lo normal a partir de la segunda autorización.
+ * Entonces esta línea es lo único que hay para ponerlo, y sigue siendo
+ * voluntaria: la solicitud ya está hecha y sin nombre se aprueba igual, con el
+ * correo. Un campo obligatorio en este punto es lo que rechazó la directriz 4.
+ *
  * Corregirlo es volver a mandar la solicitud: el servidor actualiza la que ya
  * existe en lugar de crear otra, así que no hace falta nada más.
  */
@@ -274,13 +279,17 @@ function lineaDelNombre(token, situacion) {
 
   const mostrar = () => {
     vaciar(linea).append(
-      `La has pedido como ${situacion.nombre}. `,
-      el('button', { class: 'enlace-en-linea', type: 'button', onclick: editar }, ['Cambiar']),
+      situacion.nombre
+        ? `La has pedido como ${situacion.nombre}. `
+        : 'La has pedido con tu correo y sin nombre. ',
+      el('button', { class: 'enlace-en-linea', type: 'button', onclick: editar }, [
+        situacion.nombre ? 'Cambiar' : 'Poner mi nombre',
+      ]),
     );
   };
 
   function editar() {
-    const nombre = entrada({ value: situacion.nombre, placeholder: '<tu nombre>', autocomplete: 'name' });
+    const nombre = entrada({ value: situacion.nombre || '', placeholder: '<tu nombre>', autocomplete: 'name' });
     const guardarlo = el('button', {
       class: 'boton', type: 'button',
       onclick: async () => {
@@ -310,48 +319,48 @@ function lineaDelNombre(token, situacion) {
 }
 
 /**
- * Pide el acceso con el nombre que Apple acaba de dar, sin preguntar nada.
+ * Manda la solicitud sin preguntar nada, con el nombre que Apple haya dado o
+ * sin ninguno.
  *
- * Es el camino normal de quien entra por primera vez. Si algo falla se cae al
- * formulario, para que un fallo de red no deje a nadie en una pantalla sin
- * salida.
+ * Es el único camino: entrar con Apple **es** pedir entrar. Lo que Apple
+ * entrega —el `sub`, el correo y, la primerísima vez, el nombre— ya identifica
+ * a quien llama, y volver a pedirlo en una pantalla es lo que rechaza la
+ * directriz 4. Sin nombre la solicitud sale igual y quien decide ve el correo;
+ * ponerlo después es un enlace en la pantalla de espera, no un peaje.
+ *
+ * Si algo falla, un botón para volver a intentarlo. Antes se caía al
+ * formulario, que era pedir un dato a cambio de un fallo de red.
  */
 async function pedirAccesoSinPreguntar(marco, token, situacion, nombre) {
   marco.append(
     el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
-    el('h1', { texto: `Un momento, ${nombre.split(' ')[0]}.` }),
+    el('h1', { texto: nombre ? `Un momento, ${nombre.split(' ')[0]}.` : 'Un momento.' }),
     el('p', { class: 'acceso-texto', texto: 'Estamos enviando tu solicitud.' }),
   );
 
   try {
     const resultado = await pedirEntrar(configuracion, token, nombre);
     pintarEspera(token, resultado);
-  } catch {
-    pintarFormulario(vaciar(marco), token, situacion, nombre);
+  } catch (error) {
+    pintarNoSePudo(vaciar(marco), token, situacion, nombre, error);
   }
 }
 
 /**
- * El formulario de la sala de espera: un campo, el nombre.
+ * No se pudo mandar la solicitud. Un botón para reintentar y una salida.
  *
- * Es el camino de excepción. Apple solo entrega el nombre en la primerísima
- * autorización y nunca en el token, de modo que quien ya hubiera autorizado la
- * aplicación antes —o quien retiró su solicitud y vuelve— llega sin él, y hay
- * que preguntarlo: es lo único que identifica a esa persona ante quien decide
- * si entra, sobre todo si ha elegido ocultar su correo.
+ * Lo que no lleva es ningún campo: el fallo es del envío, no de lo que se sabe
+ * de quien está delante, y no hay nada que esta persona pueda teclear que lo
+ * arregle.
  */
-function pintarFormulario(marco, token, situacion, sugerido = null) {
-  const nombre = entrada({ placeholder: '<tu nombre>', autocomplete: 'name' });
-  if (sugerido) nombre.value = sugerido;
-
+function pintarNoSePudo(marco, token, situacion, nombre, error) {
   marco.append(
     el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
-    el('h1', { texto: 'Casi está.' }),
+    el('h1', { texto: 'No se ha podido enviar.' }),
     el('p', {
       class: 'acceso-texto',
-      texto: 'Dinos quién eres y le llegará a quien puede darte acceso.',
+      texto: error?.message || 'No hemos conseguido mandar tu solicitud. Puede ser la red.',
     }),
-    campo('Tu nombre', nombre),
   );
 
   if (situacion.correo) {
@@ -363,27 +372,23 @@ function pintarFormulario(marco, token, situacion, sugerido = null) {
     }));
   }
 
-  const enviar = el('button', {
+  marco.append(el('button', {
     class: 'boton crecer', type: 'button',
-    onclick: async () => {
-      if (!nombre.value.trim()) { avisar('Falta tu nombre'); return; }
-      enviar.disabled = true;
-      enviar.textContent = 'Enviando…';
-      try {
-        const resultado = await pedirEntrar(configuracion, token, nombre.value.trim());
-        pintarEspera(token, resultado);
-      } catch (error) {
-        enviar.disabled = false;
-        enviar.textContent = 'Pedir acceso';
-        avisar(error.message || 'No se ha podido enviar la solicitud.');
-      }
+    onclick: async (evento) => {
+      const boton = evento.currentTarget;
+      boton.disabled = true;
+      boton.textContent = 'Enviando…';
+      await pedirAccesoSinPreguntar(vaciar(marco), token, situacion, nombre);
     },
-  }, ['Pedir acceso']);
+  }, ['Volver a intentarlo']));
 
-  marco.append(enviar);
   marco.append(el('button', {
     class: 'enlace-discreto', type: 'button', onclick: () => salirDeLaEspera(),
   }, ['Ahora no']));
+
+  marco.append(el('button', {
+    class: 'enlace-discreto', type: 'button', onclick: () => elegirObservadorDemo(),
+  }, ['Ver una demostración mientras tanto']));
 }
 
 function confirmarRetirada(token) {

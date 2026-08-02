@@ -27,6 +27,27 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Entrar con Apple ya no pregunta nada, y eso vino de un rechazo de la App
+  Store.** La 1.1 se cayó por la **directriz 4**: después de Sign in with Apple no
+  se puede pedir un dato que el marco de Apple ya entrega, y la sala de espera
+  abría un formulario con «¿quién eres?». La trampa está en que **Apple solo
+  entrega el nombre en la primerísima autorización de esa cuenta**, así que un
+  campo «solo para cuando falte» acaba siendo el campo de todo el mundo a partir
+  de la segunda vez —y quien revisa la aplicación entra siempre por esa segunda—.
+  Ahora entrar con Apple **es** pedir entrar: la solicitud sale sola con lo que
+  Apple haya dado, sin nombre si no lo hay, y ponerlo es un enlace voluntario en
+  la pantalla de espera. En el Worker, `registrarSolicitud` ya no lo exige y
+  guarda `''` —no `NULL`, para no rehacer la tabla que la `0003` declaró
+  `NOT NULL`—, reenviar sin nombre no borra el que ya hubiera, la bandeja dice
+  «Sin nombre» y el aviso al administrador, «Alguien quiere entrar». Y donde
+  había un formulario de reserva ahora hay un «Volver a intentarlo»: pedir un
+  dato a cambio de un fallo de red era lo mismo con otra excusa. Está en
+  `specs/autenticacion.md` §4, §5 y §8. Los otros dos rechazos de esa misma
+  ronda —2.1(a), que no podían entrar, y 2.3.8, que el nombre bajo el icono
+  decía «Agenda»— ya estaban arreglados en `main` (#72 y #113): la build
+  revisada era de antes. Queda abierto **qué hacer si Apple vuelve a citar la
+  directriz 4 por el botón**, que dice «Entrar con Apple» y no una de las
+  fórmulas oficiales de Apple en español.
 - **Sitios está construido**, y es el segundo módulo que no cuelga de la agenda.
   Un sitio es la carpeta y los apuntes cuelgan de él, con **cuatro clases que son
   verbos —Llevar, Hacer, Ir y Saber—** y «Saber» puesta de origen, para que quien

@@ -407,10 +407,17 @@ function tarjetaDeSolicitud(solicitud, ctx) {
   const cuando = new Date(`${solicitud.creado_en.replace(' ', 'T')}Z`);
 
   return el('div', { class: 'tarjeta' }, [
-    el('h3', { texto: solicitud.nombre_declarado }),
-    // El nombre lo ha escrito quien pide entrar, no Apple. Conviene que se note:
-    // es el dato sobre el que se decide y no está verificado por nadie.
-    el('p', { class: 'pista', texto: 'Nombre escrito por quien lo solicita.' }),
+    el('h3', { texto: solicitud.nombre_declarado || 'Sin nombre' }),
+    // De dónde sale el nombre importa, porque es el dato sobre el que se decide
+    // y no lo verifica nadie: lo da Apple en la primera autorización y quien
+    // espera puede corregirlo. Puede faltar —Apple no lo entrega a partir de la
+    // segunda vez— y entonces el correo es lo único que hay.
+    el('p', {
+      class: 'pista',
+      texto: solicitud.nombre_declarado
+        ? 'Lo da Apple al entrar, y quien lo pide puede corregirlo. No lo verifica nadie.'
+        : 'Apple no ha dado el nombre esta vez. Escríbelo tú al darle acceso.',
+    }),
     el('p', {
       texto: solicitud.correo
         ? solicitud.correo
@@ -452,7 +459,11 @@ function tarjetaDeSolicitud(solicitud, ctx) {
 function abrirAprobacion(solicitud, ctx) {
   const candidatas = ctx.vista.personasSinCuenta();
 
-  abrirHoja(`Dar acceso a ${solicitud.nombre_declarado}`, (cuerpo) => {
+  const rotulo = solicitud.nombre_declarado
+    ? `Dar acceso a ${solicitud.nombre_declarado}`
+    : `Dar acceso a ${solicitud.correo || 'quien espera'}`;
+
+  abrirHoja(rotulo, (cuerpo) => {
     const quien = seleccion(
       [
         { valor: '', texto: 'Crear una ficha nueva' },
@@ -464,7 +475,7 @@ function abrirAprobacion(solicitud, ctx) {
       [{ valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
       'miembro',
     );
-    const nombre = entrada({ value: solicitud.nombre_declarado, placeholder: 'Nombre' });
+    const nombre = entrada({ value: solicitud.nombre_declarado || '', placeholder: 'Nombre' });
     const apellidos = entrada({ placeholder: 'Apellidos' });
 
     const nueva = el('div', {}, [

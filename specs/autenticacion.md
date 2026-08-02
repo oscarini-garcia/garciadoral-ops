@@ -63,13 +63,13 @@ hogar:
 
 | Estado | Qué significa | Qué ve |
 |---|---|---|
-| **Desconocido** | Nunca ha entrado, o su solicitud caducó | El formulario de solicitud |
+| **Desconocido** | Nunca ha entrado, o su solicitud caducó | La solicitud se manda sola y pasa a la sala de espera |
 | **En espera** | Ha solicitado acceso y nadie lo ha resuelto | La sala de espera |
 | **Rechazado** | Un administrador dijo que no | Un mensaje neutro |
 | **Con cuenta** | Vinculado a una persona activa del registro | La aplicación |
 
 Las transiciones son pocas y todas explícitas: *desconocido → en espera* la hace
-el propio interesado al enviar el formulario; *en espera → con cuenta* y *en
+el propio interesado al entrar con Apple; *en espera → con cuenta* y *en
 espera → rechazado* las hace un administrador; *en espera → desconocido* la hace
 el interesado al retirar su solicitud, o el tiempo al caducarla; y *con cuenta →
 desconocido* es la baja que ya existe (`darDeBajaCuenta`), que deshace el vínculo
@@ -94,7 +94,7 @@ puerta.
 | identificador_apple | Único. Es la identidad real; todo lo demás es declarado |
 | correo | Lo que diga Apple. Puede ser un buzón de reenvío, o nulo |
 | correo_privado | Si Apple indicó `is_private_email` |
-| nombre_declarado | Lo escribe la persona. Obligatorio |
+| nombre_declarado | Lo da Apple la primera vez, o lo corrige la persona. Puede estar vacío |
 | estado | pendiente o rechazada |
 | resuelta_por | Qué administrador la rechazó |
 | creado_en, actualizado_en, visto_en | `visto_en` es el último intento de entrar |
@@ -110,8 +110,10 @@ actualiza `visto_en` de la que ya hay. Nadie puede generar dos avisos, ni cien.
 
 `nombre_declarado` es texto sin verificar y hay que tratarlo como tal. Se escapa
 al pintarlo y se limita en longitud. Quien lo lee es un administrador que decide
-sobre esa base, y conviene que la interfaz sea explícita en que ese nombre lo ha
-escrito el solicitante, no Apple.
+sobre esa base, y conviene que la interfaz sea explícita en de dónde sale: lo da
+Apple en la primera autorización y puede corregirlo el solicitante. Se guarda
+`''` y no `NULL` cuando no hay ninguno, para no rehacer la tabla de la `0003`
+—que lo declaró `NOT NULL`— por un caso que ya no es excepcional.
 
 **Ningún cambio en `persona`.** De la solicitud no se copia nada a la ficha: al
 aprobar, el nombre declarado se usa como propuesta editable del formulario y el
@@ -128,15 +130,24 @@ hiciera falta, `atributo_persona` existe para eso y no requiere migración.
 demostración.
 
 **Al volver de Apple.** La API responde con el estado del identificador. Si es
-desconocido, la aplicación pide **una sola cosa**: «¿quién eres?».
+desconocido, la aplicación **no pregunta nada**: manda la solicitud con lo que
+Apple acaba de entregar —el identificador, el correo y, si es la primerísima
+autorización, el nombre— y enseña la sala de espera.
 
-Un campo y nada más. Que el nombre lo escriba la persona no es desconfianza
-hacia Apple, es que Apple no lo da de forma fiable (§8), y ese único campo es lo
-que sostiene la bandeja cuando el correo llega oculto. Se descartó pedir además
-de qué os conocéis: en un grupo pequeño y de confianza, quien aprueba ya sabe
-quién viene —normalmente porque él mismo le dijo que se descargara la
-aplicación—, así que la explicación es un campo que se rellena por cortesía y no
-se lee.
+Aquí hubo un campo, «¿quién eres?», y **costó un rechazo de la App Store por la
+directriz 4**: pedir después de Sign in with Apple un dato que el marco de Apple
+ya entrega no está permitido. La trampa es que el nombre solo llega la primera
+vez (§8), de modo que un formulario «solo para cuando falte» acaba siendo el
+formulario de todo el mundo a partir de la segunda —y quien revisa la aplicación
+entra siempre por esa segunda—.
+
+Sin nombre la solicitud sale igual y quien decide ve el correo; si además está
+oculto, la bandeja lo dice y el nombre se escribe al aprobar. Y quien espera
+puede ponerlo desde la sala de espera con un enlace, que es una corrección
+voluntaria y no un peaje. Se descartó pedir además de qué os conocéis: en un
+grupo pequeño y de confianza, quien aprueba ya sabe quién viene —normalmente
+porque él mismo le dijo que se descargara la aplicación—, así que la explicación
+es un campo que se rellena por cortesía y no se lee.
 
 **La sala de espera.** Una pantalla honesta: la solicitud está hecha, la revisa
 una persona, no hay plazo. Con dos acciones: **comprobar** —que vuelve a
@@ -175,8 +186,9 @@ sería un concepto nuevo en el modelo y un punto único de fallo: si quien tuvie
 esa condición se ausenta o se da de baja, las solicitudes se quedarían sin nadie
 que las mirase.
 
-Cada solicitud muestra el nombre declarado, el correo —marcado como buzón de
-reenvío cuando lo sea— y la fecha. Y ofrece tres salidas:
+Cada solicitud muestra el nombre declarado —o «Sin nombre», que es lo que ocurre
+cuando Apple no lo entrega—, el correo —marcado como buzón de reenvío cuando lo
+sea— y la fecha. Y ofrece tres salidas:
 
 1. **Dar cuenta a alguien que ya está en el registro.** Se elige a una persona sin
    cuenta de la lista y se le asigna rol. Es el camino de la abuela: conserva su
@@ -227,7 +239,7 @@ como sesión plena.
 | Ruta | Quién | Qué hace |
 |---|---|---|
 | `POST /api/sesion` | Token de Apple | Devuelve el estado: `activa` con sesión y persona, o `sin_solicitud` / `pendiente` / `rechazada` con una sesión de espera |
-| `POST /api/solicitud` | Sesión de espera | Crea la solicitud con el nombre declarado |
+| `POST /api/solicitud` | Sesión de espera | Crea la solicitud. El nombre es opcional; sin él se guarda vacío |
 | `GET /api/solicitud` | Sesión de espera | Estado actual |
 | `DELETE /api/solicitud` | Sesión de espera | Retira y borra |
 | `GET /api/solicitudes` | Sesión de administrador | Bandeja de pendientes |
@@ -264,16 +276,19 @@ explica un «no funciona» que costaría medio día.
 **«Ocultar mi correo» va a ser frecuente.** Cuando alguien lo elige, lo que llega
 es `a1b2c3d4@privaterelay.appleid.com`. Es un correo válido y estable, y no
 identifica a nadie. Un flujo que se apoye en el correo para saber quién pide
-entrar falla justo en esos casos, y por eso el nombre se pide a mano. El campo
-`correo_privado` existe para que la bandeja lo diga en lugar de mostrar un buzón
-absurdo sin más. Y si algún día se quisiera escribir a esa dirección, habría que
+entrar falla justo en esos casos, y por eso la bandeja no puede apoyarse solo en
+él. Lo que **no** se puede hacer es cubrir ese hueco preguntando el nombre: eso
+es la directriz 4 (§5). Se cubre al aprobar, que es donde hay alguien que sabe
+quién viene. El campo `correo_privado` existe para que la bandeja lo diga en
+lugar de mostrar un buzón absurdo sin más. Y si algún día se quisiera escribir a esa dirección, habría que
 registrar el dominio remitente en el Private Email Relay Service de Apple: sin
 eso, rebota.
 
 **El nombre de Apple solo se obtiene una vez.** No viaja nunca en el token de
 identidad: llega en la respuesta de la primera autorización y no vuelve. Si la
 persona ya entró alguna vez —o si se dio de baja y regresa— no habrá nombre. No
-se puede depender de él, y no se depende.
+se puede depender de él, y no se depende: `nombre_declarado` se guarda vacío y
+la solicitud vale igual.
 
 **Dos detalles menores.** `email_verified` llega unas veces como booleano y otras
 como cadena `"true"`; se normaliza. Y el identificador `sub` es único por equipo

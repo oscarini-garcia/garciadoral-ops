@@ -20,7 +20,6 @@ import {
   verificarSesion,
 } from '../src/sesion.js';
 import {
-  Rechazo,
   aprobarSolicitud,
   rechazarSolicitud,
   registrarSolicitud,
@@ -112,12 +111,30 @@ test('los tokens antiguos, sin tipo, siguen siendo sesiones plenas', async () =>
 
 // ------------------------------------------------------------------ El alta --
 
-test('sin nombre no hay solicitud', async () => {
+// La directriz 4 de la App Store: después de Sign in with Apple no se puede
+// exigir un dato que el marco de Apple ya entrega. Y el nombre solo llega en la
+// primerísima autorización, así que exigirlo aquí obligaba a la pantalla a
+// preguntarlo a partir de la segunda vez. Un rechazo por esto costó la 1.1.
+test('sin nombre la solicitud sale igual, y se guarda vacío', async () => {
   const db = baseFalsa();
-  await assert.rejects(
-    () => registrarSolicitud(db, { identificadorApple: '000123.abc', nombre: '   ' }),
-    Rechazo,
-  );
+  const solicitud = await registrarSolicitud(db, { identificadorApple: '000123.abc', nombre: '   ' });
+
+  const [alta] = sql(db, 'INSERT INTO solicitud_acceso');
+  assert.equal(alta.args.at(-1), '');
+  assert.notEqual(solicitud, undefined);
+});
+
+test('reenviarla sin nombre no borra el que ya estaba', async () => {
+  const db = baseFalsa({
+    'FROM solicitud_acceso WHERE identificador_apple': {
+      id: 's1', identificador_apple: '000123.abc', estado: 'pendiente',
+      nombre_declarado: 'Marta Ruiz', correo_privado: 0,
+    },
+  });
+  await registrarSolicitud(db, { identificadorApple: '000123.abc', nombre: null });
+
+  const [cambio] = sql(db, 'UPDATE solicitud_acceso');
+  assert.equal(cambio.args[0], 'Marta Ruiz');
 });
 
 test('la sala llena rechaza a quien llega nuevo, no a quien ya estaba', async () => {
