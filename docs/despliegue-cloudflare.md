@@ -1295,15 +1295,17 @@ respuesta— es obligatoria para los testers externos y opcional para los intern
 #### El entorno de APNs, que aquí vuelve a morder
 
 `api/wrangler.toml` trae `APNS_ENTORNO = "produccion"`, que es **el valor
-correcto para TestFlight**. Si en algún momento lo cambió a `pruebas` para
-depurar desde Xcode (§4.6), vuelva a ponerlo y despliegue el Worker, o a los
-teléfonos de casa no les sonará nada y el token se les borrará de la base como si
-hubieran desinstalado la aplicación.
+correcto para TestFlight** y para la App Store, y **no hay que tocarlo nunca**.
 
-Y el corolario, que no está escrito en ningún otro sitio: **el Worker apunta a un
-solo entorno**, así que no se puede depurar desde Xcode con `pruebas` y a la vez
-tener sonando los teléfonos de TestFlight. Mientras dure la depuración, en casa
-no suena; al terminar, hay que acordarse de devolver la variable.
+El Worker apunta a un solo entorno, de modo que ponerlo en `pruebas` para depurar
+desde Xcode (§4.6) apaga los avisos de todos los demás: a los teléfonos de casa no
+les suena nada y el token se les borra de la base como si hubieran desinstalado la
+aplicación. Por eso se decidió **no depurar desde Xcode**: aquí se instala siempre
+por TestFlight, que firma como `produccion` igual que la App Store, y así no hay
+ninguna variable que devolver a su sitio al terminar la tarde.
+
+Si aun así alguna vez lo cambia, esto es lo que hay que deshacer: devolverlo a
+`produccion` y desplegar el Worker.
 
 #### Los 90 días
 
