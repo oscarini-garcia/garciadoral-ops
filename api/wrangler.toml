@@ -33,10 +33,16 @@ APPLE_AUD_IOS = "com.garciadoral.ops"
 # pwa/publico/config.json; `tests/test_configuracion.py` lo comprueba.
 REDIRECCION_WEB = "https://garciadoral-ops.galoopa.store"
 
-# Con qué APNs se habla. `pruebas` para lo que se instala desde Xcode y
-# `produccion` para TestFlight y la App Store: son dos servidores distintos y los
-# tokens de uno no valen en el otro. El síntoma de equivocarse es un
-# `BadDeviceToken` que no explica nada más. Sin valor, producción.
+# Con qué APNs se habla. Son dos servidores distintos y los tokens de uno no
+# valen en el otro; el síntoma de equivocarse es un `BadDeviceToken` que no
+# explica nada más. Sin valor, producción.
+#
+# **Y aquí no se toca.** `pruebas` es para lo que se instala desde Xcode, y en
+# esta casa no se instala así: las builds van siempre por TestFlight, que firma
+# como `produccion` igual que la App Store. Esto fue una atadura mientras se
+# depuraba el módulo desde Xcode —con `pruebas` puesto, a los teléfonos de casa
+# no les sonaba nada—; dejó de serlo el día que se decidió no depurar así.
+# Cambiarlo para una tarde es apagarle los avisos a los otros tres.
 APNS_ENTORNO = "produccion"
 
 # Secretos, que NO van aquí. Se registran con `wrangler secret put`:

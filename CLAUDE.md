@@ -143,9 +143,10 @@ pendiente. El hook lo inyecta al final del mapa.
   iOS solo avisa del descarte si la aplicación está despierta, de modo que
   enlazarlos funcionaría a veces sí y a veces no. Queda abierto **qué pasa cuando
   alguien acumule avisos de una semana fuera**, que hoy es una pila que se
-  descarta a mano. Y una atadura nueva: **el entorno de
-  APNs tiene que coincidir con cómo se instaló la app** —`pruebas` desde Xcode,
-  `produccion` desde TestFlight—; equivocarse da `BadDeviceToken` y nada más.
+  descarta a mano. Y una regla que no se toca: **`APNS_ENTORNO` se queda en
+  `produccion`**. Tiene que coincidir con cómo se instaló la app —`pruebas` desde
+  Xcode, `produccion` desde TestFlight y la App Store—, y aquí se instala siempre
+  por TestFlight; equivocarse da `BadDeviceToken` y nada más.
 - **La aplicación se reparte por TestFlight interno y no por la App Store.** La
   revisión existe para que llegue cualquiera, y aquí no la va a usar nadie de
   fuera de casa: el círculo interno **no pasa por revisión** y la build está en
@@ -157,9 +158,11 @@ pendiente. El hook lo inyecta al final del mapa.
   lo de esos tres meses ya está en los teléfonos por OTA. Está en
   `docs/despliegue-cloudflare.md` §8.5, y el §8.4 —la ficha entera de la App
   Store— sigue escrito y sin usar, que es donde hay que ir el día que los
-  noventa días dejen de compensar. La atadura que hereda es la de §4.6: **el
-  Worker apunta a un solo entorno de APNs**, así que mientras se depura desde
-  Xcode con `pruebas`, a los teléfonos de casa no les suena nada.
+  noventa días dejen de compensar. **Y lo que era una atadura de §4.6 ya no lo
+  es**: el Worker apunta a un solo entorno de APNs, y con eso no se podía depurar
+  desde Xcode con `pruebas` y tener sonando los teléfonos de casa a la vez. Se ha
+  decidido no depurar así —todo se prueba desde TestFlight y producción—, de modo
+  que el conflicto no llega a existir y la variable se queda quieta.
 - **La marca de lo visto viaja: la tabla `visto`.** Guarda persona, tipo, objeto y
   **hasta qué momento**, no un booleano, que es lo que permite que un aviso
   descartado vuelva. Solo llega a su dueño. Se escribe al abrir el hilo, al
