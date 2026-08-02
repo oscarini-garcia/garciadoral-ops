@@ -45,9 +45,13 @@ pendiente. El hook lo inyecta al final del mapa.
   `specs/autenticacion.md` §4, §5 y §8. Los otros dos rechazos de esa misma
   ronda —2.1(a), que no podían entrar, y 2.3.8, que el nombre bajo el icono
   decía «Agenda»— ya estaban arreglados en `main` (#72 y #113): la build
-  revisada era de antes. Queda abierto **qué hacer si Apple vuelve a citar la
-  directriz 4 por el botón**, que dice «Entrar con Apple» y no una de las
-  fórmulas oficiales de Apple en español.
+  revisada era de antes. **Y el botón dice ahora «Continuar con Apple»**, que es
+  una de las tres fórmulas oficiales de Apple en español; «Entrar con Apple» no
+  lo es y la directriz 4 cubre también el rótulo. De las tres, esta y no
+  «Iniciar sesión con Apple» porque el botón hace las dos cosas —quien ya es de
+  casa entra, y quien no, deja su solicitud—, que es justo el caso para el que
+  Apple reserva «Continuar». No lo habían citado; se cambia porque cuesta una
+  línea y la aplicación ya viene señalada por esa directriz una vez.
 - **Sitios está construido**, y es el segundo módulo que no cuelga de la agenda.
   Un sitio es la carpeta y los apuntes cuelgan de él, con **cuatro clases que son
   verbos —Llevar, Hacer, Ir y Saber—** y «Saber» puesta de origen, para que quien
