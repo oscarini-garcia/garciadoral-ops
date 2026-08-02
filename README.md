@@ -1,7 +1,7 @@
 # garciadoral-ops
 
-Implementación de las especificaciones de `specs/`. Cinco piezas que comparten
-un mismo modelo y una misma regla de visibilidad:
+La agenda de una familia. Implementación de las especificaciones de `specs/`:
+cuatro piezas que comparten un mismo modelo y una misma regla de visibilidad.
 
 | Pieza | Dónde | Qué es |
 |---|---|---|
@@ -27,25 +27,39 @@ transmitir**: ningún dispositivo llega a almacenar lo que su titular no puede
 ver, porque en un modelo sin conexión esa información permanecería accesible por
 otras vías. Es el requisito no funcional de mayor importancia del sistema.
 
+La regla alcanza a todo lo derivado. Un aviso remoto lo compone el servidor, así
+que allí hay que **volver a aplicarla**: se compone la instantánea de quien
+recibiría el aviso y se mira si el objeto está dentro, en lugar de escribir una
+segunda copia de la regla. Lo mismo con lo que se le manda a un modelo de
+lenguaje: cada encargo se compone de la instantánea de quien lo pide.
+
 ---
 
 ## 1. Qué hay aquí
 
 ```
 api/                  · Worker de Cloudflare y esquema de D1
+  src/                · rutas, visibilidad, filtrado, Lío, sitios, avisos, redacción
+  migraciones/        · 18 ficheros; `.unavez` las que no se pueden repetir
 pwa/                  · la aplicación: web instalable y cáscara de iOS con OTA
+  publico/js/         · los módulos, servidos tal cual: no hay empaquetador
+  publico/js/vistas/  · las cinco secciones de la barra
+  scripts/patch-ios.mjs · lo que el proyecto de Xcode necesita y `cap sync` no hace
 docs/
   despliegue-cloudflare.md · Cloudflare, Apple Developer y GitHub, paso a paso
   mapa.md             · mapa del repositorio; generado, no se edita a mano
 herramientas/
   preparar-pwa.py     · iconos y datos de demostración
   mapa.py             · genera el mapa a partir del código
+  aeropuertos.py      · la tabla de códigos con la que se nombra un vuelo
+  aprobar-solicitud.sh · aprobar a alguien desde la línea de órdenes
 .github/workflows/
   despachador.yml     · sondeo diario que despacha la cola
   plan-semanal.yml    · el plan de la semana entrante, los domingos por la tarde
   mantenimiento.yml   · latido contra la desactivación por inactividad
+  desplegar-api.yml   · sube el Worker y aplica las migraciones que falten
   ota.yml             · publica el bundle web que se descargan las apps de iOS
-  pruebas.yml         · unittest en cada empujón
+  pruebas.yml         · las tres suites y los guardianes, en cada PR
 scripts/
   despachar.py        · recorre queue.json y envía lo vencido
   plan_semanal.py     · compone un plan por destinatario y lo entrega
@@ -54,6 +68,7 @@ scripts/
     modelo.py         · entidades y reglas de integridad
     visibilidad.py    · la función de visibilidad
     semana.py         · semana entrante, recurrencias y eventos de varios días
+    lio.py            · los turnos de paseo, derivados del cuadro semanal
     mensaje.py        · el texto para WhatsApp
     fuente.py         · lectura del registro canónico de la agenda
 datos/
@@ -71,7 +86,72 @@ las variables de entorno y el recuento de pruebas. Se genera del propio código
 —`python3 herramientas/mapa.py`—, de modo que no envejece, y es lo que el hook
 `SessionStart` inyecta al abrir una sesión de Claude Code.
 
-### Correspondencia con las especificaciones
+---
+
+## 2. Qué hace la aplicación
+
+Cinco secciones en la barra de abajo, y Ajustes como sexto botón que no es una
+pestaña.
+
+| Sección | Qué es |
+|---|---|
+| **Hoy** | Con lo que abre. El saludo, lo del día con los cumpleaños dentro, la banda de lo que espera respuesta y los turnos del perro |
+| **Agenda** | La semana, el mes y la lista sobre los mismos datos. Un evento puede durar varios días y aparece en todos |
+| **Regalos** | Deseos, ideas, regalos y ocasiones: el ciclo entero de lo que se regala, que es lo que la regla de visibilidad protege |
+| **Gente** | Tres círculos —Familia, Familia Extendida y Amigos—, con el parentesco relativo a quien mira |
+| **Sitios** | Lo que una casa sabe de un lugar y se le olvida cada año, en cuatro clases que son verbos: Llevar, Hacer, Ir y Saber |
+
+Y dos módulos que no cuelgan de la agenda: **Lío**, los turnos de paseo del
+perro, derivados de un cuadro semanal con vigencia y con el trato que los cambia
+de dueño; y el propio **Sitios**.
+
+Lo que atraviesa a todos:
+
+- **Los comentarios**, en cualquier cosa que los admita. La lista de tipos vive
+  en un solo sitio (`api/src/comentables.js`), de modo que dar de alta un módulo
+  nuevo no obliga a rehacer la tabla.
+- **Los avisos**, en dos mitades que contestan preguntas distintas: en el
+  dispositivo, un sobre en la cabecera que **solo existe cuando hay algo** y
+  reúne lo que espera sin contestar; en el servidor, los avisos remotos por APNs,
+  que son lo que hace sonar el teléfono de otro. El globo del icono cuenta lo que
+  espera respuesta y solo eso.
+- **Sin conexión.** Interfaz optimista sobre una cola persistente: lo que se
+  escribe se ve en el acto y sube cuando hay red.
+- **Seis encargos a un modelo de Anthropic**, todos opcionales y apagados si no
+  hay clave: contar un día, proponer un regalo, apuntar cosas de un sitio,
+  redactar una felicitación, la frase del día y la voz del perro. Cada uno se
+  compone de la instantánea de quien lo pide, así que la ocultación se cumple
+  sola.
+- **Un modo demostración** con una familia inventada, en el que se elige con los
+  ojos de quién se mira. Sin cuenta y sin servidor.
+
+El acceso es **solo Sign in with Apple**, y entrar no da acceso: deja una
+solicitud que aprueba un administrador desde la propia aplicación
+(`specs/autenticacion.md`).
+
+### El reparto: el binario casi no cambia
+
+La app de iOS es la misma web dentro de una cáscara de Capacitor, y eso decide
+cómo se publica. Un cambio de pantalla es **un bundle OTA** que `ota.yml` corta y
+los teléfonos se descargan solos, sin pasar por Apple. Solo lo nativo —un plugin,
+un entitlement, el nombre bajo el icono— obliga a archivar un binario y volver a
+la revisión.
+
+Hoy se reparte por **TestFlight interno**, que no pasa por revisión
+(`docs/despliegue-cloudflare.md` §8.5). La ficha de la App Store está escrita en
+el §8.4 y es el paso en curso.
+
+Al tocar cualquier cosa de `pwa/publico/` hay que subir **tres cifras a la vez**:
+`VERSION` en `sw.js` —el navegador—, `version` en `pwa/package.json` —el bundle
+OTA— y su copia en `pwa/publico/js/version.js`, que es la que la pantalla de Hoy
+escribe abajo a la derecha. `pruebas.yml` falla si alguna se queda atrás, y
+compara contra la punta de `main` en el momento de correr, no contra la base del
+PR: dos ramas abiertas a la vez veían un salto correcto desde su base común y
+publicaban bajo la misma versión.
+
+---
+
+## 3. Correspondencia con las especificaciones
 
 Esta tabla es la lectura razonada. La mecánica —qué fichero cita qué apartado,
 extraída de los comentarios del propio código— está en `docs/mapa.md`, y es la
@@ -81,22 +161,29 @@ que delata a un módulo que dejó de citar su especificación.
 |---|---|
 | `specs/despachador.md` §5–§9 | `scripts/despachar.py`, `queue.json`, workflows `despachador` y `mantenimiento` |
 | `specs/plan-semanal.md` | `scripts/plan_semanal.py`, `agenda/semana.py`, `agenda/mensaje.py`, workflow `plan-semanal` |
-| `specs/modelo-datos.md` §2 y §4 | `scripts/agenda/modelo.py` |
+| `specs/modelo-datos.md` §2 y §4 | `scripts/agenda/modelo.py`, `api/migraciones/` |
 | `specs/modelo-datos.md` §6 | `scripts/agenda/visibilidad.py` |
 | `specs/modelo-datos.md` §7.4 | `eventos_derivados` en `scripts/agenda/semana.py` |
+| `specs/modelo-datos.md` §2.6 (Lío) | `api/src/lio.js`, `pwa/publico/js/lio.js`, `scripts/agenda/lio.py` |
+| `specs/modelo-datos.md` §2.7 (Sitios) | `pwa/publico/js/sitios.js`, `pwa/publico/js/vistas/sitios.js` |
+| `specs/modelo-datos.md` §2.9 (avisos) | `api/src/avisos.js`, `api/src/apns.js` |
 | `specs/especificacion.md` §3.1 y §4.1 | `datos/catalogos.json`, `api/migraciones/0002_catalogos.sql` |
 | `specs/especificacion.md` §3 (visibilidad) | `api/src/visibilidad.js` y `api/src/filtrado.js` |
 | `specs/especificacion.md` §8 (acceso) | `api/src/apple.js` y `pwa/publico/js/sesion.js` |
 | `specs/autenticacion.md` (sala de espera y aprobación) | `api/src/solicitudes.js` |
 | `specs/especificacion.md` §9 (sin conexión) | `pwa/publico/js/sincronizacion.js` y `pwa/publico/js/almacen.js` |
-| `specs/ux.md` §11 (opción D) | `pwa/publico/js/vistas/` |
+| `specs/calendario-viajes.md` | `api/src/viajes.js` y `api/src/ical.js` |
+| `specs/ux.md` §6 a §12 | `pwa/publico/js/vistas/` |
 
 `specs/especificacion.md` §7 (Anecdotario) tiene la especificación diferida y no
 se modela, tal como el propio documento indica.
 
+Las decisiones de diseño de cada módulo —lo que se descartó y por qué— viven en
+las propuestas y prototipos de `specs/`, que son HTML para poder mirarlos.
+
 ---
 
-## 2. El despachador
+## 4. El despachador
 
 Un sondeo diario a las 07:07 UTC recorre `queue.json`, envía lo vencido por
 CallMeBot y devuelve el estado actualizado al repositorio con un commit. El
@@ -127,7 +214,7 @@ pendientes.
 
 ---
 
-## 3. El plan semanal
+## 5. El plan semanal
 
 Cada domingo por la tarde, un mensaje por persona con el plan de los siete días
 siguientes. No pasa por `queue.json`: es un derivado que se recalcula a partir
@@ -160,23 +247,35 @@ produce, entre otros, este plan para una hija:
 27 jul – 2 ago
 
 L 27  🏇 Entreno de hípica · 18:00
-M 28  —
-X 29  —
+      🐾 ☀️ Óscar · 🌙 Ana
+M 28  🐾 ☀️ Ana · 🌙 Óscar
+X 29  🐾 ☀️ Óscar · 🌙 Ana
 J 30  🎂 Cumpleaños de la abuela
       🩺 Dentista (Ana) · 10:00
-V 31  —
+      🐾 ☀️ Ana · 🌙 Óscar
+V 31  🐾 ☀️ Óscar · 🌙 Ana
 S  1  🎂 Cumpleaños de Marta
       🏆 Torneo de hípica
+      🐾 ☀️ Marta · 🌙 Óscar
 D  2  🏆 Torneo de hípica (cont.)
       🍽️ Comida con los abuelos · 14:00
+      🐾 ☀️ Lucía · 🌙 Ana
 ```
 
-La fila `V 31` de esa misma semana contiene `📌 Preparar la fiesta de Ma… · 17:00`
-en el plan de Ana y de Óscar, y solo en el suyo.
+Tres cosas se ven ahí. La fila `V 31` contiene además
+`📌 Preparar la fiesta de Ma… · 17:00` en el plan de Ana y de Óscar, y solo en el
+suyo. El torneo del sábado se repite el domingo con `(cont.)`, porque un evento
+de varios días aparece en todos. Y el renglón del perro va en su propia línea,
+fuera del techo de tres eventos por día; a quien no tiene cuenta no le llega,
+porque Lío es de la casa.
 
 ---
 
-## 4. Puesta en marcha
+## 6. Puesta en marcha
+
+Esto cubre los dos procesos programados. El Worker, la base y la aplicación
+tienen su propia guía, paso a paso, en
+[`docs/despliegue-cloudflare.md`](docs/despliegue-cloudflare.md).
 
 1. **Claves de CallMeBot.** Cada destinatario activa la suya enviando al bot el
    mensaje de autorización.
@@ -196,8 +295,8 @@ en el plan de Ana y de Óscar, y solo en el suyo.
    o si esa persona no tiene cuenta, se compone la vista pública— y `plan: false`
    excluye a ese destinatario del envío semanal sin sacarlo del despachador.
 3. **Registro canónico de la agenda.** Copie `datos/agenda.ejemplo.json` a
-   `datos/agenda.json` y sustituya su contenido, o publique el registro en una
-   URL y configure los secretos `AGENDA_URL` y, si hace falta, `AGENDA_TOKEN`.
+   `datos/agenda.json` y sustituya su contenido, o —lo que se hace en producción—
+   apunte `AGENDA_URL` a `GET /api/registro` del Worker con `AGENDA_TOKEN`.
    `datos/agenda.json` está en `.gitignore` a propósito: contiene nombres y
    fechas de nacimiento de menores, que se aprovisionan en el despliegue y se
    mantienen fuera del repositorio versionado.
@@ -219,9 +318,24 @@ Variables de entorno reconocidas por los scripts:
 | `QUEUE_PATH` | Cola del despachador. Por defecto `queue.json`. |
 | `ESTADO_PLAN_PATH` | Registro de envíos del plan. Por defecto `estado/plan-semanal.json`. |
 
+Las del Worker están en `api/wrangler.toml`, con su explicación al lado, y
+listadas en `docs/mapa.md`.
+
+### Las migraciones no se apuntan en ninguna lista
+
+La base lleva su propio registro —la tabla `migracion`— y el despliegue de la API
+aplica **solo lo que no conste ahí**, en cada empujón a `main`. Escribir una
+migración es dejar el `.sql` en `api/migraciones/`; no hay que anotarla en ningún
+sitio. Sustituye a una lista escrita a mano que mintió dos veces.
+
+Lo que sí hay que respetar al escribir una: **corriente si se puede repetir**
+—`CREATE TABLE IF NOT EXISTS`, `INSERT OR IGNORE`— y **`.unavez`** si lleva
+`ALTER TABLE`, reparte datos o rehace una tabla. `pruebas.yml` rechaza un `.sql`
+sin `.unavez` que lleve `ALTER TABLE`, `DROP`, `INSERT INTO` o `INSERT OR REPLACE`.
+
 ---
 
-## 5. Decisiones tomadas
+## 7. Decisiones tomadas
 
 Las especificaciones dejaban abiertos varios puntos. Lo resuelto aquí, y por qué:
 
@@ -260,50 +374,59 @@ principal se extrae a `procesar()` para poder probarlo sin red.
 
 ---
 
-## 6. Pruebas
+## 8. Pruebas
+
+**320 en total**, repartidas en tres suites que corren en cada PR:
 
 ```bash
-python3 -m unittest discover -s tests -v   # despachador, plan semanal, modelo
-cd api && npm test                         # visibilidad y filtrado del Worker
+python3 -m unittest discover -s tests -v   # despachador, plan semanal, modelo, Lío
+cd api && npm test                         # Worker: visibilidad, filtrado, avisos, IA
+cd pwa && npm test                         # aplicación: acceso, varios días, vuelos
 ```
 
 Cubren la función de visibilidad —incluidas la ocultación por destinatario, los
 co-destinatarios, las categorías privadas y restringidas, y la limitación
 conocida de las etiquetas—, las reglas de integridad del modelo, la expansión de
-recurrencias, el formato del mensaje y la idempotencia del despachador. La
+recurrencias, los turnos derivados del cuadro con vigencia, la composición de los
+avisos remotos, el formato del mensaje y la idempotencia del despachador. La
 guarda que impide entregar a una persona un texto compuesto para otra tiene su
 propia prueba.
 
+`pruebas.yml` añade además lo que no es una prueba pero falla igual: que
+`docs/mapa.md` corresponde al código de su commit, que las tres versiones suben
+juntas, que el registro de ejemplo compone los siete planes y que ninguna
+migración repetible lleva un `ALTER TABLE` dentro.
+
 ---
 
-## 7. Qué falta
+## 9. Qué falta
 
 El módulo **Anecdotario** queda fuera por decisión de la propia especificación
 funcional, que difiere su detalle hasta cerrar la estructura de la importación
 desde el export de Facebook.
 
-De lo demás, dos cosas están modeladas pero no construidas: los **calendarios
-externos** importados —el modelo los contempla y la interfaz los muestra como
-eventos no editables, pero no hay conector que los traiga— y la **copia
-periódica automática** de salvaguarda; la exportación bajo demanda sí funciona
-(`docs/despliegue-cloudflare.md` §12).
+La **copia periódica automática** de salvaguarda no está construida; la
+exportación bajo demanda sí funciona (`docs/despliegue-cloudflare.md` §12).
 
-El **recordatorio previo** ya avisa, pero solo dentro de la app de iOS y con la
-misma antelación para todo el mundo: se programa en el dispositivo a partir de la
-instantánea, treinta minutos antes de un evento con hora y la tarde anterior si
-ocupa la jornada completa. Lo que falta es la parte configurable —la tabla
-`preferencia_notificacion` existe en el esquema pero ni se sirve al cliente ni
-hay pantalla para tocarla—, de modo que hoy vale su valor por defecto: el
-recordatorio activo y los avisos de modificación desactivados.
+El **recordatorio previo** avisa, pero con la misma antelación para todo el
+mundo: se programa en el dispositivo a partir de la instantánea, treinta minutos
+antes de un evento con hora y la tarde anterior si ocupa la jornada completa. Lo
+que falta es la parte configurable —la tabla `preferencia_notificacion` existe en
+el esquema pero ni se sirve al cliente ni hay pantalla para tocarla—, de modo que
+hoy vale su valor por defecto.
 
-Los **avisos remotos** sí están construidos, y son la otra mitad: lo que se
-programa en el dispositivo solo alcanza a lo que ya se sabe, y que a otro le
-suene el teléfono porque acabas de pedirle un cambio de turno no lo puede
-programar nadie por adelantado. Los empuja el Worker por APNs, con Lío entero y
-los comentarios, y se encienden desde Ajustes → Avisos. Piden dos secretos
-(`docs/despliegue-cloudflare.md` §4.6) y, sin ellos, no se empuja nada y la
-aplicación funciona igual.
+Del **ciclo de la idea** queda por construir lo que analiza
+`specs/propuesta-idea-de-punta-a-punta.html`, incluido un punto sin retorno que
+hoy está escondido: entregar el regalo cierra la idea para siempre, y retirarlo
+después no la devuelve.
 
-La cáscara de iOS no se ha generado aquí: `npx cap add ios` hace `pod install` y
-eso solo funciona en macOS. Los pasos están en `pwa/README.md` y en el apartado 8
-de la guía de despliegue.
+La cáscara de iOS no se genera aquí: `npx cap add ios` hace `pod install` y eso
+solo funciona en macOS. Los pasos están en `pwa/README.md` y en el apartado 8 de
+la guía de despliegue. `ios/` no se versiona, así que todo lo que el proyecto de
+Xcode necesita y `cap sync` no hace lo aplica `pwa/scripts/patch-ios.mjs` en cada
+sincronización.
+
+Lo que queda abierto de cada módulo —cómo partir un sitio con cuarenta apuntes,
+qué hacer con los avisos de una semana fuera, si Hoy debería llevar botón
+flotante— se anota en el apartado «En curso» de `CLAUDE.md`, que es lo único de
+la documentación que se escribe a mano porque no se deduce del código.
