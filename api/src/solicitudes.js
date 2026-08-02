@@ -110,10 +110,18 @@ export async function pendientes(db) {
  * Quien fue rechazado y vuelve a pedirlo regresa a pendiente. Un rechazo es un
  * «ahora no», no una lista negra: si alguien insiste, es que ha hablado con
  * quien decide, y lo que corresponde es que vuelva a aparecer en la bandeja.
+ *
+ * **El nombre no es obligatorio, y eso es una decisión de la directriz 4.** Lo
+ * entrega Apple, pero solo en la primerísima autorización de esa cuenta: a
+ * partir de la segunda no llega, y exigirlo aquí obligaba a la pantalla a
+ * pedirlo, que es exactamente lo que la App Store rechaza. Sin nombre, quien
+ * decide tiene el correo y siempre puede escribirlo al aprobar; y quien espera
+ * puede ponerlo desde la sala de espera, que es una corrección voluntaria y no
+ * un peaje. Se guarda `''` y no `NULL` para no rehacer una tabla por esto: la
+ * columna es `NOT NULL` desde la `0003`.
  */
 export async function registrarSolicitud(db, { identificadorApple, correo, correoPrivado, nombre }) {
   const limpio = String(nombre || '').trim().slice(0, LARGO_NOMBRE);
-  if (!limpio) throw new Rechazo('hace falta un nombre para saber quién pide entrar');
 
   const existente = await solicitudPorApple(db, identificadorApple);
 
@@ -122,6 +130,9 @@ export async function registrarSolicitud(db, { identificadorApple, correo, corre
   }
 
   if (existente) {
+    // Volver a pedirlo sin nombre no borra el que ya hubiera: Apple deja de
+    // entregarlo a partir de la segunda autorización, y un reintento no puede
+    // dejar en blanco lo que quien decide ya estaba mirando.
     await db
       .prepare(
         `UPDATE solicitud_acceso
@@ -130,7 +141,12 @@ export async function registrarSolicitud(db, { identificadorApple, correo, corre
                 actualizado_en = datetime('now'), visto_en = datetime('now')
           WHERE identificador_apple = ?`,
       )
-      .bind(limpio, correo || null, correoPrivado ? 1 : 0, identificadorApple)
+      .bind(
+        limpio || existente.nombre_declarado || '',
+        correo || null,
+        correoPrivado ? 1 : 0,
+        identificadorApple,
+      )
       .run();
   } else {
     await db

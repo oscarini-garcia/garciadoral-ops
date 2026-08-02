@@ -984,29 +984,51 @@ vista. Va dentro del binario porque `npm run sync:ios` ejecuta antes
 `preparar-pwa.py`. Lo único que hay que hacer es decirlo en las notas de
 revisión, y decirlo en inglés, que es lo que lee quien revisa:
 
-> This is a private family organiser for a single household. Signing in with
-> Apple is open to anyone, but it does not grant access: it places you in a
-> waiting room until a household administrator approves you. We cannot provide
-> an approved account, because approval is what makes someone part of this
-> family's private records.
+> HOW TO REVIEW THIS APP WITHOUT AN ACCOUNT
 >
-> To review the full app without an account, tap **"Ver una demostración con
-> datos de ejemplo"** on the sign-in screen and pick any of the family members.
-> The same week shows different content depending on who is looking — that is
-> the core feature: gift plans stay hidden from their recipient.
+> On the sign-in screen, tap the second button, **"Ver una demostración con
+> datos de ejemplo"** ("See a demo with sample data"), then pick any family
+> member from the list. This opens the complete app — every screen, every
+> feature — with invented data and no account required.
 >
-> Account deletion (guideline 5.1.1(v)) is available at both stages, and you can
-> test it end to end without approval:
+> Please pick two different people one after the other. The same week shows
+> different content depending on who is looking, and that is the core feature:
+> a gift is hidden from the person who is going to receive it.
 >
-> - From the waiting room, **"Retirar mi solicitud"** deletes the pending
->   request and the email stored with it.
-> - Once approved, **Settings (gear icon, top right) → "Eliminar mi cuenta"**
->   unlinks the Apple ID, deletes devices, notification preferences and
->   permissions, and calls the Sign in with Apple REST API to revoke the token.
+> WHY THERE IS NO DEMO ACCOUNT
 >
-> Native capabilities in use: Sign in with Apple (native sheet), haptics, the
-> system share sheet, and local notifications scheduled on-device — reminders
-> never leave the phone.
+> This is a private organiser for one family. Sign in with Apple is open to
+> anyone, but signing in does not grant access: it places you in a waiting room
+> until a member of the household approves you. We cannot hand out an approved
+> account, because approval is exactly what makes someone part of this family's
+> private records. The demo mode above exists for this reason and shows the
+> full functionality.
+>
+> SIGN IN WITH APPLE (guideline 4)
+>
+> The app never asks for a name or an email address. Signing in with Apple
+> submits the access request on its own, using only what the Authentication
+> Services framework returns. If you want to set a display name, there is an
+> optional link in the waiting room; leaving it blank works and the request is
+> still valid.
+>
+> ACCOUNT DELETION (guideline 5.1.1(v))
+>
+> Testable end to end without approval:
+>
+> - From the waiting room, **"Retirar mi solicitud"** ("Withdraw my request")
+>   deletes the pending request and the email stored with it, and calls the
+>   Sign in with Apple REST API to revoke the token.
+> - Once approved, **Ajustes** (the rightmost item in the bottom tab bar) →
+>   **"Tu cuenta"** → **"Eliminar mi cuenta"** unlinks the Apple ID and deletes
+>   devices, notification preferences and permissions.
+>
+> NATIVE CAPABILITIES IN USE
+>
+> Sign in with Apple (native sheet), haptics, the system share sheet, local
+> notifications scheduled on-device, and remote push notifications via APNs
+> (used to tell another household member that something needs their answer).
+> The app is in Spanish; it is used by one family in Spain.
 
 Ese último párrafo no es relleno: la **4.2** (funcionalidad mínima) es el otro
 riesgo real de una aplicación que por dentro es una web, y conviene ponerle
