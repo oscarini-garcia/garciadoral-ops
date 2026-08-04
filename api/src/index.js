@@ -35,14 +35,15 @@
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
  */
 
-import { verificarTokenDeApple } from './apple.js';
+import { verificarTokenDeApple } from './portero/apple.js';
 import {
   coincideEnTiempoConstante,
   emitirEspera,
   emitirSesion,
   verificarSesionDeEspera,
   verificarSesionPlena,
-} from './sesion.js';
+} from './portero/sesion.js';
+import { Rechazo, SinCredencial } from './portero/errores.js';
 import {
   administradoresRestantes,
   aplicarCambio,
@@ -53,7 +54,6 @@ import {
 } from './repositorio.js';
 import { sincronizarViajes } from './viajes.js';
 import {
-  Rechazo,
   anotarLlegada,
   aprobarSolicitud,
   pendientes,
@@ -62,8 +62,9 @@ import {
   registrarSolicitud,
   retirarSolicitud,
   solicitudPorApple,
-} from './solicitudes.js';
-import { hayRevocacionConfigurada, revocarEnApple } from './revocacion.js';
+} from './portero/solicitudes.js';
+import { cuentas } from './cuentas.js';
+import { hayRevocacionConfigurada, revocarEnApple } from './portero/revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
 import { empujar, empujarSolicitud } from './avisos.js';
@@ -126,9 +127,12 @@ async function lectorAutenticado(peticion, env) {
   const sesion = await verificarSesionPlena(env.SESION_SECRETO, credencial(peticion));
   const persona = await personaPorId(env.DB, sesion.sub);
   if (!persona || !persona.tiene_cuenta || !persona.activa) {
-    throw new Error('la sesión ya no corresponde a una persona con cuenta activa');
+    throw new SinCredencial('la sesión ya no corresponde a una persona con cuenta activa');
   }
-  return persona;
+  // El cuerpo del token viaja con la persona: la baja necesita saber por qué
+  // plataforma entró esta sesión, y volver a verificar la misma credencial para
+  // leerlo es lo que dejó a `darDeBaja` llamando a una función sin importar.
+  return { ...persona, sesion };
 }
 
 async function administradorAutenticado(peticion, env) {
@@ -264,6 +268,13 @@ async function retirar(peticion, env) {
   const espera = await enEspera(peticion, env);
   const { codigo_apple: codigo } = await peticion.json().catch(() => ({}));
 
+  // Sin solicitud no hay nada que retirar ni que revocar: responder que ya
+  // está evita, de paso, que un token de espera sirva para hacer que este
+  // Worker llame a Apple tantas veces como se quiera.
+  if (!(await solicitudPorApple(env.DB, espera.sub))) {
+    return json({ retirada: true, revocado_en_apple: false, motivo_revocacion: 'sin_solicitud' });
+  }
+
   const revocacion = await revocarEnApple(env, {
     codigo,
     plataforma: espera.plataforma,
@@ -292,7 +303,7 @@ async function bandeja(peticion, env) {
 
 async function resolverSolicitud(peticion, env) {
   const actor = await administradorAutenticado(peticion, env);
-  const { id, accion, persona_id: personaId, persona, rol } = await peticion.json();
+  const { id, accion, persona_id: personaId, persona, rol, circulo } = await peticion.json();
 
   if (accion === 'rechazar') {
     return json(await rechazarSolicitud(env.DB, { id, actorId: actor.id }));
@@ -300,7 +311,7 @@ async function resolverSolicitud(peticion, env) {
   if (accion !== 'aprobar') return json({ error: `acción desconocida: ${accion}` }, 400);
 
   return json(
-    await aprobarSolicitud(env.DB, { id, personaId, persona, rol }),
+    await aprobarSolicitud(env.DB, cuentas, { id, personaId, persona, rol, circulo }),
   );
 }
 
@@ -322,12 +333,11 @@ async function resolverSolicitud(peticion, env) {
  */
 async function darDeBaja(peticion, env) {
   const lector = await lectorAutenticado(peticion, env);
-  const { plataforma } = await verificarSesion(env.SESION_SECRETO, credencial(peticion));
   const { codigo_apple: codigo } = await peticion.json().catch(() => ({}));
 
   const revocacion = await revocarEnApple(env, {
     codigo,
-    plataforma,
+    plataforma: lector.sesion.plataforma,
     redireccion: env.REDIRECCION_WEB || (env.ORIGENES_PERMITIDOS || '').split(',')[0].trim(),
   });
 
@@ -955,10 +965,10 @@ export default {
       // ya tiene cuenta son respuestas legítimas, y el cliente tiene que poder
       // distinguirlas de un fallo del servidor para saber qué decirle a quien
       // está mirando la pantalla.
+      if (error instanceof SinCredencial) return json({ error: mensaje }, 401, cors);
       if (error instanceof SinPermiso) return json({ error: mensaje }, 403, cors);
       if (error instanceof Rechazo) return json({ error: mensaje }, 409, cors);
-      const autenticacion = /sesión|token|firma/i.test(mensaje);
-      return json({ error: mensaje }, autenticacion ? 401 : 500, cors);
+      return json({ error: mensaje }, 500, cors);
     }
   },
 

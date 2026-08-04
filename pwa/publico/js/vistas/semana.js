@@ -15,10 +15,10 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
-  deslizarHorizontal, dobleToque, botonIcono, enlazar,
+  deslizarHorizontal, dobleToque, botonIcono, enfocarAlAbrir, enlazar,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
-import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible } from '../modelo.js';
+import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
   diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
@@ -1449,7 +1449,7 @@ function bloqueDeRegalos(evento, ctx) {
   return el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Regalos' }),
     ...regalos.map((regalo) => tarjetaDeRegalo(regalo, ctx)),
-    regalos.length ? null : el('p', { class: 'pista', texto: 'Todavía no hay ninguno.' }),
+    regalos.length ? null : el('p', { class: 'vacio', texto: 'Todavía no hay ninguno.' }),
     el('button', {
       class: 'boton', 'data-tono': 'discreto', type: 'button',
       onclick: () => abrirSelectorDeRegalo(ctx, { evento }),
@@ -1465,11 +1465,15 @@ function tarjetaDeRegalo(regalo, ctx) {
   }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: idea?.titulo || 'Regalo' }),
-      el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: regalo.estado }),
+      // El mismo texto de estado que la pestaña de Regalos, no el valor crudo de
+      // la columna: el mismo regalo no puede decir «pendiente» aquí y «por
+      // comprar» allí. Y el pie con su mismo vocabulario, que es el que quedó
+      // tras retirar el de «llevar» (specs/ux.md §6.2).
+      el('span', { class: 'etiqueta empujar', 'data-tono': 'regalo', texto: textoDeEstado(regalo).toLowerCase() }),
     ]),
     el('p', {
       texto: `Para ${ctx.vista.nombre(regalo.destinatario_principal_id)}` +
-        (regalo.responsable_id ? ` · lo lleva ${ctx.vista.nombre(regalo.responsable_id)}` : ' · sin responsable'),
+        (regalo.responsable_id ? ` · se encarga ${ctx.vista.nombre(regalo.responsable_id)}` : ' · sin encargado'),
     }),
   ]);
 }
@@ -1519,13 +1523,14 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
       await retirar('evento', existente.id);
       toque('media');
       cerrarHoja();
-      avisar('Evento retirado');
+      avisar('Evento borrado');
       ctx.refrescar();
     },
   }) : null;
 
   abrirHoja(existente ? 'Editar evento' : 'Nuevo evento', (cuerpo) => {
-    const titulo = entrada({ value: borrador.titulo, autofocus: true });
+    const titulo = entrada({ value: borrador.titulo });
+    enfocarAlAbrir(titulo);
     const dia = el('input', { type: 'date', value: borrador.dia });
 
     // «Hasta» va aquí y no detrás de «Más opciones»: es la otra mitad del

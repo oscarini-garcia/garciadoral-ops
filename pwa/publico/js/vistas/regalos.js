@@ -15,7 +15,7 @@
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar,
   acordeon, botonIcono, carruselDePropuestas, cerrarDeslizada, conVerbosAlDeslizar,
-  dobleToque, icono,
+  dobleToque, enfocarAlAbrir, icono,
 } from '../ui.js';
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
@@ -1455,7 +1455,7 @@ function abrirPromocion(idea, ctx) {
       }));
       return;
     }
-    const ocasion = seleccion(abiertas.map((o) => ({ valor: o.id, texto: `${o.nombre} · ${o.fecha}` })), abiertas[0].id);
+    const ocasion = seleccion(abiertas.map((o) => ({ valor: o.id, texto: `${o.nombre} · ${fechaCorta(o.fecha)}` })), abiertas[0].id);
     let para = destinos[0] || null;
     cuerpo.append(campo('Ocasión', ocasion), campoDeGente(ctx, {
       etiqueta: 'Para quién',
@@ -1812,10 +1812,11 @@ function confirmarCierreDeOcasion(ocasion, ctx) {
       texto: 'Las ideas que salieron de aquí se dan por cerradas y salen del banco, igual que cuando un regalo se entrega.',
     }));
 
+    // El verbo delante y «Cancelar» a su derecha, como en los formularios: la
+    // confirmación no es una figura aparte con las reglas al revés.
     cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
       el('button', {
-        class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+        class: 'boton crecer', type: 'button',
         onclick: async () => {
           await guardar('ocasion', ocasion.id, { estado: 'cerrada' });
           toque('media');
@@ -1824,6 +1825,7 @@ function confirmarCierreDeOcasion(ocasion, ctx) {
           ctx.refrescar();
         },
       }, ['Cerrarla']),
+      el('button', { class: 'boton crecer', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });
 }
@@ -1877,21 +1879,23 @@ function confirmarBorradoDeIdea(idea, ctx, { alCancelar = null } = {}) {
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
-        class: 'boton crecer', type: 'button',
-        // Reabrir ya cierra esta: la hoja es una sola. Cerrarla antes a mano
-        // dejaría un parpadeo entre las dos.
-        onclick: () => (alCancelar ? alCancelar() : cerrarHoja()),
-      }, ['Cancelar']),
-      el('button', {
         class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
         onclick: async () => {
           await retirar('idea', idea.id);
           toque('media');
           cerrarHoja();
-          avisar(esDeseo ? 'Deseo retirado' : 'Idea retirada');
+          // La confirmación repite el verbo del botón: «Borrar» no puede
+          // confirmar con «retirada», que aquí es otra cosa.
+          avisar(esDeseo ? 'Deseo borrado' : 'Idea borrada');
           ctx.refrescar();
         },
       }, ['Borrar']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+        // Reabrir ya cierra esta: la hoja es una sola. Cerrarla antes a mano
+        // dejaría un parpadeo entre las dos.
+        onclick: () => (alCancelar ? alCancelar() : cerrarHoja()),
+      }, ['Cancelar']),
     ]));
   });
 }
@@ -1916,7 +1920,6 @@ function confirmarBorradoDeOcasion(ocasion, ctx) {
     }));
 
     cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
       el('button', {
         class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
         onclick: async () => {
@@ -1924,10 +1927,11 @@ function confirmarBorradoDeOcasion(ocasion, ctx) {
           await retirar('ocasion', ocasion.id);
           toque('media');
           cerrarHoja();
-          avisar('Ocasión retirada');
+          avisar('Ocasión borrada');
           ctx.refrescar();
         },
       }, ['Borrar']),
+      el('button', { class: 'boton crecer', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });
 }
@@ -1981,7 +1985,8 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   const esUnDeseo = existente ? esDeseoPropio(existente, ctx) : paraPersona === ctx.vista.yo.id;
   abrirHoja(existente ? (esUnDeseo ? 'Editar el deseo' : 'Editar idea')
     : esUnDeseo ? 'Pedir algo' : 'Apuntar una idea', (cuerpo) => {
-    const titulo = entrada({ value: existente?.titulo || '', autofocus: true });
+    const titulo = entrada({ value: existente?.titulo || '' });
+    enfocarAlAbrir(titulo);
 
     // El destello vive dentro del campo que va a rellenar, al final, como la
     // lupa de un buscador: no gasta una línea y no hay que explicar qué campo
@@ -2182,7 +2187,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     titulo.addEventListener('keydown', (evento) => { if (evento.key === 'Enter') guardarIdea(); });
 
     cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', { class: 'boton crecer', type: 'button', onclick: guardarIdea }, ['Guardar']),
+      el('button', { class: 'boton crecer', type: 'button', onclick: guardarIdea }, [existente ? 'Guardar' : 'Crear']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   }, [borrarIdea]);

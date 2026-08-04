@@ -7,7 +7,8 @@
  * habla con la base.
  */
 
-import { contarPendientes } from './solicitudes.js';
+import { contarPendientes } from './portero/solicitudes.js';
+import { Rechazo } from './portero/errores.js';
 import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
 
 const CAMPOS = {
@@ -270,9 +271,7 @@ export async function personaPorId(db, id) {
  */
 export async function darDeBajaCuenta(db, personaId) {
   await db.batch([
-    db.prepare('DELETE FROM dispositivo WHERE persona_id = ?').bind(personaId),
-    db.prepare('DELETE FROM preferencia_notificacion WHERE persona_id = ?').bind(personaId),
-    db.prepare('DELETE FROM acceso_categoria WHERE persona_id = ?').bind(personaId),
+    ...restosDeCuenta(db, personaId),
     db.prepare(
       `UPDATE persona
           SET identificador_apple = NULL,
@@ -282,6 +281,21 @@ export async function darDeBajaCuenta(db, personaId) {
         WHERE id = ?`,
     ).bind(personaId),
   ]);
+}
+
+/**
+ * Lo que una cuenta deja sembrado fuera de su fila: los aparatos con su token
+ * de avisos, las preferencias y los accesos a categorías restringidas. Se barre
+ * igual en la baja voluntaria y en la retirada de la cuenta desde la ficha
+ * —los dos caminos acaban en el mismo estado—; sin esto, el segundo dejaba el
+ * canal de push vivo a nombre de alguien que ya no puede entrar.
+ */
+function restosDeCuenta(db, personaId) {
+  return [
+    db.prepare('DELETE FROM dispositivo WHERE persona_id = ?').bind(personaId),
+    db.prepare('DELETE FROM preferencia_notificacion WHERE persona_id = ?').bind(personaId),
+    db.prepare('DELETE FROM acceso_categoria WHERE persona_id = ?').bind(personaId),
+  ];
 }
 
 /** Cuántas personas con cuenta administradora quedarían sin contar a `exceptoId`. */
@@ -300,14 +314,20 @@ export async function administradoresRestantes(db, exceptoId) {
 // Escritura
 // ---------------------------------------------------------------------------
 
-class Rechazo extends Error {}
-
 /** Quién puede tocar qué. La configuración del hogar es de los administradores;
  *  los contenidos, de cualquier miembro (spec funcional §2). */
 function comprobarPermiso(tipo, actor, anterior, campos) {
   const soloAdministradores = ['persona', 'categoria', 'etiqueta', 'presupuesto', 'lio_cuadro'];
   if (soloAdministradores.includes(tipo) && actor.rol !== 'administrador') {
     throw new Rechazo(`solo un administrador puede modificar ${tipo}`);
+  }
+
+  // El vínculo con Apple lo establece la aprobación de una solicitud, que es la
+  // única operación que comprueba que ese identificador no esté ya en otra
+  // ficha. Por esta vía solo se puede deshacer —ponerlo a NULL, que es lo que
+  // hace quitarle la cuenta a alguien desde su ficha—, nunca escribir uno.
+  if (tipo === 'persona' && 'identificador_apple' in campos && campos.identificador_apple !== null) {
+    throw new Rechazo('el vínculo con Apple solo lo establece la aprobación de una solicitud');
   }
 
   // Los paseos son de la casa: quien no está en el círculo cerrado no los ve
@@ -558,6 +578,15 @@ export async function aplicarCambio(db, actor, cambio) {
         .prepare(`UPDATE ${tipo} SET ${asignaciones}, actualizado_en = ? WHERE id = ?`)
         .bind(...claves.map((c) => propuestos[c]), ahora, id)
         .run();
+    }
+
+    // Quitarle la cuenta a alguien desde su ficha es la misma operación que la
+    // baja voluntaria, y tiene que dejar el mismo estado: sin aparatos con
+    // token de avisos, sin preferencias y sin accesos a categorías. Sin esto,
+    // la expulsión cortaba la sesión pero dejaba el canal de push vivo.
+    if (tipo === 'persona' && bool(anterior.tiene_cuenta)
+      && 'tiene_cuenta' in propuestos && !propuestos.tiene_cuenta) {
+      await db.batch(restosDeCuenta(db, id));
     }
   } else {
     const conId = ['id', ...claves];

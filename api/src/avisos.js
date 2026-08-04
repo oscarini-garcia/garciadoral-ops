@@ -441,9 +441,12 @@ export async function empujarSolicitud(env, solicitud, { enviar = enviarAviso } 
     cuerpo: solicitud.correo
       ? `${solicitud.correo}${solicitud.correo_privado ? ' · buzón de reenvío de Apple' : ''}`
       : 'Ha elegido ocultar su correo.',
-    // Insistir actualiza la solicitud en lugar de crear otra, así que el aviso
-    // de la segunda vez sustituye al de la primera en la pantalla de bloqueo.
-    agrupa: `solicitud:${solicitud.id}`,
+    // Se agrupa por el identificador de Apple y no por el de la fila: retirar
+    // la solicitud y volver a entrar crea una fila con otro identificador, y
+    // agrupando por este cada reintento de la misma persona sonaba como un
+    // aviso nuevo, sin tope. Así, el de la segunda vez sustituye al de la
+    // primera en la pantalla de bloqueo.
+    agrupa: `solicitud:${solicitud.identificador_apple}`,
     urgente: true,
     datos: { tipo: 'solicitud', solicitud_id: solicitud.id },
   };

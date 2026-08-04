@@ -3,18 +3,16 @@
  *
  * Vive en su propio módulo, y no dentro de `repositorio.js`, por la misma razón
  * por la que vive en su propia tabla: `repositorio.js` habla del registro del
- * hogar, y una solicitud todavía no forma parte de él. La única función que
+ * hogar, y una solicitud todavía no forma parte de él. La única operación que
  * cruza esa frontera es `aprobarSolicitud`, que es exactamente la operación de
- * cruzarla (specs/autenticacion.md §2).
+ * cruzarla (specs/autenticacion.md §2) — y por eso no escribe la cuenta ella
+ * misma: se la pide al adaptador de cuentas que le pasa la aplicación, que es
+ * quien conoce su propio esquema. Este módulo solo sabe de `solicitud_acceso`.
  */
 
-/**
- * Un «no» previsible: la sala llena, una solicitud que el otro administrador
- * acaba de resolver, una persona que ya tiene cuenta. No son averías, y quien
- * llama necesita poder distinguirlas de un fallo para saber qué decir en
- * pantalla.
- */
-export class Rechazo extends Error {}
+import { Rechazo } from './errores.js';
+
+export { Rechazo };
 
 /** Tope de solicitudes en espera a la vez. Deliberadamente bajo: en un hogar
  *  llegan tres al año, y con este techo cualquier intento de inundar la bandeja
@@ -43,21 +41,31 @@ function comoSalida(fila) {
  * así, el primero que asome barre lo que sobra. El precio es que en un hogar
  * completamente inactivo las filas sobreviven a su fecha, y como nadie las lee
  * entretanto, es un precio barato.
+ *
+ * Los catorce días de una pendiente cuentan desde la última vez que su titular
+ * asomó, no desde la primera: quien abre la aplicación cada mañana esperando
+ * respuesta está diciendo que su solicitud sigue viva, y borrársela el día
+ * catorce solo obligaba a la aplicación a reenviarla con otro identificador
+ * —y a los administradores, a recibir otro aviso por la misma persona—.
  */
-export async function purgarCaducadas(db) {
+export async function purgarCaducadas(db, {
+  diasPendiente = DIAS_PENDIENTE,
+  diasRechazada = DIAS_RECHAZADA,
+} = {}) {
   await db.batch([
     db
       .prepare(
         `DELETE FROM solicitud_acceso
-          WHERE estado = 'pendiente' AND creado_en < datetime('now', ?)`,
+          WHERE estado = 'pendiente'
+            AND COALESCE(visto_en, creado_en) < datetime('now', ?)`,
       )
-      .bind(`-${DIAS_PENDIENTE} days`),
+      .bind(`-${diasPendiente} days`),
     db
       .prepare(
         `DELETE FROM solicitud_acceso
           WHERE estado = 'rechazada' AND actualizado_en < datetime('now', ?)`,
       )
-      .bind(`-${DIAS_RECHAZADA} days`),
+      .bind(`-${diasRechazada} days`),
   ]);
 }
 
@@ -120,19 +128,24 @@ export async function pendientes(db) {
  * un peaje. Se guarda `''` y no `NULL` para no rehacer una tabla por esto: la
  * columna es `NOT NULL` desde la `0003`.
  */
-export async function registrarSolicitud(db, { identificadorApple, correo, correoPrivado, nombre }) {
+export async function registrarSolicitud(
+  db,
+  { identificadorApple, correo, correoPrivado, nombre },
+  { tope = TOPE_PENDIENTES } = {},
+) {
   const limpio = String(nombre || '').trim().slice(0, LARGO_NOMBRE);
 
   const existente = await solicitudPorApple(db, identificadorApple);
 
-  if (!existente && (await contarPendientes(db)) >= TOPE_PENDIENTES) {
+  if (!existente && (await contarPendientes(db)) >= tope) {
     throw new Rechazo('ahora mismo no se admiten solicitudes nuevas; inténtalo más adelante');
   }
 
   if (existente) {
-    // Volver a pedirlo sin nombre no borra el que ya hubiera: Apple deja de
-    // entregarlo a partir de la segunda autorización, y un reintento no puede
-    // dejar en blanco lo que quien decide ya estaba mirando.
+    // Volver a pedirlo sin nombre no borra el que ya hubiera, y con el correo
+    // pasa lo mismo: Apple deja de entregar los dos a partir de la segunda
+    // autorización, y un reintento —o el enlace de «Poner mi nombre», que
+    // reenvía— no puede dejar en blanco lo que quien decide ya estaba mirando.
     await db
       .prepare(
         `UPDATE solicitud_acceso
@@ -143,8 +156,8 @@ export async function registrarSolicitud(db, { identificadorApple, correo, corre
       )
       .bind(
         limpio || existente.nombre_declarado || '',
-        correo || null,
-        correoPrivado ? 1 : 0,
+        correo || existente.correo || null,
+        (correo ? correoPrivado : existente.correo_privado) ? 1 : 0,
         identificadorApple,
       )
       .run();
@@ -191,97 +204,70 @@ export async function rechazarSolicitud(db, { id, actorId }) {
 }
 
 /**
- * Aprueba: traslada a alguien de la sala de espera al registro del hogar.
+ * Aprueba: traslada a alguien de la sala de espera al registro de la
+ * aplicación.
  *
- * Es el único punto del código donde eso ocurre, y tiene dos caminos legítimos.
- * Se vincula a una persona **que ya figuraba sin cuenta** —el caso de la abuela,
- * que conserva su ficha, su fecha de nacimiento y todo lo que otros escribieron
- * con ella— o se crea una persona nueva. El primero es fácil de olvidar y es el
- * que evita duplicar a alguien que ya estaba.
+ * Es el único punto del código donde eso ocurre, y la mitad que conoce el
+ * esquema de la cuenta local no está aquí: la pone `cuentas`, el adaptador que
+ * pasa la aplicación. Debe ofrecer cuatro funciones:
  *
- * Todo va en un solo lote: o queda hecho, o no queda nada a medias.
+ *   - `validar(datos)` — el primer «no» barato: rol desconocido, círculo que no
+ *     existe. Se llama antes de tocar la base.
+ *   - `vinculadaA(db, apple)` — `{ id, nombre }` de la cuenta que ya tuviera
+ *     ese identificador, o nada.
+ *   - `prepararVinculo(db, datos)` / `prepararAlta(db, datos)` — devuelven
+ *     `{ id, sentencias }`: las sentencias que crean o vinculan la cuenta, sin
+ *     ejecutarlas.
+ *
+ * Las sentencias del adaptador y el borrado de la solicitud van en **un solo
+ * lote**: o queda hecho, o no queda nada a medias. Si dos administradores
+ * aprueban a la vez, los dos llegan hasta el lote —las comprobaciones ya habían
+ * pasado para ambos— y es la restricción de unicidad del identificador en la
+ * tabla de cuentas la que hace fracasar al segundo; aquí se convierte ese fallo
+ * de base de datos en un mensaje que se puede enseñar.
  */
-export async function aprobarSolicitud(db, { id, personaId, persona, rol }) {
-  if (!['administrador', 'miembro'].includes(rol)) {
-    throw new Rechazo(`rol no admitido: ${rol}`);
-  }
+export async function aprobarSolicitud(db, cuentas, datos) {
+  if (cuentas.validar) cuentas.validar(datos);
 
   const solicitud = await db
     .prepare(`SELECT * FROM solicitud_acceso WHERE id = ? AND estado = 'pendiente'`)
-    .bind(id)
+    .bind(datos.id)
     .first();
   if (!solicitud) throw new Rechazo('esa solicitud ya estaba resuelta');
 
   const apple = solicitud.identificador_apple;
 
-  // Ese identificador no puede estar ya en otra ficha. La restricción de
-  // unicidad de `persona` lo impediría de todos modos, pero con un error de
-  // base de datos que no le dice nada a nadie.
-  const ocupada = await db
-    .prepare('SELECT id, nombre FROM persona WHERE identificador_apple = ?')
-    .bind(apple)
-    .first();
-  if (ocupada && ocupada.id !== personaId) {
+  // Ese identificador no puede estar ya en otra cuenta. La restricción de
+  // unicidad lo impediría de todos modos, pero con un error de base de datos
+  // que no le dice nada a nadie.
+  const ocupada = await cuentas.vinculadaA(db, apple);
+  if (ocupada && ocupada.id !== datos.personaId) {
     throw new Rechazo(`ese identificador de Apple ya está vinculado a ${ocupada.nombre}`);
   }
 
-  let destino = personaId;
-  const sentencias = [];
-
-  if (personaId) {
-    const existente = await db
-      .prepare('SELECT * FROM persona WHERE id = ? AND activa = 1')
-      .bind(personaId)
-      .first();
-    if (!existente) throw new Rechazo('esa persona no figura en el registro');
-    if (existente.tiene_cuenta) throw new Rechazo(`${existente.nombre} ya tiene cuenta`);
-
-    sentencias.push(
-      db
-        .prepare(
-          `UPDATE persona
-              SET tiene_cuenta = 1, rol = ?, identificador_apple = ?,
-                  actualizado_en = datetime('now')
-            WHERE id = ?`,
-        )
-        .bind(rol, apple, personaId),
-    );
-  } else {
-    const nombre = String(persona?.nombre || solicitud.nombre_declarado || '').trim();
-    if (!nombre) throw new Rechazo('hace falta un nombre para crear la ficha');
-
-    destino = crypto.randomUUID();
-    sentencias.push(
-      db
-        .prepare(
-          `INSERT INTO persona
-             (id, nombre, apellidos, fecha_nacimiento, parentesco,
-              tiene_cuenta, identificador_apple, rol, activa)
-           VALUES (?, ?, ?, ?, ?, 1, ?, ?, 1)`,
-        )
-        .bind(
-          destino,
-          nombre,
-          String(persona?.apellidos || '').trim(),
-          persona?.fecha_nacimiento || null,
-          String(persona?.parentesco || '').trim(),
-          apple,
-          rol,
-        ),
-    );
-  }
+  const destino = datos.personaId
+    ? await cuentas.prepararVinculo(db, { ...datos, apple, solicitud })
+    : await cuentas.prepararAlta(db, { ...datos, apple, solicitud });
 
   // Aprobada es borrada. Conservar la fila dejaría el correo de alguien que ya
-  // está en el hogar guardado para siempre, porque ninguna caducidad alcanza a
-  // una solicitud resuelta a favor. A quien entró se le busca en `persona`.
-  sentencias.push(db.prepare('DELETE FROM solicitud_acceso WHERE id = ?').bind(id));
+  // está dentro guardado para siempre, porque ninguna caducidad alcanza a una
+  // solicitud resuelta a favor. A quien entró se le busca en su cuenta.
+  const sentencias = [
+    ...destino.sentencias,
+    db.prepare('DELETE FROM solicitud_acceso WHERE id = ?').bind(datos.id),
+  ];
 
-  // Si dos administradores aprueban a la vez, los dos llegan hasta aquí: la
-  // comprobación de arriba ya había pasado para ambos. Lo que impide el
-  // desaguisado es la unicidad de `persona.identificador_apple`, que hace
-  // fracasar el segundo lote entero en lugar de crear dos fichas.
-  await db.batch(sentencias);
-  return { resuelta: true, estado: 'aprobada', persona_id: destino };
+  try {
+    await db.batch(sentencias);
+  } catch (error) {
+    // La carrera de los dos administradores, resuelta por la base: al segundo
+    // lote lo tumba la unicidad, y eso no es una avería sino un «ya está hecho».
+    if (/unique|constraint/i.test(String(error?.message || error))) {
+      throw new Rechazo('esa solicitud acaba de resolverla otro administrador');
+    }
+    throw error;
+  }
+  return { resuelta: true, estado: 'aprobada', persona_id: destino.id };
 }
 
 /** D1 informa de las filas afectadas en `meta.changes`. */

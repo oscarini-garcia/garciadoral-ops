@@ -13,7 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
 
-import { hayRevocacionConfigurada, revocarEnApple, secretoDeCliente } from '../src/revocacion.js';
+import { hayRevocacionConfigurada, revocarEnApple, secretoDeCliente } from '../src/portero/revocacion.js';
 import { darDeBajaCuenta } from '../src/repositorio.js';
 
 // --------------------------------------------------------------- Utilidades --

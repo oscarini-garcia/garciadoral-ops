@@ -314,8 +314,10 @@ cualquiera puede llamar a la puerta. Tres frenos, ninguno complicado:
   No es una barrera infranqueable, pero descarta el abuso trivial.
 
 **Caducidad.** Las aprobadas desaparecen en el acto —aprobar es borrar—, las
-pendientes sin resolver se borran a los catorce días y las rechazadas a los
-treinta. La purga la hace el propio Worker al paso, en los dos
+pendientes sin resolver se borran a los catorce días —contados desde la última
+vez que su titular asomó, no desde la primera: quien abre la aplicación cada
+mañana esperando está diciendo que su solicitud sigue viva— y las rechazadas a
+los treinta. La purga la hace el propio Worker al paso, en los dos
 momentos en que alguien mira esta tabla: cuando alguien intenta entrar y cuando
 un administrador abre la bandeja. No hay tarea programada, y por tanto tampoco
 credenciales que custodiar ni un proceso que pueda llevar meses caído sin que

@@ -14,7 +14,8 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, entrada, icono, seleccion,
+  el, vaciar, abrirHoja, cerrarHoja, acordeon, avisar, botonIcono, campo, enfocarAlAbrir, entrada,
+  icono, seleccion,
 } from './ui.js';
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista, nuevoId } from './modelo.js';
@@ -22,20 +23,14 @@ import {
   darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardar, guardarAjustesDeIa, iniciar,
   instantanea, leerAjustesDeIa, probarRedaccion, refrescarViajes, retirar, sincronizar, suscribir,
 } from './sincronizacion.js';
-import {
-  cargarConfiguracion,
-  codigoDeAutorizacion,
-  consultarSolicitud,
-  eliminarLaCuenta,
-  entrarConApple,
-  pedirEntrar,
-  retirarSolicitud,
-} from './sesion.js';
+import { cargarConfiguracion, codigoDeAutorizacion, eliminarLaCuenta } from './sesion.js';
+import { iniciarAcceso, mostrarAcceso, volverALaEspera } from './acceso.js';
 import { cargarRegistroDemo, componerDemo } from './demo.js';
 import {
   HORIZONTE_RECORDATORIOS_DIAS,
   activarAvisosRemotos,
   alTocarUnAviso,
+  cancelarRecordatorios,
   comprobarActualizacion,
   copiar,
   desactivarAvisosRemotos,
@@ -62,7 +57,8 @@ import {
 import {
   abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
 } from './vistas/regalos.js';
-import { abrirBandeja as abrirBandejaDeSolicitudes, pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
+import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
+import { abrirBandeja as abrirBandejaDeSolicitudes } from './bandeja.js';
 import {
   abrirApunte, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
 } from './vistas/sitios.js';
@@ -106,6 +102,16 @@ async function arrancar() {
   iniciarNativo();
   configuracion = await cargarConfiguracion();
 
+  // La puerta es un módulo aparte (`acceso.js`) y esto son sus enganches: qué
+  // hacer cuando alguien entra con cuenta, qué demostración ofrecer y qué pie
+  // ponerle a la sala de espera.
+  iniciarAcceso({
+    configuracion,
+    alEntrar: (respuesta) => arrancarAplicacion(respuesta),
+    verDemo: () => elegirObservadorDemo(),
+    pie: () => nuevoPieDeVersion(),
+  });
+
   const sesion = leerSesion();
   if (sesion?.demostracion) return arrancarDemostracion(sesion.observador);
   if (sesion?.token) return arrancarAplicacion(sesion);
@@ -127,310 +133,6 @@ function registrarServiceWorker() {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => { /* sin caché, pero funcional */ });
   });
-}
-
-// ------------------------------------------------------------------ Acceso --
-
-function mostrarAcceso(mensaje = null) {
-  document.getElementById('aplicacion').hidden = true;
-  document.getElementById('espera').hidden = true;
-  const acceso = document.getElementById('acceso');
-  acceso.hidden = false;
-
-  const aviso = document.getElementById('accesoAviso');
-  aviso.hidden = !mensaje;
-  if (mensaje) aviso.textContent = mensaje;
-
-  const boton = document.getElementById('botonApple');
-  boton.onclick = async () => {
-    try {
-      const respuesta = await entrarConApple(configuracion);
-
-      // Sin cuenta no hay error que mostrar: es el estado normal de quien acaba
-      // de descargarse la aplicación, y lo que toca es la sala de espera.
-      if (respuesta.estado !== 'activa') {
-        acceso.hidden = true;
-        guardarSesion({ espera: respuesta.token_espera });
-        return pintarEspera(respuesta.token_espera, respuesta, respuesta.nombre_apple);
-      }
-
-      // Se descarta cualquier instantánea anterior: el almacén local pertenece
-      // a un titular concreto y no debe sobrevivir a un cambio de persona.
-      await olvidarTodo();
-      guardarSesion({ token: respuesta.token, persona: respuesta.persona });
-      acceso.hidden = true;
-      await arrancarAplicacion(respuesta);
-    } catch (error) {
-      mostrarAcceso(error.message);
-    }
-  };
-  boton.onkeydown = (evento) => { if (evento.key === 'Enter' || evento.key === ' ') boton.click(); };
-
-  document.getElementById('botonDemo').onclick = () => elegirObservadorDemo();
-}
-
-// ---------------------------------------------------------- Sala de espera --
-
-/**
- * Vuelve a la sala de espera al abrir la aplicación, y de paso pregunta.
- *
- * Si la aprobación llegó mientras tanto, la API lo dice y aquí solo queda
- * mandar a esa persona por la puerta de siempre: entrar con Apple otra vez,
- * ahora ya con cuenta. Si la credencial ha caducado —dura siete días— se vuelve
- * a la pantalla de acceso sin drama.
- */
-async function volverALaEspera(token) {
-  try {
-    const situacion = await consultarSolicitud(configuracion, token);
-    if (situacion.estado === 'activa') {
-      borrarSesion();
-      return mostrarAcceso('Ya tienes acceso. Vuelve a entrar con Apple.');
-    }
-    return pintarEspera(token, situacion);
-  } catch {
-    borrarSesion();
-    return mostrarAcceso();
-  }
-}
-
-const TEXTO_ESPERA = {
-  pendiente: {
-    titulo: 'Tu solicitud está hecha.',
-    cuerpo: 'La revisa una persona, así que no hay un plazo. Cuando te aprueben, entra otra vez con Apple y ya estarás dentro.',
-  },
-  rechazada: {
-    titulo: 'De momento, no.',
-    cuerpo: 'Esta cuenta no tiene acceso a la agenda. Si crees que es un error, habla con quien te pasó la aplicación.',
-  },
-};
-
-function pintarEspera(token, situacion, nombreDeApple = null) {
-  document.getElementById('aplicacion').hidden = true;
-  document.getElementById('acceso').hidden = true;
-  document.getElementById('espera').hidden = false;
-
-  const marco = vaciar(document.getElementById('esperaMarco'));
-
-  if (situacion.estado === 'sin_solicitud') {
-    // Nunca se pregunta nada aquí, haya dado Apple el nombre o no. Pedir después
-    // de Sign in with Apple un dato que el marco de Apple ya entrega es lo que
-    // rechaza la directriz 4 de la App Store, y el nombre solo llega en la
-    // primerísima autorización: un formulario «solo para cuando falte» acaba
-    // siendo el formulario de todo el mundo a partir de la segunda vez.
-    return pedirAccesoSinPreguntar(marco, token, situacion, nombreDeApple);
-  }
-
-  const texto = TEXTO_ESPERA[situacion.estado] || TEXTO_ESPERA.pendiente;
-  marco.append(
-    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
-    el('h1', { texto: texto.titulo }),
-    el('p', { class: 'acceso-texto', texto: texto.cuerpo }),
-  );
-
-  if (situacion.estado === 'pendiente') {
-    marco.append(lineaDelNombre(token, situacion));
-
-    marco.append(el('button', {
-      class: 'boton crecer', type: 'button',
-      onclick: async (evento) => {
-        const boton = evento.currentTarget;
-        boton.disabled = true;
-        boton.textContent = 'Comprobando…';
-        await volverALaEspera(token);
-      },
-    }, ['Comprobar si ya está']));
-  }
-
-  // Retirar tiene que estar aquí, y no es una comodidad: desde que se guarda el
-  // correo de alguien, la directriz 5.1.1(v) de la App Store exige que pueda
-  // borrarlo desde dentro de la aplicación, tenga cuenta o no.
-  marco.append(el('button', {
-    class: 'enlace-discreto', type: 'button',
-    onclick: () => confirmarRetirada(token),
-  }, ['Retirar mi solicitud']));
-
-  marco.append(el('button', {
-    class: 'enlace-discreto', type: 'button', onclick: () => elegirObservadorDemo(),
-  }, ['Ver una demostración mientras tanto']));
-
-  // Quien espera no tiene barra de pestañas ni Ajustes: sin esto no habría
-  // manera de traerse una versión nueva desde aquí, que es justo donde puede
-  // hacer falta si lo que falla es el acceso.
-  marco.append(nuevoPieDeVersion());
-}
-
-/**
- * Con qué nombre se está esperando, y cómo cambiarlo.
- *
- * Existe porque el nombre ya no lo teclea nadie: lo pone Apple y la solicitud
- * sale sin que quien la manda lo haya visto. Puede llegar a medias, o ser el de
- * la cuenta y no por el que le conocen en casa, y quien decide solo ve eso.
- *
- * **Y puede no llegar**, que es lo normal a partir de la segunda autorización.
- * Entonces esta línea es lo único que hay para ponerlo, y sigue siendo
- * voluntaria: la solicitud ya está hecha y sin nombre se aprueba igual, con el
- * correo. Un campo obligatorio en este punto es lo que rechazó la directriz 4.
- *
- * Corregirlo es volver a mandar la solicitud: el servidor actualiza la que ya
- * existe en lugar de crear otra, así que no hace falta nada más.
- */
-function lineaDelNombre(token, situacion) {
-  const linea = el('p', { class: 'pista' });
-
-  const mostrar = () => {
-    vaciar(linea).append(
-      situacion.nombre
-        ? `La has pedido como ${situacion.nombre}. `
-        : 'La has pedido con tu correo y sin nombre. ',
-      el('button', { class: 'enlace-en-linea', type: 'button', onclick: editar }, [
-        situacion.nombre ? 'Cambiar' : 'Poner mi nombre',
-      ]),
-    );
-  };
-
-  function editar() {
-    const nombre = entrada({ value: situacion.nombre || '', placeholder: '<tu nombre>', autocomplete: 'name' });
-    const guardarlo = el('button', {
-      class: 'boton', type: 'button',
-      onclick: async () => {
-        const limpio = nombre.value.trim();
-        if (!limpio) { avisar('Falta tu nombre'); return; }
-        guardarlo.disabled = true;
-        guardarlo.textContent = 'Guardando…';
-        try {
-          const resultado = await pedirEntrar(configuracion, token, limpio);
-          situacion.nombre = resultado.nombre || limpio;
-          mostrar();
-          avisar('Nombre corregido');
-        } catch (error) {
-          guardarlo.disabled = false;
-          guardarlo.textContent = 'Guardar';
-          avisar(error.message || 'No se ha podido cambiar.');
-        }
-      },
-    }, ['Guardar']);
-
-    vaciar(linea).append(campo('Tu nombre', nombre), guardarlo);
-    nombre.focus();
-  }
-
-  mostrar();
-  return linea;
-}
-
-/**
- * Manda la solicitud sin preguntar nada, con el nombre que Apple haya dado o
- * sin ninguno.
- *
- * Es el único camino: entrar con Apple **es** pedir entrar. Lo que Apple
- * entrega —el `sub`, el correo y, la primerísima vez, el nombre— ya identifica
- * a quien llama, y volver a pedirlo en una pantalla es lo que rechaza la
- * directriz 4. Sin nombre la solicitud sale igual y quien decide ve el correo;
- * ponerlo después es un enlace en la pantalla de espera, no un peaje.
- *
- * Si algo falla, un botón para volver a intentarlo. Antes se caía al
- * formulario, que era pedir un dato a cambio de un fallo de red.
- */
-async function pedirAccesoSinPreguntar(marco, token, situacion, nombre) {
-  marco.append(
-    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
-    el('h1', { texto: nombre ? `Un momento, ${nombre.split(' ')[0]}.` : 'Un momento.' }),
-    el('p', { class: 'acceso-texto', texto: 'Estamos enviando tu solicitud.' }),
-  );
-
-  try {
-    const resultado = await pedirEntrar(configuracion, token, nombre);
-    pintarEspera(token, resultado);
-  } catch (error) {
-    pintarNoSePudo(vaciar(marco), token, situacion, nombre, error);
-  }
-}
-
-/**
- * No se pudo mandar la solicitud. Un botón para reintentar y una salida.
- *
- * Lo que no lleva es ningún campo: el fallo es del envío, no de lo que se sabe
- * de quien está delante, y no hay nada que esta persona pueda teclear que lo
- * arregle.
- */
-function pintarNoSePudo(marco, token, situacion, nombre, error) {
-  marco.append(
-    el('p', { class: 'eyebrow', texto: 'Agenda Familiar' }),
-    el('h1', { texto: 'No se ha podido enviar.' }),
-    el('p', {
-      class: 'acceso-texto',
-      texto: error?.message || 'No hemos conseguido mandar tu solicitud. Puede ser la red.',
-    }),
-  );
-
-  if (situacion.correo) {
-    marco.append(el('p', {
-      class: 'pista',
-      texto: situacion.correo_privado
-        ? `Se enviará con ${situacion.correo}, la dirección de reenvío que te ha dado Apple.`
-        : `Se enviará con ${situacion.correo}.`,
-    }));
-  }
-
-  marco.append(el('button', {
-    class: 'boton crecer', type: 'button',
-    onclick: async (evento) => {
-      const boton = evento.currentTarget;
-      boton.disabled = true;
-      boton.textContent = 'Enviando…';
-      await pedirAccesoSinPreguntar(vaciar(marco), token, situacion, nombre);
-    },
-  }, ['Volver a intentarlo']));
-
-  marco.append(el('button', {
-    class: 'enlace-discreto', type: 'button', onclick: () => salirDeLaEspera(),
-  }, ['Ahora no']));
-
-  marco.append(el('button', {
-    class: 'enlace-discreto', type: 'button', onclick: () => elegirObservadorDemo(),
-  }, ['Ver una demostración mientras tanto']));
-}
-
-function confirmarRetirada(token) {
-  abrirHoja('Retirar mi solicitud', (cuerpo) => {
-    cuerpo.append(el('p', {
-      texto: 'Se borra todo lo que hemos guardado de ti: tu nombre, tu correo y el vínculo con tu Apple ID. No queda constancia de que lo hayas pedido. Se avisa además a Apple para que deje de reconocer esta aplicación entre las tuyas.',
-    }));
-    cuerpo.append(el('p', {
-      class: 'pista',
-      texto: 'Puedes volver a solicitarlo cuando quieras, entrando otra vez con Apple.',
-    }));
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', { class: 'boton crecer', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
-      el('button', {
-        class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
-        onclick: async (evento) => {
-          const boton = evento.currentTarget;
-          boton.disabled = true;
-          boton.textContent = 'Retirando…';
-          try {
-            // Vuelve a pasar por Apple para traer un código de autorización, que
-            // es con lo que el Worker le pide a Apple que revoque el vínculo. Si
-            // no se consigue —hoja cancelada, cáscara antigua—, la retirada
-            // sigue: nadie puede quedarse sin poder retirarse.
-            const codigo = await codigoDeAutorizacion(configuracion);
-            await retirarSolicitud(configuracion, token, codigo);
-          } catch {
-            /* si ya no estaba, el resultado para quien mira es el mismo */
-          }
-          cerrarHoja();
-          await salirDeLaEspera();
-          avisar('Solicitud retirada');
-        },
-      }, ['Retirar']),
-    ]));
-  });
-}
-
-async function salirDeLaEspera() {
-  borrarSesion();
-  document.getElementById('espera').hidden = true;
-  mostrarAcceso();
 }
 
 async function elegirObservadorDemo() {
@@ -1314,7 +1016,7 @@ function bloqueDeMejoras(seccion, cuenta = null) {
             cerrarHoja();
             pintar();
           },
-        }, [mejora ? 'Guardar' : 'Apuntar']),
+        }, [mejora ? 'Guardar' : 'Crear']),
       ];
 
       // Copiar se queda, y es de la mejora y no de la lista: una idea se pega en
@@ -1342,24 +1044,42 @@ function bloqueDeMejoras(seccion, cuenta = null) {
       if (mejora) {
         cuerpo.append(el('button', {
           class: 'boton', 'data-tono': 'peligro', type: 'button',
-          onclick: async () => {
-            // La frase dice a quién afecta. Cualquiera puede quitar la de
-            // cualquiera —es una lista de la casa y no un cuaderno personal, y
-            // por eso no hay comprobación de autoría en ninguno de los dos
-            // lados—, pero eso hay que decirlo antes y no descubrirlo después.
-            if (!confirm('¿Quitar esta mejora? Se va de la lista de toda la casa.')) return;
-            await retirar('mejora', mejora.id);
-            cerrarHoja();
-            pintar();
-          },
+          onclick: () => confirmarQuitar(mejora),
         }, ['Quitar']));
       }
     });
 
     // Apuntar una idea es el gesto que más se repite de este apartado, y sin
-    // esto cuesta un toque de más. El plazo es para que la hoja haya terminado
-    // de subir: enfocar mientras se mueve deja el teclado peleando con ella.
-    setTimeout(() => texto.focus(), 60);
+    // esto cuesta un toque de más.
+    enfocarAlAbrir(texto);
+  };
+
+  /**
+   * La pregunta antes de quitar, en hoja y no en un `confirm()` nativo —era el
+   * único de la aplicación—. La frase dice a quién afecta: cualquiera puede
+   * quitar la de cualquiera —es una lista de la casa y no un cuaderno personal,
+   * y por eso no hay comprobación de autoría en ninguno de los dos lados—, y
+   * eso hay que decirlo antes y no descubrirlo después.
+   */
+  const confirmarQuitar = (mejora) => {
+    abrirHoja('Quitar la mejora', (cuerpo) => {
+      cuerpo.append(el('p', { texto: 'Se va de la lista de toda la casa, la haya apuntado quien la haya apuntado.' }));
+      cuerpo.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+          onclick: async () => {
+            await retirar('mejora', mejora.id);
+            cerrarHoja();
+            pintar();
+            avisar('Mejora quitada');
+          },
+        }, ['Quitar']),
+        el('button', {
+          class: 'boton crecer', 'data-tono': 'discreto', type: 'button',
+          onclick: () => abrirFormulario(mejora),
+        }, ['Cancelar']),
+      ]));
+    });
   };
 
   pintar();
@@ -1532,7 +1252,7 @@ function formularioDeRedaccion(ajustes) {
       class: 'pista',
       texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son seis, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio, la frase con la que abre Hoy y lo que dice Lío en su bloque.',
     }),
-    campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada el ${ajustes.guardada_en.slice(0, 10)}. Deja el campo vacío para no cambiarla.` : null),
+    campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada ${formatearHace(ajustes.guardada_en)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
       ? 'Lista de reserva: Anthropic no ha respondido con los modelos de la cuenta.'
       : 'Si falla, se prueba con los demás por orden.'),
@@ -1638,14 +1358,16 @@ function confirmarBaja() {
       }));
     }
 
+    // El verbo delante y «Cancelar» a su derecha, como en todas las hojas: la
+    // confirmación no es una figura aparte del formulario.
     cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', type: 'button', onclick: () => cerrarHoja(),
-      }, ['Cancelar']),
       el('button', {
         class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
         onclick: (evento) => ejecutarBaja(evento.currentTarget),
       }, ['Eliminar mi cuenta']),
+      el('button', {
+        class: 'boton crecer', 'data-tono': 'discreto', type: 'button', onclick: () => cerrarHoja(),
+      }, ['Cancelar']),
     ]));
   });
 }
@@ -1680,6 +1402,15 @@ async function ejecutarBaja(boton) {
  */
 async function salir() {
   cerrarHoja();
+  // El teléfono se queda mudo del todo: el token de avisos se da de baja
+  // mientras la credencial todavía vale, y los recordatorios locales se
+  // cancelan, porque su texto sale de una agenda que este aparato deja de
+  // poder ver y seguirían sonando sesenta días.
+  if (estado().estado !== 'demostracion') {
+    localStorage.removeItem(CLAVE_AVISOS);
+    await darDeBajaLosAvisos().catch(() => {});
+  }
+  await cancelarRecordatorios();
   detener();
   await olvidarTodo();
   borrarSesion();
