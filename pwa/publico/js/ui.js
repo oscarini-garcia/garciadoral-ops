@@ -177,14 +177,16 @@ export function abrirHoja(titulo, construir, acciones = []) {
   const contenedor = vaciar(hoja());
   contenedor.append(el('div', { class: 'hoja-asa' }));
 
+  // `hojaTitulo` es el nombre accesible del diálogo: `index.html` lo declara en
+  // `aria-labelledby`, y sin él un lector de pantalla anuncia «diálogo» a secas.
   const utiles = [].concat(acciones).filter(Boolean);
   if (titulo && utiles.length) {
     contenedor.append(el('div', { class: 'hoja-cabecera' }, [
-      el('h2', { texto: titulo }),
+      el('h2', { id: 'hojaTitulo', texto: titulo }),
       el('div', { class: 'hoja-acciones' }, utiles),
     ]));
   } else if (titulo) {
-    contenedor.append(el('h2', { texto: titulo }));
+    contenedor.append(el('h2', { id: 'hojaTitulo', texto: titulo }));
   }
 
   const cuerpo = el('div', { class: 'hoja-seccion' });
@@ -573,12 +575,42 @@ export function carruselDePropuestas({
 
 // ------------------------------------------------------------- Formularios --
 
+/**
+ * Cada control de formulario toma su nombre de su etiqueta.
+ *
+ * El `for` necesita un `id`, y ningún control lo traía: la etiqueta era una
+ * hermana muda y ningún campo de la aplicación se anunciaba por su nombre. Se
+ * genera aquí uno por campo; cuando lo que llega no es un control —un
+ * segmentado, unas pastillas—, la etiqueta se queda como texto, que es lo único
+ * que puede ser.
+ */
+let numeroDeCampo = 0;
+
 export function campo(etiqueta, control, pista) {
+  const esControl = /^(INPUT|SELECT|TEXTAREA)$/.test(control?.tagName || '');
+  if (esControl && !control.id) {
+    numeroDeCampo += 1;
+    control.id = `campo-${numeroDeCampo}`;
+  }
   return el('div', { class: 'campo' }, [
-    el('label', { texto: etiqueta, for: control.id || undefined }),
+    el('label', { texto: etiqueta, for: esControl ? control.id : undefined }),
     control,
     pista ? el('p', { class: 'pista', texto: pista }) : null,
   ]);
+}
+
+/**
+ * Enfoca un control cuando la hoja ha terminado de subir, teclado incluido.
+ *
+ * Es la única manera de abrir el teclado al abrir una hoja, y por eso está
+ * aquí y no repetida: había tres estrategias —esto mismo en línea, `autofocus`
+ * en nodos insertados tarde, y el foco sin teclado de `abrirHoja`— y la misma
+ * hoja de «apuntar algo» abría el teclado en un sitio y en otro no. El plazo es
+ * para que la hoja haya subido: enfocar mientras se mueve deja el teclado
+ * peleando con ella.
+ */
+export function enfocarAlAbrir(control) {
+  setTimeout(() => control.focus(), 60);
 }
 
 export function entrada(atributos = {}) {

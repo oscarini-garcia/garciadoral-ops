@@ -48,6 +48,7 @@ AREAS = [
     ("scripts/agenda", "Reglas del modelo, compartidas por el plan semanal"),
     ("scripts", "Los dos procesos programados y su transporte"),
     ("api/src", "Worker de Cloudflare: filtra antes de transmitir"),
+    ("api/src/portero", "El portero: entrar con Apple, esperar y aprobar, sin saber del hogar"),
     ("pwa/publico/js", "La aplicación"),
     ("pwa/publico/js/vistas", "Las cinco secciones de la aplicación"),
     ("herramientas", "Utilidades de desarrollo"),
@@ -220,7 +221,7 @@ def variables_de_entorno() -> tuple[list[tuple[str, str]], list[str]]:
                 scripts.setdefault(nombre, str(ruta.relative_to(RAIZ)))
 
     worker: set[str] = set()
-    for ruta in sorted((RAIZ / "api" / "src").glob("*.js")):
+    for ruta in sorted((RAIZ / "api" / "src").rglob("*.js")):
         worker.update(re.findall(r"env\.([A-Z_][A-Z0-9_]*)", ruta.read_text(encoding="utf-8")))
 
     return sorted(scripts.items()), sorted(worker)

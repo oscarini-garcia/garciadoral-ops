@@ -18,12 +18,13 @@ import {
   verificarSesionDeEspera,
   verificarSesionPlena,
   verificarSesion,
-} from '../src/sesion.js';
+} from '../src/portero/sesion.js';
 import {
   aprobarSolicitud,
   rechazarSolicitud,
   registrarSolicitud,
-} from '../src/solicitudes.js';
+} from '../src/portero/solicitudes.js';
+import { cuentas } from '../src/cuentas.js';
 import { componerInstantanea } from '../src/filtrado.js';
 
 const SECRETO = 'secreto-de-pruebas';
@@ -179,7 +180,7 @@ test('aprobar vinculando conserva la ficha que ya estaba', async () => {
     'SELECT * FROM persona WHERE id = ?': { id: 'p-abuela', nombre: 'la abuela', tiene_cuenta: 0 },
   });
 
-  const resultado = await aprobarSolicitud(db, {
+  const resultado = await aprobarSolicitud(db, cuentas, {
     id: 's1', personaId: 'p-abuela', rol: 'miembro',
   });
 
@@ -194,7 +195,7 @@ test('aprobar vinculando conserva la ficha que ya estaba', async () => {
 test('aprobar sin persona crea una ficha con cuenta', async () => {
   const db = baseFalsa(PENDIENTE);
 
-  const resultado = await aprobarSolicitud(db, {
+  const resultado = await aprobarSolicitud(db, cuentas, {
     id: 's1', persona: { nombre: 'Marta', apellidos: 'Ruiz' }, rol: 'miembro',
   });
 
@@ -209,7 +210,7 @@ test('aprobar borra la solicitud en lugar de marcarla', async () => {
   // guardado para siempre: ninguna caducidad alcanza a una solicitud resuelta a
   // favor. Quien entró se busca en `persona`, que es donde está.
   const db = baseFalsa(PENDIENTE);
-  await aprobarSolicitud(db, { id: 's1', persona: { nombre: 'Marta' }, rol: 'miembro' });
+  await aprobarSolicitud(db, cuentas, { id: 's1', persona: { nombre: 'Marta' }, rol: 'miembro' });
 
   assert.equal(sql(db, 'DELETE FROM solicitud_acceso').length, 1);
   assert.equal(sql(db, 'UPDATE solicitud_acceso').length, 0);
@@ -221,7 +222,7 @@ test('no se aprueba sobre una persona que ya tiene cuenta', async () => {
     'SELECT * FROM persona WHERE id = ?': { id: 'p-marta', nombre: 'Marta', tiene_cuenta: 1 },
   });
   await assert.rejects(
-    () => aprobarSolicitud(db, { id: 's1', personaId: 'p-marta', rol: 'miembro' }),
+    () => aprobarSolicitud(db, cuentas, { id: 's1', personaId: 'p-marta', rol: 'miembro' }),
     /ya tiene cuenta/,
   );
 });
@@ -234,7 +235,7 @@ test('un identificador de Apple que ya está en otra ficha detiene la aprobació
     'SELECT id, nombre FROM persona': { id: 'p-otra', nombre: 'Lucía' },
   });
   await assert.rejects(
-    () => aprobarSolicitud(db, { id: 's1', rol: 'miembro' }),
+    () => aprobarSolicitud(db, cuentas, { id: 's1', rol: 'miembro' }),
     /ya está vinculado a Lucía/,
   );
 });
@@ -242,7 +243,7 @@ test('un identificador de Apple que ya está en otra ficha detiene la aprobació
 test('el rol se comprueba antes de tocar nada', async () => {
   const db = baseFalsa(PENDIENTE);
   await assert.rejects(
-    () => aprobarSolicitud(db, { id: 's1', rol: 'invitado' }),
+    () => aprobarSolicitud(db, cuentas, { id: 's1', rol: 'invitado' }),
     /rol no admitido/,
   );
   assert.equal(db.ejecutadas.length, 0);
@@ -251,7 +252,7 @@ test('el rol se comprueba antes de tocar nada', async () => {
 test('una solicitud que el otro administrador ya resolvió no se resuelve dos veces', async () => {
   const aprobada = baseFalsa({ "WHERE id = ? AND estado = 'pendiente'": null });
   await assert.rejects(
-    () => aprobarSolicitud(aprobada, { id: 's1', rol: 'miembro' }),
+    () => aprobarSolicitud(aprobada, cuentas, { id: 's1', rol: 'miembro' }),
     /ya estaba resuelta/,
   );
 

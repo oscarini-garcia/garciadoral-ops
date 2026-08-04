@@ -27,6 +27,49 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El portero está extraído, y la baja llevaba una semana rota.** La auditoría
+  de esta vuelta encontró que `POST /api/cuenta/baja` contestaba 500 a todo el
+  mundo desde el 27 de julio —un refactor renombró `verificarSesion` en el
+  `import` de `index.js` y una línea del handler se quedó con el nombre viejo;
+  ninguna prueba ejercitaba la ruta—, que es la 5.1.1(v) incumplida. Está
+  arreglado, y lo que lo habría cazado existe ahora: `api/test/rutas.test.js`
+  pide a los handlers de verdad con una base de mentira, y los errores van por
+  clases —`SinCredencial`, un solo `Rechazo`— en vez de por la regex
+  `/sesión|token|firma/` que clasificaba 401 contra 500 por la redacción del
+  mensaje. **Lo genérico del acceso vive en `api/src/portero/`** —Apple,
+  sesiones, revocación y sala de espera— y no sabe qué es una `persona`: la
+  aprobación recibe un adaptador, `api/src/cuentas.js`, que es lo único que
+  conoce el esquema local, y otra aplicación con el mismo patrón —autenticación
+  por Apple, autorización por la app— copia la carpeta y escribe el suyo. En la
+  PWA la puerta es `acceso.js`, con sus enganches (`alEntrar`, `verDemo`,
+  `pie`), y la bandeja, `bandeja.js`. El removal quedó parejo: quitarle la
+  cuenta a alguien desde su ficha limpia ahora lo mismo que la baja voluntaria
+  —dispositivos con su token de push, preferencias, accesos a categorías—,
+  pregunta antes con el daño escrito y avisa si se va la última administradora;
+  y salir o darse de baja cancelan los recordatorios locales, que seguían
+  sonando sesenta días con el contenido de una agenda ajena. Los estados raros
+  también: la persona aprobada nace en el círculo que diga la bandeja —antes
+  caía en `extendida` y quedaba fuera de Lío sin que nada lo dijera—, reenviar
+  la solicitud no pisa el correo que el administrador miraba, la caducidad de
+  los catorce días cuenta desde `visto_en`, el rechazado tiene «Volver a
+  pedirlo», el push de «alguien quiere entrar» se agrupa por Apple ID —insistir
+  ya no tamborilea— y `identificador_apple` solo acepta `null` por
+  `/api/cambios`: el vínculo lo establece únicamente la aprobación. De UI: la
+  agenda pinta el regalo con el mismo texto de estado y el mismo pie que
+  Regalos, fechas en palabras donde había ISO, el único `confirm()` nativo pasó
+  a hoja, «Crear» al crear y «Guardar» al editar, «Cancelar» siempre a la
+  derecha del verbo y en tono discreto, `--ink-faint` sube de 2,4:1 a 4,5:1,
+  los blancos de toque llegan a 44 por pseudoelemento sin tocar el dibujo, el
+  botón de Apple es un `<button>` de verdad que se desactiva mientras la
+  petición viaja, `campo()` asocia cada etiqueta a su control y la hoja modal
+  toma nombre de su título. Queda abierto: **retirar la cláusula «token sin
+  `tipo` = sesión plena»** cuando caduquen los últimos viejos (a partir del 27
+  de agosto); **el resto de la lista A4** —`emojiVisible` fuera de Sitios, el
+  sobre con iconos dibujados en vez de emoji, las tres casillas casi iguales,
+  títulos de hoja con un patrón—; y **el endurecimiento B4** —verificar el
+  `nonce` de Apple, freno de tasa en `/api/sesion`, y `migrar:local`/`remoto`,
+  que siguen aplicando solo de la 0001 a la 0004—. Ascender el portero a
+  paquete compartido espera a que exista un segundo consumidor de verdad.
 - **Entrar con Apple ya no pregunta nada, y eso vino de un rechazo de la App
   Store.** La 1.1 se cayó por la **directriz 4**: después de Sign in with Apple no
   se puede pedir un dato que el marco de Apple ya entrega, y la sala de espera

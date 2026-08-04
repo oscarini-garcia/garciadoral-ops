@@ -44,12 +44,12 @@ tener que recorrer la aplicación entera cada vez.
 
 - **apns.js** — El transporte hasta el teléfono: APNs con autenticación por token.
   hayApnsConfigurado · tokenDeProveedor · olvidarTokenDeProveedor · enviarAviso
-- **apple.js** — Verificación del token de identidad de Sign in with Apple.
-  base64urlADatos · verificarTokenDeApple
 - **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
   CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · empujarSolicitud · empujar
 - **comentables.js** — Qué cosas admiten comentario, en un solo sitio.
   COMENTABLES · esComentable · comentariosVisibles
+- **cuentas.js** — Las cuentas del hogar: la mitad de la aprobación que conoce el esquema local.
+  cuentas
 - **derivar.js** — Estados que nadie mantiene a mano.
   derivarEstados
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
@@ -68,23 +68,31 @@ tener que recorrer la aplicación entera cada vez.
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
   administradoresRestantes · aplicarCambio
-- **revocacion.js** — Revocación del token de Sign in with Apple al darse de baja.
-  hayRevocacionConfigurada · secretoDeCliente · revocarEnApple
-- **sesion.js** — Sesión propia: un JWT HS256 corto que el cliente presenta en cada petición.
-  TIPO_PLENA · TIPO_ESPERA · emitirSesion · emitirEspera · verificarSesion
-  verificarSesionPlena · verificarSesionDeEspera · coincideEnTiempoConstante
-- **solicitudes.js** — La sala de espera: quien ha entrado con Apple y todavía no es del hogar.
-  Rechazo · TOPE_PENDIENTES · purgarCaducadas · solicitudPorApple · anotarLlegada
-  contarPendientes · pendientes · registrarSolicitud · retirarSolicitud · rechazarSolicitud
-  …y 1 más
 - **viajes.js** — El calendario de viajes: descarga del feed, reconciliación y sello.
   CALENDARIO_VIAJES · idDeViaje · reconciliarViajes · sincronizarViajes
 - **visibilidad.js** — Función de visibilidad, aplicada en el servidor antes de transmitir.
   destinatariosDeIdea · destinatariosDeRegalo · destinatariosDeEvento · visible
   visiblePublicamente
 
+### `api/src/portero/` · El portero: entrar con Apple, esperar y aprobar, sin saber del hogar
+
+- **apple.js** — Verificación del token de identidad de Sign in with Apple.
+  base64urlADatos · verificarTokenDeApple
+- **errores.js** — Los dos «no» que el portero sabe decir, como clases y no como texto.
+  SinCredencial · Rechazo
+- **revocacion.js** — Revocación del token de Sign in with Apple al darse de baja.
+  hayRevocacionConfigurada · secretoDeCliente · revocarEnApple
+- **sesion.js** — Sesión propia: un JWT HS256 corto que el cliente presenta en cada petición.
+  TIPO_PLENA · TIPO_ESPERA · emitirSesion · emitirEspera · verificarSesion
+  verificarSesionPlena · verificarSesionDeEspera · coincideEnTiempoConstante
+- **solicitudes.js** — La sala de espera: quien ha entrado con Apple y todavía no es del hogar.
+  TOPE_PENDIENTES · purgarCaducadas · solicitudPorApple · anotarLlegada · contarPendientes
+  pendientes · registrarSolicitud · retirarSolicitud · rechazarSolicitud · aprobarSolicitud
+
 ### `pwa/publico/js/` · La aplicación
 
+- **acceso.js** — La puerta: la pantalla de acceso y la sala de espera.
+  iniciarAcceso · mostrarAcceso · volverALaEspera
 - **aeropuertos.js** — De código de aeropuerto a ciudad.
   AEROPUERTOS · ciudadDeAeropuerto
 - **almacen.js** — Almacén local.
@@ -94,6 +102,8 @@ tener que recorrer la aplicación entera cada vez.
   TEXTO_SINCRONIZACION
 - **avisos.js** — Lo que espera a quien mira, venga del módulo que venga.
   idVisto · marcarVisto · avisosDe · porContestar · novedades · hayAvisos
+- **bandeja.js** — La bandeja: quién está esperando a que le abran la puerta, y la aprobación.
+  bloqueDeSolicitudes · abrirBandeja
 - **comentarios.js** — El hilo de comentarios de cualquier cosa.
   bloqueDeComentarios
 - **demo.js** — Modo demostración.
@@ -108,8 +118,8 @@ tener que recorrer la aplicación entera cada vez.
   PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 14 más
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
-  autorizacionDeAppleNativa · nombreDe · programarRecordatorios
-  HORIZONTE_RECORDATORIOS_DIAS · …y 8 más
+  autorizacionDeAppleNativa · nombreDe · programarRecordatorios · cancelarRecordatorios
+  …y 9 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
   soloFecha · iso · isoConHora · sumarDias · …y 15 más
@@ -124,14 +134,14 @@ tener que recorrer la aplicación entera cada vez.
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · enlazar · colorDePersona · iniciales · avatar · icono · botonIcono
-  abrirHoja · cerrarHoja · …y 11 más
+  abrirHoja · cerrarHoja · …y 12 más
 - **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
   VERSION_APP
 
 ### `pwa/publico/js/vistas/` · Las cinco secciones de la aplicación
 
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
-  reiniciarFamilia · pintarFamilia · abrirBandeja · abrirFicha · abrirFormularioPersona
+  reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
   reiniciarHoy · tituloDeHoy · pintarHoy · nuevoPieDeVersion
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
@@ -197,7 +207,8 @@ tener que recorrer la aplicación entera cada vez.
 Leído de las citas a `specs/` que el código lleva en sus comentarios.
 
 - **`specs/autenticacion.md`**
-  `api/src/index.js` §7 · `api/src/solicitudes.js` §2, §9 · `pwa/publico/js/native.js` §8
+  `api/src/index.js` §7 · `api/src/portero/solicitudes.js` §2, §9
+  `pwa/publico/js/acceso.js` §5, §8 · `pwa/publico/js/native.js` §8
   `pwa/publico/js/sesion.js` §8
 - **`specs/calendario-viajes.md`**
   `api/src/ical.js` §4 · `api/src/index.js` §5.1 · `api/src/viajes.js`
@@ -228,14 +239,14 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
   `api/src/avisos.js` §12.4 · `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
-  `pwa/publico/js/avisos.js` §12.2 · `pwa/publico/js/lio.js` §10.3
-  `pwa/publico/js/modelo.js` §6.2, §7.1 · `pwa/publico/js/native.js` §12.4
-  `pwa/publico/js/semana.js` §8, §10.2 · `pwa/publico/js/sincronizacion.js` §1
-  `pwa/publico/js/sitios.js` §12.1 · `pwa/publico/js/ui.js` §1, §3
-  `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
+  `pwa/publico/js/avisos.js` §12.2 · `pwa/publico/js/bandeja.js` §7.1
+  `pwa/publico/js/lio.js` §10.3 · `pwa/publico/js/modelo.js` §6.2, §7.1
+  `pwa/publico/js/native.js` §12.4 · `pwa/publico/js/semana.js` §8, §10.2
+  `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §12.1
+  `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
-  `pwa/publico/js/vistas/semana.js` §10, §10.1, §10.2, §10.3
+  `pwa/publico/js/vistas/semana.js` §6.2, §10, §10.1, §10.2, §10.3
   `pwa/publico/js/vistas/sitios.js` §12.1 · `scripts/agenda/lio.py` §10.3
   `scripts/agenda/modelo.py` §7.1 · `scripts/agenda/semana.py` §10.2
 
@@ -260,7 +271,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**320** en total.
+**326** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -285,6 +296,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/redaccion-lio.test.js` — 8
 - `api/test/redaccion-regalo.test.js` — 14
 - `api/test/redaccion.test.js` — 13
+- `api/test/rutas.test.js` — 6
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitud-aviso.test.js` — 4
 - `api/test/solicitudes.test.js` — 15

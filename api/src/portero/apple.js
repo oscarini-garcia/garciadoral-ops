@@ -10,6 +10,8 @@
  * la web. Ambas se declaran en la configuración del Worker.
  */
 
+import { SinCredencial } from './errores.js';
+
 const CLAVES_APPLE = 'https://appleid.apple.com/auth/keys';
 const EMISOR = 'https://appleid.apple.com';
 const VIGENCIA_CACHE = 60 * 60 * 1000; // las claves de Apple rotan con holgura
@@ -65,23 +67,23 @@ function esCierto(valor) {
  */
 export async function verificarTokenDeApple(idToken, audiencias) {
   const partes = String(idToken || '').split('.');
-  if (partes.length !== 3) throw new Error('el token de Apple está mal formado');
+  if (partes.length !== 3) throw new SinCredencial('el token de Apple está mal formado');
 
   const [cabeceraB64, cuerpoB64, firmaB64] = partes;
   const cabecera = decodificarJson(cabeceraB64);
   const cuerpo = decodificarJson(cuerpoB64);
 
-  if (cabecera.alg !== 'RS256') throw new Error(`algoritmo inesperado: ${cabecera.alg}`);
-  if (cuerpo.iss !== EMISOR) throw new Error(`emisor inesperado: ${cuerpo.iss}`);
+  if (cabecera.alg !== 'RS256') throw new SinCredencial(`algoritmo inesperado: ${cabecera.alg}`);
+  if (cuerpo.iss !== EMISOR) throw new SinCredencial(`emisor inesperado: ${cuerpo.iss}`);
 
   const admitidas = audiencias.filter(Boolean);
-  if (!admitidas.includes(cuerpo.aud)) throw new Error(`audiencia no admitida: ${cuerpo.aud}`);
+  if (!admitidas.includes(cuerpo.aud)) throw new SinCredencial(`audiencia no admitida: ${cuerpo.aud}`);
 
   const ahora = Math.floor(Date.now() / 1000);
-  if (typeof cuerpo.exp !== 'number' || cuerpo.exp < ahora) throw new Error('el token de Apple ha caducado');
+  if (typeof cuerpo.exp !== 'number' || cuerpo.exp < ahora) throw new SinCredencial('el token de Apple ha caducado');
 
   const jwk = (await clavesDeApple()).find((k) => k.kid === cabecera.kid);
-  if (!jwk) throw new Error('la clave del token no figura entre las de Apple');
+  if (!jwk) throw new SinCredencial('la clave del token no figura entre las de Apple');
 
   const clave = await crypto.subtle.importKey(
     'jwk',
@@ -97,8 +99,8 @@ export async function verificarTokenDeApple(idToken, audiencias) {
     base64urlADatos(firmaB64),
     new TextEncoder().encode(`${cabeceraB64}.${cuerpoB64}`),
   );
-  if (!valida) throw new Error('la firma del token de Apple no es válida');
-  if (!cuerpo.sub) throw new Error('el token de Apple no identifica a nadie');
+  if (!valida) throw new SinCredencial('la firma del token de Apple no es válida');
+  if (!cuerpo.sub) throw new SinCredencial('el token de Apple no identifica a nadie');
 
   return {
     sub: cuerpo.sub,

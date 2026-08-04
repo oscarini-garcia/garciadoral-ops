@@ -388,6 +388,25 @@ export async function programarRecordatorios(instancias, turnosDeLio = []) {
   }
 }
 
+/**
+ * Borra todos los recordatorios pendientes.
+ *
+ * Es la otra mitad de la baja y del cierre de sesión: los avisos se programan
+ * con sesenta días de horizonte y su texto sale de la agenda, de modo que sin
+ * esto el teléfono seguía anunciando durante dos meses el contenido de una
+ * agenda a la que ya no se pertenece.
+ */
+export async function cancelarRecordatorios() {
+  const notificaciones = plugin('LocalNotifications');
+  if (!esNativo() || !notificaciones) return;
+  try {
+    const pendientes = await notificaciones.getPending();
+    if (pendientes?.notifications?.length) await notificaciones.cancel(pendientes);
+  } catch {
+    /* sin permiso no hay nada programado que borrar */
+  }
+}
+
 export const HORIZONTE_RECORDATORIOS_DIAS = HORIZONTE_DIAS;
 
 // ------------------------------------------------- Avisos remotos (APNs) --

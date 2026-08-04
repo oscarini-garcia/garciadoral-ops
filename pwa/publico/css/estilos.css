@@ -11,7 +11,10 @@
   --paper-3:    #EAE6DC;
   --ink:        #1C2B33;
   --ink-soft:   #5F7280;
-  --ink-faint:  #93A3AD;
+  /* Era #93A3AD, que sobre el papel daba 2,4:1 — y lo llevan las etiquetas de
+     todos los formularios, los estados vacíos y los rótulos de sección, no solo
+     adornos. Este llega al 4,5:1 que el propio spec fija (specs/ux.md §1). */
+  --ink-faint:  #64747F;
   --line:       #E2DED4;
   --tinta:      #0E6E62;
   --tinta-suave:#DCEDE9;
@@ -69,7 +72,7 @@
     --paper-3:    #1F2A30;
     --ink:        #E7EEF1;
     --ink-soft:   #9CB0BA;
-    --ink-faint:  #6C818C;
+    --ink-faint:  #748994;
     --line:       #263238;
     --tinta:      #55C9B4;
     --tinta-suave:#12312E;
@@ -97,7 +100,7 @@
    ambos sentidos, no solo hacia el oscuro. */
 :root[data-tema="claro"] {
   --paper: #FBF9F5; --paper-2: #F2EFE8; --paper-3: #EAE6DC;
-  --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #93A3AD;
+  --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #64747F;
   --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
   --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
   --sello-bg: #E9EEF3; --sello-line: rgba(110,134,158,.22); --sello-text: #5B7288;
@@ -109,7 +112,7 @@
 }
 :root[data-tema="oscuro"] {
   --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
-  --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #6C818C;
+  --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
   --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
   --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
   --sello-bg: #1A252B; --sello-line: rgba(156,176,186,.22); --sello-text: #9CB0BA;
@@ -1636,3 +1639,31 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 /* Y en Hoy, lo único que había que no perder al quitar el punto de la
    cabecera. Solo aparece cuando pasa. */
 .hoy-sync { font-size: 13.5px; color: var(--aviso); }
+
+/* --------------------------------------------------- Blancos de toque --
+   El mínimo es 44 × 44 (specs/ux.md §1) y una docena de mandos se dibujaba por
+   debajo: el visto de Lío a 34, el de las mejoras a 21, las aspas y los verbos
+   de cabecera de hoja entre 34 y 38. El dibujo se queda como está —agrandarlo
+   rompería las filas donde vive— y lo que crece es el área que responde al
+   dedo, con un pseudoelemento centrado del tamaño del toque. No estorba a los
+   vecinos: no ocupa sitio en el flujo, solo recoge el toque que caía a un
+   milímetro del borde. */
+.icono-accion, .lio-visto, .lio-aspa, .mas-regalo, .buscador-aspa,
+.llevar-quitar, .aviso-descartar, .mejora-visto, .boton-mini, .voto,
+.paso button {
+  position: relative;
+}
+.icono-accion::after, .lio-visto::after, .lio-aspa::after, .mas-regalo::after,
+.buscador-aspa::after, .llevar-quitar::after, .aviso-descartar::after,
+.mejora-visto::after, .boton-mini::after, .voto::after,
+.paso button::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--toque);
+  height: var(--toque);
+  min-width: 100%;
+  min-height: 100%;
+  transform: translate(-50%, -50%);
+}

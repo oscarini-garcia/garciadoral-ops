@@ -460,7 +460,7 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
           if (!id) lugarAbierto = nuevo;
           ctx.refrescar();
         },
-      }, ['Guardar']),
+      }, [id ? 'Guardar' : 'Crear']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });
@@ -545,7 +545,7 @@ function abrirFormularioApunte(ctx, { id = null, lugarId = null } = {}) {
           cerrarHoja();
           ctx.refrescar();
         },
-      }, ['Guardar']),
+      }, [apunte ? 'Guardar' : 'Crear']),
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });

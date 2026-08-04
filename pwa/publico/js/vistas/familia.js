@@ -11,7 +11,8 @@ import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar, botonIcono,
 } from '../ui.js';
 import { compartir, toque } from '../native.js';
-import { guardar, listarSolicitudes, resolverSolicitud, sincronizar } from '../sincronizacion.js';
+import { guardar } from '../sincronizacion.js';
+import { bloqueDeSolicitudes } from '../bandeja.js';
 import {
   CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte,
   nombreCompleto, nuevoId,
@@ -78,7 +79,7 @@ export function pintarFamilia(pantalla, subcabecera, ctx) {
       ajustarAspa();
       buscador.focus();
     },
-  }, ['✕']);
+  }, ['×']);
 
   const ajustarAspa = () => { aspa.hidden = !buscador.value; };
 
@@ -159,8 +160,11 @@ function tablaDePersonas(personas, ctx) {
         ]),
       ]),
       el('tbody', {}, ordenar(personas).map((persona) =>
+        // Sin `role="button"`: anulaba la semántica de fila y con ella las tres
+        // cabeceras de columna, que es lo único que esta tabla le cuenta a quien
+        // no la ve. Tocable y enfocable sigue siendo.
         el('tr', {
-          tabindex: '0', role: 'button',
+          tabindex: '0',
           onclick: () => abrirFicha(persona.id, ctx),
           onkeydown: (evento) => {
             if (evento.key === 'Enter' || evento.key === ' ') {
@@ -359,175 +363,6 @@ function notaDeCumple(persona) {
   ]);
 }
 
-// ---------------------------------------------------------------- Bandeja --
-
-/**
- * Quién está esperando a que le abran la puerta.
- *
- * El recuento llega con la instantánea, de modo que no hace falta preguntar por
- * él: si no hay nadie esperando, aquí no aparece nada. Solo al abrir la bandeja
- * se pide la lista, que es donde están el nombre y el correo.
- *
- * Solo lo ven los administradores, y no por discreción sino porque son los
- * únicos que pueden hacer algo al respecto.
- */
-function bloqueDeSolicitudes(ctx) {
-  const cuantas = ctx.vista.datos.solicitudes_pendientes || 0;
-  if (!cuantas) return null;
-
-  return el('div', { class: 'grupo' }, [
-    el('button', {
-      class: 'boton crecer', type: 'button', onclick: () => abrirBandeja(ctx),
-    }, [cuantas === 1 ? 'Hay 1 persona esperando' : `Hay ${cuantas} personas esperando`]),
-  ]);
-}
-
-export async function abrirBandeja(ctx) {
-  abrirHoja('Quién quiere entrar', (cuerpo) => {
-    cuerpo.append(el('p', { class: 'pista', texto: 'Cargando…' }));
-
-    listarSolicitudes()
-      .then((solicitudes) => {
-        vaciar(cuerpo);
-        if (!solicitudes.length) {
-          cuerpo.append(el('p', { class: 'pista', texto: 'Ya no queda nadie esperando.' }));
-          return;
-        }
-        for (const solicitud of solicitudes) {
-          cuerpo.append(tarjetaDeSolicitud(solicitud, ctx));
-        }
-      })
-      .catch((error) => {
-        vaciar(cuerpo).append(el('p', { class: 'pista', texto: error.message }));
-      });
-  });
-}
-
-function tarjetaDeSolicitud(solicitud, ctx) {
-  const cuando = new Date(`${solicitud.creado_en.replace(' ', 'T')}Z`);
-
-  return el('div', { class: 'tarjeta' }, [
-    el('h3', { texto: solicitud.nombre_declarado || 'Sin nombre' }),
-    // De dónde sale el nombre importa, porque es el dato sobre el que se decide
-    // y no lo verifica nadie: lo da Apple en la primera autorización y quien
-    // espera puede corregirlo. Puede faltar —Apple no lo entrega a partir de la
-    // segunda vez— y entonces el correo es lo único que hay.
-    el('p', {
-      class: 'pista',
-      texto: solicitud.nombre_declarado
-        ? 'Lo da Apple al entrar, y quien lo pide puede corregirlo. No lo verifica nadie.'
-        : 'Apple no ha dado el nombre esta vez. Escríbelo tú al darle acceso.',
-    }),
-    el('p', {
-      texto: solicitud.correo
-        ? solicitud.correo
-        : 'Sin correo: no lo compartió al entrar con Apple.',
-    }),
-    solicitud.correo_privado
-      ? el('p', {
-          class: 'pista',
-          texto: 'Es una dirección de reenvío de Apple, así que no dice de quién es.',
-        })
-      : null,
-    el('p', {
-      class: 'pista',
-      texto: `Lo pidió el ${cuando.toLocaleDateString('es-ES')}. Caduca a los catorce días.`,
-    }),
-    el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: () => abrirAprobacion(solicitud, ctx),
-      }, ['Darle acceso']),
-      el('button', {
-        class: 'boton', 'data-tono': 'peligro', type: 'button',
-        onclick: async (evento) => {
-          evento.currentTarget.disabled = true;
-          await resolver({ id: solicitud.id, accion: 'rechazar' }, ctx, 'Solicitud rechazada');
-        },
-      }, ['Rechazar']),
-    ]),
-  ]);
-}
-
-/**
- * Aprobar tiene dos caminos, y el que se olvida es el primero.
- *
- * Si esa persona ya figuraba en el registro sin cuenta —la abuela, que cumple
- * años y recibe regalos—, hay que vincularla a su ficha y no crear una segunda:
- * así conserva su fecha de nacimiento y todo lo que otros escribieron con ella.
- */
-function abrirAprobacion(solicitud, ctx) {
-  const candidatas = ctx.vista.personasSinCuenta();
-
-  const rotulo = solicitud.nombre_declarado
-    ? `Dar acceso a ${solicitud.nombre_declarado}`
-    : `Dar acceso a ${solicitud.correo || 'quien espera'}`;
-
-  abrirHoja(rotulo, (cuerpo) => {
-    const quien = seleccion(
-      [
-        { valor: '', texto: 'Crear una ficha nueva' },
-        ...candidatas.map((p) => ({ valor: p.id, texto: `Es ${p.nombre}, que ya está` })),
-      ],
-      '',
-    );
-    const rol = seleccion(
-      [{ valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
-      'miembro',
-    );
-    const nombre = entrada({ value: solicitud.nombre_declarado || '', placeholder: 'Nombre' });
-    const apellidos = entrada({ placeholder: 'Apellidos' });
-
-    const nueva = el('div', {}, [
-      campo('Nombre', nombre),
-      campo('Apellidos', apellidos),
-    ]);
-
-    const ajustar = () => { nueva.hidden = Boolean(quien.value); };
-    quien.addEventListener('change', ajustar);
-    ajustar();
-
-    cuerpo.append(
-      campo('Quién es', quien, 'Si ya estaba en la familia sin cuenta, vincúlala a su ficha: así conserva su cumpleaños y su historial.'),
-      nueva,
-      campo('Acceso', rol, 'Un administrador gestiona personas y categorías. Un miembro usa la agenda.'),
-    );
-
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: async (evento) => {
-          if (!quien.value && !nombre.value.trim()) { avisar('Falta el nombre'); return; }
-          evento.currentTarget.disabled = true;
-          await resolver({
-            id: solicitud.id,
-            accion: 'aprobar',
-            rol: rol.value,
-            persona_id: quien.value || null,
-            persona: quien.value
-              ? null
-              : { nombre: nombre.value.trim(), apellidos: apellidos.value.trim() },
-          }, ctx, 'Acceso concedido');
-        },
-      }, ['Dar acceso']),
-      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
-    ]));
-  });
-}
-
-async function resolver(cuerpo, ctx, exito) {
-  try {
-    await resolverSolicitud(cuerpo);
-    cerrarHoja();
-    avisar(exito);
-    // La instantánea trae el recuento y, si se ha aprobado, la persona nueva.
-    await sincronizar();
-    ctx.refrescar();
-  } catch (error) {
-    avisar(error.message || 'No se ha podido resolver la solicitud.');
-  }
-}
-
 function proximoCumple(persona) {
   if (!persona.fecha_nacimiento) return '';
   const proximo = proximoAniversario(persona);
@@ -584,7 +419,7 @@ export function abrirFicha(personaId, ctx) {
         // `pre-wrap` porque ahora el dato puede traer saltos de línea dentro.
         ? el('div', { class: 'lista' }, atributos.map((atributo) =>
             el('p', { class: 'dato', texto: textoDelDato(atributo) })))
-        : el('p', { class: 'pista', texto: 'Nada apuntado todavía.' }),
+        : el('p', { class: 'vacio', texto: 'Nada apuntado todavía.' }),
       el('button', {
         class: 'enlace-discreto', type: 'button',
         onclick: () => abrirFormularioAtributo(personaId, ctx),
@@ -600,7 +435,7 @@ export function abrirFicha(personaId, ctx) {
             el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleIdea(idea.id, ctx) }, [
               el('h3', { texto: idea.titulo }),
             ])))
-        : el('p', { class: 'pista', texto: 'Nada por ahora.' }),
+        : el('p', { class: 'vacio', texto: 'Nada por ahora.' }),
       esMia
         ? el('button', {
             class: 'enlace-discreto', type: 'button',
@@ -634,7 +469,7 @@ export function abrirFicha(personaId, ctx) {
                 ]),
                 el('p', { texto: `de ${ctx.vista.nombre(idea.autor_id)}` }),
               ])))
-          : el('p', { class: 'pista', texto: 'Ninguna todavía.' }),
+          : el('p', { class: 'vacio', texto: 'Ninguna todavía.' }),
         el('button', {
           class: 'enlace-discreto', type: 'button',
           onclick: () => abrirFormularioIdea(ctx, { paraPersona: personaId }),
@@ -653,7 +488,7 @@ export function abrirFicha(personaId, ctx) {
                 el('p', { texto: [ocasion?.nombre, formatearImporte(regalo.coste_real)].filter(Boolean).join(' · ') }),
               ]);
             }))
-          : el('p', { class: 'pista', texto: 'Sin ocasiones cerradas todavía.' }),
+          : el('p', { class: 'vacio', texto: 'Sin ocasiones cerradas todavía.' }),
       ]));
     }
 
@@ -986,11 +821,39 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
           : 'El vínculo con Apple no se escribe aquí: se establece al aprobar una solicitud.'),
     );
 
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
+    // Quitarle la cuenta a alguien no puede ser un desliz del desplegable: es
+    // la misma operación que la baja voluntaria —que confirma con una hoja de
+    // tres párrafos— hecha por otra mano. El primer toque avisa aquí mismo, con
+    // el daño escrito, y el segundo guarda; y si con esa cuenta se va la última
+    // administradora, se dice, porque después no queda nadie que pueda aprobar
+    // solicitudes desde la aplicación.
+    const avisoDeExpulsion = el('p', { class: 'pista', hidden: true });
+    let expulsionAvisada = false;
+    rol.addEventListener('change', () => {
+      expulsionAvisada = false;
+      avisoDeExpulsion.hidden = true;
+      guardarBoton.textContent = 'Guardar';
+      delete guardarBoton.dataset.tono;
+    });
+
+    const guardarBoton = el('button', {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
           if (!nombre.value.trim()) { avisar('Falta el nombre'); return; }
+
+          const expulsa = Boolean(persona?.tiene_cuenta) && !rol.value;
+          if (expulsa && !expulsionAvisada) {
+            expulsionAvisada = true;
+            const quedanAdministradores = ctx.vista.personas().some((p) =>
+              p.id !== persona.id && p.tiene_cuenta && p.rol === 'administrador');
+            avisoDeExpulsion.textContent = `Vas a quitarle la cuenta a ${persona.nombre}: se deshace su vínculo con Apple y sus avisos, y para volver a entrar tendría que solicitarlo y que alguien lo aprobara.`
+              + (quedanAdministradores ? '' : ' Y es la última cuenta administradora: no quedará nadie que pueda aprobar solicitudes desde la aplicación.');
+            avisoDeExpulsion.hidden = false;
+            guardarBoton.textContent = 'Quitarle la cuenta';
+            guardarBoton.dataset.tono = 'peligro';
+            return;
+          }
+
           await guardar('persona', persona ? persona.id : nuevoId(), {
             nombre: nombre.value.trim(),
             apellidos: apellidos.value.trim(),
@@ -1012,7 +875,10 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
           cerrarHoja(); avisar('Ficha guardada'); ctx.refrescar();
           alGuardar?.();
         },
-      }, ['Guardar']),
+      }, [persona ? 'Guardar' : 'Crear']);
+
+    cuerpo.append(avisoDeExpulsion, el('div', { class: 'acciones' }, [
+      guardarBoton,
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   });

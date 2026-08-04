@@ -40,10 +40,13 @@
          De las tres, esta y no «Iniciar sesión con Apple» porque el botón hace
          las dos cosas: quien ya es de casa entra, y quien no, deja su solicitud.
          Apple reserva «Continuar» exactamente para ese caso. -->
-    <div id="botonApple" class="apple-boton" role="button" tabindex="0">
+    <!-- Un botón de verdad y no un div con role: así hereda el teclado y el
+         foco sin emularlos, y admite `disabled` mientras la hoja de Apple y la
+         API contestan — dos toques rápidos lanzaban dos autorizaciones. -->
+    <button id="botonApple" class="apple-boton" type="button">
       <svg viewBox="0 0 16 16" aria-hidden="true" width="16" height="16"><path fill="currentColor" d="M11.18 8.53c.02-1.6 1.31-2.37 1.37-2.41-.75-1.1-1.91-1.25-2.32-1.26-.99-.1-1.93.58-2.43.58-.5 0-1.27-.57-2.09-.55-1.07.02-2.06.62-2.61 1.58-1.11 1.93-.28 4.79.8 6.36.53.77 1.16 1.63 1.99 1.6.8-.03 1.1-.52 2.06-.52.96 0 1.24.52 2.08.5.86-.01 1.4-.78 1.93-1.55.61-.89.86-1.75.87-1.79-.02-.01-1.67-.64-1.65-2.54zM9.6 3.8c.44-.53.74-1.27.66-2.01-.64.03-1.41.42-1.86.95-.4.47-.76 1.22-.66 1.94.71.06 1.43-.36 1.86-.88z"/></svg>
       <span>Continuar con Apple</span>
-    </div>
+    </button>
     <p id="accesoAviso" class="acceso-aviso" hidden></p>
     <!-- Con el mismo peso que el botón de Apple, y no como un enlace al pie.
          Es la única puerta de quien no es del hogar —incluido quien revisa la
@@ -74,9 +77,9 @@
       <h1 id="tituloPantalla" class="titulo-pantalla"></h1>
       <!-- El sobre, que **solo existe cuando hay algo**. Por eso no lleva punto
            encima ni número: que aparezca es el aviso. Y es un sobre y no una
-           campana porque esta aplicación no puede sonar —los avisos se
-           programan en el dispositivo y no hay APNs—, y un icono que promete un
-           ruido que nunca llega enseña a no fiarse de él.
+           campana: la campana promete un ruido, y lo que suena en el teléfono
+           son los avisos remotos (§12.4), que son otra pieza — descartar uno
+           allí no descarta nada aquí, y el sobre cuenta estados, no sucesos.
 
            Se queda solo en la esquina: los ajustes, que la compartían con él,
            se fueron a la barra de abajo. Aquí arriba no queda más que lo que
@@ -160,7 +163,10 @@
 </div>
 
 <div id="scrim" class="scrim" hidden></div>
-<div id="hoja" class="hoja" hidden role="dialog" aria-modal="true"></div>
+<!-- El nombre del diálogo es su título: `abrirHoja` escribe el `h2` con este
+     identificador, y sin el enlace un lector de pantalla anuncia «diálogo» a
+     secas. -->
+<div id="hoja" class="hoja" hidden role="dialog" aria-modal="true" aria-labelledby="hojaTitulo"></div>
 <div id="avisos" class="avisos" aria-live="polite"></div>
 
 <script type="module" src="/js/app.js"></script>

@@ -7,6 +7,8 @@
  * vive en el registro y la mantiene un administrador (spec funcional §8).
  */
 
+import { SinCredencial } from './errores.js';
+
 const VIGENCIA = 60 * 60 * 24 * 30; // treinta días
 
 /**
@@ -98,7 +100,7 @@ export async function emitirEspera(secreto, identificadorApple, plataforma, corr
 /** Devuelve el cuerpo del token si la firma y la vigencia son correctas. */
 export async function verificarSesion(secreto, token) {
   const partes = String(token || '').split('.');
-  if (partes.length !== 3) throw new Error('sesión mal formada');
+  if (partes.length !== 3) throw new SinCredencial('sesión mal formada');
 
   const [cabecera, cuerpo, firma] = partes;
   const esperada = await crypto.subtle.sign(
@@ -106,11 +108,11 @@ export async function verificarSesion(secreto, token) {
     await clave(secreto),
     new TextEncoder().encode(`${cabecera}.${cuerpo}`),
   );
-  if (datosABase64url(esperada) !== firma) throw new Error('firma de sesión inválida');
+  if (datosABase64url(esperada) !== firma) throw new SinCredencial('firma de sesión inválida');
 
   const datos = JSON.parse(base64urlATexto(cuerpo));
   if (typeof datos.exp !== 'number' || datos.exp < Math.floor(Date.now() / 1000)) {
-    throw new Error('sesión caducada');
+    throw new SinCredencial('sesión caducada');
   }
   return datos;
 }
@@ -129,14 +131,14 @@ export async function verificarSesion(secreto, token) {
 export async function verificarSesionPlena(secreto, token) {
   const datos = await verificarSesion(secreto, token);
   if ((datos.tipo || TIPO_PLENA) !== TIPO_PLENA) {
-    throw new Error('esta sesión no da acceso a la agenda');
+    throw new SinCredencial('esta sesión no da acceso a la agenda');
   }
   return datos;
 }
 
 export async function verificarSesionDeEspera(secreto, token) {
   const datos = await verificarSesion(secreto, token);
-  if (datos.tipo !== TIPO_ESPERA) throw new Error('sesión de espera no válida');
+  if (datos.tipo !== TIPO_ESPERA) throw new SinCredencial('sesión de espera no válida');
   return datos;
 }
 
