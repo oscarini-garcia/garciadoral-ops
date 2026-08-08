@@ -143,7 +143,23 @@ function diaAnterior(fecha) {
  *  descartarse (sin UID, o instancia de una serie recurrente). */
 function traducirEvento(lineas, zona) {
   const prop = {};
+
+  // Solo las propiedades del propio VEVENT. Un evento puede llevar dentro sus
+  // recordatorios —`BEGIN:VALARM`…`END:VALARM`— y esos traen `SUMMARY` y
+  // `DESCRIPTION` propios: sin saltárselos, el vuelo se importaba titulado
+  // «Recordatorio» y con el texto de la alarma por notas. No desaparecía, que es
+  // lo que parecía desde la agenda; llegaba con otro nombre, y por eso no se
+  // reconocía ni lo pillaba `presentarVuelo`.
+  //
+  // Se cuenta la profundidad en vez de mirar solo VALARM: lo mismo valdría para
+  // cualquier componente anidado que un cliente decida meter ahí.
+  let dentro = 0;
   for (const linea of lineas) {
+    const recortada = linea.trim();
+    if (/^BEGIN:/i.test(recortada)) { dentro += 1; continue; }
+    if (/^END:/i.test(recortada)) { dentro -= 1; continue; }
+    if (dentro > 0) continue;
+
     const p = partirLinea(linea);
     if (p) prop[p.nombre] = p;
   }

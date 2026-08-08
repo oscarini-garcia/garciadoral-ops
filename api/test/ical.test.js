@@ -207,6 +207,56 @@ test('los escapes de texto se deshacen en las notas', () => {
   assert.equal(e.notas, 'Hotel, calle 5; reserva 42\nvuelo AA100');
 });
 
+/**
+ * El recordatorio de dentro no es el evento.
+ *
+ * Un `VEVENT` puede llevar dentro sus alarmas, y una alarma trae `SUMMARY` y
+ * `DESCRIPTION` propios. Sin saltarse los bloques anidados, la última lectura
+ * ganaba: el vuelo se importaba titulado «Recordatorio» y con el texto de la
+ * alarma por notas. No desaparecía —que es lo que parecía desde la agenda—,
+ * llegaba con otro nombre, y por eso no se reconocía ni lo pillaba
+ * `presentarVuelo`.
+ */
+test('un VALARM dentro del evento no le pisa el título ni las notas', () => {
+  const [e] = parsearICal(ics(
+    'BEGIN:VEVENT',
+    'UID:u-alarma',
+    'SUMMARY:Madrid → Múnich',
+    'DTSTART;TZID=Europe/Madrid:20260810T104000',
+    'DTEND;TZID=Europe/Berlin:20260810T131500',
+    'DESCRIPTION:IB 3192. Terminal 4.',
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'TRIGGER:-PT2H',
+    'SUMMARY:Recordatorio',
+    'DESCRIPTION:Sal para el aeropuerto',
+    'END:VALARM',
+    'END:VEVENT',
+  ));
+  assert.equal(e.titulo, 'Madrid → Múnich');
+  assert.equal(e.notas, 'IB 3192. Terminal 4.');
+  assert.equal(e.inicio, '2026-08-10T10:40:00');
+});
+
+test('dos alarmas seguidas tampoco, y el evento siguiente se lee entero', () => {
+  const eventos = parsearICal(ics(
+    'BEGIN:VEVENT',
+    'UID:u-dos-alarmas',
+    'SUMMARY:Ida',
+    'DTSTART;TZID=Europe/Madrid:20260810T104000',
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'SUMMARY:Uno', 'END:VALARM',
+    'BEGIN:VALARM', 'ACTION:AUDIO', 'SUMMARY:Dos', 'END:VALARM',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'UID:u-vuelta',
+    'SUMMARY:Vuelta',
+    'DTSTART;TZID=Europe/Berlin:20260814T190000',
+    'END:VEVENT',
+  ));
+  assert.deepEqual(eventos.map((e) => e.titulo), ['Ida', 'Vuelta']);
+  assert.equal(eventos[1].inicio, '2026-08-14T19:00:00');
+});
+
 test('un VEVENT sin UID se descarta', () => {
   const eventos = parsearICal(ics(
     'BEGIN:VEVENT',
