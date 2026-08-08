@@ -904,7 +904,13 @@ function bloqueDeViajes(seccion) {
     const fechas = viajes.map((e) => e.inicio).filter(Boolean).sort();
     const lineas = [
       `Calendario en la instantánea: ${cal ? 'sí' : 'NO — ¿migración 0014 aplicada y Worker desplegado?'}`,
-      cal ? `  última sincronización: ${cal.ultima_sincronizacion || 'nunca'}` : null,
+      cal ? `  última correcta: ${cal.ultima_sincronizacion || 'nunca'}` : null,
+      // Los dos de abajo contestan lo que la fecha de arriba no podía: un feed
+      // que se lee bien y viene vacío y otro que lleva semanas dando 404 dejaban
+      // exactamente el mismo rastro —una fecha cada vez más vieja—, y desde la
+      // agenda los dos se ven igual: sin viaje.
+      cal?.ultimo_intento ? `  último intento:  ${cal.ultimo_intento}` : null,
+      cal?.ultimo_resultado ? `  y salió: ${cal.ultimo_resultado}` : null,
       `Viajes importados cargados: ${viajes.length}`,
       fechas.length ? `  fechas: de ${fechas[0]} a ${fechas[fechas.length - 1]}` : null,
       `Versión de la app: ${VERSION_APP}`,
@@ -1634,12 +1640,25 @@ function bloqueDeSincronizacion(dentro) {
 
 /** Lo que trajo la descarga, en un renglón. Sin cambios se dice, que es lo más
  *  frecuente y es una respuesta tan buena como cualquier otra. */
+/**
+ * Lo que ha dado la lectura del feed, en una línea.
+ *
+ * Decía «sin cambios» tanto cuando todo estaba al día como cuando **el feed
+ * venía vacío**, que son cosas distintas y desde la agenda se ven igual: no hay
+ * viaje. Ahora lo primero que dice es cuántos traía el feed, que es donde
+ * empieza cualquier respuesta a «¿por qué no está mi vuelo?».
+ */
 function resumenDeViajes(resultado) {
   if (resultado?.estado !== 'ok') return `Calendario de viajes: ${resultado?.estado || 'sin respuesta'}`;
+
+  if (!resultado.vistos) return 'Calendario de viajes: el feed no trae ningún evento';
+
   const cambios = (resultado.altas || 0) + (resultado.cambios || 0) + (resultado.bajas || 0);
+  const cuenta = `${resultado.vistos} en el feed`
+    + (resultado.importables !== resultado.vistos ? `, ${resultado.importables} legibles` : '');
   return cambios
-    ? `Calendario de viajes: ${resultado.altas || 0} nuevos, ${resultado.cambios || 0} cambios, ${resultado.bajas || 0} retirados`
-    : 'Calendario de viajes: sin cambios';
+    ? `Calendario de viajes: ${cuenta} · ${resultado.altas || 0} nuevos, ${resultado.cambios || 0} cambios, ${resultado.bajas || 0} retirados`
+    : `Calendario de viajes: ${cuenta} · sin cambios`;
 }
 
 /** Si esta persona puede disparar la descarga del calendario de viajes. */

@@ -139,8 +139,14 @@ function diaAnterior(fecha) {
   return `${t.getUTCFullYear()}-${dosCifras(t.getUTCMonth() + 1)}-${dosCifras(t.getUTCDate())}`;
 }
 
-/** Traduce un bloque `VEVENT` ya desplegado a un evento, o `null` si debe
- *  descartarse (sin UID, o instancia de una serie recurrente). */
+/**
+ * Traduce un bloque `VEVENT` ya desplegado.
+ *
+ * Devuelve `{ evento }` o `{ motivo, uid }` con la razón por la que se descarta.
+ * El motivo no es adorno: un evento que se cae en silencio se ve desde la agenda
+ * exactamente igual que uno que nunca existió, y no había manera de distinguir
+ * «el feed no lo trae» de «el feed lo trae y no lo entendí».
+ */
 function traducirEvento(lineas, zona) {
   const prop = {};
 
@@ -166,12 +172,13 @@ function traducirEvento(lineas, zona) {
 
   // Una instancia concreta de una serie no se importa: la recurrencia se ignora
   // y solo se toma la primera aparición, de modo que estas sobran (§5.5).
-  if (prop['RECURRENCE-ID']) return null;
-  const uid = prop.UID?.valor?.trim();
-  if (!uid) return null;
+  const uid = prop.UID?.valor?.trim() || null;
+  if (prop['RECURRENCE-ID']) return { motivo: 'instancia de una serie', uid };
+  if (!uid) return { motivo: 'sin UID', uid: null };
 
-  const inicioMomento = prop.DTSTART ? interpretarMomento(prop.DTSTART.valor, prop.DTSTART.params, zona) : null;
-  if (!inicioMomento) return null;
+  if (!prop.DTSTART) return { motivo: 'sin DTSTART', uid };
+  const inicioMomento = interpretarMomento(prop.DTSTART.valor, prop.DTSTART.params, zona);
+  if (!inicioMomento) return { motivo: `DTSTART ilegible: ${prop.DTSTART.valor}`, uid };
   const jornadaCompleta = 'fecha' in inicioMomento;
 
   let inicio;
@@ -192,7 +199,7 @@ function traducirEvento(lineas, zona) {
     }
   }
 
-  return {
+  return { evento: {
     uid,
     titulo: prop.SUMMARY ? desescapar(prop.SUMMARY.valor).trim() : '',
     inicio,
@@ -201,7 +208,7 @@ function traducirEvento(lineas, zona) {
     ubicacion: prop.LOCATION ? desescapar(prop.LOCATION.valor).trim() : '',
     notas: prop.DESCRIPTION ? desescapar(prop.DESCRIPTION.valor).trim() : '',
     cancelado: (prop.STATUS?.valor || '').toUpperCase() === 'CANCELLED',
-  };
+  } };
 }
 
 /**
@@ -211,23 +218,44 @@ function traducirEvento(lineas, zona) {
  * @param {string} [zona] Zona de la casa para convertir marcas UTC.
  * @returns {Array<{uid,titulo,inicio,fin,jornadaCompleta,ubicacion,notas,cancelado}>}
  */
-export function parsearICal(texto, zona = ZONA) {
+export function inspeccionarICal(texto, zona = ZONA) {
   const lineas = desplegar(String(texto || '')).split('\n');
   const eventos = [];
+  const ignorados = [];
+  let vistos = 0;
   let bloque = null;
+  let profundidad = 0;
+
   for (const linea of lineas) {
     const recortada = linea.trim();
-    if (recortada === 'BEGIN:VEVENT') {
+
+    // El VEVENT se abre en el nivel de fuera. Lo que se abra dentro —un VALARM—
+    // es del bloque y va con él: se cuenta la profundidad para no cerrar el
+    // evento con el `END` de su alarma.
+    if (bloque === null && recortada === 'BEGIN:VEVENT') {
       bloque = [];
-    } else if (recortada === 'END:VEVENT') {
-      if (bloque) {
-        const evento = traducirEvento(bloque, zona);
-        if (evento) eventos.push(evento);
-      }
-      bloque = null;
-    } else if (bloque) {
-      bloque.push(linea);
+      profundidad = 0;
+      vistos += 1;
+      continue;
     }
+    if (bloque === null) continue;
+
+    if (/^BEGIN:/i.test(recortada)) profundidad += 1;
+    if (/^END:/i.test(recortada) && profundidad === 0) {
+      const { evento, motivo, uid } = traducirEvento(bloque, zona);
+      if (evento) eventos.push(evento);
+      else ignorados.push({ uid, motivo });
+      bloque = null;
+      continue;
+    }
+    if (/^END:/i.test(recortada)) profundidad -= 1;
+    bloque.push(linea);
   }
-  return eventos;
+
+  return { vistos, eventos, ignorados };
+}
+
+/** Los eventos y nada más, que es lo que necesita quien no está diagnosticando. */
+export function parsearICal(texto, zona = ZONA) {
+  return inspeccionarICal(texto, zona).eventos;
 }

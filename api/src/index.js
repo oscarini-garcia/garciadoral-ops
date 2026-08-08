@@ -938,6 +938,24 @@ const RUTAS = [
   ['POST', '/api/ia/probar', probarLaRedaccion],
 ];
 
+/**
+ * Lo único que el cron puede hacer con una excepción: dejarla escrita.
+ *
+ * `sincronizarViajes` ya anota los fallos que sabe nombrar —una descarga que no
+ * llega, un 404—; esto atrapa lo que se le escape por debajo, que si no se
+ * perdería entero.
+ */
+async function anotarFalloDeCron(env, ahora, error) {
+  try {
+    await env.DB
+      .prepare('UPDATE calendario_externo SET ultimo_resultado = ?, ultimo_intento = ? WHERE id = ?')
+      .bind(`falló sin llegar a leer: ${String(error?.message || error)}`, ahora, 'cal-viajes')
+      .run();
+  } catch {
+    // Si ni siquiera esto se puede escribir, no queda nada que hacer desde aquí.
+  }
+}
+
 export default {
   // `ctx` llega hasta aquí por los avisos remotos: son lo único que continúa
   // después de haber contestado, y sin `waitUntil` el isolate se apagaría con
@@ -975,11 +993,21 @@ export default {
   // El cron del propio Worker sincroniza el calendario de viajes. Es el servidor
   // quien descarga el feed —por el secreto y porque aquí se escribe el registro
   // (`specs/calendario-viajes.md` §5.1)—, y una vez al día basta para una fuente
-  // que Google regenera cada varias horas (§5.4). Un fallo de descarga no toca
-  // nada y no propaga la excepción: el cron no tiene a quién contestar.
+  // que Google regenera cada varias horas (§5.4).
+  //
+  // La excepción sigue sin propagarse, porque el cron no tiene a quién
+  // contestar, pero **ya no se pierde**: `sincronizarViajes` anota en el propio
+  // calendario qué pasó, y Ajustes lo lee de la instantánea. Antes esto era un
+  // `.catch(() => …)` con el resultado tirado, de modo que una descarga que
+  // llevara semanas fallando no lo decía en ningún sitio: lo único que quedaba
+  // era una fecha de «última sincronización» cada vez más vieja que nadie mira.
   async scheduled(controlador, env, ctx) {
+    const ahora = new Date().toISOString();
     ctx.waitUntil(
-      sincronizarViajes(env, { ahora: new Date().toISOString() }).catch(() => ({ estado: 'error' })),
+      sincronizarViajes(env, { ahora }).catch(async (error) => {
+        await anotarFalloDeCron(env, ahora, error);
+        return { estado: 'error' };
+      }),
     );
   },
 };
