@@ -935,6 +935,18 @@ button { background: none; border: 0; cursor: pointer; }
   text-transform: uppercase; color: var(--ink-faint); font-weight: 400;
   padding-top: 0;
 }
+/* La cabecera que ordena. Es un botón dentro del `th` y no el `th` entero: así
+   la celda sigue siendo cabecera de columna para quien no ve —con su
+   `aria-sort`— y lo tocable es solo la palabra, que es lo que se toca.
+
+   La activa se marca en tinta y con una flecha, y la flecha va por
+   pseudoelemento para que no le quite sitio al rótulo cuando no está. */
+.orden-columna {
+  font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit;
+  padding: 0; background: none; border: 0; cursor: pointer;
+}
+.orden-columna[data-activa="si"] { color: var(--tinta); }
+.orden-columna[data-activa="si"]::after { content: ' ↑'; }
 .tabla-personas td { font-size: 15px; }
 .tabla-personas td:nth-child(2) { color: var(--ink-soft); font-size: 13.5px; }
 .tabla-personas td:last-child { text-align: right; padding-right: 0; white-space: nowrap; }

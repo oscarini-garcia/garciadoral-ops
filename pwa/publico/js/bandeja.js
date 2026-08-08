@@ -106,12 +106,24 @@ function tarjetaDeSolicitud(solicitud, ctx) {
 /**
  * Aprobar tiene dos caminos, y el que se olvida es el primero.
  *
- * Si esa persona ya figuraba en el registro sin cuenta —la abuela, que cumple
- * años y recibe regalos—, hay que vincularla a su ficha y no crear una segunda:
- * así conserva su fecha de nacimiento y todo lo que otros escribieron con ella.
+ * Si esa persona ya figuraba en el registro —Ana, que lleva ahí desde siempre—,
+ * hay que vincularla a su ficha y no crear una segunda: así conserva su fecha de
+ * nacimiento y todo lo que otros escribieron con ella.
+ *
+ * **A quién se puede vincular es la familia y solo la familia.** Antes se
+ * ofrecía a cualquiera sin cuenta, que en un registro de verdad son los veinte
+ * sobrinos, primos y cuñados que nunca van a entrar: una lista larguísima en la
+ * que la persona que buscas no se encuentra. Y una cuenta es de quien vive en
+ * casa —es lo que gobierna Lío, Sitios y el círculo cerrado—, así que ofrecer
+ * al resto era ofrecer algo que no debe pasar.
+ *
+ * Quien ya tiene cuenta sale igualmente, apagado y con el motivo escrito. Es la
+ * diferencia entre «no está» y «está y no se puede», que desde una lista en la
+ * que alguien falta no se distingue —y el Worker lo rechaza de todas formas—.
  */
 function abrirAprobacion(solicitud, ctx) {
-  const candidatas = ctx.vista.personasSinCuenta();
+  const deLaCasa = [...ctx.vista.personasDe('familia')]
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
   const rotulo = solicitud.nombre_declarado
     ? `Dar acceso a ${solicitud.nombre_declarado}`
@@ -121,7 +133,11 @@ function abrirAprobacion(solicitud, ctx) {
     const quien = seleccion(
       [
         { valor: '', texto: 'Crear una ficha nueva' },
-        ...candidatas.map((p) => ({ valor: p.id, texto: `Es ${p.nombre}, que ya está` })),
+        ...deLaCasa.map((p) => ({
+          valor: p.id,
+          texto: p.tiene_cuenta ? `${p.nombre} — ya tiene cuenta` : `Es ${p.nombre}, que ya está`,
+          desactivada: Boolean(p.tiene_cuenta),
+        })),
       ],
       '',
     );
