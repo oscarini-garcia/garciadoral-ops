@@ -153,7 +153,15 @@ test('una descarga fallida conserva el último estado', async () => {
   assert.equal(r.estado, 'error-descarga');
   assert.equal(r.codigo, 503);
   assert.ok(!base.ejecutadas.some(escribeEnEvento), 'no escribe eventos');
-  assert.ok(!base.ejecutadas.some((e) => e.sql.includes('UPDATE calendario_externo')), 'no resella');
+
+  // Lo que sí hace ahora es dejar dicho que falló. `ultima_sincronizacion` es la
+  // fecha de la última **correcta** y no se toca; el rastro va aparte, porque si
+  // no un feed que lleva semanas dando 503 se ve igual que uno que está al día.
+  const anotaciones = hechas(base, 'UPDATE calendario_externo');
+  assert.equal(anotaciones.length, 1);
+  assert.ok(anotaciones[0].sql.includes('ultimo_resultado'), 'anota el resultado');
+  assert.ok(!anotaciones[0].sql.includes('ultima_sincronizacion'), 'no resella');
+  assert.match(anotaciones[0].args[0], /error al descargar \(503\)/);
 });
 
 test('el camino feliz reconcilia y sella la última sincronización', async () => {
@@ -170,5 +178,51 @@ test('el camino feliz reconcilia y sella la última sincronización', async () =
   );
   assert.equal(r.estado, 'ok');
   assert.equal(r.altas, 1);
-  assert.equal(hechas(base, 'UPDATE calendario_externo').length, 1);
+
+  // Dos escrituras sobre el calendario y no una: el rastro de qué pasó, y el
+  // sello de la última correcta.
+  const tocan = hechas(base, 'UPDATE calendario_externo');
+  assert.equal(tocan.length, 2);
+  assert.equal(tocan.filter((e) => e.sql.includes('ultima_sincronizacion')).length, 1);
+
+  // Y lo que el rastro cuenta es lo que hace falta para contestar «¿por qué no
+  // está mi vuelo?»: cuántos traía el feed, cuántos se entendieron y qué se hizo.
+  assert.equal(r.vistos, 1);
+  assert.equal(r.importables, 1);
+  assert.match(tocan[0].args[0], /1 en el feed · 1 legibles · 1 nuevos/);
+});
+
+test('un feed vacío se distingue de un feed al día', async () => {
+  const base = baseFalsa();
+  const vacio = ['BEGIN:VCALENDAR', 'END:VCALENDAR'].join('\r\n');
+  const r = await sincronizarViajes(
+    { VIAJES_ICAL_URL: 'https://x/basic.ics', DB: base },
+    { ahora: AHORA, descargar: async () => ({ ok: true, text: async () => vacio }) },
+  );
+
+  // Las dos cosas daban «sin cambios» y desde la agenda se veían igual: sin
+  // viaje. Ahora el rastro dice cuál de las dos es.
+  assert.equal(r.estado, 'ok');
+  assert.equal(r.vistos, 0);
+  assert.equal(r.importables, 0);
+  assert.match(hechas(base, 'UPDATE calendario_externo')[0].args[0], /^0 en el feed · 0 legibles/);
+});
+
+test('un evento que el feed trae y no se entiende se cuenta y se nombra', async () => {
+  const base = baseFalsa();
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'BEGIN:VEVENT', 'UID:u-bueno', 'SUMMARY:Lisboa', 'DTSTART;VALUE=DATE:20260710', 'END:VEVENT',
+    'BEGIN:VEVENT', 'SUMMARY:Sin identificador', 'DTSTART;VALUE=DATE:20260711', 'END:VEVENT',
+    'BEGIN:VEVENT', 'UID:u-raro', 'SUMMARY:Fecha rara', 'DTSTART:no-es-una-fecha', 'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+  const r = await sincronizarViajes(
+    { VIAJES_ICAL_URL: 'https://x/basic.ics', DB: base },
+    { ahora: AHORA, descargar: async () => ({ ok: true, text: async () => ics }) },
+  );
+
+  assert.equal(r.vistos, 3);
+  assert.equal(r.importables, 1);
+  assert.deepEqual(r.ignorados.map((i) => i.motivo), ['sin UID', 'DTSTART ilegible: no-es-una-fecha']);
 });

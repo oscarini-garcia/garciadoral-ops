@@ -19,7 +19,7 @@
  *   último estado: un feed vacío por un error de red no cancela los viajes (§5.3).
  */
 
-import { parsearICal, ZONA } from './ical.js';
+import { inspeccionarICal, ZONA } from './ical.js';
 
 /** El calendario que siembra `migraciones/0014_viajes.sql`. */
 export const CALENDARIO_VIAJES = 'cal-viajes';
@@ -74,6 +74,46 @@ function cambia(fila, contenido) {
     b01(fila.activo) !== contenido.activo ||
     fila.origen !== 'importado'
   );
+}
+
+/**
+ * Lo que pasó en la última sincronización, en una línea legible.
+ *
+ * No es un registro de depuración: es lo que Ajustes escribe para que se pueda
+ * contestar «¿por qué no está mi vuelo?» sin abrir nada.
+ * `ultima_sincronizacion` solo se toca cuando sale bien —es la fecha de la
+ * última correcta—, así que un fallo tenía que dejar rastro en otro sitio o no
+ * dejarlo en ninguno, que es lo que pasaba.
+ */
+function resumenEnUnaLinea(r) {
+  if (r.estado !== 'ok') {
+    return `error al descargar${r.codigo ? ` (${r.codigo})` : ''}${r.mensaje ? `: ${r.mensaje}` : ''}`;
+  }
+  const partes = [
+    `${r.vistos} en el feed`,
+    `${r.importables} legibles`,
+    `${r.altas} nuevos`,
+    `${r.cambios} cambios`,
+    `${r.bajas} retirados`,
+  ];
+  if (r.ignorados?.length) {
+    partes.push(`descartados: ${r.ignorados.map((i) => i.motivo).join('; ')}`);
+  }
+  return partes.join(' · ');
+}
+
+/** Deja el resultado en el propio calendario, que ya viaja en la instantánea. */
+async function anotarResultado(db, calendarioId, ahora, texto) {
+  try {
+    await db
+      .prepare('UPDATE calendario_externo SET ultimo_resultado = ?, ultimo_intento = ? WHERE id = ?')
+      .bind(texto, ahora, calendarioId)
+      .run();
+  } catch (error) {
+    // Las columnas llegan con la 0019. Entre desplegar y migrar hay una ventana,
+    // y no vale la pena tumbar una sincronización por no poder anotarla.
+    if (!/no such column/i.test(String(error?.message || error))) throw error;
+  }
 }
 
 /**
@@ -174,14 +214,21 @@ export async function sincronizarViajes(env, {
   try {
     const respuesta = await descargar(url);
     if (!respuesta || !respuesta.ok) {
-      return { estado: 'error-descarga', codigo: respuesta?.status ?? 0 };
+      const fallo = { estado: 'error-descarga', codigo: respuesta?.status ?? 0 };
+      await anotarResultado(env.DB, calendarioId, ahora, resumenEnUnaLinea(fallo));
+      return fallo;
     }
     texto = await respuesta.text();
   } catch (error) {
-    return { estado: 'error-descarga', mensaje: String(error?.message || error) };
+    const fallo = { estado: 'error-descarga', mensaje: String(error?.message || error) };
+    await anotarResultado(env.DB, calendarioId, ahora, resumenEnUnaLinea(fallo));
+    return fallo;
   }
 
-  const eventos = parsearICal(texto, ZONA);
+  // Se inspecciona en vez de solo parsear: hace falta poder distinguir «el feed
+  // vino vacío» de «el feed trae cosas y no las entiendo». Desde la agenda las
+  // dos se ven igual —no hay viaje— y hasta ahora las dos decían «sin cambios».
+  const { vistos, eventos, ignorados } = inspeccionarICal(texto, ZONA);
   const resumen = await reconciliarViajes(env.DB, {
     calendarioId,
     tipoEventoId: cal.tipo_evento_id,
@@ -189,10 +236,18 @@ export async function sincronizarViajes(env, {
     ahora,
   });
 
+  const lectura = {
+    bytes: texto.length,
+    vistos,
+    importables: eventos.length,
+    ignorados: ignorados.slice(0, 5),
+  };
+
+  await anotarResultado(env.DB, calendarioId, ahora, resumenEnUnaLinea({ estado: 'ok', ...resumen, ...lectura }));
   await env.DB
     .prepare('UPDATE calendario_externo SET ultima_sincronizacion = ? WHERE id = ?')
     .bind(ahora, calendarioId)
     .run();
 
-  return { estado: 'ok', ...resumen };
+  return { estado: 'ok', ...resumen, ...lectura };
 }

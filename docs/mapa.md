@@ -55,7 +55,7 @@ tener que recorrer la aplicación entera cada vez.
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **ical.js** — Parser de iCalendar (RFC 5545), reducido a lo que un calendario de viajes necesita…
-  ZONA · parsearICal
+  ZONA · inspeccionarICal · parsearICal
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
@@ -271,7 +271,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**335** en total.
+**337** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -300,7 +300,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitud-aviso.test.js` — 4
 - `api/test/solicitudes.test.js` — 15
-- `api/test/viajes.test.js` — 10
+- `api/test/viajes.test.js` — 12
 - `api/test/visibilidad.test.js` — 12
 
 Lo que ejecuta la integración continua:
