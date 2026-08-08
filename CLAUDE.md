@@ -303,7 +303,12 @@ pendiente. El hook lo inyecta al final del mapa.
   la de los otros cuatro —mismo freno por minuto, misma cadena de modelos,
   instrucción editable en Ajustes (`ia.chispa`)—; lo suyo es el material y
   **el tema al azar**, sacado de los tipos de evento que la casa usa de verdad,
-  que es lo que salva los días vacíos. **El tono se le marca a mano** —ironía seca, insinuar en vez de
+  que es lo que salva los días vacíos. **Y da dos o tres líneas, no dos**: el tope se subió cuando la
+  pantalla ganó sitio, con la cautela escrita dentro —que la frase pida la
+  tercera y no la rellene—, y a la vez se cambió «quédate corto antes que
+  pasarte» por «no expliques el chiste ni lo remates», que es lo que de verdad
+  se le quería pedir: aquello frenaba la longitud y esto frena el subrayado.
+  **El tono se le marca a mano** —ironía seca, insinuar en vez de
   decir, y prohibidos los tacos y las exclamaciones—, porque sin decírselo no lo
   acierta: la primera tanda de verdad trajo un taco puesto para dar énfasis. Dos
   reglas más que no son de estilo: el encargo **prohíbe nombrar regalos, ideas y
