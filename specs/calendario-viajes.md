@@ -85,6 +85,8 @@ La traducción de una entrada iCalendar a un Evento se fija de forma explícita 
 
 **Zonas horarias.** Las entradas con hora llegan referidas a una zona (`TZID`) o en UTC (`Z`). La conversión a la zona local debe realizarse en la importación y no en la presentación, para que la fecha con la que un evento se sitúa en la semana sea inequívoca. Los eventos de jornada completa carecen de zona: son fechas flotantes y no deben desplazarse por conversión alguna.
 
+Durante un tiempo esto se cumplió solo a medias: las marcas `Z` se convertían y las `TZID` no, y se anotó como limitación conocida. No lo era. Un vuelo que sale de Nueva York a las 18:40 son las 00:40 del día siguiente en Madrid, de modo que el evento se situaba **un día antes del que le toca** —y si ese día era domingo, en la semana anterior—. Ya se convierten las tres formas, y `api/test/ical.test.js` comprueba que un mismo instante escrito en `Z`, en `TZID` de casa y en `TZID` ajeno da el mismo resultado. Una zona que el motor no reconozca —los nombres de Windows, «Romance Standard Time»— cae a la hora de pared, que es lo que había: perder el vuelo entero sería mucho peor que perder la hora.
+
 ---
 
 ## 5. Sincronización y reconciliación
