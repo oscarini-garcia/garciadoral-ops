@@ -1679,3 +1679,15 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   min-height: 100%;
   transform: translate(-50%, -50%);
 }
+
+/* El separador de rama dentro de la tabla de personas: la figura del separador
+   de día de la lista —versalita en serifa pequeña con su raya—, aquí como fila
+   que abarca las tres columnas. La fila de rama no es tocable ni se ilumina:
+   solo parte la lista. */
+.tabla-personas .tabla-rama th {
+  font-family: var(--serif); font-size: 13px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-soft); font-weight: 600;
+  padding: 16px 10px 5px 0;
+}
+.tabla-personas tbody .tabla-rama { cursor: default; }
+.tabla-personas tbody .tabla-rama:hover { background: transparent; }

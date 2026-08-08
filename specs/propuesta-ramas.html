@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ramas de familia · opciones</title>
+<style>
+  :root {
+    --paper: #FBF9F5;
+    --card: #FFFFFF;
+    --ink: #22313A;
+    --ink-soft: #5F7280;
+    --line: #E4DFD4;
+    --brick: #A4432F;
+    --brick-suave: #F6E9E4;
+    --tinta-suave: #EEF1EE;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #171C1F;
+      --card: #1E2529;
+      --ink: #E9E5DC;
+      --ink-soft: #9DAAB2;
+      --line: #2E373D;
+      --brick: #D97B62;
+      --brick-suave: #33231F;
+      --tinta-suave: #242D30;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #171C1F;
+    --card: #1E2529;
+    --ink: #E9E5DC;
+    --ink-soft: #9DAAB2;
+    --line: #2E373D;
+    --brick: #D97B62;
+    --brick-suave: #33231F;
+    --tinta-suave: #242D30;
+  }
+  :root[data-theme="light"] {
+    --paper: #FBF9F5;
+    --card: #FFFFFF;
+    --ink: #22313A;
+    --ink-soft: #5F7280;
+    --line: #E4DFD4;
+    --brick: #A4432F;
+    --brick-suave: #F6E9E4;
+    --tinta-suave: #EEF1EE;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, "Segoe UI", system-ui, sans-serif;
+    margin: 0;
+    padding: 48px 20px 72px;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+
+  h1, h2 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-weight: 600;
+    text-wrap: balance;
+    line-height: 1.2;
+  }
+  h1 { font-size: 2rem; margin: 0 0 6px; }
+  h2 { font-size: 1.45rem; margin: 0 0 4px; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  .meta {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin: 0 0 8px;
+  }
+  header p.intro { color: var(--ink-soft); margin: 10px 0 0; }
+
+  section { margin-top: 56px; }
+  section > p.marco { color: var(--ink-soft); margin: 8px 0 24px; }
+  section > p.marco strong { color: var(--ink); font-weight: 600; }
+
+  .trampa {
+    margin-top: 44px;
+    border: 1px solid var(--brick);
+    border-radius: 10px;
+    background: var(--brick-suave);
+    padding: 20px 24px;
+  }
+  .trampa .eyebrow { color: var(--brick); margin-bottom: 6px; }
+  .trampa h2 { font-size: 1.2rem; }
+  .trampa p { margin: 10px 0 0; }
+
+  .opcion {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .opcion.recomendada { border-color: var(--ink); }
+  .opcion-cabecera {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ficha {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--tinta-suave);
+    border-radius: 6px;
+    padding: 3px 9px;
+  }
+  .opcion.recomendada .ficha { background: var(--ink); color: var(--paper); }
+  .opcion-cabecera h3 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  .sello {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-left: auto;
+  }
+  .opcion p.resumen { margin: 10px 0 0; color: var(--ink-soft); }
+  .opcion ul { margin: 12px 0 0; padding-left: 20px; }
+  .opcion li { margin-bottom: 7px; }
+  .opcion li:last-child { margin-bottom: 0; }
+  .pie {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--ink-soft);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .pie b { color: var(--ink); font-weight: 600; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.86em;
+    background: var(--tinta-suave);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .trampa code { background: transparent; padding: 1px 2px; }
+
+  .respuesta {
+    margin-top: 64px;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+  .respuesta p { color: var(--ink-soft); margin: 8px 0 0; }
+  .respuesta .ejemplo {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: inline-block;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="eyebrow">garciadoral-ops · propuesta</p>
+  <h1>Las ramas: agrupar a la gente que es familia entre sí</h1>
+  <p class="meta">4 de agosto de 2026 · sobre la 1.51.0 · nada construido aún</p>
+  <p class="intro">La pantalla de Gente crece y los círculos —Extendida, Amigos— ya no bastan para
+  leerla: dentro de Extendida conviven varias familias, y hoy la tabla las mezcla en una sola lista
+  ordenada. La pregunta es qué es «una familia» para el modelo, cómo se rellena y dónde se enseña.
+  Dos notas antes de las opciones: el buscador de Gente <strong>ya</strong> encuentra por apellido
+  («garcía» saca a todos los García); y a la cosa nueva aquí se le llama <strong>rama</strong>, no
+  «familia», porque «familia» ya significa el círculo cerrado de casa — es la misma razón por la
+  que las mejoras no se llamaron «idea».</p>
+</header>
+
+<div class="trampa">
+  <p class="eyebrow">La trampa de los apellidos</p>
+  <h2>El apellido propone, pero no puede decidir</h2>
+  <p>En España una pareja no comparte apellido: agrupar en automático por el primer apellido
+  <strong>parte a los matrimonios</strong> —tu tía García queda con los García y su marido Pérez se
+  queda suelto— y junta a Garcías que no se conocen. Y varias fichas tienen los apellidos a medio
+  poner, porque nunca hicieron falta. Por eso todas las opciones que guardan algo tratan el
+  apellido como lo que es: una <strong>propuesta que alguien confirma</strong>, nunca la verdad.
+  Es el mismo patrón del nombre en la bandeja de solicitudes: el dato llega solo, y quien decide
+  lo corrige.</p>
+</div>
+
+<section>
+  <p class="eyebrow">Pregunta A</p>
+  <h2>Qué es una rama para el modelo</h2>
+  <p class="marco">De menos a más peso. La ficha de persona tiene hoy <code>nombre</code>,
+  <code>apellidos</code>, <code>parentesco</code> (relativo a quien mira), <code>circulo</code> y
+  <code>genero</code>; nada enlaza una persona con otra.</p>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">A1</span><h3>Nada que guardar: la lista se agrupa sola</h3></div>
+    <p class="resumen">Sin campo y sin migración: la tabla de Extendida y Amigos se agrupa por primer apellido, como pura presentación.</p>
+    <ul>
+      <li>Separadores por apellido —«García», «Doral»— con la misma figura de dos niveles que ya usa la lista de la agenda; quien no comparte apellido con nadie va en un grupo final.</li>
+      <li>Se equivoca sin romper nada: una pareja sale partida, pero solo es el orden de una lista, no un dato guardado.</li>
+      <li>No sirve para nada más: ni filtrar de verdad, ni regalos por rama, ni corregir el caso del marido Pérez.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · 1 PR pequeño</span><span><b>Cuándo</b> · si lo único que duele es leer la lista</span></div>
+  </div>
+
+  <div class="opcion recomendada">
+    <div class="opcion-cabecera"><span class="ficha">A2</span><h3>Una etiqueta en la ficha: la columna <code>rama</code></h3><span class="sello">Recomendada</span></div>
+    <p class="resumen">Un texto libre por persona —«García», «Los de Bolonia»— que es la verdad; el apellido solo lo propone.</p>
+    <ul>
+      <li>Una migración corta (columna nueva, <code>.unavez</code>), el espejo en <code>modelo.py</code>, y el campo en la ficha, editable por administradores como el resto de <code>persona</code>.</li>
+      <li>El marido Pérez se corrige en dos toques: su rama es «García» aunque su apellido no lo sea.</li>
+      <li>Texto libre y no catálogo a propósito: las ramas de una casa son cuatro o cinco y no cambian; una tabla propia con su CRUD sería el modelo de datos de un problema que no existe todavía (eso es A3, y tiene su cuándo).</li>
+      <li>Da soporte a todo lo de la pregunta C: separadores que no parten parejas, la ficha que dice de qué rama eres, y el buscador que ya funciona por apellido pasa a funcionar también por rama.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · 1–2 PR</span><span><b>Cuándo</b> · ahora: es el dato mínimo que contesta la pregunta</span></div>
+  </div>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">A3</span><h3>La rama como entidad propia</h3></div>
+    <p class="resumen">Tabla <code>rama</code> con nombre editable y <code>persona.rama_id</code>: un sitio del que mañana cuelgan cosas.</p>
+    <ul>
+      <li>Lo que A2 no da: renombrar la rama una vez y no ficha a ficha, y un lugar donde colgar lo conjunto —un regalo «para los García», una dirección, una cena con la rama entera como participantes de golpe—.</li>
+      <li>Lo que cuesta: tabla nueva con migración, CRUD, una hoja para gestionarlas, y la pregunta de qué pasa al borrar una rama con gente dentro.</li>
+      <li>Se puede llegar desde A2 sin tirar nada: la etiqueta de texto se convierte en entidad el día que haga falta la primera cosa colgada, igual que el portero esperó a su segundo consumidor.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · 3–4 PR</span><span><b>Cuándo</b> · cuando se quiera <em>actuar</em> sobre una rama, no solo verla</span></div>
+  </div>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">A4</span><h3>Derivarla del parentesco, con relaciones de verdad</h3></div>
+    <p class="resumen">La verdad más limpia y el coste más alto: relaciones persona a persona («X es hermana de Y») de las que las ramas salen solas.</p>
+    <ul>
+      <li>El parentesco de hoy no da para esto: es un texto relativo a quien mira («mamá», «el marido de mi prima») y no enlaza fichas entre sí. Habría que rehacerlo como relaciones, con su migración de datos a mano.</li>
+      <li>A cambio caerían de regalo cosas que hoy se escriben a mano: el parentesco de cada uno respecto a cada uno, y las ramas como componentes conexas del grafo.</li>
+      <li>Es otro proyecto, no un campo: se apunta aquí para que quede dicho que existe, y para que A2 no lo estorbe —una etiqueta de texto se migra a esto sin pena—.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · el más alto con diferencia</span><span><b>Cuándo</b> · probablemente nunca; se anota como techo</span></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Pregunta B</p>
+  <h2>Cómo se rellena (si hay campo: A2 o A3)</h2>
+  <p class="marco">Los tres primeros son acumulativos; el cuarto es la alternativa que la pregunta
+  pedía en literal, con su porqué en contra.</p>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">B1</span><h3>Solo a mano</h3></div>
+    <p class="resumen">El campo existe y lo rellena quien administra, ficha a ficha, sin ninguna ayuda.</p>
+    <ul>
+      <li>Honesto y sin sorpresas, pero con veinte fichas ya pobladas es una tarde de picar, y lo que no se siembra no se usa.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · el del campo y ya</span></div>
+  </div>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">B2</span><h3>B1 + el formulario propone</h3></div>
+    <p class="resumen">Al guardar una persona cuyo primer apellido coincide con una rama que ya existe, el campo viene propuesto y editable.</p>
+    <ul>
+      <li>Es el patrón de la bandeja con el nombre de Apple: el dato llega puesto, quien decide lo corrige, y nunca se guarda solo.</li>
+      <li>Cubre a los que van llegando, que es donde el roce se repite; no cubre a los veinte que ya están.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · +unas líneas en el formulario</span></div>
+  </div>
+
+  <div class="opcion recomendada">
+    <div class="opcion-cabecera"><span class="ficha">B3</span><h3>B2 + un barrido inicial que se confirma</h3><span class="sello">Recomendada</span></div>
+    <p class="resumen">Una sola vez, una hoja de «Ordenar por ramas»: la aplicación agrupa por primer apellido, enseña el resultado y no escribe nada hasta que se toca «Guardar».</p>
+    <ul>
+      <li>Siembra las obvias en un minuto —los tres García juntos— y deja a la vista los dudosos: los sueltos y los sin apellidos quedan sin rama, no mal puestos.</li>
+      <li>Vive en la pantalla de Gente para quien administra, aparece mientras haya gente sin rama y desaparece después: no es un modo permanente, es la mudanza.</li>
+      <li>Después manda B2: cada llegada nueva viene propuesta y confirmada al aprobar o al editar la ficha.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · +1 hoja</span><span><b>Cuándo</b> · con la gente que ya hay, es lo que evita la tarde de picar</span></div>
+  </div>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">B4</span><h3>Automático continuo, corregible</h3></div>
+    <p class="resumen">La aplicación asigna la rama sola por apellido, siempre, y solo se corrige a mano lo que quede mal.</p>
+    <ul>
+      <li>Es la pregunta en literal, y se desaconseja: partiría a cada pareja en silencio, pisaría correcciones al reeditar una ficha, y un dato que se escribe solo y mal enseña a no fiarse del campo entero.</li>
+      <li>Todo lo que este modo da de bueno ya lo dan B2 y B3 sin su parte mala: la máquina propone, la persona confirma.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · bajo de escribir, caro de deshacer</span></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Pregunta C</p>
+  <h2>Dónde se ve</h2>
+  <p class="marco">Acumulativas. Todas dan por hecho que el buscador sigue encontrando por apellido,
+  como hoy; con campo, encuentra también por rama sin tocar nada más que la lista de campos donde
+  busca.</p>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">C1</span><h3>La tabla de Gente, por ramas</h3></div>
+    <p class="resumen">Extendida y Amigos se leen agrupadas: separador con el nombre de la rama y su gente debajo; los sueltos, al final.</p>
+    <ul>
+      <li>Es la figura de separadores de dos niveles que la lista de la agenda ya usa, aplicada aquí; la columna «De qué» (el parentesco) se queda como está.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · el menor</span></div>
+  </div>
+
+  <div class="opcion recomendada">
+    <div class="opcion-cabecera"><span class="ficha">C2</span><h3>C1 + la ficha lo dice</h3><span class="sello">Recomendada</span></div>
+    <p class="resumen">Bajo el nombre, junto al parentesco: «prima · de los García». Y se edita ahí, que es donde se editan las cosas de una persona.</p>
+    <ul>
+      <li>Contesta la pregunta que de verdad se hace delante de una ficha —¿este de quién era?— sin abrir nada más.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · +una línea en la ficha y el campo en el formulario</span></div>
+  </div>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">C3</span><h3>C2 + pastillas de rama sobre la tabla</h3></div>
+    <p class="resumen">Un filtro de un toque —Todas · García · Doral · …— encima de la lista, con la figura de pastillas que ya usan Regalos.</p>
+    <ul>
+      <li>Solo compensa cuando las ramas pasen de cuatro o cinco: antes, los separadores de C1 ya dejan cada rama a un vistazo de distancia.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · +1 control</span><span><b>Cuándo</b> · cuando la lista no quepa en dos pantallas</span></div>
+  </div>
+
+  <div class="opcion">
+    <div class="opcion-cabecera"><span class="ficha">C4</span><h3>C2 + la rama actúa: selector y regalos</h3></div>
+    <p class="resumen">El selector de gente se agrupa por ramas y una rama entera se elige de un toque —«cena con los García»—; un regalo puede apuntarse «para los García».</p>
+    <ul>
+      <li>Es el punto donde conviene A3: en cuanto la rama participa en eventos y regalos, ser una entidad con identidad propia deja de ser lujo.</li>
+      <li>Toca visibilidad y plan semanal: lo derivado en el dispositivo hay que resolverlo también en <code>redaccion.js</code>, como ya pasó con los cumpleaños.</li>
+    </ul>
+    <div class="pie"><span><b>Coste</b> · el mayor, y arrastra A3</span><span><b>Cuándo</b> · si el regalo conjunto es un caso real, no imaginado</span></div>
+  </div>
+</section>
+
+<div class="respuesta">
+  <p class="eyebrow">Cómo se contesta</p>
+  <p>Tres fichas, una por pregunta. La recomendación: el campo de texto con propuesta y barrido
+  confirmado, visible en la tabla y en la ficha — y A3/C4 quedan apuntados para el día que una rama
+  tenga que recibir un regalo.</p>
+  <p class="ejemplo">A2 · B3 · C2</p>
+</div>
+</main>
+</body>
+</html>

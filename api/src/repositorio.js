@@ -14,7 +14,7 @@ import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
 const CAMPOS = {
   persona: [
     'nombre', 'apellidos', 'fecha_nacimiento', 'parentesco',
-    'tiene_cuenta', 'identificador_apple', 'rol', 'circulo', 'genero', 'activa',
+    'tiene_cuenta', 'identificador_apple', 'rol', 'circulo', 'genero', 'rama', 'activa',
   ],
   atributo_persona: ['persona_id', 'clave', 'valor', 'activo'],
   categoria: ['nombre', 'regla', 'orden', 'activa'],

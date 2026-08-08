@@ -86,6 +86,9 @@ class Persona:
     circulo: str = "extendida"
     #: Solo para nombrar bien; puede no estar (specs/ux.md §7.1).
     genero: str | None = None
+    #: Qué familia forma con otros de la lista («García»). No se llama familia
+    #: porque familia ya es el círculo de casa (specs/propuesta-ramas.html).
+    rama: str | None = None
     activa: bool = True
 
     @property
@@ -449,6 +452,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             rol=bruto.get("rol"),
             circulo=bruto.get("circulo", "extendida"),
             genero=bruto.get("genero"),
+            rama=bruto.get("rama"),
             activa=bool(bruto.get("activa", True)),
         )
 
