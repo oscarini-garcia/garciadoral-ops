@@ -28,6 +28,17 @@ import {
  *  repintados para que guardar una ficha no devuelva a nadie a la otra. */
 let pestana = 'extendida';
 let consulta = '';
+/** Por qué columna se ordena la lista de personas: 'cumple' o 'nombre'. */
+let orden = 'cumple';
+
+/**
+ * Cómo volver a pintar el cuerpo sin rehacer la pantalla.
+ *
+ * Lo necesita la cabecera que ordena, que vive dentro de la tabla y no alcanza
+ * ni al `cuerpo` ni al `ctx`. El conmutador de círculos hace lo mismo con la
+ * pareja que sí tiene a mano; esto es esa pareja, guardada.
+ */
+let repintar = () => {};
 
 export function reiniciarFamilia() {
   pestana = 'extendida';
@@ -98,6 +109,11 @@ export function pintarFamilia(pantalla, subcabecera, ctx) {
 }
 
 function componer(cuerpo, ctx) {
+  // Repintar es volver a componer sobre el mismo nodo: así el texto del
+  // buscador y su foco siguen donde estaban, que es la razón por la que el
+  // conmutador de círculos ya lo hacía así.
+  repintar = () => componer(vaciar(cuerpo), ctx);
+
   if (consulta.trim()) cuerpo.append(resultadosDeBusqueda(ctx));
   else cuerpo.append(...circulosPorSeparado(cuerpo, ctx));
 
@@ -154,9 +170,11 @@ function tablaDePersonas(personas, ctx) {
     el('table', {}, [
       el('thead', {}, [
         el('tr', {}, [
-          el('th', { scope: 'col', texto: 'Quién' }),
+          cabeceraOrdenable('Quién', 'nombre'),
+          // El parentesco no ordena: «sobrino» quince veces seguidas no es un
+          // orden, es la misma palabra repetida.
           el('th', { scope: 'col', texto: 'De qué' }),
-          el('th', { scope: 'col', texto: 'Cumple' }),
+          cabeceraOrdenable('Cumple', 'cumple'),
         ]),
       ]),
       el('tbody', {}, ordenar(personas).map((persona) =>
@@ -252,8 +270,41 @@ function rejilla(personas, ctx, { columnas = 0 } = {}) {
 }
 
 /** Lo que cumple antes, primero; y al final quien no tiene fecha, junto. */
+/**
+ * Por el cumpleaños que viene antes, o por el nombre.
+ *
+ * El de origen es el cumpleaños, que es a lo que se entra: la lista contesta
+ * «a quién le toca pronto». Por nombre hace falta para lo otro que se hace
+ * aquí, que es buscar a alguien concreto en una lista de veinte —y ahí un orden
+ * por fecha es un orden al azar—.
+ */
 function ordenar(personas) {
+  if (orden === 'nombre') {
+    return [...personas].sort((a, b) => nombreCompleto(a).localeCompare(nombreCompleto(b), 'es'));
+  }
   return [...personas].sort((a, b) => diasHastaElCumple(a) - diasHastaElCumple(b));
+}
+
+/**
+ * Una cabecera de columna que ordena por ella.
+ *
+ * Va en el `<th>` y no en un mando aparte porque la cabecera **ya está ahí** y
+ * ya nombra la columna: un segundo segmentado debajo del de los círculos habría
+ * sido otra fila de mandos para decir lo que la tabla dice sola. `aria-sort` es
+ * lo que hace que esto exista también para quien no la ve.
+ */
+function cabeceraOrdenable(texto, clave) {
+  const activa = orden === clave;
+  return el('th', {
+    scope: 'col',
+    'aria-sort': activa ? 'ascending' : 'none',
+  }, [
+    el('button', {
+      class: 'orden-columna', type: 'button',
+      'data-activa': activa ? 'si' : null,
+      onclick: () => { orden = clave; repintar(); },
+    }, [texto]),
+  ]);
 }
 
 // ------------------------------------------------------- Quién es cada uno --

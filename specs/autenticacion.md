@@ -190,9 +190,18 @@ Cada solicitud muestra el nombre declarado —o «Sin nombre», que es lo que oc
 cuando Apple no lo entrega—, el correo —marcado como buzón de reenvío cuando lo
 sea— y la fecha. Y ofrece tres salidas:
 
-1. **Dar cuenta a alguien que ya está en el registro.** Se elige a una persona sin
-   cuenta de la lista y se le asigna rol. Es el camino de la abuela: conserva su
-   ficha, su fecha de nacimiento y todo lo que otros escribieron con ella.
+1. **Dar cuenta a alguien que ya está en el registro.** Se elige a una persona de
+   **la familia** y se le asigna rol. Conserva su ficha, su fecha de nacimiento y
+   todo lo que otros escribieron con ella.
+
+   La lista es la familia y solo la familia, porque **una cuenta es de quien vive
+   en casa**: es lo que gobierna Lío, Sitios y el círculo cerrado. Antes se
+   ofrecía a cualquiera sin cuenta, que en un registro de verdad son los veinte
+   sobrinos, primos y cuñados que nunca van a entrar —una lista larguísima en la
+   que la persona que buscas no aparece— y además ofrecía algo que no debe pasar.
+   Quien ya tiene cuenta sale igualmente, apagado y con el motivo escrito: es la
+   diferencia entre «no está» y «está y no se puede», que desde una lista en la
+   que alguien falta no se distingue.
 2. **Crear una persona nueva.** Nombre y apellidos vienen propuestos desde lo que
    escribió el solicitante, editables; rol obligatorio.
 3. **Rechazar.**

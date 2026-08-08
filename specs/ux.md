@@ -441,6 +441,8 @@ Cada persona pertenece a uno solo. Son tres y cerrados a propósito: un cuarto c
 
 **La forma.** Los cuatro de casa, arriba y siempre, en una fila de cuatro columnas. Debajo, un conmutador entre los otros dos círculos y una sola lista que cambia de contenido. Así la pantalla no crece cuando crecen los amigos, y queda dicho sin escribirlo que el hogar no es un grupo más.
 
+**La lista se ordena por su cabecera.** «Quién» y «Cumple» son botones; «De qué» no, porque «sobrino» quince veces seguidas no es un orden. De origen manda el cumpleaños, que es a lo que se entra —la lista contesta a quién le toca pronto—, y por nombre hace falta para lo otro que se hace aquí, que es dar con alguien concreto entre veinte: ahí un orden por fecha es un orden al azar. Va en el `<th>` y no en un mando aparte porque la cabecera **ya está ahí** y ya nombra la columna; un segundo segmentado debajo del de los círculos habría sido otra fila de mandos para decir lo que la tabla dice sola. La columna activa lleva `aria-sort`, que es lo que hace que esto exista también para quien no la ve.
+
 **Rejilla arriba, lista abajo, y no por capricho.** La rejilla es para la familia: son cuatro y se reconocen por el hueco que ocupan, de modo que la forma ahorra leer. En Extendida y en Amigos la gente crece, y con ella los nombres largos, los parentescos que no caben en una celda y las dos Marías que solo distingue el apellido; ahí hace falta lo contrario, que es la lista de §7.3. Es **la misma** que devuelve el buscador, a propósito: son la misma pregunta hecha de dos maneras, y contestarla con dos formas distintas obligaría a aprenderlas por separado.
 
 ```

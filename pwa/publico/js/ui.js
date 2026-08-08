@@ -620,7 +620,14 @@ export function entrada(atributos = {}) {
 export function seleccion(opciones, valor, atributos = {}) {
   const nodo = el('select', atributos);
   for (const opcion of opciones) {
-    nodo.append(el('option', { value: opcion.valor, selected: opcion.valor === valor }, [opcion.texto]));
+    nodo.append(el('option', {
+      value: opcion.valor,
+      selected: opcion.valor === valor,
+      // Una opción que se enseña pero no se puede elegir. Sirve para que la
+      // lista diga «está y no se puede» en vez de dejar un hueco, que desde
+      // fuera se lee como «no está».
+      disabled: opcion.desactivada || false,
+    }, [opcion.texto]));
   }
   return nodo;
 }
