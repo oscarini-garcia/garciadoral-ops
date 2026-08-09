@@ -95,6 +95,10 @@ const ICONOS = {
   destello: '<path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z"'
     + ' fill="currentColor" stroke-width="1"/>',
   cerrar: '<path d="M6 6l12 12M18 6 6 18"/>',
+  // El triángulo de un acordeón compacto (`acordeon(..., {compacta: true})`):
+  // relleno, no trazo, porque a 13px un contorno de 1,8px se lee peor que una
+  // mancha sólida — es la misma razón por la que `destello` tampoco lleva trazo.
+  angulo: '<path d="M9 6l8 6-8 6z" fill="currentColor" stroke="none"/>',
   // Descartar no es cerrar ni borrar, y por eso no es un aspa ni una papelera:
   // un aspa en la cabecera de una hoja se lee como «cierra esto», que es
   // justamente lo que no hace. El círculo con la raya dice «quítalo de la
@@ -231,13 +235,20 @@ export const hayHojaAbierta = () => Boolean(cerrarActual);
  * buscador del navegador abre por su cuenta el apartado donde encuentra algo.
  * Nada de eso saldría gratis con un `div` y una clase.
  */
-export function acordeon(titulo, construir, { abierta = false, nota = null, icono: dibujo = null } = {}) {
+export function acordeon(titulo, construir, {
+  abierta = false, nota = null, icono: dibujo = null, compacta = false, verbos = null,
+} = {}) {
   const cuerpo = el('div', { class: 'acordeon-cuerpo' });
   construir(cuerpo);
-  return el('details', { class: 'acordeon', open: abierta }, [
+  return el('details', { class: compacta ? 'acordeon acordeon-compacta' : 'acordeon', open: abierta }, [
     // La nota va en el propio rótulo para que el apartado plegado siga diciendo
     // algo: «el próximo, Marta en seis días» ahorra desplegarlo solo para verlo.
     el('summary', {}, [
+      // Compacto pone el ángulo el primero de la fila —Sitios, donde una
+      // franja propia ya hace de marco y no necesita el ángulo al final para
+      // saberse tocable—. El de Ajustes se queda con el de siempre, al final
+      // por CSS (`::after`), que es el que no cambia aquí.
+      compacta ? el('span', { class: 'acordeon-angulo', 'aria-hidden': 'true' }, [icono('angulo')]) : null,
       // La moneda solo aparece donde se pide, que hoy es Ajustes. Una lista de
       // apartados que son cosas —Deseos, Ideas, Cumpleaños— no la necesita: allí
       // el rótulo ya nombra lo que hay dentro, y aquí nombra dónde se toca.
@@ -248,6 +259,11 @@ export function acordeon(titulo, construir, { abierta = false, nota = null, icon
       // dan por hechas ahí mismo—: con una cadena, el rótulo se queda diciendo
       // el número de cuando se abrió Ajustes.
       nota instanceof Node ? nota : (nota ? el('span', { class: 'acordeon-nota', texto: nota }) : null),
+      // Un verbo propio del apartado —hoy solo «compartir lo que hay que
+      // llevar»—, dentro de la cabecera y no suelto en una fila propia del
+      // cuerpo: es lo que evita que un acordeón sin nada dentro que compartir
+      // deje un botón huérfano.
+      verbos,
     ]),
     cuerpo,
   ]);
