@@ -409,6 +409,20 @@ export async function apuntarEnSitio(lugarId, { clase = 'saber', descartadas = [
 }
 
 /**
+ * Una tanda de cinco emojis para un sitio, a partir de su nombre.
+ *
+ * A menudo no hay sitio todavía —se pide desde «Un sitio nuevo»—, así que aquí
+ * viaja el nombre tal cual se está escribiendo y no un identificador.
+ */
+export async function sugerirEmojiDeSitio(nombre, { descartados = [] } = {}) {
+  const { emojis } = await peticion('/api/sitio/emoji', {
+    method: 'POST',
+    body: JSON.stringify({ nombre, descartados }),
+  });
+  return emojis || [];
+}
+
+/**
  * Una tanda de cinco frases para la pantalla de Hoy.
  *
  * Viajan la fecha, los identificadores de lo de hoy y de lo que viene —las

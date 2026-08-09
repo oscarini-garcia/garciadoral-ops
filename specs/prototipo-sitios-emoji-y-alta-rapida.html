@@ -1,0 +1,647 @@
+<meta charset="utf-8">
+<title>Sitios: el emoji al crear, y añadir sin el «+»</title>
+
+<style>
+  /* Los valores reales de pwa/publico/css/estilos.css: lo que se ve aquí es lo
+     que se va a ver en el teléfono. 'Newsreader', 'Instrument Sans' e 'IBM Plex
+     Mono' no se pueden cargar desde fuera, así que quedan sus repuestos de
+     sistema — el mismo trato que ya tienen los demás prototipos de specs/. */
+  :root {
+    color-scheme: light dark;
+    --paper:       #FBF9F5;
+    --paper-2:     #F2EFE8;
+    --paper-3:     #EAE6DC;
+    --paper-alto:  #FFFDFA;
+    --paper-alto-2:#F6F2EA;
+    --ink:         #1C2B33;
+    --ink-soft:    #5F7280;
+    --ink-faint:   #64747F;
+    --line:        #E2DED4;
+    --tinta:       #0E6E62;
+    --tinta-suave: #DCEDE9;
+    --regalo:      #8E3B5E;
+    --aviso:       #A8641B;
+    --hueco:       #F0EBE0;
+    --hueco-linea: #DCD6C9;
+    --sombra:      0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --radio: 12px;
+    --toque: 44px;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono:  ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30; --paper-alto: #1E282D; --paper-alto-2: #253238;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+      --regalo: #E48FAE; --aviso: #E0A253;
+      --hueco: #0A0F11; --hueco-linea: #2A363C;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30; --paper-alto: #1E282D; --paper-alto-2: #253238;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
+    --regalo: #E48FAE; --aviso: #E0A253;
+    --hueco: #0A0F11; --hueco-linea: #2A363C;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 32px 20px 80px;
+  }
+  .doc { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 34px; }
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 27px; }
+  h2 { font-size: 21px; }
+  h3 { font-size: 16.5px; }
+  p { margin: 0; }
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .portada { display: flex; flex-direction: column; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+  .portada p { color: var(--ink-soft); max-width: 66ch; }
+  .portada p strong { color: var(--ink); }
+
+  .pregunta { display: flex; flex-direction: column; gap: 22px; }
+  .pregunta-cabecera { display: flex; flex-direction: column; gap: 10px; }
+  .pregunta-cabecera p { color: var(--ink-soft); max-width: 68ch; }
+  .pregunta-cabecera p strong { color: var(--ink); }
+
+  .eleccion { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .eleccion-cabeza { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--mono); font-size: 12.5px; font-weight: 600; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%; letter-spacing: -.02em;
+    width: 32px; height: 32px; display: grid; place-items: center; flex: none;
+  }
+  .par { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 300px 1fr; } }
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); font-size: 14.5px; }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio strong { color: var(--ink); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+
+  /* ---------------------------------------------------- El marco de pantalla --
+     Una tarjeta que simula un trozo de teléfono, sin más cáscara: ni barra de
+     estado ni pestañas, porque no es eso lo que aquí se compara. */
+  .marco {
+    width: 310px; max-width: 100%; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--sombra);
+    padding: 14px; display: flex; flex-direction: column; gap: 11px;
+  }
+  .marco + .marco { margin-top: 2px; }
+  .marco-etiqueta {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .par-doble { display: flex; flex-direction: column; gap: 14px; }
+
+  /* --------------------------------------------------------------- Formulario --
+     Copiado tal cual de estilos.css: .campo, el destello dentro de un campo, y
+     el carrusel de propuestas que ya usan Regalos y los propios apuntes. */
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo > label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .campo input {
+    min-height: var(--toque); width: 100%; background: var(--hueco);
+    border: 1px solid var(--hueco-linea); border-radius: 10px;
+    padding: 10px 12px; font-size: 15.5px; font-family: inherit; color: var(--ink);
+  }
+  .campo[data-con-destello] { position: relative; }
+  .campo[data-con-destello] input { padding-right: 46px; }
+  .destello-campo {
+    position: absolute; right: 5px; bottom: 5px;
+    width: 34px; height: 34px; border-radius: 9px;
+    display: grid; place-items: center; flex: none;
+    background: var(--tinta-suave); color: var(--tinta);
+  }
+  .pista { font-size: 13.5px; color: var(--ink-soft); }
+
+  .propuesta {
+    border: 1px solid var(--tinta); border-radius: var(--radio); background: var(--tinta-suave);
+    padding: 10px 11px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .propuesta-cuerpo { display: flex; align-items: center; gap: 8px; }
+  .propuesta-texto { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 40px; }
+  .propuesta-emoji { font-size: 26px; }
+  .propuesta-que { font-size: 15px; font-weight: 500; }
+  .propuesta-flecha {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    display: grid; place-items: center;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-soft);
+    font-family: var(--serif); font-size: 17px; line-height: 1;
+  }
+  .propuesta-pie { display: flex; align-items: center; gap: 8px; }
+  .propuesta-cuenta { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+  .boton {
+    min-height: 38px; padding: 8px 15px; border-radius: 10px;
+    font-size: 14.5px; font-weight: 500; background: var(--tinta); color: var(--paper); border: none;
+  }
+  .boton[data-tono="discreto"] { background: var(--paper-3); color: var(--ink); }
+  .boton-mini {
+    min-height: 32px; padding: 6px 12px; border-radius: 9px; font-size: 13.5px; font-weight: 500;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink);
+  }
+  .boton-mini[data-tono="principal"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+
+  /* Las pastillas de clase — .opciones/.opcion — tal cual las usa hoy el
+     conmutador de «De qué va» y el «+» de «Para quién». */
+  .opciones { display: flex; flex-wrap: wrap; gap: 6px; }
+  .opcion {
+    min-height: 32px; padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper);
+    font-size: 13.5px; color: var(--ink-soft);
+  }
+  .opcion[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
+  .opcion-mas {
+    min-height: 32px; padding: 6px 13px; border-radius: 999px; text-align: center;
+    color: var(--tinta); border: 1px dashed var(--tinta); background: transparent;
+    font-size: 13.5px; line-height: 1.4;
+  }
+
+  /* ------------------------------------------------------------------ Sitios --
+     Copiado de la sección «Sitios» de estilos.css: migas, grupo, apunte, voto,
+     la lista de la compra. */
+  .migas { display: inline-flex; align-items: baseline; gap: 7px; }
+  .miga { font-family: var(--sans); font-size: 14.5px; color: var(--tinta); }
+  .miga-flecha { font-size: 14.5px; color: var(--ink-faint); }
+  .miga-actual { font-family: var(--serif); font-size: 16.5px; font-weight: 500; color: var(--ink); }
+
+  .grupo { display: flex; flex-direction: column; gap: 2px; }
+  .grupo-cabeza { display: flex; align-items: center; gap: 8px; }
+  .grupo-titulo {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 6px 0 2px;
+  }
+  .grupo-vacio { color: var(--ink-faint); font-size: 13px; padding: 4px 0 8px; }
+
+  .apunte {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+    border-bottom: 1px solid var(--line); min-height: 42px;
+  }
+  .apunte:last-child { border-bottom: 0; }
+  .apunte-cuerpo { display: flex; flex-direction: column; padding: 8px 0; min-width: 0; }
+  .apunte-titulo { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .voto {
+    display: inline-flex; align-items: center; gap: 4px; flex: none;
+    min-height: 28px; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2);
+    font-family: var(--mono); font-size: 10px; color: var(--ink-soft); letter-spacing: .05em;
+  }
+
+  .llevar {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
+    border-bottom: 1px solid var(--line); min-height: 40px;
+  }
+  .llevar:last-child { border-bottom: 0; }
+  .llevar-cuerpo { display: flex; align-items: baseline; gap: 9px; min-width: 0; padding: 8px 0; flex: 1; }
+  .llevar-casilla {
+    flex: none; width: 19px; height: 19px; border-radius: 6px; border: 1.5px solid var(--line);
+    display: grid; place-items: center; color: var(--paper); background: transparent;
+  }
+  .llevar[data-hecho="si"] .llevar-casilla { background: var(--tinta); border-color: var(--tinta); }
+  .llevar[data-hecho="si"] .llevar-titulo { text-decoration: line-through; color: var(--ink-faint); }
+  .llevar-titulo { font-size: 15px; }
+
+  /* --------------------------------------------------- Lo que aquí es nuevo --
+     Ninguna de estas clases existe todavía: son la materia de las opciones. */
+  .emoji-hueco {
+    flex: none; width: 40px; height: 40px; border-radius: 50%;
+    border: 1.5px solid var(--hueco-linea); background: var(--hueco);
+    display: grid; place-items: center; font-size: 20px; position: relative;
+  }
+  .emoji-hueco .badge {
+    position: absolute; right: -4px; bottom: -4px;
+    width: 21px; height: 21px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--tinta-suave); color: var(--tinta);
+    border: 2px solid var(--paper);
+  }
+  .fila-nombre-swatch { display: flex; align-items: center; gap: 10px; }
+  .fila-nombre-swatch .campo { flex: 1; }
+
+  .campo-doble { display: flex; gap: 8px; align-items: flex-end; }
+  .campo-emoji-corto input {
+    width: 58px; text-align: center; font-size: 19px; padding: 10px 4px;
+  }
+  .campo-doble .campo:last-child { flex: 1; }
+
+  .prefijo-nombre {
+    position: absolute; left: 5px; top: 5px; bottom: 5px;
+    width: 34px; border-radius: 8px;
+    display: grid; place-items: center; font-size: 18px;
+  }
+  .prefijo-nombre.vacio { background: var(--tinta-suave); color: var(--tinta); }
+  .prefijo-nombre.puesto { background: var(--paper-3); color: var(--ink); }
+  .campo[data-con-prefijo] input { padding-left: 46px; padding-right: 12px; }
+
+  .fila-escribir { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 5px 0; }
+  .fila-escribir input {
+    flex: 1; min-width: 0; background: var(--hueco); border: 1px solid var(--hueco-linea);
+    border-radius: 9px; padding: 7px 10px; font-size: 14.5px; color: var(--ink); font-family: inherit;
+  }
+  .fila-escribir input::placeholder { color: var(--ink-faint); }
+  .fila-confirmar {
+    flex: none; width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center; background: var(--tinta-suave); color: var(--tinta);
+    font-size: 17px; line-height: 1;
+  }
+  .fila-detalle {
+    flex: none; width: 26px; height: 26px; border-radius: 7px;
+    display: grid; place-items: center; color: var(--ink-faint);
+    font-family: var(--serif); font-size: 16px; line-height: 1;
+  }
+  .fila-lapiz { flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--ink-faint); }
+
+  .tira-arranque { display: flex; flex-direction: column; gap: 8px; padding: 10px 0 2px; }
+  .tira-arranque p { font-size: 13px; color: var(--ink-faint); }
+
+  .caveat {
+    font-size: 13px; color: var(--ink-soft); background: var(--paper-2);
+    border-radius: 8px; padding: 8px 10px; margin-top: 2px;
+  }
+  .caveat strong { color: var(--ink); }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-destello" viewBox="0 0 24 24">
+    <path d="M12 2 13.6 8.4 20 10 13.6 11.6 12 18 10.4 11.6 4 10 10.4 8.4z" fill="currentColor" stroke-width="1"/>
+  </symbol>
+  <symbol id="i-visto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m5 12.5 4.5 4.5L19 7"/>
+  </symbol>
+  <symbol id="i-editar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>
+  </symbol>
+</svg>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>Sitios: el emoji al crear, y añadir sin el «+»</h1>
+    <p>
+      Dos huecos de Sitios, dibujados con los valores reales de <code>estilos.css</code>:
+      lo que se ve aquí es lo que se va a ver en el teléfono. Hoy, crear un sitio es
+      un solo campo —<strong>Nombre</strong>—, con la pista de que el emoji va delante
+      y se separa solo al guardar (<code>partirEmoji</code>). Y dentro de un sitio, todo
+      lo que se apunta sale del mismo «+»: abre una hoja con el título, la clase y una
+      descripción opcional, aunque lo que se quiera apuntar sea una sola palabra.
+    </p>
+    <p>
+      <strong>A</strong> decide si ese campo se queda igual, y <strong>B</strong> decide
+      qué ocupa el hueco del «+» dentro de un sitio ya abierto.
+    </p>
+  </header>
+
+  <!-- ==================================================================== -->
+  <!-- Pregunta A                                                            -->
+  <!-- ==================================================================== -->
+  <section class="pregunta">
+    <div class="pregunta-cabecera">
+      <p class="rotulo">Pregunta A</p>
+      <h2>El emoji al crear un sitio</h2>
+      <p>
+        El campo sigue siendo uno solo y la tabla no lleva columna nueva —eso no está
+        en discusión—: lo que cambia entre las cuatro es cuánto hueco visual se le da
+        al emoji y por dónde entra el botón de IA. Ese botón pide lo mismo que ya piden
+        los otros seis encargos: cinco de golpe, con el mismo carrusel de
+        «¿Ideas para…?» que ya usan Regalos y los propios apuntes de un sitio. Esa parte
+        no es una decisión nueva, así que no es una de las cuatro opciones — lo único
+        que cambia entre ellas es dónde vive el botón que lo pide.
+      </p>
+      <p>
+        Y hay una frontera que no se toca: dos campos con un emoji de ejemplo dentro ya
+        se probaron y se quitaron —«el campo parecía relleno, se guardaba vacío, y el
+        sitio salía sin emoji sin que nada lo dijera»—. Cualquier hueco nuevo tiene que
+        quedarse <strong>vacío de verdad</strong> hasta que haya algo, nunca con un
+        🏖️ de muestra dentro.
+      </p>
+    </div>
+
+    <!-- A1 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">A1</span><h3>El destello dentro del campo de siempre</h3></div>
+      <div class="par">
+        <div class="marco">
+          <div class="campo" data-con-destello>
+            <label>Nombre</label>
+            <div style="position:relative">
+              <input value="🏖️ Bolonia" readonly>
+              <button class="destello-campo" aria-label="Que la IA sugiera un emoji">
+                <svg viewBox="0 0 24 24" style="width:16px;height:16px"><use href="#i-destello"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="acciones"><button class="boton">Crear</button><button class="boton" data-tono="discreto">Cancelar</button></div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>Reutiliza tal cual <code>.destello-campo</code>, el mismo botón que ya usa Regalos para pedirle el «Qué» a la IA: cero CSS nuevo, cero componente nuevo.</span></div>
+          <div class="si"><span>+</span><span>El campo se queda exactamente como hoy. El único cambio de verdad es un botón.</span></div>
+          <div class="no"><span>−</span><span>No hay «espacio» que enseñar: una hoja en blanco sigue pareciendo un campo de texto con un botoncito, no un sitio pensado para llevar un emoji.</span></div>
+          <div class="no"><span>−</span><span><strong>Detalle de CSS:</strong> hoy el destello se mide contra todo el <code>.campo</code>, no contra el <code>&lt;input&gt;</code> — funciona en Regalos porque ese campo no lleva pista debajo. Aquí la pista («Empiézalo por un emoji…») sí está, así que se queda sin sitio o el destello hay que anclarlo solo al input. Un par de líneas, no un rediseño, pero hay que tocarlo.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A2 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">A2</span><h3>Una vista previa redonda, con el destello en su esquina</h3></div>
+      <div class="par">
+        <div class="marco">
+          <div class="fila-nombre-swatch">
+            <span class="emoji-hueco">🏖️<span class="badge"><svg viewBox="0 0 24 24" style="width:11px;height:11px"><use href="#i-destello"/></svg></span></span>
+            <div class="campo">
+              <label>Nombre</label>
+              <input value="Bolonia">
+            </div>
+          </div>
+          <p class="pista">Empiézalo por un emoji y será lo que lo distinga de un vistazo en la lista.</p>
+          <div class="acciones"><button class="boton">Crear</button><button class="boton" data-tono="discreto">Cancelar</button></div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>Es la lectura más literal de «un espacio para el emoji»: un hueco redondo, vacío de verdad hasta que hay algo —sin glifo de muestra dentro—, que se enciende solo con lo mismo que va a salir en la lista.</span></div>
+          <div class="si"><span>+</span><span>Sigue siendo un único campo por debajo: el redondel solo refleja en vivo lo que <code>partirEmoji</code> ya calcula al guardar, ahora en cada tecla y no solo al final.</span></div>
+          <div class="no"><span>−</span><span>Es CSS nuevo —el redondel y su insignia—, no una reutilización de una pieza que ya existe.</span></div>
+          <div class="no"><span>−</span><span>Un redondel vacío antes de escribir nada es, técnicamente, un hueco con forma de «aquí va algo»; no es un emoji de muestra —el error que ya se quitó—, pero conviene vigilar que no empiece a sentirse como uno según crezca.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A3 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">A3</span><h3>Dos campos, fundidos en uno al guardar</h3></div>
+      <div class="par">
+        <div class="marco">
+          <div class="campo-doble">
+            <div class="campo campo-emoji-corto" data-con-destello>
+              <label>Emoji</label>
+              <div style="position:relative">
+                <input value="🏖️">
+              </div>
+            </div>
+            <div class="campo">
+              <label>Nombre</label>
+              <input value="Bolonia">
+            </div>
+          </div>
+          <div class="acciones"><button class="boton">Crear</button><button class="boton" data-tono="discreto">Cancelar</button></div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>La más inequívoca de las cuatro: un cuadro con su propia etiqueta, imposible de no ver.</span></div>
+          <div class="no"><span>−</span><span><strong>Reabre una decisión ya cerrada, con su razón ya escrita.</strong> Es prácticamente el diseño de dos campos que Sitios tuvo y quitó: «un marcador con emoji se ve exactamente igual que un valor». Con el cuadro vacío en blanco de verdad se evita ese error concreto, pero el layout que lo produjo vuelve a estar ahí, a un cambio de opinión de repetirlo.</span></div>
+          <div class="no"><span>−</span><span>Es la única de las cuatro que separa en dos controles algo que la aplicación entera trata como una sola cosa —«el emoji se escribe donde se escribe el nombre», la misma regla que ya tienen los eventos—.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A4 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">A4</span><h3>El propio hueco del emoji hace de botón</h3></div>
+      <div class="par">
+        <div class="par-doble">
+          <div class="marco">
+            <p class="marco-etiqueta">Antes de escribir</p>
+            <div class="campo" data-con-prefijo>
+              <label>Nombre</label>
+              <div style="position:relative">
+                <span class="prefijo-nombre vacio"><svg viewBox="0 0 24 24" style="width:15px;height:15px"><use href="#i-destello"/></svg></span>
+                <input value="" placeholder="Bolonia">
+              </div>
+            </div>
+          </div>
+          <div class="marco">
+            <p class="marco-etiqueta">Con el emoji puesto</p>
+            <div class="campo" data-con-prefijo>
+              <label>Nombre</label>
+              <div style="position:relative">
+                <span class="prefijo-nombre puesto">🏖️</span>
+                <input value="Bolonia">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>Da un hueco real sin dejar nunca de ser un único <code>&lt;input&gt;</code>: el mismo campo que hoy, con su primer casillero reservado para lo que ya iba a estar ahí.</span></div>
+          <div class="si"><span>+</span><span>El botón de pedirle un emoji a la IA y el sitio donde ese emoji se enseña son la misma pieza: no hay que mirar en dos puntos distintos del formulario.</span></div>
+          <div class="no"><span>−</span><span>Es la más «lista» de construir: alternar ese casillero entre botón y emoji-ya-puesto, y hacer que un backspace al principio del texto lo vacíe otra vez, es más JavaScript que las otras tres opciones juntas.</span></div>
+          <div class="no"><span>−</span><span>Para un campo que se rellena tres o cuatro veces al año por sitio, ese coste de mantenimiento es difícil de justificar frente a la A2, que da casi lo mismo con un <code>&lt;span&gt;</code>.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nota">
+      <p>
+        <strong>Yo haría la A2.</strong> Es la lectura más literal de «un espacio para
+        el emoji» sin tocar el modelo de un solo campo: se sigue escribiendo en
+        <code>Nombre</code>, el redondel solo refleja lo que ya hay ahí, y no reabre los
+        dos campos que ya se probaron y se quitaron.
+      </p>
+      <p>
+        La A1 es la más barata si de verdad no se quiere tocar el layout —reutiliza
+        <code>.destello-campo</code> tal cual—, pero entonces no hay «espacio» que
+        enseñar, solo un botón más. La A3 es la que pides si el sitio del emoji importa
+        más que el ahorro de trabajo, sabiendo que reabre una discusión ya cerrada.
+        Evitaría la A4: es la más ingeniosa de las cuatro, pero el coste de mantenerla
+        no lo justifica un campo que se toca tan pocas veces.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==================================================================== -->
+  <!-- Pregunta B                                                            -->
+  <!-- ==================================================================== -->
+  <section class="pregunta">
+    <div class="pregunta-cabecera">
+      <p class="rotulo">Pregunta B</p>
+      <h2>Añadir dentro de un sitio, sin el «+»</h2>
+      <p>
+        Hoy, dentro de un sitio, el flotante abre <code>abrirFormularioApunte</code>:
+        una hoja con el título, el conmutador de clase y una descripción opcional. Sirve
+        igual para apuntar «Sombrilla» que para escribir tres líneas sobre por dónde se
+        sube a la duna, y por eso cuesta lo mismo apuntar una palabra que planear algo.
+        Las cuatro opciones sustituyen ese flotante, dentro de un sitio, por algo por
+        cada sección: escribir un título es rápido y no abre nada, y un botón de detalle
+        lleva a la misma hoja de hoy para quien quiera describirlo, votarlo desde ahí o
+        pedirle ideas a la IA. <strong>El «+» se queda tal cual en la lista de
+        sitios</strong> —crear un sitio nuevo sigue siendo un flotante—; lo único que
+        cambia es su segundo significado, el de dentro.
+      </p>
+      <p>
+        Una precisión que vale para las cuatro: <strong>Llevar no lleva botón de
+        detalle</strong>. Es la lista de la compra —«sin descripción, sin voto y sin
+        hilo»— y su hoja de hoy ya esconde el campo de descripción cuando la clase es
+        una lista; no hay un «más» que ofrecerle a una fila que nunca lo tuvo.
+      </p>
+    </div>
+
+    <!-- B1 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">B1</span><h3>La fila de escribir, al final de cada lista</h3></div>
+      <div class="par">
+        <div class="marco">
+          <span class="migas"><span class="miga">Sitios</span><span class="miga-flecha">›</span><span class="miga-actual">🏖️ Bolonia</span></span>
+          <div class="grupo">
+            <p class="grupo-titulo">Llevar</p>
+            <div class="llevar" data-hecho="si">
+              <div class="llevar-cuerpo"><span class="llevar-casilla"><svg viewBox="0 0 24 24" style="width:12px;height:12px"><use href="#i-visto"/></svg></span><span class="llevar-titulo">Toallas</span></div>
+            </div>
+            <div class="llevar">
+              <div class="llevar-cuerpo"><span class="llevar-casilla"></span><span class="llevar-titulo">Crema solar</span></div>
+            </div>
+            <div class="fila-escribir">
+              <input placeholder="Gafas de sol">
+              <span class="fila-confirmar">+</span>
+            </div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Ir</p>
+            <div class="apunte">
+              <div class="apunte-cuerpo"><span class="apunte-titulo">Subir a la duna</span></div>
+              <span class="voto">👍 MA·OS</span>
+            </div>
+            <div class="fila-escribir">
+              <input placeholder="El mirador">
+              <span class="fila-confirmar">+</span>
+              <span class="fila-detalle">›</span>
+            </div>
+          </div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>El gesto más corto de los cuatro: escribir en esa fila <strong>es</strong> escribir la siguiente línea de la lista que se está mirando. Sin desplegar nada.</span></div>
+          <div class="si"><span>+</span><span>Meter varias cosas seguidas de la misma clase cuesta cero pasos extra: se escribe, se confirma, la fila se vacía y sigue enfocada.</span></div>
+          <div class="no"><span>−</span><span>Un sitio recién creado no tiene ningún grupo bajo el que colgar esta fila. Hace falta un estado aparte —una tira arriba con las cuatro clases como pastillas <code>.opcion-mas</code>— solo para ese arranque.</span></div>
+          <div class="no"><span>−</span><span>Si un sitio ya usa las cuatro clases, son cuatro filas de escribir a la vez en pantalla, aunque solo una se toque cada vez.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B2 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">B2</span><h3>Las cuatro secciones, siempre puestas</h3></div>
+      <div class="par">
+        <div class="marco">
+          <span class="migas"><span class="miga">Sitios</span><span class="miga-flecha">›</span><span class="miga-actual">🏖️ Bolonia</span></span>
+          <div class="grupo">
+            <p class="grupo-titulo">Llevar</p>
+            <div class="fila-escribir"><input placeholder="Gafas de sol"><span class="fila-confirmar">+</span></div>
+            <div class="llevar" data-hecho="si"><div class="llevar-cuerpo"><span class="llevar-casilla"><svg viewBox="0 0 24 24" style="width:12px;height:12px"><use href="#i-visto"/></svg></span><span class="llevar-titulo">Toallas</span></div></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Hacer</p>
+            <div class="fila-escribir"><input placeholder="Reservar mesa"><span class="fila-confirmar">+</span><span class="fila-detalle">›</span></div>
+            <p class="grupo-vacio">Nada todavía</p>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Ir</p>
+            <div class="fila-escribir"><input placeholder="El mirador"><span class="fila-confirmar">+</span><span class="fila-detalle">›</span></div>
+            <div class="apunte"><div class="apunte-cuerpo"><span class="apunte-titulo">Subir a la duna</span></div><span class="voto">👍 MA·OS</span></div>
+          </div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>La lectura más literal de «enseñar las diferentes secciones»: las cuatro están siempre ahí, en su orden fijo, sin tocar nada para descubrirlas.</span></div>
+          <div class="si"><span>+</span><span>Un sitio nuevo dice de un vistazo qué cuatro cosas se le pueden apuntar, sin que nadie tenga que saberlo de antemano.</span></div>
+          <div class="no"><span>−</span><span><strong>Reabre una regla puesta a propósito y con su razón escrita:</strong> «los grupos vacíos no salen — un sitio al que solo hay que ir no enseña tres rótulos huecos». Un sitio que solo usa Saber pintaría igualmente Llevar, Hacer e Ir vacíos para siempre.</span></div>
+          <div class="no"><span>−</span><span>Es la más ocupada de las cuatro nada más abrir un sitio: cuatro títulos y cuatro filas de escribir antes de haber apuntado una sola cosa.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B3 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">B3</span><h3>Cuatro píldoras arriba; escribir despliega debajo</h3></div>
+      <div class="par">
+        <div class="marco">
+          <span class="migas"><span class="miga">Sitios</span><span class="miga-flecha">›</span><span class="miga-actual">🏖️ Bolonia</span></span>
+          <div class="opciones">
+            <span class="opcion">Llevar</span>
+            <span class="opcion" aria-pressed="true">Hacer</span>
+            <span class="opcion">Ir</span>
+            <span class="opcion">Saber</span>
+          </div>
+          <div class="fila-escribir"><input placeholder="Reservar mesa" autofocus><span class="fila-confirmar">+</span><span class="fila-detalle">›</span></div>
+          <div class="grupo">
+            <p class="grupo-titulo">Llevar</p>
+            <div class="llevar" data-hecho="si"><div class="llevar-cuerpo"><span class="llevar-casilla"><svg viewBox="0 0 24 24" style="width:12px;height:12px"><use href="#i-visto"/></svg></span><span class="llevar-titulo">Toallas</span></div></div>
+            <div class="llevar"><div class="llevar-cuerpo"><span class="llevar-casilla"></span><span class="llevar-titulo">Crema solar</span></div></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Ir</p>
+            <div class="apunte"><div class="apunte-cuerpo"><span class="apunte-titulo">Subir a la duna</span></div><span class="voto">👍 MA·OS</span></div>
+          </div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>No cambia una sola línea de cómo se pintan los grupos ni sus filas: cero riesgo sobre reglas ya afinadas —el «vacíos no salen», el estilo propio de cada fila—.</span></div>
+          <div class="si"><span>+</span><span>Las cuatro clases están siempre a la vista arriba, así que cumple «enseñar las secciones» sin pre-pintar listas vacías.</span></div>
+          <div class="no"><span>−</span><span>Lo que se toca y lo que aparece quedan en dos sitios: se toca «Hacer» arriba, pero el grupo Hacer con lo recién puesto aparece más abajo, a veces fuera de lo que se está mirando.</span></div>
+          <div class="no"><span>−</span><span>Una fila más que aprender: no es ni el «+» de hoy ni una fila dentro de la lista, es un tercer sitio nuevo en la pantalla.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B4 -->
+    <div class="eleccion">
+      <div class="eleccion-cabeza"><span class="letra">B4</span><h3>La fila de Llevar, prestada a las cuatro clases</h3></div>
+      <div class="par">
+        <div class="marco">
+          <span class="migas"><span class="miga">Sitios</span><span class="miga-flecha">›</span><span class="miga-actual">🏖️ Bolonia</span></span>
+          <div class="grupo">
+            <p class="grupo-titulo">Llevar</p>
+            <div class="llevar" data-hecho="si"><div class="llevar-cuerpo"><span class="llevar-casilla"><svg viewBox="0 0 24 24" style="width:12px;height:12px"><use href="#i-visto"/></svg></span><span class="llevar-titulo">Toallas</span></div></div>
+            <div class="llevar"><div class="llevar-cuerpo"><input placeholder="Gafas de sol" style="border:none;background:transparent;padding:0;font-size:15px;flex:1;min-width:0"></div></div>
+          </div>
+          <div class="grupo">
+            <p class="grupo-titulo">Ir</p>
+            <div class="apunte"><div class="apunte-cuerpo"><span class="apunte-titulo">Subir a la duna</span></div><span class="voto">👍 MA·OS</span></div>
+            <div class="llevar"><div class="llevar-cuerpo"><input placeholder="El mirador" style="border:none;background:transparent;padding:0;font-size:15px;flex:1;min-width:0"></div><span class="fila-lapiz"><svg viewBox="0 0 24 24" style="width:15px;height:15px"><use href="#i-editar"/></svg></span></div>
+          </div>
+        </div>
+        <div class="juicio">
+          <div class="si"><span>+</span><span>El único vocabulario nuevo de verdad es una frase de texto para el sitio vacío —«Empieza por Llevar, Hacer, Ir o Saber»—; todo lo demás —la fila, el lápiz de «Editar»— ya existe con esa misma forma.</span></div>
+          <div class="si"><span>+</span><span>Menos piezas que memorizar: una sola fila-tipo en vez de una para Llevar y otra distinta para el resto.</span></div>
+          <div class="no"><span>−</span><span>Prestarle a Hacer/Ir/Saber la fila sin casilla de Llevar difumina una distinción que la propia hoja cuida: esas filas llevan voto e hilo en cuanto se guardan, y la fila de escribir no lo deja ver. Hay que dibujarla lo bastante distinta de la fila ya guardada para que no prometa «sin voto, sin hilo» por error.</span></div>
+          <div class="no"><span>−</span><span>El lápiz ya significa «edita esto que existe» en el apunte abierto; reusarlo aquí para «añade el detalle de esto que aún no existe» es la misma imagen para dos verbos parecidos, no iguales.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nota">
+      <p>
+        <strong>Yo haría la B1</strong>, con la advertencia puesta: el bulto de la tira
+        de arranque para un sitio recién creado es un precio pequeño por lo que da a
+        cambio, que es exactamente lo que pides —escribir donde se va a quedar, sin
+        abrir nada—.
+      </p>
+      <p>
+        Si esa tira de arranque no convence, la B3 lo consigue sin tocar una sola regla
+        de cómo se pintan las listas, al precio de separar dónde se toca de dónde
+        aparece. Evitaría la B2: reabre «los grupos vacíos no salen» sin que el sitio lo
+        pida, y uno que solo usa Saber se pasaría la vida enseñando tres cabeceras que
+        no va a usar nunca. Y si se elige la B4, hay que dibujar su fila de escribir
+        claramente distinta de la fila ya guardada — si no, promete un voto y un hilo
+        que Llevar nunca tuvo.
+      </p>
+    </div>
+  </section>
+
+</div>

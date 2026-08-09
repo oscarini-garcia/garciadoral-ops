@@ -60,7 +60,7 @@ import {
 import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { abrirBandeja as abrirBandejaDeSolicitudes } from './bandeja.js';
 import {
-  abrirApunte, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
+  abrirApunte, hayFabEnSitios, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
 } from './vistas/sitios.js';
 import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
 
@@ -87,7 +87,15 @@ const PESTANAS = {
   // de los cinco huecos de la barra en una búsqueda global era el peor reparto
   // posible. Su título es una función porque la pestaña tiene dos alturas: la
   // lista de sitios y un sitio abierto, que escribe su nombre arriba.
-  sitios: { titulo: tituloDeSitios, pintar: pintarSitios, fab: (ctx) => nuevoDesdeSitios(ctx) },
+  //
+  // Y es la única con un flotante que puede desaparecer sin cambiar de
+  // pestaña: crea un sitio en la lista, pero dentro de uno ya no hace nada
+  // —eso lo hacen las filas de escribir de cada sección—, así que `hayFab` se
+  // vuelve a preguntar en cada pintado.
+  sitios: {
+    titulo: tituloDeSitios, pintar: pintarSitios, fab: (ctx) => nuevoDesdeSitios(ctx),
+    hayFab: hayFabEnSitios,
+  },
 };
 
 let pestana = 'hoy';
@@ -325,7 +333,11 @@ function refrescar() {
   // El de la agenda es una fecha y no un nombre: se compone más largo y se
   // compone en cifras, así que se dibuja con su propio tamaño.
   titulo.dataset.pestana = pestana;
-  document.getElementById('fab').hidden = !definicion.fab;
+  // La mayoría de las pestañas deciden esto una vez, al entrar: `fab` es una
+  // función o no lo es. Sitios lo vuelve a preguntar en cada pintado, porque
+  // ahí el mismo flotante tiene o no tiene sentido según en qué altura se está.
+  const hayFab = Boolean(definicion.fab) && (definicion.hayFab ? definicion.hayFab(ctx) : true);
+  document.getElementById('fab').hidden = !hayFab;
 
   // Cada pestaña parte de la pantalla desnuda y le añade las clases de
   // disposición que necesite, sin heredar las de la anterior.

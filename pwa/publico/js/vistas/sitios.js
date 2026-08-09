@@ -19,8 +19,8 @@ import {
   abrirHoja, avisar, botonIcono, campo, carruselDePropuestas, cerrarHoja, el, entrada, icono,
   vaciar,
 } from '../ui.js';
-import { apuntarEnSitio, guardar, retirar } from '../sincronizacion.js';
-import { estaActivo, nuevoId, partirEmoji, redaccionDisponible } from '../modelo.js';
+import { apuntarEnSitio, guardar, retirar, sugerirEmojiDeSitio } from '../sincronizacion.js';
+import { emojiVisible, estaActivo, nuevoId, partirEmoji, redaccionDisponible } from '../modelo.js';
 import { compartir, toque } from '../native.js';
 import { bloqueDeComentarios } from '../comentarios.js';
 import { marcarVisto } from '../avisos.js';
@@ -35,9 +35,30 @@ import {
  *  no en la instantánea: es dónde está uno, no un dato del hogar. */
 let lugarAbierto = null;
 
+/** Qué clase sin nada todavía tiene su fila de escribir desplegada, dentro de
+ *  un sitio — `null` si ninguna. Vive aquí por lo mismo que `lugarAbierto`: es
+ *  dónde está uno, no un dato del hogar. */
+let claseEnAlta = null;
+
+/** Qué fila de escribir se enfoca en el próximo pintado — de un solo uso, para
+ *  no robarle el teclado a quien está escribiendo en otra fila cuando un
+ *  cambio ajeno vuelve a pintar la pantalla. */
+let enfocarClase = null;
+
 export function reiniciarSitios() {
   lugarAbierto = null;
+  claseEnAlta = null;
+  enfocarClase = null;
 }
+
+/**
+ * Si el flotante tiene algo que hacer en Sitios ahora mismo.
+ *
+ * En la lista, sigue creando un sitio. Dentro de uno, ya no: eso lo hacen las
+ * filas de escribir de cada sección, y un flotante que abriera además la hoja
+ * de siempre sería un segundo camino a lo mismo.
+ */
+export const hayFabEnSitios = () => !lugarAbierto;
 
 /**
  * El título de la pestaña, que dentro de un sitio son migas.
@@ -158,40 +179,68 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
   ]));
 
   const grupos = porClase(ctx.vista.datos, lugar.id);
-  if (!grupos.length) {
-    pantalla.append(el('p', {
-      class: 'vacio',
-      texto: 'Todavía no hay nada apuntado aquí. Toca el «+».',
-    }));
-    return;
+  const conAlgo = new Set(grupos.map((g) => g.clase.id));
+  // Si ya tiene algo, deja de estar «en alta»: a partir de ahora es un grupo
+  // como cualquier otro, y el hueco de escribir lo pone su propia fila.
+  if (claseEnAlta && conAlgo.has(claseEnAlta)) claseEnAlta = null;
+
+  // Las clases sin nada todavía, y sin su fila de escribir desplegada: una
+  // píldora por cada una, siempre a la vista, para que «enseñar las
+  // secciones» no obligue a pre-pintar listas vacías. Tocarla es lo que
+  // sustituye aquí al «+» que ya no está.
+  const pendientes = CLASES.filter((c) => !conAlgo.has(c.id) && c.id !== claseEnAlta);
+  if (pendientes.length) {
+    pantalla.append(el('div', { class: 'opciones' }, pendientes.map((clase) =>
+      el('button', {
+        class: 'opcion', 'data-vacia': true, type: 'button',
+        onclick: () => { claseEnAlta = clase.id; enfocarClase = clase.id; ctx.refrescar(); },
+      }, [`+ ${clase.nombre}`]))));
   }
 
-  for (const { clase, apuntes } of grupos) {
+  for (const clase of CLASES) {
+    const grupo = grupos.find((g) => g.clase.id === clase.id);
+    if (!grupo && clase.id !== claseEnAlta) continue;
+    const apuntes = grupo?.apuntes || [];
+
     pantalla.append(el('div', { class: 'grupo' }, [
       // El rótulo de una lista lleva su propio verbo de compartir: «mándame lo
       // que hay que llevar» se pide entero y sin lo demás, y quien lo recibe no
-      // quiere saber a qué duna se sube.
+      // quiere saber a qué duna se sube. Sin nada que llevar todavía, no hay
+      // nada que compartir tampoco.
       clase.lista
         ? el('div', { class: 'grupo-cabeza' }, [
             el('p', { class: 'grupo-titulo', texto: clase.nombre }),
-            botonIcono('compartir', {
-              etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
-              tono: 'discreto',
-              onclick: async () => {
-                toque();
-                const enviado = await compartir({
-                  titulo: `${clase.nombre} · ${lugar.nombre}`,
-                  texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
-                });
-                if (!enviado) avisar('No he podido compartirlo');
-              },
-            }),
+            apuntes.length
+              ? botonIcono('compartir', {
+                  etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
+                  tono: 'discreto',
+                  onclick: async () => {
+                    toque();
+                    const enviado = await compartir({
+                      titulo: `${clase.nombre} · ${lugar.nombre}`,
+                      texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
+                    });
+                    if (!enviado) avisar('No he podido compartirlo');
+                  },
+                })
+              : null,
           ])
         : el('p', { class: 'grupo-titulo', texto: clase.nombre }),
       el('div', {}, apuntes.map((apunte) => (clase.lista
         ? filaDeLista(apunte, ctx)
         : filaDeApunte(apunte, ctx)))),
+      filaEscribir(clase, lugar.id, ctx),
     ]));
+  }
+
+  // Se enfoca después de montar, no al construir: el campo no recibe foco
+  // hasta que está en el documento. Es de un solo uso — si no se consumiera
+  // aquí, cualquier refresco ajeno (marcar un «Llevar» de otro grupo) le
+  // robaría el teclado a quien esté escribiendo en otro sitio de la pantalla.
+  if (enfocarClase) {
+    const objetivo = enfocarClase;
+    enfocarClase = null;
+    pantalla.querySelector(`.fila-escribir[data-clase="${objetivo}"] input`)?.focus();
   }
 }
 
@@ -289,6 +338,57 @@ function filaDeApunte(apunte, ctx) {
     ]),
     voto,
   ]);
+}
+
+/**
+ * La fila de escribir del final de un grupo: un título y ya está, sin abrir
+ * nada. Sustituye al «+» de dentro de un sitio — meter cosas rápido es
+ * escribir la siguiente línea de la lista que se está mirando, y refinarlas
+ * es para después.
+ *
+ * En Llevar no lleva más botón que el de confirmar: es la lista de la compra,
+ * y una lista de la compra no tiene detalle que asociarle. En las demás
+ * clases lleva además el lápiz, que entrega lo ya escrito —sin perderlo— a la
+ * misma hoja de siempre, con la clase puesta: ahí es donde se describe, se
+ * pide una idea a la IA o simplemente se guarda tal cual.
+ */
+function filaEscribir(clase, lugarId, ctx) {
+  const input = entrada({ placeholder: `Añadir a ${clase.nombre}…` });
+
+  const confirmar = async () => {
+    const texto = input.value.trim();
+    if (!texto) return;
+    await guardar('apunte', nuevoId(), {
+      lugar_id: lugarId, clase: clase.id, titulo: texto, autor_id: ctx.vista.yo.id, activo: 1,
+    });
+    toque();
+    if (claseEnAlta === clase.id) claseEnAlta = null;
+    enfocarClase = clase.id;
+    ctx.refrescar();
+  };
+
+  input.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter') { evento.preventDefault(); confirmar(); }
+  });
+
+  const hijos = [
+    input,
+    el('button', {
+      class: 'fila-confirmar', type: 'button', 'aria-label': `Añadir a ${clase.nombre}`,
+      onclick: confirmar,
+    }, ['+']),
+  ];
+
+  if (!clase.lista) {
+    hijos.push(el('button', {
+      class: 'fila-lapiz', type: 'button', 'aria-label': 'Más detalle',
+      onclick: () => abrirFormularioApunte(ctx, {
+        lugarId, claseInicial: clase.id, tituloInicial: input.value.trim(),
+      }),
+    }, [icono('editar')]));
+  }
+
+  return el('div', { class: 'fila-escribir', 'data-clase': clase.id }, hijos);
 }
 
 /** Las dos primeras letras del nombre, como en el carril de Lío: con cuatro
@@ -426,15 +526,63 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
     //
     // Y de paso es el trato que ya tienen los eventos —«para otro emoji, empieza
     // el título con él»—, así que deja de haber dos maneras de hacer lo mismo.
+    //
+    // El redondel de al lado no es un segundo campo: es una vista previa que
+    // refleja en vivo lo que `partirEmoji` va a separar al guardar. Vacío de
+    // verdad hasta que hay algo —nunca con un emoji de muestra dentro—, que es
+    // la misma frontera que ya mató a los dos campos.
     const nombre = entrada({
       value: nombreDeLugar(lugar) || '',
       placeholder: 'Bolonia',
     });
 
-    cuerpo.append(campo(
-      'Nombre', nombre,
-      'Empiézalo por un emoji y será lo que lo distinga de un vistazo en la lista.',
-    ));
+    const glifo = el('span', { class: 'emoji-hueco-glifo' });
+    const destello = el('button', {
+      class: 'emoji-hueco-destello', type: 'button', hidden: true,
+      'aria-label': 'Que la IA sugiera un emoji',
+      onclick: () => { toque(); destello.hidden = true; carrusel.abrir(); },
+    }, [icono('destello')]);
+    const redondel = el('span', { class: 'emoji-hueco', 'aria-hidden': 'true' }, [glifo, destello]);
+
+    const carrusel = carruselDePropuestas({
+      pedir: ({ mas, yaDichas }) => {
+        if (mas) toque();
+        const base = partirEmoji(nombre.value.trim()).resto || nombre.value.trim();
+        return sugerirEmojiDeSitio(base, { descartados: yaDichas });
+      },
+      pintar: (emoji) => [el('span', { class: 'propuesta-emoji', texto: emoji })],
+      clave: (emoji) => emoji,
+      verbo: {
+        texto: 'Ponerlo',
+        hacer: (emoji) => {
+          toque();
+          const partido = partirEmoji(nombre.value.trim());
+          nombre.value = [emoji, partido.resto].filter(Boolean).join(' ');
+          actualizarRedondel();
+          carrusel.cerrar();
+        },
+      },
+    });
+
+    function actualizarRedondel() {
+      const partido = partirEmoji(nombre.value.trim());
+      glifo.textContent = partido.emoji ? emojiVisible(partido.emoji) : '';
+      // Escondido sin nada que sugerir, y escondido también una vez pedido: el
+      // carrusel abierto ya ofrece «Otras cinco», y es lo mismo que ya hace el
+      // destello de Regalos.
+      destello.hidden = !nombre.value.trim() || carrusel.hay();
+    }
+    nombre.addEventListener('input', actualizarRedondel);
+    actualizarRedondel();
+
+    cuerpo.append(el('div', { class: 'fila-nombre-swatch' }, [
+      redondel,
+      campo(
+        'Nombre', nombre,
+        'Empiézalo por un emoji y será lo que lo distinga de un vistazo en la lista.',
+      ),
+    ]));
+    cuerpo.append(carrusel.nodo);
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
@@ -442,8 +590,8 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
         onclick: async () => {
           const texto = nombre.value.trim();
           if (!texto) { avisar('Ponle un nombre'); return; }
-          // Se parte al guardar y no al escribir: la columna sigue significando
-          // lo que decía, y lo que se teclea es una sola cosa.
+          // Se parte al guardar: la columna sigue significando lo que decía, y
+          // lo que se teclea —y lo que refleja el redondel— es una sola cosa.
           const partido = partirEmoji(texto);
           const nuevo = id || nuevoId();
           await guardar('lugar', nuevo, {
@@ -456,7 +604,7 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
           cerrarHoja();
           // Un sitio recién creado se abre: lo que uno quiere después de
           // nombrarlo es apuntar la primera cosa, y ese es el sitio donde
-          // el «+» ya significa eso.
+          // las filas de escribir ya están esperando.
           if (!id) lugarAbierto = nuevo;
           ctx.refrescar();
         },
@@ -466,15 +614,19 @@ function abrirFormularioLugar(ctx, { id = null } = {}) {
   });
 }
 
-function abrirFormularioApunte(ctx, { id = null, lugarId = null } = {}) {
+function abrirFormularioApunte(ctx, {
+  id = null, lugarId = null, claseInicial = null, tituloInicial = '',
+} = {}) {
   const apunte = id ? (ctx.vista.datos.apuntes || []).find((a) => a.id === id) : null;
   const destino = lugarId || apunte?.lugar_id;
   if (!destino) return;
 
   abrirHoja(apunte ? 'Editar el apunte' : 'Apuntar algo', (cuerpo) => {
-    let clase = apunte?.clase || CLASE_POR_DEFECTO;
+    // La fila de escribir de una sección ya sabe su clase, y el lápiz que
+    // entrega lo escrito la trae puesta: no tiene sentido pedirla dos veces.
+    let clase = apunte?.clase || claseInicial || CLASE_POR_DEFECTO;
 
-    const titulo = entrada({ value: apunte?.titulo || '', placeholder: 'Sombrilla' });
+    const titulo = entrada({ value: apunte?.titulo || tituloInicial || '', placeholder: 'Sombrilla' });
     const detalle = el('textarea', { rows: '3', placeholder: 'Allí no hay ni una sombra' });
     detalle.value = apunte?.detalle || '';
 
