@@ -1,0 +1,698 @@
+<meta charset="utf-8">
+<title>Sitios: secciones más ligeras</title>
+
+<style>
+  /* Los valores reales de pwa/publico/css/estilos.css, con el mismo trato que
+     los demás prototipos de specs/: las tres tipografías con su repuesto de
+     sistema, porque no se pueden cargar desde fuera. */
+  :root {
+    color-scheme: light dark;
+    --paper:       #FBF9F5;
+    --paper-2:     #F2EFE8;
+    --paper-3:     #EAE6DC;
+    --ink:         #1C2B33;
+    --ink-soft:    #5F7280;
+    --ink-faint:   #64747F;
+    --line:        #E2DED4;
+    --tinta:       #0E6E62;
+    --tinta-suave: #DCEDE9;
+    --aviso:       #A8641B;
+    --sombra:      0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --radio: 12px;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono:  ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E; --aviso: #E0A253;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E; --aviso: #E0A253;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 32px 20px 80px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 27px; }
+  h3 { font-size: 16.5px; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: .92em; background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .portada { display: flex; flex-direction: column; gap: 13px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .portada p { color: var(--ink-soft); max-width: 68ch; }
+  .portada p strong { color: var(--ink); }
+  .diagnostico {
+    background: var(--paper-2); border: 1px solid var(--line); border-left: 3px solid var(--aviso);
+    border-radius: 12px; padding: 15px 17px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .diagnostico p { color: var(--ink-soft); max-width: 68ch; }
+  .diagnostico p strong { color: var(--ink); }
+
+  .eleccion { display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .eleccion-cabeza { display: flex; align-items: baseline; gap: 11px; }
+  .eleccion-cabeza h3 { display: flex; flex-direction: column; gap: 2px; }
+  .eleccion-cabeza .pista { font-family: var(--sans); font-size: 13.5px; font-weight: 400; color: var(--ink-soft); }
+  .letra {
+    font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 30px; height: 30px; display: grid; place-items: center; flex: none;
+    align-self: flex-start; margin-top: 2px;
+  }
+  .par { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 800px) { .par { grid-template-columns: 360px 1fr; } }
+  .juicio { display: flex; flex-direction: column; gap: 9px; padding-top: 4px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); font-size: 14.5px; }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio strong { color: var(--ink); }
+  .juicio code { font-size: .88em; }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 70ch; }
+  .nota strong { color: var(--ink); }
+
+  /* --------------------------------------------------- El teléfono y su marco -- */
+  .marco {
+    width: 340px; max-width: 100%; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sombra);
+    padding: 16px 16px 18px;
+  }
+  .marco-etiqueta {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 10px;
+  }
+  .icono-svg svg { display: block; }
+
+  /* Piezas reales de Sitios, sin tocar salvo donde lo dice cada opción. */
+  .grupo { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
+  .grupo:first-child { margin-top: 0; }
+
+  .acordeon { border-top: 1px solid var(--line); }
+  .acordeon:last-of-type { border-bottom: 1px solid var(--line); }
+  .acordeon > summary {
+    display: flex; align-items: center; gap: 10px;
+    min-height: 44px; padding: 4px 0;
+    font-size: 16.5px; font-weight: 500;
+    cursor: pointer; list-style: none;
+  }
+  .acordeon > summary::-webkit-details-marker { display: none; }
+  .acordeon > summary::after {
+    content: ''; margin-left: auto; flex: none;
+    width: 9px; height: 9px;
+    border-right: 1.8px solid var(--ink-faint); border-bottom: 1.8px solid var(--ink-faint);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform .16s ease;
+  }
+  .acordeon[open] > summary::after { transform: rotate(-135deg) translate(-2px, -2px); }
+  .acordeon-nota { margin-left: auto; padding-left: 10px; font-size: 13px; font-weight: 400; color: var(--ink-faint); }
+  .acordeon-cuerpo { display: flex; flex-direction: column; gap: 11px; padding: 2px 0 15px; }
+  .acordeon > summary .icono-accion { margin-left: 0; }
+
+  .icono-accion {
+    flex: none; width: 30px; height: 30px; border-radius: 9px;
+    display: grid; place-items: center; color: var(--ink-faint);
+    border: 0; background: none; padding: 0; cursor: pointer;
+  }
+  .icono-accion svg { width: 17px; height: 17px; }
+
+  .lista-filas { display: flex; flex-direction: column; }
+  .llevar, .apunte, .fila-escribir {
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--line); min-height: 46px;
+  }
+  .lista-filas > :last-child, .grupo > .fila-escribir:last-child { border-bottom: 0; }
+
+  .llevar-casilla {
+    flex: none; width: 21px; height: 21px; border-radius: 6px;
+    border: 1.5px solid var(--line); display: grid; place-items: center; color: var(--paper);
+  }
+  .llevar-casilla svg { width: 14px; height: 14px; stroke-width: 2.6; }
+  .llevar[data-hecho] .llevar-casilla { background: var(--tinta); border-color: var(--tinta); }
+  .llevar-titulo, .apunte-titulo { flex: 1; min-width: 0; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .llevar[data-hecho] .llevar-titulo { text-decoration: line-through; color: var(--ink-faint); }
+  .llevar-firma { flex: none; font-size: 12.5px; color: var(--ink-faint); }
+
+  .voto {
+    display: inline-flex; align-items: center; gap: 5px; flex: none;
+    min-height: 30px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2);
+    font-family: var(--mono); font-size: 11px; color: var(--ink-soft); letter-spacing: .05em;
+  }
+  .voto[data-vacio] { color: var(--ink-faint); }
+
+  .fila-escribir input {
+    flex: 1; min-width: 0; border: none; background: transparent; padding: 0; margin: 0;
+    font-size: 16px; font-family: inherit; color: var(--ink-faint);
+  }
+  .fila-escribir[data-clase="llevar"] input { padding-left: 32px; }
+  .fila-lapiz {
+    flex: none; width: 30px; height: 30px; border-radius: 9px;
+    display: grid; place-items: center; color: var(--ink-faint); opacity: .55;
+  }
+  .fila-lapiz svg { width: 15px; height: 15px; }
+
+  .pendientes {
+    display: flex; flex-wrap: wrap; gap: 7px; margin-top: 22px;
+  }
+  .pendientes button {
+    min-height: 36px; padding: 7px 13px; border-radius: 999px;
+    border: 1px dashed var(--tinta); color: var(--tinta); background: transparent; font-size: 14.5px;
+  }
+
+  /* --------------------------------------------------------------- A -- */
+  .marco[data-opcion="a"] .llevar,
+  .marco[data-opcion="a"] .apunte,
+  .marco[data-opcion="a"] .fila-escribir { border-bottom: 0; }
+  .marco[data-opcion="a"] .lista-filas { gap: 5px; }
+  .marco[data-opcion="a"] .grupo > .fila-escribir { margin-top: 5px; }
+
+  /* --------------------------------------------------------------- B -- */
+  .marco[data-opcion="b"] .acordeon {
+    border-top: 0; border-bottom: 0 !important;
+    border-left: 3px solid color-mix(in srgb, var(--tinta) 55%, transparent);
+    padding-left: 13px; margin-left: -13px;
+  }
+  .marco[data-opcion="b"] .llevar,
+  .marco[data-opcion="b"] .apunte,
+  .marco[data-opcion="b"] .fila-escribir { border-bottom: 0; }
+  .marco[data-opcion="b"] .lista-filas { gap: 5px; }
+  .marco[data-opcion="b"] .grupo > .fila-escribir { margin-top: 5px; padding-left: 13px; margin-left: -13px; }
+
+  /* --------------------------------------------------------------- C -- */
+  .marco[data-opcion="c"] .acordeon { border-top: 0; border-bottom: 0 !important; }
+  .marco[data-opcion="c"] .acordeon > summary {
+    background: var(--paper-3); border-radius: 9px;
+    min-height: 34px; padding: 5px 10px; font-size: 14.5px; font-weight: 600;
+  }
+  .marco[data-opcion="c"] .acordeon > summary .icono-accion { width: 24px; height: 24px; }
+  .marco[data-opcion="c"] .acordeon > summary .icono-accion svg { width: 14px; height: 14px; }
+  .marco[data-opcion="c"] .acordeon-cuerpo { padding: 10px 2px 4px; }
+  .marco[data-opcion="c"] .llevar,
+  .marco[data-opcion="c"] .apunte,
+  .marco[data-opcion="c"] .fila-escribir { border-bottom: 0; padding-left: 8px; }
+  .marco[data-opcion="c"] .lista-filas { gap: 5px; }
+  .marco[data-opcion="c"] .grupo > .fila-escribir { margin-top: 5px; padding-left: 8px; }
+
+  /* --------------------------------------------------------------- D -- */
+  .marco[data-opcion="d"] .grupo { margin-top: 14px; }
+  .marco[data-opcion="d"] .acordeon {
+    border-top: 0; border-bottom: 0 !important;
+    background: var(--paper-2); border-radius: 12px; padding: 2px 13px 4px;
+  }
+  .marco[data-opcion="d"] .llevar,
+  .marco[data-opcion="d"] .apunte,
+  .marco[data-opcion="d"] .fila-escribir { border-bottom: 0; }
+  .marco[data-opcion="d"] .lista-filas { gap: 5px; }
+  .marco[data-opcion="d"] .grupo > .fila-escribir {
+    margin-top: 4px; background: var(--paper-2); border-radius: 12px; padding: 0 13px;
+  }
+  .marco[data-opcion="d"] .grupo > .fila-escribir[data-clase="llevar"] input { padding-left: 32px; }
+
+  /* --------------------------------------------------------------- E -- */
+  .marco[data-opcion="e"] .acordeon-unico-cuerpo { display: flex; flex-direction: column; gap: 20px; padding: 8px 0 4px; }
+  .marco[data-opcion="e"] .subrotulo {
+    display: flex; align-items: baseline; gap: 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .marco[data-opcion="e"] .subrotulo::after { content: ''; flex: 1 1 auto; height: 1px; background: var(--line); }
+  .marco[data-opcion="e"] .subgrupo { display: flex; flex-direction: column; }
+  .marco[data-opcion="e"] .lista-filas { gap: 5px; margin-top: 9px; }
+  .marco[data-opcion="e"] .llevar,
+  .marco[data-opcion="e"] .apunte,
+  .marco[data-opcion="e"] .fila-escribir { border-bottom: 0; }
+  .marco[data-opcion="e"] .subgrupo > .fila-escribir { margin-top: 5px; }
+
+  /* --------------------------------------------------------------- F -- */
+  .marco[data-opcion="f"] .rotulo-llano {
+    display: flex; align-items: baseline; gap: 8px; margin-top: 22px;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-faint);
+    padding-bottom: 7px; border-bottom: 1px solid var(--line);
+  }
+  .marco[data-opcion="f"] .grupo:first-child .rotulo-llano { margin-top: 0; }
+  .marco[data-opcion="f"] .rotulo-llano-nota { color: var(--ink-faint); }
+  .marco[data-opcion="f"] .rotulo-llano .icono-accion { margin-left: auto; width: 22px; height: 22px; }
+  .marco[data-opcion="f"] .rotulo-llano .icono-accion svg { width: 13px; height: 13px; }
+  .marco[data-opcion="f"] .llevar,
+  .marco[data-opcion="f"] .apunte,
+  .marco[data-opcion="f"] .fila-escribir { border-bottom: 0; }
+  .marco[data-opcion="f"] .lista-filas { gap: 5px; margin-top: 10px; }
+  .marco[data-opcion="f"] .grupo > .fila-escribir { margin-top: 5px; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · propuesta</p>
+    <h1>Sitios: secciones más ligeras</h1>
+    <p>
+      Lo último que se mergeó hace que cada clase de un sitio se pliegue y
+      recuerde cómo se dejó, con el recuento en el rótulo. Con contenido
+      dentro, eso trae también una cabecera propia, un marco alrededor y una
+      raya por fila — y con varias clases con algo escrito, se junta todo a la
+      vez. Seis maneras de aligerarlo.
+    </p>
+  </header>
+
+  <div class="diagnostico">
+    <p class="rotulo" style="margin:0">Por qué se ve así hoy</p>
+    <p>
+      Ninguna sección mide mal — cada una ocupa justo lo que su CSS dice. Lo
+      que pasa es que <strong>cada pieza dibuja su propia raya</strong>: cada
+      línea de Llevar, cada apunte y cada fila de escribir lleva su
+      <code>border-bottom</code>, y el propio plegable se enmarca además con
+      <code>border-top</code> y <code>border-bottom</code> alrededor de eso.
+      Un sitio con Llevar y Hacer ya escritos junta dos cabeceras de 44
+      puntos, dos marcos completos y media docena de rayas de fila antes de
+      llegar a Ir; con las cuatro clases con algo dentro, se acerca a la
+      veintena de rayas en una sola pantalla. Nada está roto — se acumula.
+    </p>
+    <p>
+      Las seis opciones de aquí abajo dan por hecho un arreglo aparte, igual
+      en las seis: el botón de compartir de Llevar hoy tiene su propia fila
+      — flota solo, a la derecha, sin nada más en su renglón — y se muda
+      dentro de la cabecera, junto al ángulo. Sirve a cualquiera de las
+      seis, así que no hacía falta convertirlo en una séptima.
+    </p>
+  </div>
+
+  <!-- A ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza">
+      <span class="letra">A</span>
+      <h3>Solo el aire separa<span class="pista">sin rayas entre filas; el plegable se queda igual</span></h3>
+    </div>
+    <div class="par">
+      <div class="marco" data-opcion="a">
+        <p class="marco-etiqueta">Bolonia</p>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary>
+              <span>Llevar</span>
+              <span class="acordeon-nota">(3)</span>
+              <button class="icono-accion" type="button" aria-label="Compartir lo que hay que llevar" title="Compartir lo que hay que llevar">
+                <span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg></span>
+              </button>
+            </summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Sombrilla</span></div>
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Kriirif</span></div>
+                <div class="llevar" data-hecho="si">
+                  <span class="llevar-casilla"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span></span>
+                  <span class="llevar-titulo">Monedas para el parquímetro</span>
+                  <span class="llevar-firma">Óscar</span>
+                </div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir" data-clase="llevar"><input placeholder="Añadir a Llevar…" readonly></div>
+        </div>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary><span>Hacer</span><span class="acordeon-nota">(2)</span></summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="apunte"><span class="apunte-titulo">Torre degli Asinelli</span><span class="voto">👍 MA·OS</span></div>
+                <div class="apunte"><span class="apunte-titulo">Mercato di Mezzo</span><span class="voto" data-vacio="si">👍 —</span></div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir">
+            <input placeholder="Añadir a Hacer…" readonly>
+            <span class="fila-lapiz"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></span>
+          </div>
+        </div>
+
+        <div class="pendientes"><button type="button">+ Ir</button><button type="button">+ Saber</button></div>
+      </div>
+
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El cambio más corto de los seis: quitar <code>border-bottom</code> en tres selectores, sin mecanismo nuevo.</span></div>
+        <div class="si"><span>+</span><span>El plegable se queda exactamente como lo conoce quien ya usa Sitios — misma cabecera, mismo recuento, mismo plegado.</span></div>
+        <div class="no"><span>−</span><span>Sin ninguna marca dentro de la sección, el ojo se apoya solo en el aire para notar que ha cambiado de fila: entre «Sombrilla» y «Kriirif», dos líneas del mismo peso y sin casilla marcada, cuesta un instante más que con la raya de hoy.</span></div>
+        <div class="no"><span>−</span><span>No contesta «difícil ver dónde está cada sección»: dos plegables seguidos, con solo su borde de 1px, se siguen pareciendo mucho el uno al otro.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza">
+      <span class="letra">B</span>
+      <h3>Una raya de color, no una caja<span class="pista">banda a la izquierda, prestada de la semana</span></h3>
+    </div>
+    <div class="par">
+      <div class="marco" data-opcion="b">
+        <p class="marco-etiqueta">Bolonia</p>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary>
+              <span>Llevar</span>
+              <span class="acordeon-nota">(3)</span>
+              <button class="icono-accion" type="button" aria-label="Compartir lo que hay que llevar" title="Compartir lo que hay que llevar">
+                <span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg></span>
+              </button>
+            </summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Sombrilla</span></div>
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Kriirif</span></div>
+                <div class="llevar" data-hecho="si">
+                  <span class="llevar-casilla"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span></span>
+                  <span class="llevar-titulo">Monedas para el parquímetro</span>
+                  <span class="llevar-firma">Óscar</span>
+                </div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir" data-clase="llevar"><input placeholder="Añadir a Llevar…" readonly></div>
+        </div>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary><span>Hacer</span><span class="acordeon-nota">(2)</span></summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="apunte"><span class="apunte-titulo">Torre degli Asinelli</span><span class="voto">👍 MA·OS</span></div>
+                <div class="apunte"><span class="apunte-titulo">Mercato di Mezzo</span><span class="voto" data-vacio="si">👍 —</span></div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir">
+            <input placeholder="Añadir a Hacer…" readonly>
+            <span class="fila-lapiz"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></span>
+          </div>
+        </div>
+
+        <div class="pendientes"><button type="button">+ Ir</button><button type="button">+ Saber</button></div>
+      </div>
+
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Reutiliza un lenguaje que la aplicación ya tiene: <code>.linea-banda</code>, la marca de «esto continúa» en la semana, es la misma banda al borde — aquí dice «esto es una sección» en vez de «esto viene de ayer».</span></div>
+        <div class="si"><span>+</span><span>La sección se reconoce por color, no por memorizar dónde cae una raya de 1px: funciona incluso pasando el pulgar rápido por la pantalla.</span></div>
+        <div class="si"><span>+</span><span>Sin cajas ni fondos nuevos — el papel se queda siendo el papel.</span></div>
+        <div class="no"><span>−</span><span>Introduce color donde hoy solo lo lleva el estado — <code>--tinta</code> es «mío», «hecho», «tocable» — y una banda que no significa nada de eso podría leerse como si todas las secciones estuvieran «activas».</span></div>
+        <div class="no"><span>−</span><span>Es la más discreta de las tres opciones con color; si lo que hace falta es que salte a la vista, se queda corta.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- C ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza">
+      <span class="letra">C</span>
+      <h3>Cabecera con su propio fondo<span class="pista">franja compacta y teñida, más corta que la de hoy</span></h3>
+    </div>
+    <div class="par">
+      <div class="marco" data-opcion="c">
+        <p class="marco-etiqueta">Bolonia</p>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary>
+              <span>Llevar</span>
+              <span class="acordeon-nota">(3)</span>
+              <button class="icono-accion" type="button" aria-label="Compartir lo que hay que llevar" title="Compartir lo que hay que llevar">
+                <span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg></span>
+              </button>
+            </summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Sombrilla</span></div>
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Kriirif</span></div>
+                <div class="llevar" data-hecho="si">
+                  <span class="llevar-casilla"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span></span>
+                  <span class="llevar-titulo">Monedas para el parquímetro</span>
+                  <span class="llevar-firma">Óscar</span>
+                </div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir" data-clase="llevar"><input placeholder="Añadir a Llevar…" readonly></div>
+        </div>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary><span>Hacer</span><span class="acordeon-nota">(2)</span></summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="apunte"><span class="apunte-titulo">Torre degli Asinelli</span><span class="voto">👍 MA·OS</span></div>
+                <div class="apunte"><span class="apunte-titulo">Mercato di Mezzo</span><span class="voto" data-vacio="si">👍 —</span></div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir">
+            <input placeholder="Añadir a Hacer…" readonly>
+            <span class="fila-lapiz"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></span>
+          </div>
+        </div>
+
+        <div class="pendientes"><button type="button">+ Ir</button><button type="button">+ Saber</button></div>
+      </div>
+
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El límite más neto sin llegar a la caja: una franja se ve entera de un vistazo, incluso de refilón.</span></div>
+        <div class="si"><span>+</span><span>La cabecera baja de 44 a 34 puntos — más corta que la de hoy, no solo más clara por dentro.</span></div>
+        <div class="si"><span>+</span><span>Usa <code>--paper-3</code>, el mismo tono neutro de <code>.etiqueta</code> y <code>.opcion</code>: no estrena significado, lo aplica a una franja entera en vez de a una pastilla.</span></div>
+        <div class="no"><span>−</span><span>Es la primera vez que una cabecera de sección lleva fondo propio en toda la aplicación — ni Ajustes, ni Gente, ni la Agenda lo hacen hoy.</span></div>
+        <div class="no"><span>−</span><span>Con dos franjas seguidas del mismo tono, si algún día hiciera falta distinguir una tercera cosa por color aquí, el recurso ya estaría gastado.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza">
+      <span class="letra">D</span>
+      <h3>Una tarjeta por sección<span class="pista">fondo y esquina propios, el límite más claro de los seis</span></h3>
+    </div>
+    <div class="par">
+      <div class="marco" data-opcion="d">
+        <p class="marco-etiqueta">Bolonia</p>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary>
+              <span>Llevar</span>
+              <span class="acordeon-nota">(3)</span>
+              <button class="icono-accion" type="button" aria-label="Compartir lo que hay que llevar" title="Compartir lo que hay que llevar">
+                <span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg></span>
+              </button>
+            </summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Sombrilla</span></div>
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Kriirif</span></div>
+                <div class="llevar" data-hecho="si">
+                  <span class="llevar-casilla"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span></span>
+                  <span class="llevar-titulo">Monedas para el parquímetro</span>
+                  <span class="llevar-firma">Óscar</span>
+                </div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir" data-clase="llevar"><input placeholder="Añadir a Llevar…" readonly></div>
+        </div>
+
+        <div class="grupo">
+          <details class="acordeon" open>
+            <summary><span>Hacer</span><span class="acordeon-nota">(2)</span></summary>
+            <div class="acordeon-cuerpo">
+              <div class="lista-filas">
+                <div class="apunte"><span class="apunte-titulo">Torre degli Asinelli</span><span class="voto">👍 MA·OS</span></div>
+                <div class="apunte"><span class="apunte-titulo">Mercato di Mezzo</span><span class="voto" data-vacio="si">👍 —</span></div>
+              </div>
+            </div>
+          </details>
+          <div class="fila-escribir">
+            <input placeholder="Añadir a Hacer…" readonly>
+            <span class="fila-lapiz"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></span>
+          </div>
+        </div>
+
+        <div class="pendientes"><button type="button">+ Ir</button><button type="button">+ Saber</button></div>
+      </div>
+
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El límite más inequívoco de los seis: un bloque con fondo y esquina no se confunde con el siguiente ni a un metro de distancia.</span></div>
+        <div class="si"><span>+</span><span>Comparte figura con <code>.tarjeta</code>, que la aplicación ya usa para presentar algo como una unidad — no inventa una superficie nueva, adapta una que ya existe.</span></div>
+        <div class="no"><span>−</span><span>Es la más pesada: cuatro tarjetas apiladas en un sitio con las cuatro clases llenas leen como cuatro paneles, y esto era justo la sensación de «ocupa mucho» que se quería bajar.</span></div>
+        <div class="no"><span>−</span><span><code>.tarjeta</code> hoy siempre contiene un resumen — un regalo, una idea — nunca una lista de filas tocables por dentro; sería el primer uso de la figura para eso.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- E ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza">
+      <span class="letra">E</span>
+      <h3>Un solo plegable por sitio<span class="pista">las clases pasan a ser rótulos dentro, no plegables propios</span></h3>
+    </div>
+    <div class="par">
+      <div class="marco" data-opcion="e">
+        <p class="marco-etiqueta">Bolonia</p>
+
+        <details class="acordeon" open>
+          <summary><span>Lo apuntado</span><span class="acordeon-nota">4 clases</span></summary>
+          <div class="acordeon-unico-cuerpo">
+
+            <div class="subgrupo">
+              <div class="subrotulo">
+                <span>Llevar</span><span>(3)</span>
+                <button class="icono-accion" type="button" aria-label="Compartir lo que hay que llevar" title="Compartir lo que hay que llevar" style="width:24px;height:24px;margin-left:8px;">
+                  <span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg></span>
+                </button>
+              </div>
+              <div class="lista-filas">
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Sombrilla</span></div>
+                <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Kriirif</span></div>
+                <div class="llevar" data-hecho="si">
+                  <span class="llevar-casilla"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span></span>
+                  <span class="llevar-titulo">Monedas para el parquímetro</span>
+                  <span class="llevar-firma">Óscar</span>
+                </div>
+              </div>
+              <div class="fila-escribir" data-clase="llevar"><input placeholder="Añadir a Llevar…" readonly></div>
+            </div>
+
+            <div class="subgrupo">
+              <div class="subrotulo"><span>Hacer</span><span>(2)</span></div>
+              <div class="lista-filas">
+                <div class="apunte"><span class="apunte-titulo">Torre degli Asinelli</span><span class="voto">👍 MA·OS</span></div>
+                <div class="apunte"><span class="apunte-titulo">Mercato di Mezzo</span><span class="voto" data-vacio="si">👍 —</span></div>
+              </div>
+              <div class="fila-escribir">
+                <input placeholder="Añadir a Hacer…" readonly>
+                <span class="fila-lapiz"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></span>
+              </div>
+            </div>
+
+          </div>
+        </details>
+
+        <div class="pendientes"><button type="button">+ Ir</button><button type="button">+ Saber</button></div>
+      </div>
+
+      <div class="juicio">
+        <div class="si"><span>+</span><span>El ahorro más grande de los seis: de un plumazo, tres cabeceras de 44 puntos y tres marcos de plegable menos por sitio.</span></div>
+        <div class="si"><span>+</span><span>Los rótulos de clase reutilizan el mismo trato que <code>.grupo-titulo</code> — la versalita gris que ya separa bloques en Regalos y en la Agenda — así que no añade una figura nueva, la trae a Sitios.</span></div>
+        <div class="no"><span>−</span><span>Deshace lo que se acaba de construir: el plegado por clase, con su recuerdo en <code>localStorage</code>, se pidió y se entregó hace una vuelta. Aquí «Saber» ya no se puede cerrar sola dejando «Llevar» abierta.</span></div>
+        <div class="no"><span>−</span><span>Un sitio con las cuatro clases llenas junta todos sus apuntes en un cuerpo largo; plegar el conjunto ayuda a esconderlo entero, pero ya no a esconder solo una parte.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- F ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza">
+      <span class="letra">F</span>
+      <h3>Vuelta a los rótulos fijos<span class="pista">se retira el plegado que se acababa de construir</span></h3>
+    </div>
+    <div class="par">
+      <div class="marco" data-opcion="f">
+        <p class="marco-etiqueta">Bolonia</p>
+
+        <div class="grupo">
+          <div class="rotulo-llano">
+            <span>Llevar</span><span class="rotulo-llano-nota">(3)</span>
+            <button class="icono-accion" type="button" aria-label="Compartir lo que hay que llevar" title="Compartir lo que hay que llevar">
+              <span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/></svg></span>
+            </button>
+          </div>
+          <div class="lista-filas">
+            <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Sombrilla</span></div>
+            <div class="llevar"><span class="llevar-casilla"></span><span class="llevar-titulo">Kriirif</span></div>
+            <div class="llevar" data-hecho="si">
+              <span class="llevar-casilla"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg></span></span>
+              <span class="llevar-titulo">Monedas para el parquímetro</span>
+              <span class="llevar-firma">Óscar</span>
+            </div>
+          </div>
+          <div class="fila-escribir" data-clase="llevar"><input placeholder="Añadir a Llevar…" readonly></div>
+        </div>
+
+        <div class="grupo">
+          <div class="rotulo-llano"><span>Hacer</span><span class="rotulo-llano-nota">(2)</span></div>
+          <div class="lista-filas">
+            <div class="apunte"><span class="apunte-titulo">Torre degli Asinelli</span><span class="voto">👍 MA·OS</span></div>
+            <div class="apunte"><span class="apunte-titulo">Mercato di Mezzo</span><span class="voto" data-vacio="si">👍 —</span></div>
+          </div>
+          <div class="fila-escribir">
+            <input placeholder="Añadir a Hacer…" readonly>
+            <span class="fila-lapiz"><span class="icono-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></span>
+          </div>
+        </div>
+
+        <div class="pendientes"><button type="button">+ Ir</button><button type="button">+ Saber</button></div>
+      </div>
+
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es visualmente la más tranquila de las seis: retoma <code>.lista-dia</code>, el rótulo con su raya hasta el margen que ya separa los días en la semana, así que no estrena nada.</span></div>
+        <div class="si"><span>+</span><span>Sin cabecera de 44 puntos ni ángulo que rotar, cada sección pesa menos que en cualquiera de las otras cinco — ni siquiera la franja de C llega tan abajo.</span></div>
+        <div class="no"><span>−</span><span>Deshace una funcionalidad pedida explícitamente hace una vuelta y ya construida: nadie podrá volver a plegar «Saber» para dejar de verla.</span></div>
+        <div class="no"><span>−</span><span>El recuento se queda en el rótulo, pero sin plegar nada quien mira un sitio con las cuatro clases llenas vuelve a verlo todo de una vez — que es justo lo que el plegado se construyó para evitar.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="nota">
+    <p>
+      <strong>Yo iría con C.</strong> Es la que de verdad contesta las dos
+      quejas a la vez: el límite salta a la vista sin llegar a la caja, y la
+      cabecera es más corta que la de hoy, no solo más clara por dentro.
+      Usa <code>--paper-3</code>, que ya es el tono neutro de esta
+      aplicación para «esto es superficie, no estado» — <code>.etiqueta</code>,
+      <code>.opcion</code> — así que no abre un significado de color nuevo,
+      solo lo extiende a una franja entera.
+    </p>
+    <p>
+      Si una franja con fondo pareciera de más para Sitios, <strong>B</strong>
+      hace casi lo mismo con menos: el mismo límite reconocible, pero
+      prestado de una pieza que la aplicación ya tiene en la semana
+      (<code>.linea-banda</code>), sin fondo nuevo en ningún sitio. Dejaría
+      <strong>D</strong> para si ninguna de las dos bastara y hiciera falta
+      el límite más fuerte posible — es la única que no se puede confundir
+      de un vistazo, al precio de ser también la que más «bloque» añade a la
+      pantalla.
+    </p>
+    <p>
+      <strong>E</strong> y <strong>F</strong> son la otra conversación: no
+      visten mejor una sección, cambian cuántas hay que plegar. Las dejaría
+      aparte de esta ronda — las dos deshacen el plegado por clase que se
+      acaba de pedir y construir, y eso merece decidirse a propósito y no
+      como efecto secundario de «se ve muy alto».
+    </p>
+    <p>
+      Aparte de las seis: <strong>empezar plegado</strong> es un interruptor
+      que no depende de ninguna — hoy una sección nace abierta la primera
+      vez que se ve, y podría nacer cerrada salvo la que tenga algo por
+      hacer de verdad. Encaja con cualquiera, y con A y C mejor que con las
+      demás: son las que menos dependen de ver contenido para notarse como
+      sección.
+    </p>
+  </div>
+
+</div>
