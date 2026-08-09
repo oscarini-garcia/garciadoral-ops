@@ -97,7 +97,7 @@ tener que recorrer la aplicación entera cada vez.
   AEROPUERTOS · ciudadDeAeropuerto
 - **almacen.js** — Almacén local.
   guardarDocumento · leerDocumento · guardarInstantanea · leerInstantanea · encolarCambio
-  leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 5 más
+  leerCola · vaciarCola · olvidarTodo · guardarSesion · leerSesion · …y 7 más
 - **app.js** — Arranque y navegación.
   TEXTO_SINCRONIZACION
 - **avisos.js** — Lo que espera a quien mira, venga del módulo que venga.

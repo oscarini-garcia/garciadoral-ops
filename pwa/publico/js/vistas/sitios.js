@@ -5,8 +5,6 @@
  * abierto— y no una hoja para lo segundo. Un sitio no es un detalle que se mira
  * de pasada: es la lista que se lee antes de salir de casa, con cuatro grupos
  * dentro, y una hoja modal encima de otra pantalla no es donde se hace eso.
- * Además así el botón flotante tiene sus dos significados sin inventarse nada:
- * en la lista crea un sitio, dentro de uno crea un apunte allí.
  *
  * El apunte sí es una hoja, porque a un apunte se entra a decir algo —votarlo,
  * leer lo que se ha hablado— y se vuelve enseguida a la lista.
@@ -16,9 +14,10 @@
  */
 
 import {
-  abrirHoja, avisar, botonIcono, campo, carruselDePropuestas, cerrarHoja, el, entrada, icono,
-  vaciar,
+  abrirHoja, acordeon, avisar, botonIcono, campo, carruselDePropuestas, cerrarHoja, el, entrada,
+  icono, vaciar,
 } from '../ui.js';
+import { marcarSeccionPlegada, seccionPlegada } from '../almacen.js';
 import { apuntarEnSitio, guardar, retirar, sugerirEmojiDeSitio } from '../sincronizacion.js';
 import { emojiVisible, estaActivo, nuevoId, partirEmoji, redaccionDisponible } from '../modelo.js';
 import { compartir, toque } from '../native.js';
@@ -232,34 +231,43 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
     const grupo = grupos.find((g) => g.clase.id === clase.id);
     if (!grupo && clase.id !== claseEnAlta) continue;
     const apuntes = grupo?.apuntes || [];
+    // Una fila que se acaba de revelar con una píldora se enseña siempre
+    // desplegada: se ha tocado justo para escribir en ella, y una preferencia
+    // guardada de la última vez que estuvo vacía no puede ganarle a eso.
+    const desplegada = clase.id === claseEnAlta || !seccionPlegada(lugar.id, clase.id);
+
+    const seccion = acordeon(clase.nombre, (cuerpo) => {
+      // El verbo de compartir de una lista vive dentro, no en el rótulo:
+      // «mándame lo que hay que llevar» es una acción de tres veces al año, y
+      // el rótulo tiene ya el sitio ocupado por el recuento. Sin nada que
+      // llevar todavía, no hay nada que compartir tampoco.
+      if (clase.lista && apuntes.length) {
+        cuerpo.append(el('div', { class: 'acordeon-verbos' }, [
+          botonIcono('compartir', {
+            etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
+            tono: 'discreto',
+            onclick: async () => {
+              toque();
+              const enviado = await compartir({
+                titulo: `${clase.nombre} · ${lugar.nombre}`,
+                texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
+              });
+              if (!enviado) avisar('No he podido compartirlo');
+            },
+          }),
+        ]));
+      }
+      cuerpo.append(el('div', {}, apuntes.map((apunte) => (clase.lista
+        ? filaDeLista(apunte, ctx)
+        : filaDeApunte(apunte, ctx)))));
+    }, { abierta: desplegada, nota: `(${apuntes.length})` });
+
+    seccion.addEventListener('toggle', () => {
+      marcarSeccionPlegada(lugar.id, clase.id, !seccion.open);
+    });
 
     pantalla.append(el('div', { class: 'grupo' }, [
-      // El rótulo de una lista lleva su propio verbo de compartir: «mándame lo
-      // que hay que llevar» se pide entero y sin lo demás, y quien lo recibe no
-      // quiere saber a qué duna se sube. Sin nada que llevar todavía, no hay
-      // nada que compartir tampoco.
-      clase.lista
-        ? el('div', { class: 'grupo-cabeza' }, [
-            el('p', { class: 'grupo-titulo', texto: clase.nombre }),
-            apuntes.length
-              ? botonIcono('compartir', {
-                  etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
-                  tono: 'discreto',
-                  onclick: async () => {
-                    toque();
-                    const enviado = await compartir({
-                      titulo: `${clase.nombre} · ${lugar.nombre}`,
-                      texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
-                    });
-                    if (!enviado) avisar('No he podido compartirlo');
-                  },
-                })
-              : null,
-          ])
-        : el('p', { class: 'grupo-titulo', texto: clase.nombre }),
-      el('div', {}, apuntes.map((apunte) => (clase.lista
-        ? filaDeLista(apunte, ctx)
-        : filaDeApunte(apunte, ctx)))),
+      seccion,
       filaEscribir(clase, lugar.id, ctx),
     ]));
   }
@@ -284,47 +292,81 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
 }
 
 /**
- * Una línea de la lista de la compra: casilla, lo que hay que llevar, quién lo
- * puso y el aspa.
+ * Una línea de la lista de la compra: casilla, lo que hay que llevar, quién
+ * lo puso y el aspa.
  *
- * **No abre nada.** Aquí no hay hoja, ni hilo, ni voto: es la lista que se mira
- * de pie y antes de salir por la puerta, y todo lo que se puede hacer con una
- * línea cabe en la propia línea. Tocarla la tacha, que es el gesto que se repite
- * doce veces seguidas y tiene que costar un dedo entero y no un objetivo de
- * veinte puntos.
- *
- * Y no se edita: el formulario es un solo campo, así que corregir una errata es
- * volver a escribirla. Un verbo de editar aquí pesaría más que el error.
+ * **Casilla y texto son dos blancos distintos.** Antes era uno solo —tocar
+ * en cualquier punto tachaba, «un dedo entero y no un objetivo de veinte
+ * puntos»—, pero eso dejaba corregir una errata solo borrando y volviendo a
+ * escribir. Ahora la casilla tacha —sigue siendo pequeña, el toque le crece
+ * por pseudoelemento sin tocar el dibujo— y el texto edita: se sustituye por
+ * un campo con lo mismo puesto, Intro o perder el foco confirma, Escape
+ * deshace.
  */
 function filaDeLista(apunte, ctx) {
   const hecho = estaHecho(apunte);
   const firma = firmaDeApunte(ctx.vista, apunte);
 
+  const casilla = el('button', {
+    class: 'llevar-casilla', type: 'button',
+    'aria-pressed': hecho ? 'true' : 'false',
+    'aria-label': hecho ? `Quitar la marca de hecho a ${apunte.titulo}` : `Marcar ${apunte.titulo} como hecho`,
+    onclick: async () => {
+      toque();
+      await alternarHecho(apunte);
+    },
+  }, [hecho ? icono('visto') : null]);
+
+  const texto = el('button', {
+    class: 'llevar-texto', type: 'button', 'aria-label': `Editar «${apunte.titulo}»`,
+    onclick: () => editarTituloEnLinea(texto, apunte),
+  }, [
+    el('span', { class: 'llevar-titulo', texto: apunte.titulo }),
+    firma ? el('span', { class: 'llevar-firma', texto: firma }) : null,
+  ]);
+
   return el('div', { class: 'llevar', 'data-hecho': hecho ? 'si' : null }, [
-    el('button', {
-      class: 'llevar-cuerpo', type: 'button',
-      'aria-pressed': hecho ? 'true' : 'false',
-      onclick: async () => {
-        toque();
-        await alternarHecho(apunte);
-        ctx.refrescar();
-      },
-    }, [
-      el('span', { class: 'llevar-casilla', 'aria-hidden': 'true' }, [hecho ? icono('visto') : null]),
-      el('span', { class: 'llevar-texto' }, [
-        el('span', { class: 'llevar-titulo', texto: apunte.titulo }),
-        firma ? el('span', { class: 'llevar-firma', texto: firma }) : null,
-      ]),
-    ]),
+    el('div', { class: 'llevar-cuerpo' }, [casilla, texto]),
     el('button', {
       class: 'llevar-quitar', type: 'button', 'aria-label': `Quitar ${apunte.titulo}`,
       onclick: async () => {
         await retirar('apunte', apunte.id);
         toque('media');
-        ctx.refrescar();
       },
     }, ['×']),
   ]);
+}
+
+/**
+ * Sustituye el texto por un campo editable en su sitio. Confirma al perder
+ * el foco o con Intro; Escape lo deja como estaba. No pasa por
+ * `ctx.refrescar()`: `guardar` ya avisa solo a quien está suscrito.
+ */
+function editarTituloEnLinea(texto, apunte) {
+  const input = entrada({ value: apunte.titulo });
+  input.className = 'llevar-editar';
+
+  const terminar = async (aceptar) => {
+    input.removeEventListener('blur', confirmar);
+    const nuevo = aceptar ? input.value.trim() : '';
+    input.replaceWith(texto);
+    if (nuevo && nuevo !== apunte.titulo) {
+      texto.querySelector('.llevar-titulo').textContent = nuevo;
+      toque();
+      await guardar('apunte', apunte.id, { titulo: nuevo });
+    }
+  };
+  const confirmar = () => terminar(true);
+
+  input.addEventListener('blur', confirmar);
+  input.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter') { evento.preventDefault(); input.blur(); }
+    if (evento.key === 'Escape') { evento.preventDefault(); terminar(false); }
+  });
+
+  texto.replaceWith(input);
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
 }
 
 /**
