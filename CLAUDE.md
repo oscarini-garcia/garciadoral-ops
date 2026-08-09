@@ -174,6 +174,24 @@ pendiente. El hook lo inyecta al final del mapa.
   de confirmar solo aparece con algo escrito, y las píldoras de las clases
   sin nada se corren al final de lo que ya hay apuntado en vez de ir delante,
   para que un sitio con contenido lo enseñe primero.
+  **Y añadir varias cosas seguidas se había quedado corto**, aunque la fila ya
+  tenía el aspecto de la B1: cada Intro esperaba a que `guardar` terminara
+  del todo, y eso incluía una segunda escritura en IndexedDB —la cola de
+  cambios pendientes, la que de verdad tarda si hay que avisar a la red—
+  antes de dejar escribir lo siguiente, más un `ctx.refrescar()` propio y
+  redundante con el que ya disparaba solo la suscripción de
+  `sincronizacion.js`. `guardar` ahora solo hace esperar a su mitad local
+  —memoria e IndexedDB, lo que hace falta para que la interfaz ya se dé por
+  buena—; encolar el cambio y avisar a la red siguen su curso solos. Y como
+  ya no hay que esperar, el campo puede quedarse a media palabra cuando llega
+  un redibujado —el propio o el de cualquier otra cosa, un voto ajeno, un
+  turno que cambia—, así que `pintarSitios` captura qué fila tenía el foco y
+  qué llevaba escrito antes de repintar, y se lo devuelve después: no se
+  pierde una letra aunque el redibujado la pille a medias. Era la opción A de
+  `specs/prototipo-sitios-anadir-de-un-tiron.html`, la más corta de las
+  cuatro; las otras tres —quitar los botones, que el campo no se destruya
+  nunca, o enseñar la línea antes incluso de guardarla— se quedan ahí por si
+  esto no bastara, y de momento basta.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato

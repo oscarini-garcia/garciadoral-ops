@@ -167,6 +167,15 @@ export function detener() {
  * Registra un cambio. `campos` son solo los que cambian; el resto se conserva.
  * Devuelve la instantánea ya actualizada, de modo que quien llama puede pintar
  * sin esperar a nada.
+ *
+ * Lo que se espera aquí es solo la mitad local —memoria y la instantánea en
+ * IndexedDB, que es lo que hace falta para que la interfaz ya se pueda dar
+ * por buena—. Encolar el cambio y avisar a la red siguen su curso solos, en
+ * segundo plano: es la mitad que de verdad puede tardar si hay que hablar con
+ * el servidor, y nadie necesita esperarla para saber que su cambio ya es el
+ * que se ve. Antes se esperaba a las dos, y quien escribía varias cosas
+ * seguidas —la fila de escribir de un sitio— pagaba esa espera de más en
+ * cada una.
  */
 export async function guardar(tipo, id, campos) {
   const cambio = { tipo, id, campos, actualizado_en: ahora() };
@@ -175,10 +184,12 @@ export async function guardar(tipo, id, campos) {
   await guardarInstantanea(instantaneaActual);
   anunciar();
 
-  if (configuracion.demostracion) return instantaneaActual;
+  if (!configuracion.demostracion) {
+    encolarCambio(cambio)
+      .then(() => sincronizar())
+      .catch((error) => console.warn('no se ha podido encolar el cambio', error));
+  }
 
-  await encolarCambio(cambio);
-  sincronizar();
   return instantaneaActual;
 }
 
