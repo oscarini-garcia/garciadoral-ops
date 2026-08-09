@@ -92,6 +92,14 @@ export function nuevoDesdeSitios(ctx) {
 }
 
 export function pintarSitios(pantalla, subcabecera, ctx) {
+  // Lo que se estuviera escribiendo en una fila, antes de que `vaciar` se lo
+  // lleve por delante: guardar un apunte ya no espera a nada antes de volver
+  // a pintar, así que un redibujado puede llegar con la fila todavía en uso
+  // —a media palabra de la siguiente cosa—, y no solo cuando lo dispara el
+  // apunte que se acaba de guardar: el turno de otro, un voto ajeno, lo que
+  // sea, tampoco debe poder robarle el teclado a quien está escribiendo.
+  const enCurso = capturarEscritura(pantalla);
+
   vaciar(subcabecera);
   vaciar(pantalla);
 
@@ -109,6 +117,42 @@ export function pintarSitios(pantalla, subcabecera, ctx) {
 
   if (lugarAbierto) pintarUnLugar(pantalla, subcabecera, ctx);
   else pintarLaLista(pantalla, ctx);
+
+  restaurarFoco(pantalla, enCurso);
+}
+
+/** Qué fila de escribir tiene el foco ahora mismo y qué lleva escrito, para
+ *  que un redibujado no se lo lleve por delante. `null` si el foco no está en
+ *  ninguna. */
+function capturarEscritura(pantalla) {
+  const activo = document.activeElement;
+  const fila = activo?.closest?.('.fila-escribir');
+  if (!fila || !pantalla.contains(fila)) return null;
+  return { clase: fila.dataset.clase, valor: activo.value, cursor: activo.selectionStart };
+}
+
+/**
+ * Devuelve el foco después de un redibujado: a la fila que se estaba usando,
+ * con lo que llevaba escrito, o si no había ninguna, a la que acaba de pedir
+ * `enfocarClase` —la píldora de una clase sin nada que se acaba de tocar,
+ * donde no había nada que capturar porque la fila todavía no existía—.
+ */
+function restaurarFoco(pantalla, capturado) {
+  const objetivo = capturado?.clase || enfocarClase;
+  enfocarClase = null;
+  if (!objetivo) return;
+
+  const input = pantalla.querySelector(`.fila-escribir[data-clase="${objetivo}"] input`);
+  if (!input) return;
+
+  if (capturado) {
+    input.value = capturado.valor;
+    // El «+» de confirmar depende de este mismo evento; disparándolo no hay
+    // que repetir aquí la regla de cuándo se enseña.
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  input.focus({ preventScroll: true });
+  if (capturado) input.setSelectionRange(capturado.cursor, capturado.cursor);
 }
 
 // ------------------------------------------------------------- La lista --
@@ -234,17 +278,9 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
       }, [`+ ${clase.nombre}`]))));
   }
 
-  // Se enfoca después de montar, no al construir: el campo no recibe foco
-  // hasta que está en el documento. Es de un solo uso — si no se consumiera
-  // aquí, cualquier refresco ajeno (marcar un «Llevar» de otro grupo) le
-  // robaría el teclado a quien esté escribiendo en otro sitio de la pantalla.
-  // Y sin desplazar la pantalla: el sitio de la fila apenas se mueve entre un
-  // pintado y el siguiente, así que forzar el scroll hacía más mal que bien.
-  if (enfocarClase) {
-    const objetivo = enfocarClase;
-    enfocarClase = null;
-    pantalla.querySelector(`.fila-escribir[data-clase="${objetivo}"] input`)?.focus({ preventScroll: true });
-  }
+  // El foco se devuelve desde `pintarSitios`, después de llamar a esta
+  // función: `restaurarFoco` es quien decide a qué fila, con qué llevaba
+  // escrito si la había, y sin desplazar la pantalla para conseguirlo.
 }
 
 /**
@@ -367,16 +403,23 @@ function filaEscribir(clase, lugarId, ctx) {
     class: 'fila-confirmar', type: 'button', 'aria-label': `Añadir a ${clase.nombre}`, hidden: true,
   }, ['+']);
 
-  const guardarApunte = async () => {
+  const guardarApunte = () => {
     const texto = input.value.trim();
     if (!texto) return;
-    await guardar('apunte', nuevoId(), {
-      lugar_id: lugarId, clase: clase.id, titulo: texto, autor_id: ctx.vista.yo.id, activo: 1,
-    });
+    // Se limpia y se sigue escribiendo al instante, sin esperar a que
+    // `guardar` termine: ya deja escrita la instantánea y avisa a quien está
+    // suscrito —la propia aplicación, que es quien redibuja— antes de
+    // encolar el cambio para la red, que es lo que de verdad podía tardar.
+    // El campo sigue enfocado durante ese redibujado —no se toca aquí—, y es
+    // `capturarEscritura`/`restaurarFoco` quien se encarga de que no pierda
+    // ni el foco ni lo que se haya llegado a escribir mientras tanto.
+    input.value = '';
+    confirmar.hidden = true;
     toque();
     if (claseEnAlta === clase.id) claseEnAlta = null;
-    enfocarClase = clase.id;
-    ctx.refrescar();
+    guardar('apunte', nuevoId(), {
+      lugar_id: lugarId, clase: clase.id, titulo: texto, autor_id: ctx.vista.yo.id, activo: 1,
+    });
   };
   confirmar.onclick = guardarApunte;
 
