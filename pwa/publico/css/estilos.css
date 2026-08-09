@@ -1590,9 +1590,11 @@ table.presupuesto td:not(:first-child) { text-align: right; }
    por la puerta. Una línea, una casilla y un aspa; nada que abrir, nada que
    votar y nada que comentar. Tocar la línea entera tacha, porque es el gesto que
    se repite doce veces seguidas y no puede pedir puntería. */
-.grupo-cabeza { display: flex; align-items: center; gap: 8px; }
-.grupo-cabeza .icono-accion { margin-left: auto; width: 30px; height: 30px; }
-.grupo-cabeza .icono-accion .icono-svg svg { width: 17px; height: 17px; }
+/* El verbo de compartir de Llevar, dentro del apartado y no en su rótulo: el
+   rótulo ya lleva el recuento, y compartir es una acción de tres veces al año. */
+.acordeon-verbos { display: flex; justify-content: flex-end; }
+.acordeon-verbos .icono-accion { width: 30px; height: 30px; }
+.acordeon-verbos .icono-accion .icono-svg svg { width: 17px; height: 17px; }
 
 .llevar {
   display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;

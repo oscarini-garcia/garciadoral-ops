@@ -204,6 +204,17 @@ pendiente. El hook lo inyecta al final del mapa.
   tachando, y el texto se sustituye por un campo en su sitio —Intro o perder
   el foco confirma, Escape lo deja como estaba—. No pasa por
   `ctx.refrescar()`, que ya no hace falta pedirlo a mano.
+  **Y los cuatro grupos de un sitio son apartados plegables**, el mismo
+  `acordeon` de Ajustes, con el recuento en el rótulo —«Llevar (2)»— porque
+  ese hueco ya no lo ocupa nada más. Lo que Ajustes no tenía y aquí hacía
+  falta es que se acuerde: `seccionPlegada`/`marcarSeccionPlegada`
+  (`almacen.js`) guardan qué está plegado por sitio y por clase, en
+  `localStorage` y no en el registro —es una preferencia de pantalla, la
+  misma familia que el tema, y no se borra al cerrar sesión—. Plegar no
+  esconde la fila de escribir, que vive fuera del apartado a propósito:
+  seguir metiendo cosas a un grupo no debería exigir desplegarlo antes. El
+  verbo de compartir de Llevar, que vivía en el rótulo, se fue dentro del
+  apartado —el rótulo ya no tiene sitio, y compartir es una acción rara—.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato

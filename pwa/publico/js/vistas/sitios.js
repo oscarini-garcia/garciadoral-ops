@@ -5,8 +5,6 @@
  * abierto— y no una hoja para lo segundo. Un sitio no es un detalle que se mira
  * de pasada: es la lista que se lee antes de salir de casa, con cuatro grupos
  * dentro, y una hoja modal encima de otra pantalla no es donde se hace eso.
- * Además así el botón flotante tiene sus dos significados sin inventarse nada:
- * en la lista crea un sitio, dentro de uno crea un apunte allí.
  *
  * El apunte sí es una hoja, porque a un apunte se entra a decir algo —votarlo,
  * leer lo que se ha hablado— y se vuelve enseguida a la lista.
@@ -16,9 +14,10 @@
  */
 
 import {
-  abrirHoja, avisar, botonIcono, campo, carruselDePropuestas, cerrarHoja, el, entrada, icono,
-  vaciar,
+  abrirHoja, acordeon, avisar, botonIcono, campo, carruselDePropuestas, cerrarHoja, el, entrada,
+  icono, vaciar,
 } from '../ui.js';
+import { marcarSeccionPlegada, seccionPlegada } from '../almacen.js';
 import { apuntarEnSitio, guardar, retirar, sugerirEmojiDeSitio } from '../sincronizacion.js';
 import { emojiVisible, estaActivo, nuevoId, partirEmoji, redaccionDisponible } from '../modelo.js';
 import { compartir, toque } from '../native.js';
@@ -232,34 +231,43 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
     const grupo = grupos.find((g) => g.clase.id === clase.id);
     if (!grupo && clase.id !== claseEnAlta) continue;
     const apuntes = grupo?.apuntes || [];
+    // Una fila que se acaba de revelar con una píldora se enseña siempre
+    // desplegada: se ha tocado justo para escribir en ella, y una preferencia
+    // guardada de la última vez que estuvo vacía no puede ganarle a eso.
+    const desplegada = clase.id === claseEnAlta || !seccionPlegada(lugar.id, clase.id);
+
+    const seccion = acordeon(clase.nombre, (cuerpo) => {
+      // El verbo de compartir de una lista vive dentro, no en el rótulo:
+      // «mándame lo que hay que llevar» es una acción de tres veces al año, y
+      // el rótulo tiene ya el sitio ocupado por el recuento. Sin nada que
+      // llevar todavía, no hay nada que compartir tampoco.
+      if (clase.lista && apuntes.length) {
+        cuerpo.append(el('div', { class: 'acordeon-verbos' }, [
+          botonIcono('compartir', {
+            etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
+            tono: 'discreto',
+            onclick: async () => {
+              toque();
+              const enviado = await compartir({
+                titulo: `${clase.nombre} · ${lugar.nombre}`,
+                texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
+              });
+              if (!enviado) avisar('No he podido compartirlo');
+            },
+          }),
+        ]));
+      }
+      cuerpo.append(el('div', {}, apuntes.map((apunte) => (clase.lista
+        ? filaDeLista(apunte, ctx)
+        : filaDeApunte(apunte, ctx)))));
+    }, { abierta: desplegada, nota: `(${apuntes.length})` });
+
+    seccion.addEventListener('toggle', () => {
+      marcarSeccionPlegada(lugar.id, clase.id, !seccion.open);
+    });
 
     pantalla.append(el('div', { class: 'grupo' }, [
-      // El rótulo de una lista lleva su propio verbo de compartir: «mándame lo
-      // que hay que llevar» se pide entero y sin lo demás, y quien lo recibe no
-      // quiere saber a qué duna se sube. Sin nada que llevar todavía, no hay
-      // nada que compartir tampoco.
-      clase.lista
-        ? el('div', { class: 'grupo-cabeza' }, [
-            el('p', { class: 'grupo-titulo', texto: clase.nombre }),
-            apuntes.length
-              ? botonIcono('compartir', {
-                  etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
-                  tono: 'discreto',
-                  onclick: async () => {
-                    toque();
-                    const enviado = await compartir({
-                      titulo: `${clase.nombre} · ${lugar.nombre}`,
-                      texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
-                    });
-                    if (!enviado) avisar('No he podido compartirlo');
-                  },
-                })
-              : null,
-          ])
-        : el('p', { class: 'grupo-titulo', texto: clase.nombre }),
-      el('div', {}, apuntes.map((apunte) => (clase.lista
-        ? filaDeLista(apunte, ctx)
-        : filaDeApunte(apunte, ctx)))),
+      seccion,
       filaEscribir(clase, lugar.id, ctx),
     ]));
   }

@@ -169,6 +169,42 @@ function olvidarUltimos() {
   }
 }
 
+// -------------------------------------------- Secciones plegadas, por sitio --
+
+const CLAVE_PLEGADAS = 'agenda.sitios.plegadas';
+
+/**
+ * Qué secciones de qué sitios están plegadas en este aparato.
+ *
+ * Es una preferencia de pantalla y no de quien mira —la misma familia que el
+ * tema—, así que no se guarda en el registro ni se borra al cerrar sesión:
+ * cambiar de persona en este aparato no tiene por qué desplegar nada.
+ */
+export function seccionPlegada(lugarId, claseId) {
+  return Boolean(leerPlegadas()[`${lugarId}:${claseId}`]);
+}
+
+export function marcarSeccionPlegada(lugarId, claseId, plegada) {
+  const plegadas = leerPlegadas();
+  const clave = `${lugarId}:${claseId}`;
+  if (plegada) plegadas[clave] = true;
+  else delete plegadas[clave];
+  try {
+    localStorage.setItem(CLAVE_PLEGADAS, JSON.stringify(plegadas));
+  } catch {
+    /* sin sitio en el almacén local, la preferencia no se guarda */
+  }
+}
+
+function leerPlegadas() {
+  try {
+    const guardadas = JSON.parse(localStorage.getItem(CLAVE_PLEGADAS) || '{}');
+    return guardadas && typeof guardadas === 'object' ? guardadas : {};
+  } catch {
+    return {};
+  }
+}
+
 // ----------------------------------------------------- Las frases de este día --
 
 const PREFIJO_FRASES = 'agenda.frases.';
