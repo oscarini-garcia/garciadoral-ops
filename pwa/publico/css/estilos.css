@@ -1015,6 +1015,28 @@ button { background: none; border: 0; cursor: pointer; }
 .destello-campo:disabled { opacity: .5; cursor: default; }
 .destello-campo .icono-svg svg { width: 17px; height: 17px; }
 
+/* El redondel del emoji de un sitio: una vista previa, no un segundo campo.
+   Vacío de verdad hasta que hay algo —nunca con un emoji de muestra dentro—,
+   que es la frontera que ya costó quitar los dos campos que tuvo esta hoja. */
+.fila-nombre-swatch { display: flex; align-items: flex-end; gap: 10px; }
+.fila-nombre-swatch .campo { flex: 1; min-width: 0; }
+.emoji-hueco {
+  flex: none; position: relative;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1.5px solid var(--hueco-linea); background: var(--hueco);
+  display: grid; place-items: center;
+}
+.emoji-hueco-glifo { font-size: 21px; line-height: 1; }
+.emoji-hueco-destello {
+  position: absolute; right: -4px; bottom: -4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--tinta-suave); color: var(--tinta);
+  border: 2px solid var(--paper);
+}
+.emoji-hueco-destello:disabled { opacity: .5; cursor: default; }
+.emoji-hueco-destello .icono-svg svg { width: 12px; height: 12px; }
+
 /* La tanda de cinco: se pasan con las flechas y solo cambia el texto. El hueco
    lleva el alto reservado a propósito, porque si la tarjeta creciera con la
    propuesta más larga, «Usarla» se escaparía de debajo del dedo al pasar. */
@@ -1029,6 +1051,9 @@ button { background: none; border: 0; cursor: pointer; }
 }
 .propuesta-que { font-size: 16px; font-weight: 500; }
 .propuesta-porque { font-size: 14px; color: var(--ink-soft); }
+/* El emoji de un sitio no lleva porqué: la tanda es un carácter grande y ya
+   está, para que se reconozca sin entornar los ojos. */
+.propuesta-emoji { font-size: 34px; text-align: center; width: 100%; }
 /* Una felicitación es un párrafo, no un título de ocho palabras: ocupa dos o
    tres líneas y el hueco reservado crece con ella para que el marco siga sin
    moverse al pasar de una a otra. */
@@ -1268,6 +1293,10 @@ a.enlace-discreto { display: inline-flex; align-items: center; align-self: flex-
 }
 .opcion[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
 .opcion-quitar { margin-left: 6px; opacity: .75; }
+/* Las clases de un sitio que todavía no tienen nada: el mismo borde
+   discontinuo del «+» de «Para quién», con el ancho de una pastilla normal
+   porque aquí el texto es «+ Ir» y no un carácter suelto. */
+.opcion[data-vacia] { border-style: dashed; border-color: var(--tinta); color: var(--tinta); background: transparent; }
 
 /* El «+» del final de «Para quién»: la fila enseña solo a los de casa —y lo que
    ya se haya elegido de fuera, que no puede esconderse— y detrás va este botón,
@@ -1591,6 +1620,28 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   font-size: 18px; line-height: 1; color: var(--ink-faint);
 }
 .llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
+
+/* La fila de escribir, al final de cada grupo: sustituye al «+» de dentro de
+   un sitio. Un campo de toque, sin la caja de `.campo`, porque ya vive dentro
+   de una lista y no de un formulario. */
+.fila-escribir { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 5px 0; }
+.fila-escribir input {
+  flex: 1; min-width: 0; background: var(--hueco); border: 1px solid var(--hueco-linea);
+  border-radius: 9px; padding: 8px 11px; font-size: 15px; font-family: inherit; color: var(--ink);
+}
+.fila-confirmar {
+  flex: none; width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center; background: var(--tinta-suave); color: var(--tinta);
+  font-size: 18px; line-height: 1;
+}
+/* El lápiz de «más detalle»: mismo dibujo que «Editar», porque las dos abren
+   la misma hoja completa; lo que cambia es que aquí el apunte aún no existe. */
+.fila-lapiz {
+  flex: none; width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center; color: var(--ink-faint);
+}
+.fila-lapiz:hover { background: var(--paper-2); color: var(--tinta); }
+.fila-lapiz .icono-svg svg { width: 15px; height: 15px; }
 
 /* ----------------------------------------------------------------- Mejoras --
 

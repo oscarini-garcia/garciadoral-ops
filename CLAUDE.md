@@ -130,8 +130,7 @@ pendiente. El hook lo inyecta al final del mapa.
   quien votó y no un número** —con cuatro en casa, «MA·OS» contesta la pregunta
   que de verdad se hace— y **ordena su grupo**, que es lo único que separa un voto
   de un adorno. La pestaña tiene dos alturas dentro de sí misma y no una hoja para
-  el sitio, y de ahí sale que el botón flotante tenga sus dos significados solos.
-  La navegación entre las dos alturas son **migas en la línea del título**
+  el sitio. La navegación entre las dos alturas son **migas en la línea del título**
   —«Sitios › Bolonia», con «Sitios» tocable—, y para eso el título de una pestaña
   puede devolver un nodo y no solo una cadena. En la lista, cada sitio dice **de
   qué va y no cuánto tiene**: «3 llevar · 2 hacer · 1 ir». Y el emoji pasa por
@@ -150,6 +149,20 @@ pendiente. El hook lo inyecta al final del mapa.
   de cada decisión en `specs/propuesta-sitios.html`. Queda abierto **cómo partir un
   sitio cuando acumule cuarenta apuntes** —hoy los cuatro rótulos bastan— y **si un
   sitio debería poder salir del círculo de casa**, que hoy se decidió que no.
+  **El botón flotante dejó de tener dos significados: dentro de un sitio ya no
+  hace nada**, y cada grupo lleva su propia fila de escribir al final —un título
+  y ya está, sin abrir nada, con un lápiz en las clases que no son Llevar que
+  entrega lo escrito a la hoja de siempre y sin perderlo—; las clases sin nada
+  todavía se enseñan como una píldora de borde discontinuo, «+ Ir», que abre su
+  fila enfocada sin romper la regla de los grupos vacíos. Y crear un sitio tiene
+  ahora un redondel junto al nombre —vacío de verdad hasta que hay algo, nunca
+  con un emoji de muestra dentro, la misma frontera que ya costó quitar los dos
+  campos— con un destello que le pide cinco a la IA, el mismo botón y el mismo
+  carrusel que ya usa Regalos para el «Qué» de una idea. No es un séptimo
+  encargo: la instrucción es fija y no vive en Ajustes, porque no hay mucho que
+  reescribir en una frase que pide un emoji. Queda abierto **si eso deja de ser
+  cierto el día que alguien quiera cambiarle el tono**, que es cuando tocaría
+  hacerlo un encargo más.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato

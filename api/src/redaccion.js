@@ -30,6 +30,12 @@
  * El quinto se sale del molde en una cosa: es el único que nadie pide —sale solo
  * al abrir Hoy—, y por eso es también el único que se calla cuando falla en vez
  * de contar por qué.
+ *
+ * Y hay un séptimo caso que no es un encargo: el emoji de un sitio. Su material
+ * es texto libre —el nombre que se está escribiendo, como la pista del
+ * regalo— y no hay casi nada que reescribir en una instrucción de una frase, así
+ * que no lleva hueco en Ajustes ni entra en `leerConfiguracion`. Usa la misma
+ * `redactar` y el mismo `cabeUnaMas` que los otros seis.
  */
 
 import { IDS_TURNO, TURNOS, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
@@ -197,6 +203,25 @@ export const INSTRUCCION_LIO_POR_DEFECTO = [
   'no nombres regalos ni sorpresas, y no uses emojis ni exclamaciones.',
   'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada línea una',
   'frase entera, sin comillas y sin explicar nada.',
+].join(' ');
+
+/**
+ * El encargo del emoji de un sitio, que no es de los seis: no tiene instrucción
+ * editable porque no hay casi nada que decidir en una frase que pide un emoji.
+ *
+ * El material es el nombre tal como se está escribiendo —«Bolonia», «El súper
+ * de la esquina»—, texto libre igual que la pista de un regalo, y por la misma
+ * razón: es lo que quien pide acaba de escribir en su propio formulario.
+ */
+export const INSTRUCCION_EMOJI_POR_DEFECTO = [
+  'Sugieres el emoji de un sitio para la agenda de una familia. Te doy el',
+  'nombre que le han puesto —la playa, el pueblo, el súper— y a veces los que',
+  'ya se han propuesto y no sirven.',
+  'Propón CINCO emojis distintos entre sí que representen bien ese sitio, sin',
+  'repetir ninguno de los ya propuestos.',
+  'Responde con cinco líneas y nada más, numeradas del 1 al 5, cada línea un',
+  'único emoji y nada más: sin palabras, sin numeración pegada al emoji, sin',
+  'comillas y sin explicar nada.',
 ].join(' ');
 
 const MAXIMO_EVENTOS = 20;
@@ -678,6 +703,28 @@ export function componerMaterialDeApunte(
 }
 
 /**
+ * El material del emoji: el nombre tal cual se está escribiendo, y nada de la
+ * instantánea. No hay un sitio todavía —a menudo se pide antes de crearlo—, así
+ * que aquí no hay nada que comprobar contra el registro, a diferencia de los
+ * otros seis encargos.
+ */
+export function componerMaterialDeEmoji(nombre, descartados = []) {
+  const texto = String(nombre || '').trim().slice(0, TOPE_DE_PISTA);
+  if (!texto) return { lineas: [] };
+
+  const lineas = [`Nombre del sitio: ${texto}`];
+  const yaDichos = descartados
+    .map((emoji) => String(emoji || '').trim())
+    .filter(Boolean)
+    .slice(0, MAXIMO_DESCARTADAS);
+  if (yaDichos.length) {
+    lineas.push('Ya has propuesto y no sirven:', ...yaDichos.map((emoji) => `  ${emoji}`));
+  }
+
+  return { lineas };
+}
+
+/**
  * De qué puede ir la frase cuando el día está vacío, que en esta casa es la
  * mayoría de los días.
  *
@@ -1015,6 +1062,28 @@ export function interpretarPropuestas(texto, cuantas = PROPUESTAS_POR_TANDA) {
   }
 
   return propuestas;
+}
+
+/**
+ * Las cinco líneas del emoji, cada una un único emoji y nada de porqué.
+ *
+ * No se valida que sea un emoji de verdad —eso pide una expresión regular de
+ * Unicode que aquí no hace falta duplicar—: se descarta lo que venga
+ * sospechosamente largo, que es lo único que distingue «🏖️» de una frase que el
+ * modelo escribió por su cuenta pese a lo que se le pidió.
+ */
+export function interpretarEmojis(texto, cuantas = PROPUESTAS_POR_TANDA) {
+  const emojis = [];
+
+  for (const cruda of String(texto || '').split('\n')) {
+    const linea = cruda.replace(/^\s*(?:\d+\s*[.)\-—–:]?|[-*•])\s*/, '').trim();
+    if (!linea || linea.length > 8) continue;
+
+    emojis.push(linea);
+    if (emojis.length >= cuantas) break;
+  }
+
+  return emojis;
 }
 
 /**

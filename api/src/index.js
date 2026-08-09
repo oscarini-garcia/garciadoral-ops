@@ -28,6 +28,7 @@
  *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
  *   POST   /api/sitio/apuntar · cinco apuntes para un sitio y una clase
+ *   POST   /api/sitio/emoji · cinco emojis para el nombre de un sitio
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
@@ -75,12 +76,15 @@ import {
   componerMaterialDePeriodo,
   componerMaterialDeApunte,
   componerMaterialDeChispa,
+  componerMaterialDeEmoji,
   componerMaterialDeFelicitacion,
   componerMaterialDeLio,
   componerMaterialDeRegalo,
   configuracionPublica,
   guardarConfiguracion,
+  INSTRUCCION_EMOJI_POR_DEFECTO,
   interpretarChispas,
+  interpretarEmojis,
   interpretarFelicitaciones,
   interpretarPropuestas,
   leerConfiguracion,
@@ -764,6 +768,47 @@ async function apuntarEnUnSitio(peticion, env) {
 }
 
 /**
+ * Cinco emojis para un sitio, a partir de lo que se lleva escrito en su
+ * nombre.
+ *
+ * No es uno de los seis encargos —no tiene instrucción propia en
+ * `configuracion`—, pero comparte freno y cadena de modelos con todos ellos. Y
+ * a menudo no hay sitio todavía: se pide desde el formulario de «Un sitio
+ * nuevo», antes de que exista un `lugar_id` contra el que comprobar nada.
+ */
+async function sugerirEmojiDeSitio(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
+  }
+
+  const { nombre = '', descartados = [] } = await peticion.json().catch(() => ({}));
+  const material = componerMaterialDeEmoji(nombre, descartados);
+  if (!material.lineas.length) return json({ error: 'falta el nombre' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const resultado = await redactar({
+    configuracion, material, instruccion: INSTRUCCION_EMOJI_POR_DEFECTO, tope: 100,
+  });
+
+  const emojis = interpretarEmojis(resultado.texto);
+
+  if (!emojis.length) {
+    console.warn('emoji fallido', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        emojis: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ emojis, modelo: resultado.modelo });
+}
+
+/**
  * Las cinco frases con las que abre la pantalla de Hoy.
  *
  * El quinto encargo, y el único que no nace de un toque: la pide la pantalla al
@@ -930,6 +975,7 @@ const RUTAS = [
   ['POST', '/api/redactar', contarElDia],
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
   ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],
+  ['POST', '/api/sitio/emoji', sugerirEmojiDeSitio],
   ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],

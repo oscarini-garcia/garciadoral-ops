@@ -64,7 +64,7 @@ tener que recorrer la aplicación entera cada vez.
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
   INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
-  INSTRUCCION_LIO_POR_DEFECTO · leerConfiguracion · configuracionPublica · …y 16 más
+  INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_EMOJI_POR_DEFECTO · leerConfiguracion · …y 19 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
   administradoresRestantes · aplicarCambio
@@ -128,7 +128,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 13 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 14 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -153,7 +153,8 @@ tener que recorrer la aplicación entera cada vez.
   filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta
   …y 4 más
 - **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
-  reiniciarSitios · tituloDeSitios · nuevoDesdeSitios · pintarSitios · abrirApunte
+  reiniciarSitios · hayFabEnSitios · tituloDeSitios · nuevoDesdeSitios · pintarSitios
+  abrirApunte
 
 ### `herramientas/` · Utilidades de desarrollo
 
@@ -186,6 +187,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
+- `POST /api/sitio/emoji` — cinco emojis para el nombre de un sitio
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
@@ -271,7 +273,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**337** en total.
+**346** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -293,6 +295,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
 - `api/test/redaccion-dia.test.js` — 17
+- `api/test/redaccion-emoji.test.js` — 9
 - `api/test/redaccion-lio.test.js` — 8
 - `api/test/redaccion-regalo.test.js` — 14
 - `api/test/redaccion.test.js` — 13
