@@ -236,37 +236,36 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
     // guardada de la última vez que estuvo vacía no puede ganarle a eso.
     const desplegada = clase.id === claseEnAlta || !seccionPlegada(lugar.id, clase.id);
 
+    // El verbo de compartir de una lista va dentro de la cabecera, junto al
+    // ángulo y el total —no suelto en una fila propia del cuerpo—: «mándame
+    // lo que hay que llevar» es una acción de tres veces al año, y sin nada
+    // que llevar todavía no hay nada que compartir tampoco.
+    const verbos = clase.lista && apuntes.length
+      ? botonIcono('compartir', {
+        etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
+        tono: 'discreto',
+        onclick: async () => {
+          toque();
+          const enviado = await compartir({
+            titulo: `${clase.nombre} · ${lugar.nombre}`,
+            texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
+          });
+          if (!enviado) avisar('No he podido compartirlo');
+        },
+      })
+      : null;
+
     const seccion = acordeon(clase.nombre, (cuerpo) => {
-      // El verbo de compartir de una lista vive dentro, no en el rótulo:
-      // «mándame lo que hay que llevar» es una acción de tres veces al año, y
-      // el rótulo tiene ya el sitio ocupado por el recuento. Sin nada que
-      // llevar todavía, no hay nada que compartir tampoco.
-      if (clase.lista && apuntes.length) {
-        cuerpo.append(el('div', { class: 'acordeon-verbos' }, [
-          botonIcono('compartir', {
-            etiqueta: `Compartir lo que hay que ${clase.nombre.toLowerCase()}`,
-            tono: 'discreto',
-            onclick: async () => {
-              toque();
-              const enviado = await compartir({
-                titulo: `${clase.nombre} · ${lugar.nombre}`,
-                texto: textoDeLaLista(ctx.vista.datos, lugar, clase.id),
-              });
-              if (!enviado) avisar('No he podido compartirlo');
-            },
-          }),
-        ]));
-      }
-      cuerpo.append(el('div', {}, apuntes.map((apunte) => (clase.lista
+      cuerpo.append(el('div', { class: 'acordeon-lista' }, apuntes.map((apunte) => (clase.lista
         ? filaDeLista(apunte, ctx)
         : filaDeApunte(apunte, ctx)))));
-    }, { abierta: desplegada, nota: `(${apuntes.length})` });
+    }, { abierta: desplegada, nota: String(apuntes.length), compacta: true, verbos });
 
     seccion.addEventListener('toggle', () => {
       marcarSeccionPlegada(lugar.id, clase.id, !seccion.open);
     });
 
-    pantalla.append(el('div', { class: 'grupo' }, [
+    pantalla.append(el('div', { class: 'grupo grupo-sitio' }, [
       seccion,
       filaEscribir(clase, lugar.id, ctx),
     ]));

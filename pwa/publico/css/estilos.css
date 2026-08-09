@@ -1190,6 +1190,42 @@ button { background: none; border: 0; cursor: pointer; }
 .acordeon-cuerpo { display: flex; flex-direction: column; gap: 11px; padding: 2px 0 15px; }
 @media (prefers-reduced-motion: reduce) { .acordeon > summary::after { transition: none; } }
 
+/* La versión compacta (`acordeon(..., {compacta: true})`), hoy solo en
+   Sitios: una franja con fondo propio hace de marco, así que no hace falta
+   el borde de arriba/abajo que sí lleva la de Ajustes; el ángulo pasa a ser
+   el primero de la fila, no el último, y quien llama puede añadir un verbo
+   propio —«compartir»— dentro de la misma cabecera en vez de en una fila
+   suelta del cuerpo. specs/prototipo-sitios-cabecera-de-seccion.html tiene
+   el porqué de cada número. */
+.acordeon-compacta { border-top: 0; }
+.acordeon-compacta:last-of-type { border-bottom: 0; }
+.acordeon-compacta > summary {
+  background: var(--paper-3); border-radius: 9px;
+  min-height: 34px; padding: 5px 10px 5px 9px; gap: 9px;
+  font-size: 14.5px; font-weight: 600;
+}
+.acordeon-compacta > summary::after { content: none; }
+.acordeon-angulo {
+  flex: none; width: 15px; height: 15px; display: grid; place-items: center;
+  color: var(--ink-soft); transition: transform .16s ease;
+}
+.acordeon-angulo .icono-svg svg { width: 13px; height: 13px; }
+.acordeon-compacta[open] .acordeon-angulo { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .acordeon-angulo { transition: none; } }
+/* El total pegado al nombre, no empujado al borde: la misma pareja «nombre ·
+   cifra» que ya separan MA·OS en el voto o «quién · cuándo» en la firma de
+   un apunte — no una figura nueva. */
+.acordeon-compacta .acordeon-nota { margin-left: 0; padding-left: 0; font-family: var(--mono); }
+.acordeon-compacta .acordeon-nota::before { content: '·'; margin-right: 6px; color: var(--ink-faint); }
+/* El botón de compartir que se le pasa como `verbos`: es un `.icono-accion`
+   normal, y en la cabecera compacta —más baja que su alto de siempre—
+   encoge para caber sin estirar la fila. */
+.acordeon-compacta > summary > .icono-accion {
+  margin-left: auto; flex: none; width: 24px; height: 24px; border-radius: 7px;
+}
+.acordeon-compacta > summary > .icono-accion .icono-svg svg { width: 14px; height: 14px; }
+.acordeon-compacta .acordeon-cuerpo { padding: 8px 9px 4px; }
+
 /* Lo que el apartado sigue diciendo con la solapa bajada: cuántas fechas hay en
    marcha, o quién es el próximo que cumple. Va apagado y a la derecha, pegado a
    la flecha, para que se lea como una nota del rótulo y no como parte de él. */
@@ -1300,7 +1336,7 @@ a.enlace-discreto { display: inline-flex; align-items: center; align-self: flex-
 /* Las clases sin nada todavía, al final de un sitio: el mismo aire por
    encima que separa un grupo del siguiente, para que no queden pegadas a
    la última fila de lo que ya hay apuntado. */
-.pendientes-sitio { margin-top: 22px; }
+.pendientes-sitio { margin-top: 26px; }
 
 /* El «+» del final de «Para quién»: la fila enseña solo a los de casa —y lo que
    ya se haya elegido de fuera, que no puede esconderse— y detrás va este botón,
@@ -1526,11 +1562,19 @@ table.presupuesto td:not(:first-child) { text-align: right; }
    del voto se traga su propio toque. Votar tiene que costar un toque desde la
    lista —es el gesto barato— y abrir es lo que se hace cuando hay algo que
    decir. */
+
+/* La clase de un sitio: la sección compacta y su fila de escribir, sin el
+   aire de `.grupo` entre las dos —el hilo de la fila de escribir ya las une—
+   pero con más que `.grupo` entre una clase y la siguiente. Es justo al
+   revés que el resto de la aplicación: aquí lo apretado es dentro y lo
+   holgado es entre secciones, no al contrario. */
+.grupo-sitio { gap: 0; margin-top: 26px; }
+.grupo-sitio:first-child { margin-top: 0; }
+
 .apunte {
   display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
-  border-bottom: 1px solid var(--line); min-height: 48px;
+  min-height: 48px;
 }
-.apunte:last-child { border-bottom: 0; }
 .apunte-cuerpo {
   display: flex; flex-direction: column; gap: 1px; min-width: 0;
   text-align: left; padding: 9px 0;
@@ -1590,17 +1634,23 @@ table.presupuesto td:not(:first-child) { text-align: right; }
    por la puerta. Una línea, una casilla y un aspa; nada que abrir, nada que
    votar y nada que comentar. Tocar la línea entera tacha, porque es el gesto que
    se repite doce veces seguidas y no puede pedir puntería. */
-/* El verbo de compartir de Llevar, dentro del apartado y no en su rótulo: el
-   rótulo ya lleva el recuento, y compartir es una acción de tres veces al año. */
-.acordeon-verbos { display: flex; justify-content: flex-end; }
-.acordeon-verbos .icono-accion { width: 30px; height: 30px; }
-.acordeon-verbos .icono-accion .icono-svg svg { width: 17px; height: 17px; }
+/* El verbo de compartir de Llevar vive en la cabecera del acordeón compacto
+   (`acordeon(..., {verbos: ...})`), a la derecha del ángulo y el total —
+   `.acordeon-compacta > summary > .icono-accion`, más abajo—, no suelto en
+   una fila propia del cuerpo. */
+
+/* Cada sección es una lista de un solo bloque: sin raya bajo cada fila, con
+   un hilo tenue solo *entre* filas —ni antes de la primera ni después de la
+   última—, para que «apretado» no se lea como «una fila sola». El hilo pesa
+   la mitad que `--line`: lo justo para no confundir dos filas seguidas sin
+   volver a las rayas de antes. */
+.acordeon-lista { display: flex; flex-direction: column; }
+.acordeon-lista > * + * { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
 
 .llevar {
   display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center;
-  border-bottom: 1px solid var(--line); min-height: 46px;
+  min-height: 46px;
 }
-.llevar:last-child { border-bottom: 0; }
 /* La casilla y el texto son dos blancos separados, no uno solo: tocar la
    casilla tacha, tocar el texto edita. Antes eran el mismo botón —costaba un
    dedo entero, sin puntería— pero eso ya no deja sitio para editar sin abrir
@@ -1641,14 +1691,15 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 
 /* La fila de escribir, al final de cada grupo: la siguiente línea en blanco
    de la lista, no una barra de búsqueda pegada debajo. Mismo molde que
-   `.apunte` y `.llevar` —contenido a la izquierda, verbos a la derecha,
-   misma raya y el mismo alto—, para que se lea como parte de la lista y no
-   como un formulario aparte. */
+   `.apunte` y `.llevar` —contenido a la izquierda, verbos a la derecha, el
+   mismo alto—, para que se lea como parte de la lista y no como un
+   formulario aparte. Lleva su hilo propio arriba, siempre: viene después de
+   una lista con hilo entre filas o de un acordeón recién abierto sin nada
+   dentro, y en los dos casos es «la siguiente línea» la que lo necesita. */
 .fila-escribir {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
-  border-bottom: 1px solid var(--line); min-height: 46px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); min-height: 46px;
 }
-.fila-escribir:last-child { border-bottom: 0; }
 /* Sin caja ni borde propios, y sin bajar de 16: por debajo de eso Safari
    hace zoom al enfocar el campo, que es lo que arrastraba a la pantalla
    entera con él. */

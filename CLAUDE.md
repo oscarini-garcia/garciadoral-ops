@@ -215,6 +215,28 @@ pendiente. El hook lo inyecta al final del mapa.
   seguir metiendo cosas a un grupo no debería exigir desplegarlo antes. El
   verbo de compartir de Llevar, que vivía en el rótulo, se fue dentro del
   apartado —el rótulo ya no tiene sitio, y compartir es una acción rara—.
+  **Y esas cabeceras pesaban demasiado: una queja con captura de pantalla
+  real** —«ocupa mucho verticalmente», «muchas rayas horizontales», «difícil
+  ver dónde hay cada sección»—, con dos o tres clases ya escritas. Se
+  estudiaron seis tratamientos (`specs/prototipo-sitios-secciones-compactas.html`)
+  y se afinó el ganador en una segunda ronda sobre la cabecera y el ritmo
+  (`specs/prototipo-sitios-cabecera-de-seccion.html`). La cabecera es ahora
+  una franja con fondo propio —`--paper-3`, el mismo tono neutro de
+  `.etiqueta`, no uno nuevo— que hace de marco sin raya arriba ni abajo.
+  **`acordeon()` gana `{compacta, verbos}`, y Ajustes no pasa ninguno de los
+  dos**, así que su aspecto no cambia: dentro de la franja, el ángulo de
+  plegar pasa a ser el primero de la fila y un triángulo relleno en vez del
+  trazo que sigue usando Ajustes —a este tamaño y solo en el borde, el trazo
+  se leía peor—; el nombre y el recuento van juntos, «Llevar · 3» y no
+  «Llevar (3)», con el mismo punto que ya separa `MA·OS` en un voto; y el
+  verbo de compartir, cuando lo hay, se muda de una fila huérfana del cuerpo
+  —`.acordeon-verbos`, retirada— a la propia cabecera. Dentro de una sección
+  ya no hay raya bajo cada fila: solo un hilo a la mitad de fuerza de
+  `--line`, entre una fila y la siguiente y nunca antes de la primera ni
+  después de la última (`.acordeon-lista`). Y entre una sección y la
+  siguiente hay más aire que antes, no menos —`.grupo-sitio` sube el margen a
+  26px—, al revés que el resto de la aplicación: aquí lo apretado es dentro y
+  lo holgado es entre secciones.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato
