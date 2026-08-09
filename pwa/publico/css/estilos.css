@@ -1297,6 +1297,10 @@ a.enlace-discreto { display: inline-flex; align-items: center; align-self: flex-
    discontinuo del «+» de «Para quién», con el ancho de una pastilla normal
    porque aquí el texto es «+ Ir» y no un carácter suelto. */
 .opcion[data-vacia] { border-style: dashed; border-color: var(--tinta); color: var(--tinta); background: transparent; }
+/* Las clases sin nada todavía, al final de un sitio: el mismo aire por
+   encima que separa un grupo del siguiente, para que no queden pegadas a
+   la última fila de lo que ya hay apuntado. */
+.pendientes-sitio { margin-top: 22px; }
 
 /* El «+» del final de «Para quién»: la fila enseña solo a los de casa —y lo que
    ya se haya elegido de fuera, que no puede esconderse— y detrás va este botón,
@@ -1621,18 +1625,29 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 }
 .llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
 
-/* La fila de escribir, al final de cada grupo: sustituye al «+» de dentro de
-   un sitio. Un campo de toque, sin la caja de `.campo`, porque ya vive dentro
-   de una lista y no de un formulario. */
-.fila-escribir { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 5px 0; }
-.fila-escribir input {
-  flex: 1; min-width: 0; background: var(--hueco); border: 1px solid var(--hueco-linea);
-  border-radius: 9px; padding: 8px 11px; font-size: 15px; font-family: inherit; color: var(--ink);
+/* La fila de escribir, al final de cada grupo: la siguiente línea en blanco
+   de la lista, no una barra de búsqueda pegada debajo. Mismo molde que
+   `.apunte` y `.llevar` —contenido a la izquierda, verbos a la derecha,
+   misma raya y el mismo alto—, para que se lea como parte de la lista y no
+   como un formulario aparte. */
+.fila-escribir {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--line); min-height: 46px;
 }
+.fila-escribir:last-child { border-bottom: 0; }
+/* Sin caja ni borde propios, y sin bajar de 16: por debajo de eso Safari
+   hace zoom al enfocar el campo, que es lo que arrastraba a la pantalla
+   entera con él. */
+.fila-escribir input {
+  border: none; background: transparent; padding: 0; margin: 0; min-width: 0;
+  font-size: 16px; font-family: inherit; color: var(--ink);
+}
+.fila-escribir input::placeholder { color: var(--ink-faint); }
+.fila-escribir-verbos { display: flex; align-items: center; gap: 2px; }
 .fila-confirmar {
   flex: none; width: 32px; height: 32px; border-radius: 9px;
-  display: grid; place-items: center; background: var(--tinta-suave); color: var(--tinta);
-  font-size: 18px; line-height: 1;
+  display: grid; place-items: center; color: var(--tinta);
+  font-size: 20px; line-height: 1;
 }
 /* El lápiz de «más detalle»: mismo dibujo que «Editar», porque las dos abren
    la misma hoja completa; lo que cambia es que aquí el apunte aún no existe. */
