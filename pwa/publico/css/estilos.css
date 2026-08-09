@@ -1599,12 +1599,15 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   border-bottom: 1px solid var(--line); min-height: 46px;
 }
 .llevar:last-child { border-bottom: 0; }
-.llevar-cuerpo {
-  display: flex; align-items: baseline; gap: 11px; min-width: 0;
-  text-align: left; padding: 10px 0;
-}
+/* La casilla y el texto son dos blancos separados, no uno solo: tocar la
+   casilla tacha, tocar el texto edita. Antes eran el mismo botón —costaba un
+   dedo entero, sin puntería— pero eso ya no deja sitio para editar sin abrir
+   un formulario. La casilla se queda pequeña porque es un dibujo reconocible
+   y el toque le crece por pseudoelemento sin tocarlo (ver «Blancos de
+   toque»); el texto no lo necesita: ya es ancho y alto de sobra. */
+.llevar-cuerpo { display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1; }
 .llevar-casilla {
-  flex: none; align-self: center;
+  flex: none;
   width: 21px; height: 21px; border-radius: 6px;
   border: 1.5px solid var(--line);
   display: grid; place-items: center;
@@ -1612,12 +1615,21 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 }
 .llevar[data-hecho="si"] .llevar-casilla { background: var(--tinta); border-color: var(--tinta); }
 .llevar-casilla .icono-svg svg { width: 14px; height: 14px; stroke-width: 2.6; }
-.llevar-texto { display: flex; align-items: baseline; gap: 7px; min-width: 0; flex: 1; }
+.llevar-texto {
+  display: flex; align-items: baseline; gap: 7px; min-width: 0; flex: 1;
+  text-align: left; padding: 10px 0;
+}
 /* El título es lo que se recorta y la firma se queda entera: es lo más corto de
    los dos y lo que peor se adivina. */
 .llevar-titulo { font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .llevar-firma { flex: none; font-size: 12.5px; color: var(--ink-faint); }
 .llevar[data-hecho="si"] .llevar-titulo { text-decoration: line-through; color: var(--ink-faint); }
+/* El campo de la edición inline: mismo alto y mismo tamaño de letra que el
+   título que sustituye —16, o iOS hace zoom al enfocar—, sin caja propia. */
+.llevar-editar {
+  flex: 1; min-width: 0; border: none; background: transparent; padding: 10px 0; margin: 0;
+  font-size: 16px; font-family: inherit; color: var(--ink);
+}
 .llevar-quitar {
   flex: none; width: 34px; height: 34px; border-radius: 9px;
   display: grid; place-items: center;
@@ -1642,6 +1654,11 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   border: none; background: transparent; padding: 0; margin: 0; min-width: 0;
   font-size: 16px; font-family: inherit; color: var(--ink);
 }
+/* En Llevar, la fila de escribir es la línea siguiente de una lista con
+   casilla: el texto tiene que empezar donde empieza «Sombrilla» encima, no
+   donde empezaría la casilla que esta fila no lleva. 21 + 11 de hueco, los
+   mismos números que `.llevar-casilla` y `.llevar-cuerpo`. */
+.fila-escribir[data-clase="llevar"] input { padding-left: 32px; }
 .fila-escribir input::placeholder { color: var(--ink-faint); }
 .fila-escribir-verbos { display: flex; align-items: center; gap: 2px; }
 .fila-confirmar {
@@ -1727,12 +1744,12 @@ table.presupuesto td:not(:first-child) { text-align: right; }
    vecinos: no ocupa sitio en el flujo, solo recoge el toque que caía a un
    milímetro del borde. */
 .icono-accion, .lio-visto, .lio-aspa, .mas-regalo, .buscador-aspa,
-.llevar-quitar, .aviso-descartar, .mejora-visto, .boton-mini, .voto,
+.llevar-quitar, .llevar-casilla, .aviso-descartar, .mejora-visto, .boton-mini, .voto,
 .paso button {
   position: relative;
 }
 .icono-accion::after, .lio-visto::after, .lio-aspa::after, .mas-regalo::after,
-.buscador-aspa::after, .llevar-quitar::after, .aviso-descartar::after,
+.buscador-aspa::after, .llevar-quitar::after, .llevar-casilla::after, .aviso-descartar::after,
 .mejora-visto::after, .boton-mini::after, .voto::after,
 .paso button::after {
   content: '';

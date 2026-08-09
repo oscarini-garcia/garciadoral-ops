@@ -284,47 +284,81 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
 }
 
 /**
- * Una línea de la lista de la compra: casilla, lo que hay que llevar, quién lo
- * puso y el aspa.
+ * Una línea de la lista de la compra: casilla, lo que hay que llevar, quién
+ * lo puso y el aspa.
  *
- * **No abre nada.** Aquí no hay hoja, ni hilo, ni voto: es la lista que se mira
- * de pie y antes de salir por la puerta, y todo lo que se puede hacer con una
- * línea cabe en la propia línea. Tocarla la tacha, que es el gesto que se repite
- * doce veces seguidas y tiene que costar un dedo entero y no un objetivo de
- * veinte puntos.
- *
- * Y no se edita: el formulario es un solo campo, así que corregir una errata es
- * volver a escribirla. Un verbo de editar aquí pesaría más que el error.
+ * **Casilla y texto son dos blancos distintos.** Antes era uno solo —tocar
+ * en cualquier punto tachaba, «un dedo entero y no un objetivo de veinte
+ * puntos»—, pero eso dejaba corregir una errata solo borrando y volviendo a
+ * escribir. Ahora la casilla tacha —sigue siendo pequeña, el toque le crece
+ * por pseudoelemento sin tocar el dibujo— y el texto edita: se sustituye por
+ * un campo con lo mismo puesto, Intro o perder el foco confirma, Escape
+ * deshace.
  */
 function filaDeLista(apunte, ctx) {
   const hecho = estaHecho(apunte);
   const firma = firmaDeApunte(ctx.vista, apunte);
 
+  const casilla = el('button', {
+    class: 'llevar-casilla', type: 'button',
+    'aria-pressed': hecho ? 'true' : 'false',
+    'aria-label': hecho ? `Quitar la marca de hecho a ${apunte.titulo}` : `Marcar ${apunte.titulo} como hecho`,
+    onclick: async () => {
+      toque();
+      await alternarHecho(apunte);
+    },
+  }, [hecho ? icono('visto') : null]);
+
+  const texto = el('button', {
+    class: 'llevar-texto', type: 'button', 'aria-label': `Editar «${apunte.titulo}»`,
+    onclick: () => editarTituloEnLinea(texto, apunte),
+  }, [
+    el('span', { class: 'llevar-titulo', texto: apunte.titulo }),
+    firma ? el('span', { class: 'llevar-firma', texto: firma }) : null,
+  ]);
+
   return el('div', { class: 'llevar', 'data-hecho': hecho ? 'si' : null }, [
-    el('button', {
-      class: 'llevar-cuerpo', type: 'button',
-      'aria-pressed': hecho ? 'true' : 'false',
-      onclick: async () => {
-        toque();
-        await alternarHecho(apunte);
-        ctx.refrescar();
-      },
-    }, [
-      el('span', { class: 'llevar-casilla', 'aria-hidden': 'true' }, [hecho ? icono('visto') : null]),
-      el('span', { class: 'llevar-texto' }, [
-        el('span', { class: 'llevar-titulo', texto: apunte.titulo }),
-        firma ? el('span', { class: 'llevar-firma', texto: firma }) : null,
-      ]),
-    ]),
+    el('div', { class: 'llevar-cuerpo' }, [casilla, texto]),
     el('button', {
       class: 'llevar-quitar', type: 'button', 'aria-label': `Quitar ${apunte.titulo}`,
       onclick: async () => {
         await retirar('apunte', apunte.id);
         toque('media');
-        ctx.refrescar();
       },
     }, ['×']),
   ]);
+}
+
+/**
+ * Sustituye el texto por un campo editable en su sitio. Confirma al perder
+ * el foco o con Intro; Escape lo deja como estaba. No pasa por
+ * `ctx.refrescar()`: `guardar` ya avisa solo a quien está suscrito.
+ */
+function editarTituloEnLinea(texto, apunte) {
+  const input = entrada({ value: apunte.titulo });
+  input.className = 'llevar-editar';
+
+  const terminar = async (aceptar) => {
+    input.removeEventListener('blur', confirmar);
+    const nuevo = aceptar ? input.value.trim() : '';
+    input.replaceWith(texto);
+    if (nuevo && nuevo !== apunte.titulo) {
+      texto.querySelector('.llevar-titulo').textContent = nuevo;
+      toque();
+      await guardar('apunte', apunte.id, { titulo: nuevo });
+    }
+  };
+  const confirmar = () => terminar(true);
+
+  input.addEventListener('blur', confirmar);
+  input.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Enter') { evento.preventDefault(); input.blur(); }
+    if (evento.key === 'Escape') { evento.preventDefault(); terminar(false); }
+  });
+
+  texto.replaceWith(input);
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
 }
 
 /**
