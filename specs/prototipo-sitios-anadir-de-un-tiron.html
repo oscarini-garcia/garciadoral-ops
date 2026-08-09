@@ -1,0 +1,351 @@
+<meta charset="utf-8">
+<title>Sitios: añadir varias cosas seguidas, de un tirón</title>
+
+<style>
+  /* Los valores reales de pwa/publico/css/estilos.css. 'Newsreader',
+     'Instrument Sans' e 'IBM Plex Mono' no se pueden cargar desde fuera, así
+     que quedan sus repuestos de sistema — el mismo trato que los demás
+     prototipos de specs/. */
+  :root {
+    color-scheme: light dark;
+    --paper:       #FBF9F5;
+    --paper-2:     #F2EFE8;
+    --paper-3:     #EAE6DC;
+    --ink:         #1C2B33;
+    --ink-soft:    #5F7280;
+    --ink-faint:   #64747F;
+    --line:        #E2DED4;
+    --tinta:       #0E6E62;
+    --tinta-suave: #DCEDE9;
+    --aviso:       #A8641B;
+    --hueco:       #F0EBE0;
+    --hueco-linea: #DCD6C9;
+    --sombra:      0 1px 2px rgba(28, 43, 51, .06), 0 8px 24px rgba(28, 43, 51, .06);
+    --radio: 12px;
+    --serif: Georgia, 'Times New Roman', serif;
+    --sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono:  ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+      --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
+      --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E; --aviso: #E0A253;
+      --hueco: #0A0F11; --hueco-linea: #2A363C;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10171A; --paper-2: #172025; --paper-3: #1F2A30;
+    --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
+    --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E; --aviso: #E0A253;
+    --hueco: #0A0F11; --hueco-linea: #2A363C;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper); color: var(--ink); font-family: var(--sans);
+    font-size: 16px; line-height: 1.55; margin: 0; padding: 32px 20px 80px;
+  }
+  .doc { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }
+  h1, h2, h3 { margin: 0; font-family: var(--serif); font-weight: 500; letter-spacing: -.01em; text-wrap: balance; }
+  h1 { font-size: 27px; }
+  h3 { font-size: 16.5px; }
+  p { margin: 0; }
+  code { font-family: var(--mono); font-size: .92em; background: var(--paper-2); padding: 1px 5px; border-radius: 4px; }
+  .rotulo {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  .portada { display: flex; flex-direction: column; gap: 13px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  .portada p { color: var(--ink-soft); max-width: 68ch; }
+  .portada p strong { color: var(--ink); }
+  .diagnostico {
+    background: var(--paper-2); border: 1px solid var(--line); border-left: 3px solid var(--aviso);
+    border-radius: 12px; padding: 15px 17px; display: flex; flex-direction: column; gap: 9px;
+  }
+  .diagnostico p { color: var(--ink-soft); max-width: 68ch; }
+  .diagnostico p strong { color: var(--ink); }
+
+  .eleccion { display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .eleccion-cabeza { display: flex; align-items: center; gap: 11px; }
+  .letra {
+    font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--tinta);
+    border: 1px solid var(--tinta); border-radius: 50%;
+    width: 30px; height: 30px; display: grid; place-items: center; flex: none;
+  }
+  .par { display: grid; gap: 18px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 760px) { .par { grid-template-columns: 340px 1fr; } }
+  .juicio { display: flex; flex-direction: column; gap: 9px; }
+  .juicio div { display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; color: var(--ink-soft); font-size: 14.5px; }
+  .juicio span:first-child { font-family: var(--mono); }
+  .juicio .si span:first-child { color: var(--tinta); }
+  .juicio .no span:first-child { color: var(--aviso); }
+  .juicio strong { color: var(--ink); }
+
+  .nota {
+    background: var(--paper-2); border: 1px solid var(--line);
+    border-left: 3px solid var(--tinta); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .nota p { color: var(--ink-soft); max-width: 68ch; }
+  .nota strong { color: var(--ink); }
+
+  /* ------------------------------------------------------- Los diagramas -- */
+  figure { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .marco-diagrama {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--sombra); padding: 14px 10px; overflow-x: auto;
+  }
+  .marco-diagrama svg { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 12.5px; color: var(--ink-faint); }
+  .etiqueta-svg { font-family: var(--sans); font-size: 10.5px; }
+  .etiqueta-svg.rotulo-fila { font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; }
+
+  /* --------------------------------------------------------- La fila real -- */
+  .marco {
+    width: 300px; max-width: 100%; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--sombra);
+    padding: 14px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .marco-etiqueta {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 6px;
+  }
+  .apunte, .llevar, .fila-escribir {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--line); min-height: 44px;
+  }
+  .apunte:last-child, .llevar:last-child, .fila-escribir:last-child { border-bottom: 0; }
+  .apunte-titulo, .llevar-titulo { font-size: 15px; }
+  .voto {
+    display: inline-flex; align-items: center; gap: 4px; flex: none;
+    min-height: 26px; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--paper-2);
+    font-family: var(--mono); font-size: 10px; color: var(--ink-soft);
+  }
+  .fila-escribir input {
+    border: none; background: transparent; padding: 0; margin: 0; min-width: 0;
+    font-size: 16px; font-family: inherit; color: var(--ink); width: 100%;
+  }
+  .fila-escribir input::placeholder { color: var(--ink-faint); }
+  .fila-escribir-verbos { display: flex; align-items: center; gap: 2px; }
+  .fila-confirmar {
+    flex: none; width: 30px; height: 30px; border-radius: 9px;
+    display: grid; place-items: center; color: var(--tinta); font-size: 19px; line-height: 1;
+  }
+  .fila-lapiz { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: var(--ink-faint); font-size: 13px; }
+  .fila-lapiz.tenue { opacity: .35; }
+</style>
+
+<div class="doc">
+
+  <header class="portada">
+    <p class="rotulo">Agenda Familiar · prototipo</p>
+    <h1>Añadir varias cosas seguidas, de un tirón</h1>
+    <p>
+      La fila de escribir ya tiene el aspecto de la opción B1. Lo que queda es
+      la sensación al usarla: pulsar Intro y que el siguiente campo esté listo
+      <strong>al instante</strong>, sin esperar y sin que nada en la pantalla
+      dé un salto.
+    </p>
+  </header>
+
+  <div class="diagnostico">
+    <p class="rotulo" style="margin:0">Por qué se nota hoy</p>
+    <p>
+      Cada Intro hace más de lo que hace falta. <code>guardar()</code> escribe
+      en memoria, escribe la instantánea entera en IndexedDB, y <strong>eso ya
+      dispara solo</strong> el redibujado de la pantalla —lo hace la
+      suscripción de <code>sincronizacion.js</code>, que existe para esto—.
+      Pero la fila de escribir espera al final de <code>guardar()</code>,
+      que incluye además escribir en la cola de cambios pendientes —una
+      segunda escritura en IndexedDB, la que de verdad tarda si hay que
+      avisar a la red—, antes de limpiarse y volver a enfocarse. Y encima
+      pide <strong>su propio</strong> redibujado, uno más, redundante con el
+      que ya iba a llegar solo.
+    </p>
+    <p>
+      Dos redibujados y una espera de más, y ninguno de los tres hacía falta
+      para que el campo esté listo para la siguiente palabra. Las cuatro
+      opciones de aquí abajo dan ese arreglo por hecho —ya no vale la pena
+      medir nada sin él—; lo que deciden es si hace falta ir más allá.
+    </p>
+  </div>
+
+  <!-- A ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza"><span class="letra">A</span><h3>Arreglar la espera doble, y nada más</h3></div>
+    <div class="par">
+      <figure>
+        <div class="marco-diagrama">
+          <svg viewBox="0 0 320 150" role="img" aria-label="Al pulsar Intro, limpiar y enfocar el campo ocurre al instante; escribir en disco, redibujar la pantalla y avisar a la red pasan en segundo plano, sin que nadie los espere.">
+            <defs>
+              <marker id="fA" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L8,4 L0,8 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <line x1="30" y1="10" x2="30" y2="130" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="2,3"/>
+            <text x="30" y="8" text-anchor="middle" class="etiqueta-svg" fill="currentColor">Intro</text>
+
+            <text x="10" y="34" class="etiqueta-svg rotulo-fila" fill="currentColor" opacity=".6">se nota</text>
+            <rect x="26" y="24" width="34" height="20" rx="5" fill="var(--tinta)"/>
+            <text x="66" y="38" class="etiqueta-svg" fill="currentColor">limpiar el campo y seguir escribiendo — al instante</text>
+
+            <text x="10" y="78" class="etiqueta-svg rotulo-fila" fill="currentColor" opacity=".6">segundo plano</text>
+            <line x1="30" y1="88" x2="290" y2="88" stroke="currentColor" stroke-opacity=".3" marker-end="url(#fA)"/>
+            <rect x="26" y="80" width="56" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <rect x="96" y="80" width="70" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <rect x="180" y="80" width="46" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <rect x="240" y="80" width="46" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <text x="54" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">IndexedDB<tspan x="54" dy="11">instantánea</tspan></text>
+            <text x="131" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">redibujar<tspan x="131" dy="11">la pantalla</tspan></text>
+            <text x="203" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">IndexedDB<tspan x="203" dy="11">cola</tspan></text>
+            <text x="263" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">avisar<tspan x="263" dy="11">a la red</tspan></text>
+            <text x="160" y="142" text-anchor="middle" class="etiqueta-svg" fill="currentColor" opacity=".7">nadie espera a esto para seguir escribiendo</text>
+          </svg>
+        </div>
+        <figcaption>Lo único que ocurre «delante» del usuario es limpiar y enfocar; todo lo demás sigue su curso solo.</figcaption>
+      </figure>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es el cambio más corto: no toca el aspecto de la fila —sigue siendo la B1 de la vuelta anterior—, solo el orden en que se hacen las cosas.</span></div>
+        <div class="si"><span>+</span><span>No estrena ninguna pieza: usa la suscripción que <code>sincronizacion.js</code> ya tiene para esto, en vez de pedir un redibujado propio y de más.</span></div>
+        <div class="no"><span>−</span><span>Sigue habiendo un redibujado completo de la pantalla en cada Intro —ya no se espera, pero sigue ocurriendo—; en un sitio con muchos apuntes y un teléfono viejo, podría seguir notándose algo.</span></div>
+        <div class="no"><span>−</span><span>No se sabe si esto ya es «de un tirón» hasta probarlo en un teléfono de verdad, y no solo en el navegador.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- B ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza"><span class="letra">B</span><h3>Sin botones a la vista: solo Intro</h3></div>
+    <div class="par">
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="marco">
+          <p class="marco-etiqueta">En reposo</p>
+          <div class="apunte"><div class="apunte-titulo">Subir a la duna al atardecer</div><span class="voto">👍 MA</span></div>
+          <div class="fila-escribir"><input placeholder="Añadir a Hacer…"><div class="fila-escribir-verbos"></div></div>
+        </div>
+        <div class="marco">
+          <p class="marco-etiqueta">Escribiendo</p>
+          <div class="apunte"><div class="apunte-titulo">Subir a la duna al atardecer</div><span class="voto">👍 MA</span></div>
+          <div class="fila-escribir"><input value="Las ruinas romanas, temprano">
+            <div class="fila-escribir-verbos"><span class="fila-lapiz">✎</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>La fila más desnuda de las cuatro: en reposo no hay nada que mirar salvo el propio texto de la lista, ni un «+» que confirmar.</span></div>
+        <div class="si"><span>+</span><span>Encaja de lleno con lo que se pide: Intro es el único gesto, así que «con Intro pasa a añadir el siguiente» deja de ser una frase y pasa a ser literalmente lo único que se puede hacer.</span></div>
+        <div class="no"><span>−</span><span>Sin un «+» de repuesto, confirmar en el teléfono depende de tocar «Intro» o «ir» del teclado. Funciona —el teclado de iOS siempre lo lleva—, pero quien no lo sepa no tiene un botón al que mirar.</span></div>
+        <div class="no"><span>−</span><span>El lápiz escondido añade un toque: hay que tocar la fila antes de poder pedir el detalle, cuando hoy está siempre a la vista.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- C ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza"><span class="letra">C</span><h3>El campo no se destruye nunca entre un Intro y el siguiente</h3></div>
+    <div class="par">
+      <figure>
+        <div class="marco-diagrama">
+          <svg viewBox="0 0 320 168" role="img" aria-label="En cada redibujado, los grupos de la lista se rehacen desde cero, pero el campo de la fila de escribir es el mismo nodo de principio a fin.">
+            <defs>
+              <marker id="fC" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L8,4 L0,8 z" fill="var(--tinta)"/>
+              </marker>
+            </defs>
+            <rect x="8" y="16" width="130" height="120" rx="10" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="3,3"/>
+            <text x="73" y="10" text-anchor="middle" class="etiqueta-svg rotulo-fila" fill="currentColor" opacity=".7">pantalla · intro 1</text>
+            <rect x="182" y="16" width="130" height="120" rx="10" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="3,3"/>
+            <text x="247" y="10" text-anchor="middle" class="etiqueta-svg rotulo-fila" fill="currentColor" opacity=".7">pantalla · intro 2</text>
+
+            <rect x="18" y="28" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <rect x="18" y="46" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <rect x="18" y="64" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <rect x="192" y="28" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <rect x="192" y="46" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <rect x="192" y="64" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <rect x="192" y="82" width="110" height="14" rx="4" fill="currentColor" opacity=".18"/>
+            <text x="73" y="100" text-anchor="middle" class="etiqueta-svg" fill="currentColor" opacity=".7">grupos: se rehacen</text>
+            <text x="247" y="118" text-anchor="middle" class="etiqueta-svg" fill="currentColor" opacity=".7">grupos: se rehacen</text>
+
+            <rect x="18" y="112" width="110" height="18" rx="5" fill="var(--tinta-suave)" stroke="var(--tinta)"/>
+            <rect x="192" y="126" width="110" height="18" rx="5" fill="var(--tinta-suave)" stroke="var(--tinta)"/>
+            <line x1="128" y1="121" x2="192" y2="135" stroke="var(--tinta)" stroke-dasharray="2,2" marker-end="url(#fC)"/>
+            <text x="160" y="158" text-anchor="middle" class="etiqueta-svg" fill="var(--tinta)">el campo de escribir: mismo nodo, nunca se destruye</text>
+          </svg>
+        </div>
+        <figcaption>Los grupos de apuntes se reconstruyen en cada redibujado; el campo de la fila queda fuera de esa demolición.</figcaption>
+      </figure>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Es la única de las cuatro que <strong>garantiza</strong> cero parpadeo pase lo que pase: no depende de que el redibujado sea rápido, es que ni siquiera toca el campo.</span></div>
+        <div class="si"><span>+</span><span>Cubre además un caso que la A no cubre: si dos personas de la casa apuntan a la vez, la fila de quien está escribiendo tampoco se movería con lo que llega de fuera.</span></div>
+        <div class="no"><span>−</span><span>Es la primera vez que una pantalla de esta aplicación actualiza un trozo sin redibujarlo entero. Hoy «vaciar y reconstruir todo» es la regla en cada pestaña, sin excepción, y esto la rompe justo aquí.</span></div>
+        <div class="no"><span>−</span><span>Más pieza que mantener aparte, para un problema que la A probablemente ya resuelve del todo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- D ================================================================= -->
+  <section class="eleccion">
+    <div class="eleccion-cabeza"><span class="letra">D</span><h3>La línea aparece al momento, y se confirma de verdad en segundo plano</h3></div>
+    <div class="par">
+      <figure>
+        <div class="marco-diagrama">
+          <svg viewBox="0 0 320 150" role="img" aria-label="Al pulsar Intro, una fila provisional aparece ya en la lista y el campo se limpia; el guardado real, la escritura en disco y el aviso a la red confirman esa fila más tarde, en segundo plano.">
+            <defs>
+              <marker id="fD" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L8,4 L0,8 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <line x1="30" y1="10" x2="30" y2="130" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="2,3"/>
+            <text x="30" y="8" text-anchor="middle" class="etiqueta-svg" fill="currentColor">Intro</text>
+
+            <text x="10" y="34" class="etiqueta-svg rotulo-fila" fill="currentColor" opacity=".6">se nota</text>
+            <rect x="26" y="24" width="150" height="20" rx="5" fill="var(--tinta)" stroke-dasharray="3,2" stroke="var(--paper)" stroke-width="1.5"/>
+            <text x="184" y="38" class="etiqueta-svg" fill="currentColor">fila «provisional» ya en la lista, campo limpio</text>
+
+            <text x="10" y="78" class="etiqueta-svg rotulo-fila" fill="currentColor" opacity=".6">segundo plano</text>
+            <line x1="30" y1="88" x2="290" y2="88" stroke="currentColor" stroke-opacity=".3" marker-end="url(#fD)"/>
+            <rect x="26" y="80" width="56" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <rect x="96" y="80" width="46" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <rect x="156" y="80" width="46" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <rect x="216" y="80" width="64" height="16" rx="4" fill="currentColor" opacity=".22"/>
+            <text x="54" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">IndexedDB<tspan x="54" dy="11">instantánea</tspan></text>
+            <text x="119" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">IndexedDB<tspan x="119" dy="11">cola</tspan></text>
+            <text x="179" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">avisar<tspan x="179" dy="11">a la red</tspan></text>
+            <text x="248" y="112" text-anchor="middle" class="etiqueta-svg" fill="currentColor">la fila deja de<tspan x="248" dy="11">ser provisional</tspan></text>
+            <text x="160" y="142" text-anchor="middle" class="etiqueta-svg" fill="currentColor" opacity=".7">nada de esto se espera para ver la fila ni para escribir la siguiente</text>
+          </svg>
+        </div>
+        <figcaption>La fila se enseña antes incluso de que la primera escritura en disco haya terminado.</figcaption>
+      </figure>
+      <div class="juicio">
+        <div class="si"><span>+</span><span>Cero espera perceptible por definición: nada se dibuja después de que el usuario actúa, todo se dibuja en el mismo instante.</span></div>
+        <div class="no"><span>−</span><span>Con diferencia la más grande de construir: hace falta un estado «provisional» de verdad, decidir qué se ve si el guardado real falla —hoy eso lo cuenta <code>situacion.rechazados</code>—, y no confundir el identificador provisional con el definitivo.</span></div>
+        <div class="no"><span>−</span><span>Soluciona un problema que hoy se mide en unos pocos milisegundos —una escritura en IndexedDB—, no en algo que un dedo llegue a notar.</span></div>
+        <div class="no"><span>−</span><span>Es la única que puede llegar a mentir un instante: si el guardado real fallara, habría que quitar de la lista algo que ya se había enseñado como puesto.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="nota">
+    <p>
+      <strong>Yo probaría la A primero, en un teléfono de verdad, antes de construir nada más.</strong>
+      El diagnóstico apunta a que lo que se notaba era la espera de más —una segunda escritura en disco
+      y un redibujado redundante—, no el redibujado en sí: arreglado eso, es muy probable que ya sea
+      indistinguible de «al instante».
+    </p>
+    <p>
+      Si tras probarla en el teléfono sigue sin sentirse del todo ágil, <strong>B</strong> es barata y
+      compone bien con la A —quita ruido visual sin tocar la arquitectura—. Dejaría <strong>C</strong>
+      en la nevera hasta que A falle de verdad: es la más sólida de las cuatro, pero también la primera
+      excepción a «esta pantalla siempre se redibuja entera», y eso no se abre por si acaso. Y evitaría
+      <strong>D</strong> — resuelve milisegundos con una pieza de estado provisional que puede acabar
+      mintiendo, para un caso que la A ya deja resuelto.
+    </p>
+  </div>
+
+</div>
