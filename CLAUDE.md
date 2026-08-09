@@ -163,6 +163,17 @@ pendiente. El hook lo inyecta al final del mapa.
   reescribir en una frase que pide un emoji. Queda abierto **si eso deja de ser
   cierto el día que alguien quiera cambiarle el tono**, que es cuando tocaría
   hacerlo un encargo más.
+  **La fila de escribir se probó en el teléfono y venían dos fallos.** El
+  campo llevaba 15 puntos de letra, por debajo de los 16 que ya exige
+  `.campo` desde el principio —«o iOS hace zoom al enfocar»—, así que cada
+  «Intro» disparaba el zoom de Safari y arrastraba la pantalla entera con él.
+  Y el aspecto no convencía: una fila con caja propia y un racimo de botones
+  redondos, en vez de leerse como la siguiente línea de la lista. Las dos se
+  corrigen juntas: la fila pasa a compartir molde con `.apunte` y `.llevar`
+  —sin caja, con su misma raya y su mismo alto—, el tamaño sube a 16, el «+»
+  de confirmar solo aparece con algo escrito, y las píldoras de las clases
+  sin nada se corren al final de lo que ya hay apuntado en vez de ir delante,
+  para que un sitio con contenido lo enseñe primero.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato

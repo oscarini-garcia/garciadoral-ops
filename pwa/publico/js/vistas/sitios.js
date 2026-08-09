@@ -184,19 +184,6 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
   // como cualquier otro, y el hueco de escribir lo pone su propia fila.
   if (claseEnAlta && conAlgo.has(claseEnAlta)) claseEnAlta = null;
 
-  // Las clases sin nada todavía, y sin su fila de escribir desplegada: una
-  // píldora por cada una, siempre a la vista, para que «enseñar las
-  // secciones» no obligue a pre-pintar listas vacías. Tocarla es lo que
-  // sustituye aquí al «+» que ya no está.
-  const pendientes = CLASES.filter((c) => !conAlgo.has(c.id) && c.id !== claseEnAlta);
-  if (pendientes.length) {
-    pantalla.append(el('div', { class: 'opciones' }, pendientes.map((clase) =>
-      el('button', {
-        class: 'opcion', 'data-vacia': true, type: 'button',
-        onclick: () => { claseEnAlta = clase.id; enfocarClase = clase.id; ctx.refrescar(); },
-      }, [`+ ${clase.nombre}`]))));
-  }
-
   for (const clase of CLASES) {
     const grupo = grupos.find((g) => g.clase.id === clase.id);
     if (!grupo && clase.id !== claseEnAlta) continue;
@@ -233,14 +220,30 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
     ]));
   }
 
+  // Las clases sin nada todavía, y sin su fila de escribir desplegada: una
+  // píldora por cada una, al final y no delante de lo que ya hay apuntado —
+  // un sitio que ya tiene contenido lo enseña primero, y lo que falta por
+  // empezar queda donde se busca cuando hace falta y no antes—. Tocarla es
+  // lo que sustituye aquí al «+» que ya no está.
+  const pendientes = CLASES.filter((c) => !conAlgo.has(c.id) && c.id !== claseEnAlta);
+  if (pendientes.length) {
+    pantalla.append(el('div', { class: 'opciones pendientes-sitio' }, pendientes.map((clase) =>
+      el('button', {
+        class: 'opcion', 'data-vacia': true, type: 'button',
+        onclick: () => { claseEnAlta = clase.id; enfocarClase = clase.id; ctx.refrescar(); },
+      }, [`+ ${clase.nombre}`]))));
+  }
+
   // Se enfoca después de montar, no al construir: el campo no recibe foco
   // hasta que está en el documento. Es de un solo uso — si no se consumiera
   // aquí, cualquier refresco ajeno (marcar un «Llevar» de otro grupo) le
   // robaría el teclado a quien esté escribiendo en otro sitio de la pantalla.
+  // Y sin desplazar la pantalla: el sitio de la fila apenas se mueve entre un
+  // pintado y el siguiente, así que forzar el scroll hacía más mal que bien.
   if (enfocarClase) {
     const objetivo = enfocarClase;
     enfocarClase = null;
-    pantalla.querySelector(`.fila-escribir[data-clase="${objetivo}"] input`)?.focus();
+    pantalla.querySelector(`.fila-escribir[data-clase="${objetivo}"] input`)?.focus({ preventScroll: true });
   }
 }
 
@@ -341,21 +344,30 @@ function filaDeApunte(apunte, ctx) {
 }
 
 /**
- * La fila de escribir del final de un grupo: un título y ya está, sin abrir
- * nada. Sustituye al «+» de dentro de un sitio — meter cosas rápido es
- * escribir la siguiente línea de la lista que se está mirando, y refinarlas
- * es para después.
+ * La fila de escribir del final de un grupo: la siguiente línea en blanco de
+ * la lista que se está mirando, no una barra de búsqueda pegada debajo. Por
+ * eso el campo no lleva caja ni borde propios y comparte el alto y la raya de
+ * separación de las filas que tiene encima —el mismo molde que `.apunte` y
+ * `.llevar`—, y por eso el tamaño de letra no baja de 16: por debajo de eso
+ * Safari hace zoom al enfocar, que es lo que movía la pantalla entera.
  *
- * En Llevar no lleva más botón que el de confirmar: es la lista de la compra,
- * y una lista de la compra no tiene detalle que asociarle. En las demás
- * clases lleva además el lápiz, que entrega lo ya escrito —sin perderlo— a la
- * misma hoja de siempre, con la clase puesta: ahí es donde se describe, se
- * pide una idea a la IA o simplemente se guarda tal cual.
+ * Sustituye al «+» de dentro de un sitio: meter cosas rápido es escribir esa
+ * línea, y refinarlas es para después. En Llevar no lleva más botón que el de
+ * confirmar —una lista de la compra no tiene detalle que asociarle—, y solo
+ * aparece con algo escrito, para no poner un «+» que todavía no hace nada. En
+ * las demás clases lleva además el lápiz, siempre ahí, que entrega lo ya
+ * escrito —sin perderlo— a la misma hoja de siempre, con la clase puesta: ahí
+ * es donde se describe, se pide una idea a la IA o simplemente se guarda tal
+ * cual.
  */
 function filaEscribir(clase, lugarId, ctx) {
   const input = entrada({ placeholder: `Añadir a ${clase.nombre}…` });
 
-  const confirmar = async () => {
+  const confirmar = el('button', {
+    class: 'fila-confirmar', type: 'button', 'aria-label': `Añadir a ${clase.nombre}`, hidden: true,
+  }, ['+']);
+
+  const guardarApunte = async () => {
     const texto = input.value.trim();
     if (!texto) return;
     await guardar('apunte', nuevoId(), {
@@ -366,21 +378,16 @@ function filaEscribir(clase, lugarId, ctx) {
     enfocarClase = clase.id;
     ctx.refrescar();
   };
+  confirmar.onclick = guardarApunte;
 
+  input.addEventListener('input', () => { confirmar.hidden = !input.value.trim(); });
   input.addEventListener('keydown', (evento) => {
-    if (evento.key === 'Enter') { evento.preventDefault(); confirmar(); }
+    if (evento.key === 'Enter') { evento.preventDefault(); guardarApunte(); }
   });
 
-  const hijos = [
-    input,
-    el('button', {
-      class: 'fila-confirmar', type: 'button', 'aria-label': `Añadir a ${clase.nombre}`,
-      onclick: confirmar,
-    }, ['+']),
-  ];
-
+  const verbos = [confirmar];
   if (!clase.lista) {
-    hijos.push(el('button', {
+    verbos.push(el('button', {
       class: 'fila-lapiz', type: 'button', 'aria-label': 'Más detalle',
       onclick: () => abrirFormularioApunte(ctx, {
         lugarId, claseInicial: clase.id, tituloInicial: input.value.trim(),
@@ -388,7 +395,10 @@ function filaEscribir(clase, lugarId, ctx) {
     }, [icono('editar')]));
   }
 
-  return el('div', { class: 'fila-escribir', 'data-clase': clase.id }, hijos);
+  return el('div', { class: 'fila-escribir', 'data-clase': clase.id }, [
+    input,
+    el('div', { class: 'fila-escribir-verbos' }, verbos),
+  ]);
 }
 
 /** Las dos primeras letras del nombre, como en el carril de Lío: con cuatro
