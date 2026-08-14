@@ -18,6 +18,14 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.64.0',
+    fecha: '2026-08-14',
+    titulo: 'Marcar algo en Sitios ya se ve en el momento',
+    lineas: [
+      'Tocar «hecho» o añadir algo a una lista ya no vuelve al principio de la pantalla: el cambio se ve donde se ha tocado.',
+    ],
+  },
+  {
     version: '1.63.0',
     fecha: '2026-08-14',
     titulo: 'Ajustes cuenta qué ha cambiado',

@@ -345,11 +345,21 @@ function refrescar() {
   const pantalla = document.getElementById('pantalla');
   pantalla.className = 'pantalla';
 
+  // `refrescar` vacía y reconstruye `pantalla` entera, y eso por sí solo deja
+  // el scroll a 0 —no queda nada que desplazar mientras está vacía—. Sin
+  // conservarlo, marcar hecho o añadir algo en Sitios saltaba al principio de
+  // la pantalla en cada guardado: el cambio se veía al volver a entrar, pero
+  // no en el sitio donde se acababa de tocar. Al cambiar de pestaña el propio
+  // botón ya deja `pantalla` en 0 antes de llamar aquí, así que capturarlo y
+  // devolverlo sirve para los dos casos sin distinguirlos.
+  const scroll = pantalla.scrollTop;
+
   definicion.pintar(
     pantalla,
     document.getElementById('subcabecera'),
     ctx,
   );
+  pantalla.scrollTop = scroll;
   pintarCabecera();
 }
 

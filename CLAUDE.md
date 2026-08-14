@@ -230,6 +230,22 @@ pendiente. El hook lo inyecta al final del mapa.
   siguiente hay más aire que antes, no menos —`.grupo-sitio` sube el margen a
   26px—, al revés que el resto de la aplicación: aquí lo apretado es dentro y
   lo holgado es entre secciones.
+  **Y marcar hecho o añadir se veía tarde: el cambio no aparecía hasta cambiar
+  de pantalla y volver.** La causa no estaba en Sitios sino en `refrescar()`
+  (`app.js`), compartida por toda la aplicación: vacía `pantalla` entera y la
+  reconstruye en cada guardado, y una `pantalla` vacía no tiene nada que
+  desplazar, así que el scroll caía a 0 en cada redibujado —el cambio sí
+  estaba, pero fuera de lo que se estaba mirando, y parecía que no había
+  pasado nada—. Se nota más en Sitios porque ahí se interactúa seguido con
+  listas largas, pero afecta por igual a cualquier pestaña. El arreglo es
+  capturar `pantalla.scrollTop` antes de pintar y devolverlo después, en el
+  propio `refrescar()`, sin distinguir de qué guardado viene ni si la lista
+  se reordena al marcar algo hecho. Lo que parecía la causa y no lo era: que
+  el botón robara el foco al tocarlo —se probó bloqueándolo y el fallo
+  seguía igual, con el foco donde estaba—; la pista falsa la puso el propio
+  Playwright, que desplaza el elemento a la vista antes de tocarlo en las
+  pruebas automatizadas, moviendo el scroll por su cuenta y haciendo parecer
+  roto lo que ya iba bien.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato
