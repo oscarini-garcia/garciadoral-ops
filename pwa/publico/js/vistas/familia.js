@@ -48,66 +48,13 @@ export function reiniciarFamilia() {
 const normalizar = (texto) =>
   String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-/** Busca por nombre, apellidos, parentesco y rama: «abuel» tiene que dar con
- *  los dos abuelos aunque ninguno se llame así, y «garcía» con el marido Pérez
- *  que es de los García. */
+/** Busca por nombre, apellidos y parentesco: «abuel» tiene que dar con los dos
+ *  abuelos aunque ninguno se llame así. */
 function encaja(persona, texto) {
   const aguja = normalizar(texto).trim();
   if (!aguja) return true;
-  return [persona.nombre, persona.apellidos, persona.parentesco, persona.rama]
+  return [persona.nombre, persona.apellidos, persona.parentesco]
     .some((parte) => normalizar(parte).includes(aguja));
-}
-
-// ------------------------------------------------------------------- Ramas --
-
-/** «de los García» cuando la rama es un apellido; tal cual cuando es una frase
- *  («Los de Bolonia»), que ya se sostiene sola. */
-const textoDeRama = (rama) => (/^\S+$/.test(rama.trim()) ? `de los ${rama.trim()}` : rama.trim());
-
-/** El primer apellido tal como está escrito, que es el nombre natural de una
- *  rama nueva. */
-const primerApellido = (persona) => String(persona.apellidos || '').trim().split(/\s+/)[0] || '';
-
-/** Las ramas que ya existen, cada una con su grafía de la primera vez. */
-function ramasExistentes(ctx) {
-  const vistas = new Map();
-  for (const persona of ctx.vista.personas()) {
-    if (persona.rama && !vistas.has(normalizar(persona.rama))) {
-      vistas.set(normalizar(persona.rama), persona.rama);
-    }
-  }
-  return vistas;
-}
-
-/**
- * Lo que el barrido propone: los sin rama de los dos círculos abiertos,
- * agrupados por primer apellido. Un apellido suelto no hace rama —solo propone
- * cuando junta a dos, o cuando esa rama ya existe y alguien encaja en ella—,
- * y el apellido **solo propone**: la hoja enseña el resultado y no se guarda
- * nada hasta que se confirma. Las parejas que no comparten apellido se añaden
- * después desde su ficha, que es exactamente el caso que un automático puro
- * haría mal.
- */
-function propuestasDeRamas(ctx) {
-  const existentes = ramasExistentes(ctx);
-  const sinRama = [...ctx.vista.personasDe('extendida'), ...ctx.vista.personasDe('amigos')]
-    .filter((persona) => !persona.rama);
-
-  const grupos = new Map();
-  for (const persona of sinRama) {
-    const clave = normalizar(primerApellido(persona));
-    if (!clave) continue;
-    if (!grupos.has(clave)) grupos.set(clave, []);
-    grupos.get(clave).push(persona);
-  }
-
-  const propuestas = [];
-  for (const [clave, personas] of grupos) {
-    const existente = existentes.get(clave);
-    if (!existente && personas.length < 2) continue;
-    propuestas.push({ nombre: existente || primerApellido(personas[0]), personas });
-  }
-  return propuestas.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 }
 
 /**
@@ -202,69 +149,9 @@ function circulosPorSeparado(cuerpo, ctx) {
     // caben en una celda y las dos Marías que solo distingue el apellido.
     tablaDePersonas(ctx.vista.personasDe(pestana), ctx),
     filaDeAnadir(pestana, ctx),
-    botonDeOrdenarPorRamas(ctx),
   ]);
 
   return [familia, abiertos];
-}
-
-/**
- * La mudanza a las ramas, no un modo permanente: aparece para quien administra
- * mientras el barrido tenga algo que proponer, y desaparece cuando ya no.
- */
-function botonDeOrdenarPorRamas(ctx) {
-  if (!ctx.vista.esAdministrador()) return null;
-  if (!propuestasDeRamas(ctx).length) return null;
-  return el('button', {
-    class: 'enlace-discreto', type: 'button',
-    onclick: () => abrirOrdenarPorRamas(ctx),
-  }, ['Ordenar por ramas']);
-}
-
-function abrirOrdenarPorRamas(ctx) {
-  const propuestas = propuestasDeRamas(ctx);
-
-  abrirHoja('Ordenar por ramas', (cuerpo) => {
-    cuerpo.append(el('p', {
-      class: 'pista',
-      texto: 'Agrupado por el primer apellido, que solo propone: no se guarda nada hasta tocar «Guardar». '
-        + 'Quien no comparte apellido con su familia —una pareja, por ejemplo— se añade después desde su ficha.',
-    }));
-
-    const casillas = propuestas.map((propuesta) => {
-      const casilla = el('input', { type: 'checkbox', checked: true });
-      return {
-        propuesta,
-        casilla,
-        nodo: el('label', { class: 'conmutador' }, [
-          casilla,
-          `${propuesta.nombre} · ${propuesta.personas.map((p) => p.nombre).join(', ')}`,
-        ]),
-      };
-    });
-    cuerpo.append(...casillas.map((c) => c.nodo));
-
-    cuerpo.append(el('div', { class: 'acciones' }, [
-      el('button', {
-        class: 'boton crecer', type: 'button',
-        onclick: async (evento) => {
-          evento.currentTarget.disabled = true;
-          let escritas = 0;
-          for (const { propuesta, casilla } of casillas) {
-            if (!casilla.checked) continue;
-            for (const persona of propuesta.personas) {
-              await guardar('persona', persona.id, { rama: propuesta.nombre });
-              escritas += 1;
-            }
-          }
-          cerrarHoja();
-          avisar(escritas ? 'Ramas guardadas' : 'Nada que guardar');
-          ctx.refrescar();
-        },
-      }, ['Guardar']),
-      el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
-    ]));
-  });
 }
 
 /**
@@ -308,40 +195,9 @@ function tablaDePersonas(personas, ctx) {
           cabeceraOrdenable('Cumple', 'cumple'),
         ]),
       ]),
-      el('tbody', {}, porRamas(personas).flatMap(({ rotulo, gente }) => [
-        rotulo
-          ? el('tr', { class: 'tabla-rama' }, [el('th', { colspan: '3', scope: 'colgroup', texto: rotulo })])
-          : null,
-        ...ordenar(gente).map(fila),
-      ])),
+      el('tbody', {}, ordenar(personas).map(fila)),
     ]),
   ]);
-}
-
-/**
- * La lista partida por ramas, cuando las hay.
- *
- * Mientras nadie tenga rama, la tabla es la de siempre: un solo tramo sin
- * rótulo. En cuanto hay ramas, cada una va bajo su separador —ordenadas por
- * nombre— y los que no son de ninguna cierran la lista bajo «Los demás». Las
- * cabeceras que ordenan siguen mandando, pero dentro de cada tramo: la rama
- * agrupa y el orden ordena, cada uno a lo suyo.
- */
-function porRamas(personas) {
-  const conRama = personas.filter((p) => p.rama);
-  if (!conRama.length) return [{ rotulo: null, gente: personas }];
-
-  const tramos = new Map();
-  for (const persona of conRama) {
-    const clave = normalizar(persona.rama);
-    if (!tramos.has(clave)) tramos.set(clave, { rotulo: persona.rama, gente: [] });
-    tramos.get(clave).gente.push(persona);
-  }
-
-  const ordenados = [...tramos.values()].sort((a, b) => a.rotulo.localeCompare(b.rotulo, 'es'));
-  const sueltos = personas.filter((p) => !p.rama);
-  if (sueltos.length) ordenados.push({ rotulo: 'Los demás', gente: sueltos });
-  return ordenados;
 }
 
 /** El «+» de un círculo, ahora al pie de su lista y no como celda de rejilla.
@@ -597,9 +453,6 @@ export function abrirFicha(personaId, ctx) {
             // parentesco escrito, el círculo vuelve como último recurso, que es
             // lo que deja «Amigos» bajo el nombre de un amigo sin más dato.
             esMia ? null : deQuienEs(persona, ctx),
-            // La rama contesta «¿este de quién era?» delante de la ficha, que
-            // es donde la pregunta se hace de verdad.
-            persona.rama ? textoDeRama(persona.rama) : null,
             persona.tiene_cuenta ? persona.rol : 'sin cuenta',
           ].filter(Boolean).join(' · '),
         }),
@@ -938,19 +791,6 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
   abrirHoja(persona ? `Ficha de ${persona.nombre}` : 'Nueva persona', (cuerpo) => {
     const nombre = entrada({ value: persona?.nombre || '', placeholder: 'Nombre' });
     const apellidos = entrada({ value: persona?.apellidos || '', placeholder: 'Apellidos' });
-
-    // La rama la propone el apellido y la confirma quien guarda, nunca al
-    // revés: en España una pareja no comparte apellido, así que un automático
-    // partiría a los matrimonios en silencio. Se propone solo si el campo está
-    // vacío y el primer apellido coincide con una rama que ya existe.
-    const rama = entrada({ value: persona?.rama || '', placeholder: 'García' });
-    apellidos.addEventListener('change', () => {
-      if (rama.value.trim()) return;
-      const clave = normalizar(String(apellidos.value || '').trim().split(/\s+/)[0]);
-      if (!clave) return;
-      const existente = ramasExistentes(ctx).get(clave);
-      if (existente) rama.value = existente;
-    });
     const { control: nacimiento, campo: campoNacimiento } = campoDeFecha(persona?.fecha_nacimiento);
     const genero = seleccion(
       [{ valor: '', texto: 'Sin decir' }, ...Object.entries(GENEROS).map(([valor, texto]) => ({ valor, texto }))],
@@ -1026,8 +866,6 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
         el('label', { texto: 'Parentesco' }), parentesco, pista,
       ]),
       campoOtro,
-      campo('Rama', rama,
-        'Qué familia forma con otros de la lista: «García» junta a los García y a quien se casó con ellos, comparta apellido o no. Vacía, sale con «Los demás».'),
       campo('Acceso', rol,
         persona?.tiene_cuenta
           ? 'Quitarle la cuenta deshace su vínculo con Apple: para volver a entrar tendría que solicitarlo otra vez.'
@@ -1076,7 +914,6 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
               : parentesco.value,
             genero: genero.value || null,
             circulo: grupo.value,
-            rama: rama.value.trim() || null,
             tiene_cuenta: rol.value ? 1 : 0,
             rol: rol.value || null,
             // Dejar a alguien sin cuenta deshace su vínculo con Apple, igual que

@@ -27,28 +27,21 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
-- **Las ramas están construidas: la gente se agrupa por familias.** Una columna
-  `rama` en `persona` (migración `0020`, texto libre) que dice qué familia
-  forma cada uno de Extendida y Amigos: «García», «Los de Bolonia». **No se
-  llama «familia»** porque familia ya es el círculo cerrado de casa —la misma
-  razón por la que las mejoras no se llamaron «idea»—. **El apellido propone y
-  una persona confirma, nunca al revés**: en España una pareja no comparte
-  apellido, y un agrupado automático puro partiría a los matrimonios en
-  silencio. De ahí las tres piezas: el formulario de la ficha propone la rama
-  cuando el primer apellido coincide con una que ya existe; la hoja «Ordenar
-  por ramas» —solo administradores, y solo mientras tenga algo que proponer—
-  agrupa por primer apellido a los que no tienen rama, lo enseña con casillas y
-  no escribe nada hasta «Guardar»; y quien no encaje se corrige en su ficha,
-  que es donde la pareja de un García se hace de los García. La tabla de Gente
-  se parte por ramas con separadores —los sin rama al final, bajo «Los demás»—
-  y las cabeceras que ordenan siguen mandando dentro de cada tramo; la ficha lo
-  dice bajo el nombre («prima · de los García») y el buscador encuentra
-  también por rama. El porqué de cada decisión y las opciones que se
-  descartaron están en `specs/propuesta-ramas.html`. Queda apuntado como techo,
-  sin construir: **la rama como entidad propia** (regalos «para los García»,
-  la rama entera como participantes de un evento), que es el día en que la
-  etiqueta de texto se convierte en tabla; y **las relaciones persona a
-  persona** de las que las ramas saldrían solas, que es otro proyecto.
+- **Las ramas se probaron y se quitaron: agrupaban por familias y era un lío
+  que aportaba poco.** Estuvieron construidas una vuelta entera —columna
+  `rama` en `persona`, el formulario proponiéndola por apellido, la hoja
+  «Ordenar por ramas», la tabla de Gente partida por separadores y el
+  subtítulo de la ficha («prima · de los García»)— antes de decidir que no
+  compensaban. Se retiró **la interfaz entera**: el campo del formulario, la
+  hoja de ordenar, los separadores de la tabla, la línea de la ficha y la
+  búsqueda por rama. **Lo que no se tocó es el dato**: la columna `rama`
+  (migración `0020`) se queda tal cual, con lo que cada uno ya tuviera
+  escrito, y `api/src/repositorio.js` la sigue aceptando —quitarla habría
+  borrado lo que ya se hubiera apuntado de verdad, para un cambio que es de
+  interfaz y no de modelo—. `scripts/agenda/modelo.py` sigue leyendo el campo
+  sin usarlo, por lo mismo. El porqué de intentarlo y las opciones que se
+  descartaron entonces se quedan en `specs/propuesta-ramas.html`, como
+  registro de una decisión que se tomó y más tarde se deshizo.
 - **El portero está extraído, y la baja llevaba una semana rota.** La auditoría
   de esta vuelta encontró que `POST /api/cuenta/baja` contestaba 500 a todo el
   mundo desde el 27 de julio —un refactor renombró `verificarSesion` en el
