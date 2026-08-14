@@ -110,19 +110,18 @@ function tarjetaDeSolicitud(solicitud, ctx) {
  * hay que vincularla a su ficha y no crear una segunda: así conserva su fecha de
  * nacimiento y todo lo que otros escribieron con ella.
  *
- * **A quién se puede vincular es la familia y solo la familia.** Antes se
- * ofrecía a cualquiera sin cuenta, que en un registro de verdad son los veinte
- * sobrinos, primos y cuñados que nunca van a entrar: una lista larguísima en la
- * que la persona que buscas no se encuentra. Y una cuenta es de quien vive en
- * casa —es lo que gobierna Lío, Sitios y el círculo cerrado—, así que ofrecer
- * al resto era ofrecer algo que no debe pasar.
+ * **A quién se puede vincular es cualquiera del registro, no solo Familia.**
+ * Se probó a acotarlo a los cuatro de casa, para no perder a quien se busca
+ * entre veinte sobrinos y primos que nunca van a entrar; pero eso mismo
+ * escondía a quien sí hacía falta encontrar —alguien de Extendida o de Amigos
+ * pidiendo acceso de verdad—, así que vuelve a ofrecerse el registro entero.
  *
  * Quien ya tiene cuenta sale igualmente, apagado y con el motivo escrito. Es la
  * diferencia entre «no está» y «está y no se puede», que desde una lista en la
  * que alguien falta no se distingue —y el Worker lo rechaza de todas formas—.
  */
 function abrirAprobacion(solicitud, ctx) {
-  const deLaCasa = [...ctx.vista.personasDe('familia')]
+  const registro = [...ctx.vista.personas()]
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 
   const rotulo = solicitud.nombre_declarado
@@ -133,7 +132,7 @@ function abrirAprobacion(solicitud, ctx) {
     const quien = seleccion(
       [
         { valor: '', texto: 'Crear una ficha nueva' },
-        ...deLaCasa.map((p) => ({
+        ...registro.map((p) => ({
           valor: p.id,
           texto: p.tiene_cuenta ? `${p.nombre} — ya tiene cuenta` : `Es ${p.nombre}, que ya está`,
           desactivada: Boolean(p.tiene_cuenta),
@@ -174,7 +173,7 @@ function abrirAprobacion(solicitud, ctx) {
     ajustar();
 
     cuerpo.append(
-      campo('Quién es', quien, 'Si ya estaba en la familia sin cuenta, vincúlala a su ficha: así conserva su cumpleaños y su historial.'),
+      campo('Quién es', quien, 'Si ya estaba en el registro sin cuenta, vincúlala a su ficha: así conserva su cumpleaños y su historial.'),
       nueva,
       campo('Acceso', rol, 'Un administrador gestiona personas y categorías. Un miembro usa la agenda.'),
     );
