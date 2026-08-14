@@ -45,6 +45,7 @@ import {
 } from './native.js';
 import { NOMBRES_DIA, formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { VERSION_APP } from './version.js';
+import { NOVEDADES } from './novedades.js';
 import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana,
   nombreDeTurno, resolverPropuesta, rotuloDeTurno, turnosDe,
@@ -693,6 +694,13 @@ function abrirAjustes() {
     // abierto de origen aunque ya no sea el primero: lo que decide eso es a qué
     // se viene, no el orden.
     if (!demostracion) cuerpo.append(acordeon('Sincronización', bloqueDeSincronizacion, { abierta: true, icono: 'sincronizar' }));
+
+    // Justo debajo de Sincronización, y plegado: las dos preguntas llegan en
+    // ese orden —primero qué versión hay, y solo a veces qué trajo—, y esta es
+    // la que se lee una vez después de actualizar y no de nuevo hasta la
+    // siguiente. Sin dato de cuenta ni de administrador detrás, se enseña
+    // también en la demostración. La idea es de `meeting-ops-air`.
+    cuerpo.append(acordeon('Novedades', bloqueDeNovedades, { icono: 'megafono' }));
 
     // Los demás empiezan plegados. Ajustes es una lista de cosas que casi nunca
     // se tocan: enseñarlas todas abiertas obliga a leerlas enteras para
@@ -1648,6 +1656,25 @@ function bloqueDeSincronizacion(dentro) {
   escribirLinea();
   escribirVersion();
   dentro.append(linea, version, boton, progreso);
+}
+
+/**
+ * El carrusel de Novedades: una tarjeta por versión, deslizando en horizontal.
+ *
+ * Las cuatro últimas —la actual y las tres anteriores—, para que la pregunta
+ * frecuente («¿tengo lo nuevo?», que ya contesta Sincronización) no se mezcle
+ * con esta, que se lee una vez después de actualizar y no todos los días. El
+ * resto de `NOVEDADES` no se enseña aquí, pero tampoco cuesta nada
+ * conservarlo.
+ */
+function bloqueDeNovedades(dentro) {
+  dentro.append(el('div', { class: 'novedades', 'aria-label': 'Qué ha cambiado, por versión' },
+    NOVEDADES.slice(0, 4).map((novedad) => el('div', { class: 'tarjeta novedad' }, [
+      el('p', { class: 'novedad-meta', texto: [novedad.version, novedad.fecha].filter(Boolean).join(' · ') }),
+      el('p', { class: 'novedad-titulo', texto: novedad.titulo }),
+      ...(novedad.lineas || []).map((linea) => el('p', { class: 'pista', texto: linea })),
+    ])),
+  ));
 }
 
 /** Lo que trajo la descarga, en un renglón. Sin cambios se dice, que es lo más

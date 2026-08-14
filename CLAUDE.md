@@ -530,6 +530,20 @@ pendiente. El hook lo inyecta al final del mapa.
   una línea, y desde que «Buscar actualización» se fue a Sincronización no le
   quedaba nada más. Privacidad y Ayuda bajan al pie de «Tu cuenta», que es de lo
   que hablan, y siguen ahí para el día que se use la ficha de la App Store.
+- **Ajustes tiene un apartado de Novedades, con lo último que ha cambiado.** Una
+  tarjeta por versión, deslizando en horizontal, con las cuatro últimas a la
+  vista y el resto —`pwa/publico/js/novedades.js`— de historial que no cuesta
+  nada conservar. Va justo debajo de Sincronización y empieza plegado: son dos
+  preguntas que llegan en ese orden, «qué versión tengo» y solo a veces «qué
+  trajo», y compartir apartado hacía que la primera, la frecuente, tuviera que
+  pasar de largo cuatro tarjetas para llegar a su línea. Se escribe a mano al
+  final de cada vuelta —el código dice qué es cierto de una versión, no qué
+  notaría quien tiene el teléfono en la mano—, y `pwa/test/novedades.test.js`
+  sujeta la primera entrada a la versión de `package.json` y `version.js`, la
+  misma disciplina que ya tenían esas dos. **La idea es de `meeting-ops-air`**,
+  que lleva su propia versión desde antes; aquí el apartado se llama Novedades
+  y no «What's new», y el icono es una bocina nueva en `ICONOS`, a juego con el
+  resto de Ajustes.
 - **El botón de Ajustes se fue de la cabecera a la barra de abajo**, el sexto y
   a la derecha. Arriba a la derecha es lo que peor alcanza el pulgar de una mano
   sola, y es justo el sitio al que hay que estirarse cuando algo no va. De paso
