@@ -256,19 +256,17 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
       : null;
 
     const seccion = acordeon(clase.nombre, (cuerpo) => {
-      cuerpo.append(el('div', { class: 'acordeon-lista' }, apuntes.map((apunte) => (clase.lista
-        ? filaDeLista(apunte, ctx)
-        : filaDeApunte(apunte, ctx)))));
+      cuerpo.append(el('div', { class: 'acordeon-lista' }, [
+        filaEscribir(clase, lugar.id, ctx),
+        ...apuntes.map((apunte) => (clase.lista ? filaDeLista(apunte, ctx) : filaDeApunte(apunte, ctx))),
+      ]));
     }, { abierta: desplegada, nota: String(apuntes.length), compacta: true, verbos });
 
     seccion.addEventListener('toggle', () => {
       marcarSeccionPlegada(lugar.id, clase.id, !seccion.open);
     });
 
-    pantalla.append(el('div', { class: 'grupo grupo-sitio' }, [
-      filaEscribir(clase, lugar.id, ctx),
-      seccion,
-    ]));
+    pantalla.append(el('div', { class: 'grupo grupo-sitio' }, [seccion]));
   }
 
   // Las clases sin nada todavía, y sin su fila de escribir desplegada: una
