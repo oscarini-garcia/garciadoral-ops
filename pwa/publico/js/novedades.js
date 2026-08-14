@@ -18,6 +18,14 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.66.0',
+    fecha: '2026-08-14',
+    titulo: 'Añadir en Sitios, alineado bajo el rótulo',
+    lineas: [
+      'La casilla de «Añadir a...» pasa a estar debajo de la barra de la sección, alineada con el texto de la lista de debajo.',
+    ],
+  },
+  {
     version: '1.65.0',
     fecha: '2026-08-14',
     titulo: 'Añadir en Sitios ya no queda al final',

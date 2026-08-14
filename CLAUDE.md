@@ -246,15 +246,19 @@ pendiente. El hook lo inyecta al final del mapa.
   Playwright, que desplaza el elemento a la vista antes de tocarlo en las
   pruebas automatizadas, moviendo el scroll por su cuenta y haciendo parecer
   roto lo que ya iba bien.
-  **Y la fila de escribir se cambió de sitio: ahora abre cada grupo en vez de
-  cerrarlo.** Vivía al final, después de la lista y de la cabecera —«la
-  siguiente línea en blanco»—, así que añadir a un sitio con la lista ya
-  larga pedía primero pasar de largo todo lo que hubiera apuntado. Ahora es
-  lo primero que hay bajo la cabecera de cada clase, con el mismo hilo que
-  antes llevaba arriba pero ahora abajo, de modo que sigue siendo lo que
-  separa la fila de lo que venga a continuación —antes la lista, ahora la
-  cabecera, que no lleva borde propio—. Sigue fuera del `<details>` del
-  acordeón a propósito, igual que antes: plegar la sección no la esconde.
+  **Y la fila de escribir se cambió de sitio: ahora abre la lista de cada
+  grupo en vez de cerrarla.** Vivía al final, después de la lista y de la
+  cabecera —«la siguiente línea en blanco»—, así que añadir a un sitio con
+  la lista ya larga pedía primero pasar de largo todo lo que hubiera
+  apuntado. El primer intento la subió por encima de la cabecera entera,
+  pero no era eso: **va debajo de la barra de sección**, como primera fila
+  de `.acordeon-lista`, alineada con el texto de lo que sigue —con el mismo
+  hueco que `.llevar-casilla` en Llevar, donde el resto no lleva casilla
+  que alinear—. Al ser una fila más de esa lista comparte su misma regla de
+  separación entre filas, sin borde propio ya. **Y eso le cambia una
+  regla que antes era a propósito**: al vivir dentro del `<details>` del
+  acordeón y no fuera, plegar la sección ahora sí esconde su fila de
+  escribir, junto con el resto.
 - **`avisos.js` es la pieza que no es de Sitios.** Reúne lo que espera a quien
   mira, venga del módulo que venga, **derivado de la instantánea y no de una
   tabla**: si un aviso fuera una fila escrita por el Worker, contestar un trato

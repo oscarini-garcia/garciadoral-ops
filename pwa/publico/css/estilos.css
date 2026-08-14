@@ -1706,16 +1706,17 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 }
 .llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
 
-/* La fila de escribir, al principio de cada grupo: lo primero que hay debajo
-   de la cabecera, para añadir sin desplazarse a través de lo que ya hay
-   apuntado. Mismo molde que `.apunte` y `.llevar` —contenido a la izquierda,
-   verbos a la derecha, el mismo alto—, para que se lea como parte de la
-   lista y no como un formulario aparte. Lleva su hilo propio abajo, siempre:
-   es lo que la separa de la cabecera compacta que viene justo después, que
-   no lleva borde propio (`.acordeon-compacta { border-top: 0 }`). */
+/* La fila de escribir, primera línea de `.acordeon-lista`: debajo de la
+   barra de sección y antes de lo que ya hay apuntado, para añadir sin
+   desplazarse a través de la lista. Mismo molde que `.apunte` y `.llevar`
+   —contenido a la izquierda, verbos a la derecha, el mismo alto—, para que
+   se lea como parte de la lista y no como un formulario aparte. Sin borde
+   propio: al ser una fila más de `.acordeon-lista`, la regla compartida
+   `.acordeon-lista > * + *` ya la separa del apunte que le siga, igual que
+   separa un apunte del siguiente. */
 .fila-escribir {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); min-height: 46px;
+  min-height: 46px;
 }
 /* Sin caja ni borde propios, y sin bajar de 16: por debajo de eso Safari
    hace zoom al enfocar el campo, que es lo que arrastraba a la pantalla
@@ -1724,10 +1725,10 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   border: none; background: transparent; padding: 0; margin: 0; min-width: 0;
   font-size: 16px; font-family: inherit; color: var(--ink);
 }
-/* En Llevar, la fila de escribir es la línea siguiente de una lista con
-   casilla: el texto tiene que empezar donde empieza «Sombrilla» encima, no
-   donde empezaría la casilla que esta fila no lleva. 21 + 11 de hueco, los
-   mismos números que `.llevar-casilla` y `.llevar-cuerpo`. */
+/* En Llevar, la fila de escribir precede a una lista con casilla: el texto
+   tiene que empezar donde empieza el texto de «Sombrilla» debajo, no donde
+   empezaría la casilla que esta fila no lleva. 21 + 11 de hueco, los mismos
+   números que `.llevar-casilla` y `.llevar-cuerpo`. */
 .fila-escribir[data-clase="llevar"] input { padding-left: 32px; }
 .fila-escribir input::placeholder { color: var(--ink-faint); }
 .fila-escribir-verbos { display: flex; align-items: center; gap: 2px; }
