@@ -1706,16 +1706,16 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 }
 .llevar-quitar:hover { background: var(--paper-2); color: var(--regalo); }
 
-/* La fila de escribir, al final de cada grupo: la siguiente línea en blanco
-   de la lista, no una barra de búsqueda pegada debajo. Mismo molde que
-   `.apunte` y `.llevar` —contenido a la izquierda, verbos a la derecha, el
-   mismo alto—, para que se lea como parte de la lista y no como un
-   formulario aparte. Lleva su hilo propio arriba, siempre: viene después de
-   una lista con hilo entre filas o de un acordeón recién abierto sin nada
-   dentro, y en los dos casos es «la siguiente línea» la que lo necesita. */
+/* La fila de escribir, al principio de cada grupo: lo primero que hay debajo
+   de la cabecera, para añadir sin desplazarse a través de lo que ya hay
+   apuntado. Mismo molde que `.apunte` y `.llevar` —contenido a la izquierda,
+   verbos a la derecha, el mismo alto—, para que se lea como parte de la
+   lista y no como un formulario aparte. Lleva su hilo propio abajo, siempre:
+   es lo que la separa de la cabecera compacta que viene justo después, que
+   no lleva borde propio (`.acordeon-compacta { border-top: 0 }`). */
 .fila-escribir {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px;
-  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); min-height: 46px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); min-height: 46px;
 }
 /* Sin caja ni borde propios, y sin bajar de 16: por debajo de eso Safari
    hace zoom al enfocar el campo, que es lo que arrastraba a la pantalla

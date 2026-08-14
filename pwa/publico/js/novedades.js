@@ -18,6 +18,14 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.65.0',
+    fecha: '2026-08-14',
+    titulo: 'Añadir en Sitios ya no queda al final',
+    lineas: [
+      'La casilla de «Añadir a...» de cada grupo pasa a estar arriba, justo debajo del rótulo, en vez de después de toda la lista.',
+    ],
+  },
+  {
     version: '1.64.0',
     fecha: '2026-08-14',
     titulo: 'Marcar algo en Sitios ya se ve en el momento',

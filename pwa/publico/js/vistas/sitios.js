@@ -266,8 +266,8 @@ function pintarUnLugar(pantalla, subcabecera, ctx) {
     });
 
     pantalla.append(el('div', { class: 'grupo grupo-sitio' }, [
-      seccion,
       filaEscribir(clase, lugar.id, ctx),
+      seccion,
     ]));
   }
 
