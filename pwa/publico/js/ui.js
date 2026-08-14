@@ -133,6 +133,10 @@ const ICONOS = {
     + '<path d="M10.2 18.6a2.1 2.1 0 0 0 3.6 0"/>',
   bombilla: '<path d="M9 16.6a6.4 6.4 0 1 1 6 0v1.8H9z"/><path d="M10.3 21.3h3.4"/>',
   persona: '<circle cx="12" cy="8.1" r="3.6"/><path d="M4.9 20.3a7.2 7.2 0 0 1 14.2 0"/>',
+  // La bocina en trapecio, boca a la derecha, con una sola onda de sonido: a
+  // los diecisiete puntos a los que se dibuja, una segunda onda se apelmaza
+  // con la primera en vez de leerse como sonido.
+  megafono: '<path d="M5 9.5L17 5v14L5 14.5z"/><path d="M19.3 8.6a6.2 6.2 0 0 1 0 6.8"/>',
 };
 
 export function icono(nombre) {

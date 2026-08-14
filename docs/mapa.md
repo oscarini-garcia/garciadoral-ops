@@ -120,6 +120,8 @@ tener que recorrer la aplicación entera cada vez.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · nombreDe · programarRecordatorios · cancelarRecordatorios
   …y 9 más
+- **novedades.js** — Qué cambió cada versión, en el idioma de quien la usa — el registro detrás de las tarjetas…
+  NOVEDADES
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
   soloFecha · iso · isoConHora · sumarDias · …y 15 más
