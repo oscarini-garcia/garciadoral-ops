@@ -18,6 +18,14 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.67.0',
+    fecha: '2026-08-14',
+    titulo: 'Arreglo: campos rellenados por Safari, en modo claro',
+    lineas: [
+      'El nombre de la pantalla de espera, y cualquier otro campo que Safari ofrezca rellenar solo, ya no se queda sin letras visibles con el tema claro puesto.',
+    ],
+  },
+  {
     version: '1.66.0',
     fecha: '2026-08-14',
     titulo: 'Añadir en Sitios, alineado bajo el rótulo',

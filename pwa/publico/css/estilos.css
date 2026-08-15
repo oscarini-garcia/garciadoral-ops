@@ -158,6 +158,24 @@ input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-sele
 button { background: none; border: 0; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; border-radius: 4px; }
 
+/* Un campo que Safari autorrellena —el nombre de la sala de espera, el
+   correo— deja de pintar con `color`: WebKit pasa a `-webkit-text-fill-color`,
+   que no hereda, y sin esta regla se queda con el suyo de siempre en vez del
+   de la aplicación. En modo claro eso es texto claro sobre el fondo claro del
+   campo: se ve el rectángulo autorrellenado y ninguna letra dentro. El truco
+   del `box-shadow` enorme por dentro es lo único que también gana al fondo
+   amarillento del autorrelleno, que tampoco cede a `background`. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--hueco) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 .eyebrow {
   font-family: var(--mono);
   font-size: 11.5px;

@@ -27,6 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Un campo autorrellenado por Safari se quedaba sin letras en modo claro.**
+  El nombre voluntario de la pantalla de espera (`acceso.js`, `autocomplete:
+  'name'`) es justo el tipo de campo que iOS ofrece rellenar solo, y ahí
+  WebKit deja de pintar con `color` —que la aplicación ya hereda de sobra— y
+  pasa a `-webkit-text-fill-color`, que no hereda de nada y se queda con el
+  suyo de siempre en vez del de la aplicación: en claro, texto claro sobre el
+  fondo claro del campo, así que se veía el rectángulo y ninguna letra
+  dentro. `input:-webkit-autofill`/`textarea:-webkit-autofill` en
+  `estilos.css` fuerzan `-webkit-text-fill-color` a `--ink` y tapan el fondo
+  amarillento que tampoco cede a `background` con el truco del `box-shadow`
+  enorme por dentro, hacia `--hueco`. Va para cualquier campo, no solo el del
+  nombre: es el mismo bicho en cualquiera que Safari decida rellenar.
 - **Las ramas se probaron y se quitaron: agrupaban por familias y era un lío
   que aportaba poco.** Estuvieron construidas una vuelta entera —columna
   `rama` en `persona`, el formulario proponiéndola por apellido, la hoja
