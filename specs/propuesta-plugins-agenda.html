@@ -1,0 +1,704 @@
+<meta charset="utf-8">
+<title>Plugins de la agenda</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2EFE8;
+    --card: #FFFDFA;
+    --lift: #FBF9F5;
+    --ink: #1C2B33;
+    --sub: #5F7280;
+    --faint: #64747F;
+    --line: #E2DED4;
+    --line-hard: #C9C3B6;
+    --ac: #0E6E62;
+    --ac-soft: #DCEDE9;
+    --ac-ink: #FFFFFF;
+    --rec: #5B7288;
+    --regalo: #8E3B5E;
+    --aviso: #A8641B;
+    --paper-3: #EAE6DC;
+    --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+    --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10171A;
+      --card: #1E282D;
+      --lift: #172025;
+      --ink: #E7EEF1;
+      --sub: #9CB0BA;
+      --faint: #748994;
+      --line: #263238;
+      --line-hard: #3C4A52;
+      --ac: #55C9B4;
+      --ac-soft: #12312E;
+      --ac-ink: #10171A;
+      --rec: #9CB0BA;
+      --regalo: #E48FAE;
+      --aviso: #E0A253;
+      --paper-3: #1F2A30;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10171A;
+    --card: #1E282D;
+    --lift: #172025;
+    --ink: #E7EEF1;
+    --sub: #9CB0BA;
+    --faint: #748994;
+    --line: #263238;
+    --line-hard: #3C4A52;
+    --ac: #55C9B4;
+    --ac-soft: #12312E;
+    --ac-ink: #10171A;
+    --rec: #9CB0BA;
+    --regalo: #E48FAE;
+    --aviso: #E0A253;
+    --paper-3: #1F2A30;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 44px 20px 150px; }
+  .mono { font-family: var(--mono); }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 34px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 62ch; }
+  .stand em { color: var(--ink); font-style: italic; font-family: var(--serif); font-size: 17px; }
+  .q { margin-top: 52px; }
+  .qhead { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); margin: 0 0 6px; }
+  .qtitle { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.25; margin: 0 0 8px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 16px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--ac); flex: none; }
+  .oname { font-weight: 600; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 8px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--lift); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--faint); font-size: 12px; letter-spacing: 0.02em; }
+
+  /* ---- maquetas: la semana ---- */
+  .sem { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .sem-cab, .dia { display: grid; grid-template-columns: 38px 56px 1fr; column-gap: 4px; align-items: start; padding: 6px 10px; }
+  .sem-cab { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .dia { border-top: 1px solid var(--line); padding: 8px 10px; }
+  .dia:first-of-type { border-top: 0; }
+  .num { display: block; font-family: var(--serif); font-size: 22px; line-height: 1; }
+  .dow { display: block; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-top: 2px; }
+  .pastillas { display: flex; flex-direction: column; gap: 3px; padding-top: 2px; }
+  .past { display: inline-flex; align-items: center; gap: 3px; width: 44px; height: 18px; font-family: var(--mono); font-size: 9.5px; border: 1px solid var(--line-hard); border-radius: 9px; padding: 0 5px; color: var(--ink); }
+  .past.hecho { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .past.mio { background: var(--ac-soft); border-color: transparent; }
+  .evs { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-left: 16px; }
+  .ev { display: block; font-size: 13px; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev .h { font-family: var(--mono); font-size: 11px; color: var(--sub); margin-right: 4px; }
+  .ev .de { color: var(--sub); }
+  .ev .tag { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-left: 6px; }
+  .ev .rep { color: var(--faint); font-size: 11px; margin-left: 4px; }
+  .banda { display: block; background: var(--paper-3); border-radius: 5px; padding: 2px 8px; font-size: 12.5px; margin-bottom: 2px; }
+  .ev .pt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .pt.c1 { background: #3B6FA8; } .pt.c2 { background: var(--regalo); } .pt.c3 { background: var(--ac); } .pt.c4 { background: var(--aviso); }
+  .evs.sinlio { padding-left: 0; }
+
+  /* ---- maquetas: hojas y listas ---- */
+  .hoja { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .hoja-t { display: block; font-family: var(--serif); font-size: 17px; padding: 8px 12px 4px; }
+  .hoja-s { display: block; font-size: 11.5px; color: var(--sub); padding: 0 12px 6px; }
+  .fila { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 7px 12px; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .fila .sec { color: var(--sub); font-size: 12px; margin-left: 6px; }
+  .fila .chev { color: var(--faint); font-size: 12px; }
+  .conm { display: inline-block; width: 32px; height: 19px; border-radius: 10px; background: var(--line-hard); position: relative; vertical-align: middle; }
+  .conm::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: var(--card); }
+  .conm.on { background: var(--ac); }
+  .conm.on::after { left: 15px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-hard); border-radius: 8px; overflow: hidden; font-size: 12px; }
+  .seg span { padding: 3px 9px; border-left: 1px solid var(--line-hard); }
+  .seg span:first-child { border-left: 0; }
+  .seg .sel { background: var(--ink); color: var(--card); }
+  .casillas { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; }
+  .casillas span::before { content: ""; display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--line-hard); border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .casillas span.si::before { background: var(--ac); border-color: var(--ac); }
+  .campo { display: block; border: 1px solid var(--line-hard); border-radius: 8px; padding: 6px 10px; font-size: 14px; background: var(--card); }
+  .campo .ph { color: var(--faint); }
+  .rotulo { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 0 0 4px; }
+
+  /* ---- maquetas: diagramas ---- */
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .col { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .col .rotulo { margin-bottom: 6px; }
+  .item { display: block; font-size: 12.5px; line-height: 1.5; padding: 2px 0; border-top: 1px solid var(--line); }
+  .item:first-of-type { border-top: 0; }
+  .item .src { display: block; color: var(--sub); font-size: 11px; font-family: var(--mono); }
+  .lista { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .lista .item { padding: 5px 10px; }
+  .fich { display: block; font-family: var(--mono); font-size: 11.5px; padding: 3px 10px; border-top: 1px solid var(--line); }
+  .fich:first-of-type { border-top: 0; }
+  .fich .q2 { color: var(--sub); }
+
+  /* ---- maquetas: tabla de opciones por plugin ---- */
+  .tabla { display: grid; grid-template-columns: 112px 1fr; font-size: 12.5px; line-height: 1.45; }
+  .tabla > span { padding: 6px 8px; border-top: 1px solid var(--line); }
+  .tabla > span:nth-child(-n+2) { border-top: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+  .tabla .pl { font-weight: 600; }
+  .tabla .mas { color: var(--ac); }
+
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 52px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .foot p { margin: 0 0 10px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+  @media (max-width: 480px) { .dos { grid-template-columns: 1fr; } .tabla { grid-template-columns: 90px 1fr; } }
+</style>
+
+<div class="wrap">
+  <h1>Plugins de la agenda</h1>
+  <p class="stand"><em>«Cada una de las cosas que se añaden a la agenda son plugins: el perro, los viajes de Flighty, los cumpleaños y santos, las cosas puntuales, las extraescolares, pasar el fin de semana. Proponme opciones de cómo se debería configurar esto y qué opciones debería tener cada una. No tiene por qué estar en Ajustes. Las opciones también visuales.»</em></p>
+  <p class="stand">Cinco preguntas. Qué es un plugin por dentro, dónde se configura, cómo se distingue en la semana, qué mandos comparten todos y cuánto lleva cada uno de suyo. Hoy ya hay tres cosas que se comportan como plugins sin llamarse así: Lío tiene su columna y su cuadro en Ajustes, los viajes de Flighty entran por un calendario externo con su apartado en Ajustes, y los cumpleaños se derivan de las fichas de Gente sin mando ninguno. Los otros tres —cenas, hípica, findes— son hoy eventos sueltos con un tipo.</p>
+
+  <!-- ===================== A ===================== -->
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Qué es un plugin</p>
+    <p class="qtitle">¿Qué es un plugin por dentro?</p>
+    <p class="qwhy">Es la decisión de la que cuelgan las otras cuatro. Lo que separa a los seis no es el tema sino de dónde sale lo que se ve: tres se derivan de una fuente que nadie escribe evento a evento, y tres se escriben a mano.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Dos familias: los que se derivan y los que se escriben</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="dos">
+            <span class="col">
+              <span class="rotulo">Se derivan de una fuente</span>
+              <span class="item">🐾 Lío<span class="src">← cuadro de reparto</span></span>
+              <span class="item">✈️ Viajes<span class="src">← Flighty (iCal)</span></span>
+              <span class="item">🎂 Cumpleaños y santos<span class="src">← fichas de Gente</span></span>
+            </span>
+            <span class="col">
+              <span class="rotulo">Se escriben a mano</span>
+              <span class="item">🍽️ Puntuales<span class="src">un día, una hora</span></span>
+              <span class="item">🐴 Extraescolares<span class="src">un curso, un horario</span></span>
+              <span class="item">🧳 Fin de semana<span class="src">varios días, un sitio</span></span>
+            </span>
+          </span>
+          <span class="caption">Los de la izquierda se configuran y no se crean; los de la derecha se crean, cada uno con su propio formulario.</span>
+        </span>
+        <p class="obody">Un plugin es <b>una fuente de cosas que caen en un día</b>, con su formulario propio si se escribe y su mando propio si se deriva. Lío y Viajes se quedan como están —ya son esto— y ganan dos hermanos escritos que hoy no existen: la actividad con curso y el finde con sitio. Lo que cuesta: dos formularios nuevos además del de evento, y decidir en cada uno qué campos son suyos y cuáles hereda del evento de siempre.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Todos iguales: un plugin es una plantilla de evento</span></span>
+        <span class="mock">
+          <span class="lista">
+            <span class="item">🍽️ Cena <span class="src">tipo celebración · lleva regalos: no · quién va</span></span>
+            <span class="item">🐴 Extraescolar <span class="src">se repite: semanal · desde–hasta · quién · dónde · aviso: la víspera</span></span>
+            <span class="item">🧳 Finde <span class="src">varios días · quién va · sitio</span></span>
+            <span class="item">✈️ Vuelo <span class="src">tipo viaje · de quién · origen: calendario</span></span>
+            <span class="item" style="color: var(--ac)">+ Nueva plantilla</span>
+          </span>
+          <span class="caption">Cada plugin es una fila del catálogo, con los campos que enseña y los valores que propone.</span>
+        </span>
+        <p class="obody">Un plugin es una fila de datos, no un módulo: <b>la casa puede añadir «Natación» un septiembre sin esperar a una versión</b>. El formulario de evento se monta con los campos que la plantilla diga. Lo que cuesta: Lío no cabe —tiene dueño, trato y no termina al pasar la fecha, y por eso mismo se decidió que no fuera evento— y los cumpleaños tampoco, así que los dos seguirían siendo excepciones fuera de la lista.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Todos módulos: un plugin es código, con su carril y su hoja</span></span>
+        <span class="mock">
+          <span class="lista">
+            <span class="fich">plugins/lio.js <span class="q2">· columna · hoja del turno · cuadro</span></span>
+            <span class="fich">plugins/viajes.js <span class="q2">· banda del día · ficha del vuelo · enlace</span></span>
+            <span class="fich">plugins/cumples.js <span class="q2">· línea del día · ficha · círculos</span></span>
+            <span class="fich">plugins/extraescolar.js <span class="q2">· línea con horario · formulario · curso</span></span>
+            <span class="fich">plugins/finde.js <span class="q2">· banda de varios días · formulario · sitio</span></span>
+            <span class="fich">plugins/puntual.js <span class="q2">· línea del día · formulario de siempre</span></span>
+          </span>
+          <span class="caption">Cada uno se da de alta en una lista, como hoy hacen las FUENTES de los avisos.</span>
+        </span>
+        <p class="obody">Es el patrón que ya siguen Lío y Sitios: <b>cada módulo decide cómo se pinta, cómo se crea y qué mando tiene</b>, y la agenda solo pregunta a cada uno qué hay ese día. Lo más limpio por dentro y lo más caro por fuera: añadir un plugin es un PR y una versión, y seis módulos que dibujan su propia línea acaban en seis maneras de escribir una hora.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Solo son plugins los que se derivan; lo escrito sigue siendo un evento</span></span>
+        <span class="mock">
+          <span class="dos">
+            <span class="col">
+              <span class="rotulo">Plugins</span>
+              <span class="item">🐾 Lío<span class="src">← cuadro</span></span>
+              <span class="item">✈️ Viajes<span class="src">← Flighty</span></span>
+              <span class="item">🎂 Cumpleaños y santos<span class="src">← fichas</span></span>
+            </span>
+            <span class="col">
+              <span class="rotulo">Eventos, como hasta ahora</span>
+              <span class="item">🍽️ Cena<span class="src">tipo celebración</span></span>
+              <span class="item">🐴 Hípica<span class="src">tipo entreno · se repite: semanal</span></span>
+              <span class="item">🧳 Sierra<span class="src">tipo viaje · «Hasta» el domingo</span></span>
+            </span>
+          </span>
+          <span class="caption">Los tres de la derecha ya se pueden escribir hoy con el formulario que hay.</span>
+        </span>
+        <p class="obody">Lo más barato: <b>el formulario de evento ya sabe repetir por semanas y durar varios días</b>, así que hípica y el finde son un tipo bien puesto y nada más. Se pierde lo que hace distinta a una extraescolar —que tiene curso, que se para en vacaciones, que alguien lleva y alguien recoge— y al finde no se le puede colgar un sitio de Sitios. Se dibuja para poder decir que no.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota, qué familia de plugin falta o sobra.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ===================== B ===================== -->
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Dónde se configura</p>
+    <p class="qtitle">¿Desde dónde se enciende y se ajusta cada plugin?</p>
+    <p class="qwhy">Hoy Lío y Viajes viven en Ajustes, que es una hoja que se abre dos veces al año; una extraescolar cambia cada septiembre y un finde, cada mes. La pregunta es qué sitio se lee como «lo que hay en mi agenda» sin que sea la hoja de la aplicación.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Una hoja «Qué hay en la agenda», desde la propia agenda</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Qué hay en la agenda</span>
+            <span class="hoja-s">Lo que sale en tu semana. Toca uno para ajustarlo.</span>
+            <span class="fila"><span>🐾 Lío <span class="sec">turnos de casa</span></span><span><span class="conm on"></span> <span class="chev">›</span></span></span>
+            <span class="fila"><span>✈️ Viajes <span class="sec">de Óscar, por Flighty</span></span><span><span class="conm on"></span> <span class="chev">›</span></span></span>
+            <span class="fila"><span>🎂 Cumpleaños y santos <span class="sec">casa y familia</span></span><span><span class="conm on"></span> <span class="chev">›</span></span></span>
+            <span class="fila"><span>🐴 Extraescolares <span class="sec">hípica, martes</span></span><span><span class="conm on"></span> <span class="chev">›</span></span></span>
+            <span class="fila"><span>🧳 Findes <span class="sec">nada este mes</span></span><span><span class="conm"></span> <span class="chev">›</span></span></span>
+          </span>
+          <span class="caption">Se abre desde la subcabecera de la agenda, junto al periodo; cada fila dice de qué va y abre su propia hoja.</span>
+        </span>
+        <p class="obody">Es la figura de «Calendarios» del calendario de iOS: <b>una lista de lo que se está viendo, a un toque de la pantalla donde se ve</b>. Un conmutador por plugin para quien mira, y detrás la hoja de cada uno. Ajustes se queda para la aplicación —tema, sincronización, cuenta— y deja de tener a Lío y a Viajes como apartados. Lo que cuesta: un mando más en la subcabecera de la agenda, que hoy solo lleva el periodo, y mover dos apartados que ya tienen sitio.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Donde se ve: cada rótulo abre lo suyo</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="sem-cab"><span>Día</span><span style="text-decoration: underline dotted; text-underline-offset: 3px;">🐾 Lío</span><span>Evento</span></span>
+            <span class="dia">
+              <span><span class="num">12</span><span class="dow">sáb</span></span>
+              <span class="pastillas"><span class="past hecho">☀️ MA</span><span class="past mio">🌙 OS</span></span>
+              <span class="evs">
+                <span class="banda">✈️ Bolonia <span class="de">· de Óscar</span> <span class="chev" style="float:right">›</span></span>
+                <span class="ev">🎂 Cumple de la abuela <span class="chev">›</span></span>
+                <span class="ev"><span class="h">18:00</span>🐴 Hípica <span class="chev">›</span></span>
+              </span>
+            </span>
+          </span>
+          <span class="caption">El rótulo de la columna abre el cuadro de Lío; la banda del viaje, el enlace de Flighty; el cumpleaños, la ficha de la abuela.</span>
+        </span>
+        <p class="obody">No hay lista: <b>cada plugin se ajusta tocando su presencia en la semana</b>, y lo que se escribe a mano se crea desde el «+», que ofrece «Evento», «Actividad» y «Finde». No pide ningún sitio nuevo. Lo que cuesta: un plugin apagado no está en ningún sitio que se pueda tocar, así que no hay manera de volver a encenderlo ni de saber que existe; y un rótulo de columna que abre una hoja es el primer rótulo tocable de la aplicación.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Ajustes, un apartado por plugin</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Ajustes</span>
+            <span class="fila"><span>Aspecto</span><span class="chev">›</span></span>
+            <span class="fila"><span>Sincronización</span><span class="chev">⌄</span></span>
+            <span class="fila"><span>Novedades</span><span class="chev">›</span></span>
+            <span class="fila"><span>Lío</span><span class="chev">›</span></span>
+            <span class="fila"><span>Viajes</span><span class="chev">›</span></span>
+            <span class="fila"><span>Cumpleaños y santos</span><span class="chev">›</span></span>
+            <span class="fila"><span>Extraescolares</span><span class="chev">›</span></span>
+            <span class="fila"><span>Findes</span><span class="chev">›</span></span>
+            <span class="fila"><span>Mejoras</span><span class="chev">›</span></span>
+          </span>
+          <span class="caption">Lo que hay hoy, con cuatro apartados más; cada uno con la moneda de Ajustes delante.</span>
+        </span>
+        <p class="obody">Es seguir el camino andado: <b>Lío y Viajes ya están aquí y tienen su moneda</b>. Cuesta poco y no inventa nada. Lo que se paga es que Ajustes pasa de ocho apartados a doce, y que la hoja de la aplicación se llena de cosas de la agenda: quien quiera cambiar la hora de la hípica tiene que saber que eso vive junto al tema y la cuenta.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">En la ficha de cada persona, porque casi todo es de alguien</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Marta</span>
+            <span class="hoja-s">hija · casa</span>
+            <span class="fila"><span>🎂 Cumpleaños</span><span class="sec">14 de marzo</span></span>
+            <span class="fila"><span>✨ Santo</span><span class="sec">26 de julio</span></span>
+            <span class="fila"><span>🐴 Hípica</span><span class="sec">martes 18:00 · hasta junio ›</span></span>
+            <span class="fila"><span>✈️ Calendario de vuelos</span><span class="sec">ninguno ›</span></span>
+            <span class="fila"><span>🐾 Turnos de Lío</span><span class="sec">L, X mañana ›</span></span>
+          </span>
+          <span class="caption">Lo que Marta aporta a la agenda, en su ficha; el cuadro de Lío se lee por persona y no por día.</span>
+        </span>
+        <p class="obody">Un vuelo es de Óscar, la hípica es de Marta, el cumpleaños es de cada uno: <b>la ficha de Gente es donde ya se dice de quién es cada cosa</b>. Lo que no encaja: los findes y las cenas son de la casa y no de nadie, y el cuadro de Lío leído por persona pierde lo que tiene de bueno la tabla de siete días. Sirve como segundo camino, no como el único.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota, desde dónde se querría llegar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ===================== C ===================== -->
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · Cómo se ve</p>
+    <p class="qtitle">¿Cómo se distingue en la semana de qué plugin viene cada cosa?</p>
+    <p class="qwhy">Las cuatro maquetas dibujan el mismo sábado: un viaje de Óscar, el cumpleaños de la abuela, la hípica y los dos turnos de Lío. Las filas miden lo que miden hoy: 38 puntos de fecha, la columna de Lío y una línea por evento.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Por posición y forma: lo que enmarca el día va como banda, lo que pasa dentro va como línea</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="sem-cab"><span>Día</span><span>🐾 Lío</span><span>Evento</span></span>
+            <span class="dia">
+              <span><span class="num">12</span><span class="dow">sáb</span></span>
+              <span class="pastillas"><span class="past hecho">☀️ MA</span><span class="past mio">🌙 OS</span></span>
+              <span class="evs">
+                <span class="banda">✈️ Bolonia <span class="de">· de Óscar</span></span>
+                <span class="ev">🎂 Cumple de la abuela</span>
+                <span class="ev"><span class="h">18:00</span>🐴 Hípica<span class="rep">↻</span></span>
+              </span>
+            </span>
+            <span class="dia">
+              <span><span class="num">13</span><span class="dow">dom</span></span>
+              <span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span>
+              <span class="evs">
+                <span class="banda">🧳 Finde en la sierra <span class="de">· cont.</span></span>
+              </span>
+            </span>
+          </span>
+          <span class="caption">Viajes y findes enmarcan el día en una banda; cumpleaños y cenas son líneas; la actividad lleva la marca de que se repite; Lío sigue en su columna.</span>
+        </span>
+        <p class="obody">Es la regla que ya rige en el mes y en la lista —«el viaje abre porque enmarca el día entero, Lío cierra»— llevada a la semana: <b>un plugin se reconoce por dónde cae en la fila y qué forma tiene, sin rótulo ni color</b>. La banda ya existe para los eventos de varios días. Lo que cuesta: la banda ocupa una línea del techo de tres, y una actividad solo se distingue de una cena por la marca de repetición, que es pequeña.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">El emoji y nada más, como hoy</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="sem-cab"><span>Día</span><span>🐾 Lío</span><span>Evento</span></span>
+            <span class="dia">
+              <span><span class="num">12</span><span class="dow">sáb</span></span>
+              <span class="pastillas"><span class="past hecho">☀️ MA</span><span class="past mio">🌙 OS</span></span>
+              <span class="evs">
+                <span class="ev">✈️ Madrid → Bolonia</span>
+                <span class="ev">🎂 Cumple de la abuela</span>
+                <span class="ev"><span class="h">18:00</span>🐴 Hípica</span>
+              </span>
+            </span>
+            <span class="dia">
+              <span><span class="num">13</span><span class="dow">dom</span></span>
+              <span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span>
+              <span class="evs">
+                <span class="ev">🧳 Finde en la sierra <span class="de">(cont.)</span></span>
+              </span>
+            </span>
+          </span>
+          <span class="caption">Cada línea igual que las demás; el emoji del tipo es lo único que dice de qué va.</span>
+        </span>
+        <p class="obody">No se toca nada: <b>el tipo ya pone el emoji y el emoji ya cuenta</b>. Es lo que hay y funciona con seis cosas por semana. Lo que no dice: que el viaje es de Óscar y no de la casa, que la hípica es de todos los martes, y que el finde cubre el día entero y no es una cosa más entre las del domingo.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Un rótulo de plugin en versalita, tras el título</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="sem-cab"><span>Día</span><span>🐾 Lío</span><span>Evento</span></span>
+            <span class="dia">
+              <span><span class="num">12</span><span class="dow">sáb</span></span>
+              <span class="pastillas"><span class="past hecho">☀️ MA</span><span class="past mio">🌙 OS</span></span>
+              <span class="evs">
+                <span class="ev">✈️ Bolonia<span class="tag">viaje · Óscar</span></span>
+                <span class="ev">🎂 La abuela<span class="tag">cumple</span></span>
+                <span class="ev"><span class="h">18:00</span>🐴 Hípica<span class="tag">extraescolar</span></span>
+              </span>
+            </span>
+            <span class="dia">
+              <span><span class="num">13</span><span class="dow">dom</span></span>
+              <span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span>
+              <span class="evs">
+                <span class="ev">🧳 La sierra<span class="tag">finde · cont.</span></span>
+              </span>
+            </span>
+          </span>
+          <span class="caption">El rótulo va en la misma letra pequeña que el «(cont.)» y los separadores de día.</span>
+        </span>
+        <p class="obody">Lo dice con palabras, que es lo que hace la aplicación en todos los demás sitios: <b>«viaje · Óscar» contesta de quién es sin dibujo ninguno</b>. Lo que cuesta: la línea del evento tiene 159 puntos para el título y el rótulo se los come; en una semana normal los títulos ya se recortan, y con esto se recortan antes. En la lista y en el detalle, donde hay sitio, sí cabe sin pagar nada.</p>
+      </button>
+      <button class="opt" data-t="C4" aria-pressed="false">
+        <span class="optrow"><span class="tok">C4</span><span class="oname">Un color por plugin, como los calendarios de iOS</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="sem-cab"><span>Día</span><span>🐾 Lío</span><span>Evento</span></span>
+            <span class="dia">
+              <span><span class="num">12</span><span class="dow">sáb</span></span>
+              <span class="pastillas"><span class="past hecho">☀️ MA</span><span class="past mio">🌙 OS</span></span>
+              <span class="evs">
+                <span class="ev"><span class="pt c1"></span>Madrid → Bolonia</span>
+                <span class="ev"><span class="pt c2"></span>Cumple de la abuela</span>
+                <span class="ev"><span class="pt c3"></span><span class="h">18:00</span>Hípica</span>
+              </span>
+            </span>
+            <span class="dia">
+              <span><span class="num">13</span><span class="dow">dom</span></span>
+              <span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span>
+              <span class="evs">
+                <span class="ev"><span class="pt c4"></span>Finde en la sierra <span class="de">(cont.)</span></span>
+              </span>
+            </span>
+          </span>
+          <span class="caption">Un punto de color delante de cada línea, con la leyenda en la hoja de plugins; el emoji sobra, porque el color ya clasifica.</span>
+        </span>
+        <p class="obody">Es lo que hace todo calendario y se aprende en un día. <b>Va en contra de lo que la aplicación ha decidido dos veces</b>: papel, tinta y un solo acento, y los tonos por persona de Lío se retiraron precisamente por meter cuatro tintes ajenos en una pantalla que no los tiene. Se dibuja para poder descartarlo con conocimiento de causa, no como recomendación.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota, qué debería leerse de un vistazo que aquí no se lee.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ===================== D ===================== -->
+  <section class="q" data-q="D" data-multi="true">
+    <p class="qhead">Pregunta D · Mandos comunes · se pueden elegir varios</p>
+    <p class="qtitle">¿Qué mandos lleva todo plugin, sea el que sea?</p>
+    <p class="qwhy">Son los que irían en la cabecera de la hoja de cada uno, antes de lo suyo. Cada tarjeta dibuja el mando como saldría. Los que no se elijan no aparecen en ninguna hoja.</p>
+    <div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Encendido para mí</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja"><span class="fila"><span>Enseñar en mi agenda</span><span class="conm on"></span></span></span>
+          <span class="caption">Preferencia de pantalla, guardada en el teléfono como el tema; no cambia lo que ven los demás.</span>
+        </span>
+        <p class="obody">Quien no quiera ver los turnos de Lío en su semana los apaga y ya. <b>Es de quien mira, no de la casa</b>: no toca el registro ni se sincroniza, igual que el tema o las secciones plegadas de Sitios. Lo que cuesta: apagado no es lo mismo que no existir, y hay que decidir si un aviso de algo apagado sigue sonando.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Quién lo recibe: el círculo</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja"><span class="fila"><span>Lo ven</span><span class="seg"><span class="sel">Casa</span><span>Familia</span><span>Amigos</span></span></span></span>
+          <span class="caption">El mismo segmentado de Gente; Lío está fijo en Casa y no se puede abrir.</span>
+        </span>
+        <p class="obody">Es la visibilidad, decidida por plugin y no evento a evento: <b>la hípica la ve la casa, un cumpleaños lo ve quien tenga a esa persona en su círculo</b>. Lo aplica el servidor, como todo lo demás que se oculta. Lo que cuesta: un plugin abierto a Amigos manda cosas que hoy no salen de casa, y hay que revisar el plan del domingo para que no cuente lo que no debe.</p>
+      </button>
+      <button class="opt" data-t="D3" aria-pressed="false">
+        <span class="optrow"><span class="tok">D3</span><span class="oname">Dónde sale</span></span>
+        <span class="mock">
+          <span class="hoja"><span class="fila" style="grid-template-columns: 1fr"><span class="casillas"><span class="si">Semana</span><span class="si">Mes</span><span class="si">Lista</span><span class="si">Hoy</span><span>Plan del domingo</span></span></span></span>
+          <span class="caption">Cinco casillas; Lío ya está fuera del mes por decisión tomada.</span>
+        </span>
+        <p class="obody">Que un plugin pueda estar en la semana y no en Hoy, o en Hoy y no en el plan de WhatsApp. <b>Sirve sobre todo para el plan del domingo</b>, que hoy decide por sí solo qué entra. Lo que cuesta: cinco casillas por plugin son treinta decisiones que casi nadie va a tomar, y las que se tomen mal dejan la semana y la lista contando cosas distintas.</p>
+      </button>
+      <button class="opt" data-t="D4" aria-pressed="false">
+        <span class="optrow"><span class="tok">D4</span><span class="oname">Aviso previo</span></span>
+        <span class="mock">
+          <span class="hoja"><span class="fila"><span>Avisar</span><span class="seg"><span>Nunca</span><span>Ese día</span><span class="sel">La víspera</span><span>Una semana</span></span></span></span>
+          <span class="caption">El recordatorio local que hoy solo tiene el turno propio de Lío, extendido a cada plugin.</span>
+        </span>
+        <p class="obody">Un cumpleaños quiere avisar una semana antes para dar tiempo al regalo; un vuelo, la víspera; la hípica, nunca. <b>Es el trozo configurable del recordatorio previo que el README lleva pendiente desde el principio</b>, y por plugin tiene sentido donde por evento no lo tenía. Lo que cuesta: se programa en el dispositivo desde la instantánea, así que hay un tope de avisos pendientes y hay que repartirlo.</p>
+      </button>
+      <button class="opt" data-t="D5" aria-pressed="false">
+        <span class="optrow"><span class="tok">D5</span><span class="oname">Nombre y emoji</span></span>
+        <span class="mock">
+          <span class="hoja"><span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Cómo se llama</span><span class="campo">🐴 Hípica</span></span></span></span>
+          <span class="caption">Como el nombre de un sitio: el emoji dentro del nombre, sin campo aparte.</span>
+        </span>
+        <p class="obody">Para que «Extraescolares» pueda llamarse «Hípica» en una casa donde solo hay una, y para que el emoji sea el que la casa reconozca. <b>Es lo que ya hace un sitio</b>, con su destello de IA si se quiere. Lo que cuesta: poco; solo tiene sentido en los que se escriben, porque Lío ya se llama Lío.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguno de estos</span></span>
+        <p class="obody">Ningún mando común: cada plugin lleva solo lo suyo, y encender o apagar no existe.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ===================== E ===================== -->
+  <section class="q" data-q="E">
+    <p class="qhead">Pregunta E · Lo propio de cada uno</p>
+    <p class="qtitle">¿Cuánto lleva cada plugin de suyo?</p>
+    <p class="qwhy">Las dos tablas listan los seis plugins con sus mandos propios, además de los comunes de la pregunta D. La segunda contiene a la primera; lo que añade va en color.</p>
+    <div class="opts">
+      <button class="opt" data-t="E1" aria-pressed="false">
+        <span class="optrow"><span class="tok">E1</span><span class="oname">Lo justo: la fuente, de quién es y poco más</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="tabla">
+            <span>Plugin</span><span>Mandos propios</span>
+            <span class="pl">🐾 Lío</span><span>El cuadro de reparto de siete días, como hoy.</span>
+            <span class="pl">✈️ Viajes</span><span>El enlace de Flighty y de quién es.</span>
+            <span class="pl">🎂 Cumples y santos</span><span>Qué círculos entran: casa, familia, amigos.</span>
+            <span class="pl">🍽️ Puntuales</span><span>Nada: es el formulario de evento de siempre.</span>
+            <span class="pl">🐴 Extraescolares</span><span>Quién, qué día de la semana, a qué hora, desde y hasta cuándo.</span>
+            <span class="pl">🧳 Fin de semana</span><span>Desde y hasta, quién va.</span>
+          </span>
+          <span class="caption">Cada hoja cabe en una pantalla sin desplazar.</span>
+        </span>
+        <p class="obody">Cada plugin pide lo que no se puede deducir y nada más. <b>Se construye en una vuelta y se ve si hace falta más</b>, que es como se ha hecho con Hoy y con Sitios. Lo que se queda fuera está en la tabla de al lado, y parte de ello —quién lleva y quién recoge a la hípica, la lista de Llevar del finde— es justo lo que separaría a un plugin de un evento bien puesto.</p>
+      </button>
+      <button class="opt" data-t="E2" aria-pressed="false">
+        <span class="optrow"><span class="tok">E2</span><span class="oname">La hoja completa: cada plugin con todo lo que sabe hacer</span></span>
+        <span class="mock">
+          <span class="tabla">
+            <span>Plugin</span><span>Mandos propios</span>
+            <span class="pl">🐾 Lío</span><span>El cuadro, <span class="mas">las ventanas de turno, vacaciones (quién cubre una semana), la frase de Lío encendida o no.</span></span>
+            <span class="pl">✈️ Viajes</span><span>Enlace y dueño, <span class="mas">un calendario por persona, tipo al importar, cadencia y «refrescar ahora», el vuelo en Hoy la víspera con su hora.</span></span>
+            <span class="pl">🎂 Cumples y santos</span><span>Círculos, <span class="mas">el santo en la ficha, días de antelación, si lleva regalos según círculo, la edad en el rótulo («cumple 12»).</span></span>
+            <span class="pl">🍽️ Puntuales</span><span><span class="mas">Qué tipos se ofrecen en «Qué es», «lleva regalos» de origen, plantillas de cena con quién y dónde.</span></span>
+            <span class="pl">🐴 Extraescolares</span><span>Quién, día, hora, curso, <span class="mas">dónde, quién lleva y quién recoge (con turno, como Lío), pausas en festivos y vacaciones, material que hay que llevar.</span></span>
+            <span class="pl">🧳 Fin de semana</span><span>Fechas y quién va, <span class="mas">el sitio de Sitios enlazado (su lista de Llevar sube a Hoy la víspera), cómo se va, qué pasa con Lío esos días.</span></span>
+          </span>
+          <span class="caption">Lo que va en color es lo que añade sobre E1.</span>
+        </span>
+        <p class="obody">Aquí es donde un plugin deja de ser un tipo de evento: <b>la hípica con turno de llevar y recoger es Lío otra vez, y el finde con su sitio es lo que une la agenda con Sitios</b>, que hoy no se hablan. Lo que cuesta: seis hojas largas, dos de ellas con un trato de turnos que hay que generalizar desde el de Lío, y varias decisiones —qué pasa con el perro cuando la casa se va— que hoy se resuelven hablando.</p>
+      </button>
+      <button class="opt none" data-t="E0" aria-pressed="false">
+        <span class="optrow"><span class="tok">E0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota, qué mandos sobran o faltan en cada fila.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre E</summary><textarea data-n="E" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p><b>Lo que no se dibuja a propósito.</b> El modelo de datos —si un plugin es una tabla, una casilla de <span class="mono">configuracion</span> o un módulo— se decide después de A, porque depende de ella. Tampoco el plan del domingo ni los avisos remotos: heredan lo que se decida en D. Y no se reabre lo ya decidido sobre Lío —sus ventanas, su trato, su columna—: aquí solo se pregunta cómo convive con cinco hermanos.</p>
+    <p><b>Lo que ya existe y en qué opción se apoya.</b> Lío es un plugin derivado con columna propia (A1, C1). Los viajes de Flighty entran por <span class="mono">calendario_externo</span> con dueño y se escriben «de Óscar» (A1, C3 en la lista). Los cumpleaños se derivan de las fichas y ya van en la semana y en Hoy sin mando ninguno. El formulario de evento repite por semanas y dura varios días (A4).</p>
+    <p><b>Decidido:</b> — pendiente.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  const KEY = "options.plugins-agenda";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t];
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía. Toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: selecciónalo abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>
