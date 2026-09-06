@@ -26,13 +26,13 @@ import { escribirLaChispa, escribirLoDeLio, estado, guardar } from '../sincroniz
 import { frasesGuardadas, guardarFrases } from '../almacen.js';
 import { VERSION_APP } from '../version.js';
 import {
-  abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDeLinea, textoDePropuesta,
+  abrirDetalleEvento, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, filaDeTurno, textoDeLinea, textoDePropuesta, textoDeTratoDia,
 } from './semana.js';
 import { hayLio, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
 import { aplicarLioDeEscapada, escapadasDe } from './plugins.js';
 import { irALugar } from './sitios.js';
 import { porClase, estaHecho } from '../sitios.js';
-import { pluginOculto } from '../plugins.js';
+import { pluginOculto, tratosDeDiaParaMi, resolverTratoDeDia } from '../plugins.js';
 
 /** El bundle OTA que está aplicado, si se ha llegado a preguntar. Se guarda
  *  aquí para que volver a la pestaña no vuelva a enseñar la de origen mientras
@@ -357,12 +357,17 @@ function construirVoz({ voz, clase, pedirTanda }) {
 const TOPE_PETICIONES = 2;
 
 function bandaDePeticiones(ctx) {
-  const pendientes = tratosParaMi(ctx.vista.datos);
+  // Las de Lío y las de un día de actividad, juntas y por fecha: para quien
+  // tiene que contestar son la misma cosa, alguien esperando.
+  const pendientes = [
+    ...tratosParaMi(ctx.vista.datos).map((trato) => ({ trato, de: 'lio' })),
+    ...tratosDeDiaParaMi(ctx.vista.datos).map((trato) => ({ trato, de: 'dia' })),
+  ].sort((a, b) => a.trato.fecha.localeCompare(b.trato.fecha));
   if (!pendientes.length) return [];
 
   const banda = el('div', { class: 'lio-banda' });
-  for (const trato of pendientes.slice(0, TOPE_PETICIONES)) {
-    banda.append(tarjetaDePeticion(trato, ctx));
+  for (const peticion of pendientes.slice(0, TOPE_PETICIONES)) {
+    banda.append(tarjetaDePeticion(peticion, ctx));
   }
 
   const restantes = pendientes.length - TOPE_PETICIONES;
@@ -370,7 +375,9 @@ function bandaDePeticiones(ctx) {
     banda.append(el('button', {
       class: 'desbordamiento', type: 'button',
       onclick: () => abrirHoja('Por contestar', (cuerpo) => {
-        for (const trato of pendientes) cuerpo.append(bloqueDePropuesta(trato, ctx));
+        for (const { trato, de } of pendientes) {
+          cuerpo.append(de === 'lio' ? bloqueDePropuesta(trato, ctx) : bloqueDePropuestaDeDia(trato, ctx));
+        }
       }),
     }, [`y ${restantes} más`]));
   }
@@ -378,21 +385,23 @@ function bandaDePeticiones(ctx) {
 }
 
 /** Una petición, con sus dos respuestas escritas enteras y del mismo tamaño. */
-function tarjetaDePeticion(trato, ctx) {
+function tarjetaDePeticion({ trato, de }, ctx) {
   const responder = async (acepta) => {
     toque();
-    await resolverPropuesta(trato, acepta);
+    if (de === 'lio') await resolverPropuesta(trato, acepta);
+    else await resolverTratoDeDia(trato, acepta, (t) => escribirDiaDeTrato(t, ctx));
     avisar(acepta ? 'Contestado' : 'Se queda como estaba');
     ctx.refrescar();
   };
+  const correccion = de === 'lio' && trato.clase !== 'cambio';
 
   return el('div', { class: 'lio-peticion' }, [
-    el('p', { texto: textoDePropuesta(trato, ctx) }),
+    el('p', { texto: de === 'lio' ? textoDePropuesta(trato, ctx) : textoDeTratoDia(trato, ctx) }),
     el('div', { class: 'acciones' }, [
       el('button', { class: 'boton crecer', type: 'button', onclick: () => responder(true) },
-        [trato.clase === 'cambio' ? 'Acepto' : 'Es verdad']),
+        [correccion ? 'Es verdad' : 'Acepto']),
       el('button', { class: 'boton', type: 'button', onclick: () => responder(false) },
-        [trato.clase === 'cambio' ? 'No puedo' : 'No fue así']),
+        [correccion ? 'No fue así' : 'No puedo']),
     ]),
   ]);
 }

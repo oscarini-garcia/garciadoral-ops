@@ -24,7 +24,9 @@ import {
   diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia,
   instanciasEn, iso, isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
-import { ajustesDe, pluginDeEvento } from '../plugins.js';
+import {
+  ajustesDe, comoCambiar, pluginDeEvento, proponerCambioDeDia, resolverTratoDeDia, retirarTratoDeDia, tratoDeDia,
+} from '../plugins.js';
 import { viajeDelVuelo } from '../viajes.js';
 import {
   abrirFormularioActividad, abrirFormularioEscapada, abrirPlugins, quienesVan, tiposVisibles,
@@ -1544,45 +1546,62 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
  * día» (`specs/propuesta-plugins-hojas.html`, K1 y L3).
  */
 function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
+  const datos = ctx.vista.datos;
+  const yo = ctx.vista.yo.id;
   const fechaIso = iso(aparicion.dia);
-  const reparto = repartoDelDia(ctx.vista.datos, evento, aparicion.dia);
+  const reparto = repartoDelDia(datos, evento, aparicion.dia);
   const casa = [null, ...ctx.vista.personasDe('familia').filter((p) => p.tiene_cuenta).map((p) => p.id)];
   const nombre = (id) => (id ? ctx.vista.nombre(id) : 'Nadie');
-  const suelto = () => diaDeEvento(ctx.vista.datos, evento.id, fechaIso);
+  const volver = () => { ctx.refrescar(); abrirDetalleEvento(evento.id, ctx, aparicion); };
 
   const escribir = async (campos) => {
     await guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
-      evento_id: evento.id, fecha: fechaIso, cancelado: 0, autor_id: ctx.vista.yo.id, activo: 1,
-      lleva_id: suelto()?.lleva_id || reparto.lleva || null,
-      recoge_id: suelto()?.recoge_id || reparto.recoge || null,
+      evento_id: evento.id, fecha: fechaIso, cancelado: 0, autor_id: yo, activo: 1,
+      lleva_id: reparto.lleva, recoge_id: reparto.recoge,
       ...campos,
     });
   };
 
-  const celda = (clave, actual) => {
-    const boton = el('button', { class: 'lio-dia-turno', type: 'button', 'data-vacio': actual ? 'no' : 'si' }, [
-      el('span', { class: 'lio-dia-nombre', texto: nombre(actual) }),
-    ]);
-    boton.onclick = async () => {
-      toque();
-      const siguiente = casa[(casa.indexOf(actual) + 1) % casa.length];
-      await escribir({ [`${clave}_id`]: siguiente });
-      ctx.refrescar();
-      abrirDetalleEvento(evento.id, ctx, aparicion);
-    };
-    return boton;
+  // Quién lleva y quién recoge ese día, como chips y no como un botón que va
+  // pasando de persona en persona: cada toque puede ser una propuesta a
+  // alguien, y un botón que rota haría tres propuestas por llegar a la cuarta.
+  // Lo que no hace falta preguntar se escribe en el acto —quedarse uno con el
+  // recado, o soltar el propio sin cargárselo a nadie—; lo demás pasa por
+  // trato, como un turno de Lío (specs/propuesta-plugins-hojas.html, K1).
+  const filaDe = (campo) => {
+    const actual = reparto[campo];
+    const pendiente = tratoDeDia(datos, evento.id, fechaIso, campo);
+    const cabecera = el('p', { class: 'grupo-subtitulo', texto: campo === 'lleva' ? 'Lleva' : 'Recoge' });
+    if (pendiente) return [cabecera, bloqueDePropuestaDeDia(pendiente, ctx, { alTerminar: volver })];
+
+    const chips = el('div', { class: 'opciones' });
+    for (const id of casa) {
+      chips.append(el('button', {
+        class: 'opcion', type: 'button',
+        'aria-pressed': id === actual ? 'true' : 'false',
+        onclick: async () => {
+          const como = comoCambiar(yo, actual, id);
+          if (!como) return;
+          toque();
+          if (como.directo) {
+            await escribir({ [`${campo}_id`]: id });
+            volver();
+            return;
+          }
+          await proponerCambioDeDia(datos, { eventoId: evento.id, fechaIso, campo, actual, nuevo: id });
+          avisar(`Propuesto a ${nombre(como.destinatario)}`);
+          volver();
+        },
+      }, [nombre(id)]));
+    }
+    return [cabecera, chips];
   };
 
   return el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: `Este ${NOMBRES_DIA[indiceDia(aparicion.dia)]}` }),
-    el('div', { class: 'lio-dias' }, [
-      el('div', { class: 'lio-dia lio-dia-cabecera' }, [el('span'), el('span', { texto: 'Lleva' }), el('span', { texto: 'Recoge' })]),
-      el('div', { class: 'lio-dia' }, [
-        el('span', { class: 'lio-dia-rotulo', texto: String(aparicion.dia.getDate()) }),
-        celda('lleva', reparto.lleva), celda('recoge', reparto.recoge),
-      ]),
-    ]),
-    el('p', { class: 'pista', texto: 'Vale para este día. Todos los días se cambian en la actividad.' }),
+    el('p', { class: 'grupo-titulo', texto: `Este ${NOMBRES_DIA[indiceDia(aparicion.dia)]} ${aparicion.dia.getDate()}` }),
+    ...filaDe('lleva'),
+    ...filaDe('recoge'),
+    el('p', { class: 'pista', texto: 'Vale para este día. Cogerlo tú se escribe en el acto; pedírselo a otro espera a que conteste. Todos los días se cambian en la actividad.' }),
     el('button', {
       class: 'enlace-discreto', type: 'button',
       onclick: async () => {
@@ -1594,6 +1613,101 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
       },
     }, [`No hay ${ctx.vista.caraDe(evento).titulo.toLowerCase()} este día`]),
   ]);
+}
+
+// ------------------------------------------- El trato de un día suelto --
+
+/** «lleves a Marta a Hípica el martes 22 de septiembre», conjugado para
+ *  quien lee. `persona` es 2 (tú) o 3 (él o ella). */
+function queHacer(trato, ctx, persona) {
+  const evento = ctx.vista.datos.eventos.find((e) => e.id === trato.evento_id);
+  const titulo = evento ? ctx.vista.caraDe(evento).titulo : 'la actividad';
+  const quienes = evento ? ctx.vista.protagonistas(evento).map((id) => ctx.vista.nombre(id)) : [];
+  const verbo = trato.campo === 'recoge'
+    ? (persona === 2 ? 'recojas' : 'recoja')
+    : (persona === 2 ? 'lleves' : 'lleve');
+  const cuando = `el ${formatearFechaLarga(parsearMomento(trato.fecha))}`;
+  return `${verbo}${quienes.length ? ` a ${quienes.join(' y ')}` : ''} a ${titulo} ${cuando}`;
+}
+
+/**
+ * Qué se está pidiendo, contado desde el lado de quien lee, como
+ * `textoDePropuesta` para Lío: en cuanto uno de los dos es quien mira, el
+ * verbo cambia de persona.
+ */
+export function textoDeTratoDia(trato, ctx) {
+  const yo = ctx.vista.yo.id;
+  const nombre = (id) => ctx.vista.nombre(id);
+  if (!trato.nuevo_id) {
+    // Se propone que ese día no lo haga nadie: se le pide a quien lo tenía.
+    if (trato.proponente_id === yo) return `Propones a ${nombre(trato.destinatario_id)} que nadie ${queHacer(trato, ctx, 3)}.`;
+    if (trato.destinatario_id === yo) return `${nombre(trato.proponente_id)} propone que nadie ${queHacer(trato, ctx, 3)}, que te tocaba a ti.`;
+    return `${nombre(trato.proponente_id)} propone que nadie ${queHacer(trato, ctx, 3)}.`;
+  }
+  if (trato.proponente_id === yo) return `Le pides a ${nombre(trato.destinatario_id)} que ${queHacer(trato, ctx, 3)}.`;
+  if (trato.destinatario_id === yo) return `${nombre(trato.proponente_id)} te pide que ${queHacer(trato, ctx, 2)}.`;
+  return `${nombre(trato.proponente_id)} le pide a ${nombre(trato.destinatario_id)} que ${queHacer(trato, ctx, 3)}.`;
+}
+
+/** La fila del día que resulta de aceptar: el campo del trato con su nuevo
+ *  valor y el otro como estaba. */
+export function escribirDiaDeTrato(trato, ctx) {
+  const datos = ctx.vista.datos;
+  const evento = datos.eventos.find((e) => e.id === trato.evento_id);
+  const reparto = evento ? repartoDelDia(datos, evento, parsearMomento(trato.fecha)) : { lleva: null, recoge: null };
+  return guardar('evento_dia', idDiaDeEvento(trato.evento_id, trato.fecha), {
+    evento_id: trato.evento_id, fecha: trato.fecha, cancelado: 0, autor_id: ctx.vista.yo.id, activo: 1,
+    lleva_id: trato.campo === 'lleva' ? trato.nuevo_id : reparto.lleva,
+    recoge_id: trato.campo === 'recoge' ? trato.nuevo_id : reparto.recoge,
+  });
+}
+
+/**
+ * La propuesta sobre un día, con sus verbos: retirarla si es mía, contestarla
+ * si es para mí. Misma forma que `bloqueDePropuesta`, sin caja.
+ */
+export function bloqueDePropuestaDeDia(trato, ctx, { alTerminar = null } = {}) {
+  const yo = ctx.vista.yo.id;
+  const terminar = () => { if (alTerminar) alTerminar(); else { cerrarHoja(); ctx.refrescar(); } };
+  const bloque = el('div', { class: 'lio-propuesta' }, [
+    el('p', { texto: textoDeTratoDia(trato, ctx) }),
+  ]);
+
+  if (trato.proponente_id === yo) {
+    bloque.append(el('div', { class: 'acciones' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async () => {
+          await retirarTratoDeDia(trato);
+          avisar('Retirado: ese día se queda como estaba');
+          terminar();
+        },
+      }, ['Retirar lo que pedí']),
+    ]));
+    return bloque;
+  }
+
+  if (trato.destinatario_id !== yo) return bloque;
+
+  bloque.append(el('div', { class: 'acciones' }, [
+    el('button', {
+      class: 'boton crecer', type: 'button',
+      onclick: async () => {
+        await resolverTratoDeDia(trato, true, (t) => escribirDiaDeTrato(t, ctx));
+        avisar('Hecho: queda apuntado');
+        terminar();
+      },
+    }, ['Acepto']),
+    el('button', {
+      class: 'boton', type: 'button',
+      onclick: async () => {
+        await resolverTratoDeDia(trato, false);
+        avisar('Se queda como estaba');
+        terminar();
+      },
+    }, ['No puedo']),
+  ]));
+  return bloque;
 }
 
 /** Lo propio de una escapada en su hoja: el sitio, que se abre, y Lío. */

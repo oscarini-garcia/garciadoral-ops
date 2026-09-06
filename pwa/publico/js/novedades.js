@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.71.0',
+    fecha: '2026-09-06',
+    titulo: 'Quién lleva un día suelto se acuerda, y el aviso previo llega del servidor',
+    lineas: [
+      'En el día de una actividad, cogerlo tú se escribe en el acto; pedirle a otro que lleve o recoja le llega como petición, con Acepto y No puedo.',
+      'Con los avisos del teléfono puestos, «Mañana: …» lo manda el servidor cada mañana con la antelación de cada plugin, sin que haga falta abrir la aplicación.',
+      'Lío tiene en cuenta quién está fuera también en su frase y en los avisos de turno.',
+    ],
+  },
+  {
     version: '1.70.0',
     fecha: '2026-09-06',
     titulo: 'La agenda se compone de plugins, y cada uno tiene su hoja',

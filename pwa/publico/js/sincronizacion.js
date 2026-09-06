@@ -35,6 +35,7 @@ const PLURAL = {
   mejora: 'mejoras',
   evento_dia: 'dias_evento',
   ausencia: 'ausencias',
+  trato_dia: 'tratos_dia',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -489,8 +490,8 @@ export async function escribirLoDeLio(fecha, descartadas = []) {
 // ---------------------------------------------------------- Avisos remotos --
 
 /** Este aparato quiere avisos, y este es el token con el que se le alcanza. */
-export const darDeAltaLosAvisos = (token, plataforma = 'ios') =>
-  peticion('/api/avisos', { method: 'POST', body: JSON.stringify({ token, plataforma }) });
+export const darDeAltaLosAvisos = (token, plataforma = 'ios', avisos = null) =>
+  peticion('/api/avisos', { method: 'POST', body: JSON.stringify({ token, plataforma, avisos }) });
 
 /** Y deja de quererlos. Se borra el token en el servidor; el permiso del sistema
  *  se queda puesto, que es de iOS y no nuestro. */

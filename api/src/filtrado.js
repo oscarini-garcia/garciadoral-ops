@@ -133,6 +133,11 @@ export function componerInstantanea(registro, observador) {
     // pidió un cambio tiene que ver que sigue sin contestar, y el carril de la
     // semana marca el turno pedido para los dos.
     tratos_paseo: deLaCasa ? registro.tratos_paseo || [] : [],
+    // Las propuestas sobre un día de una actividad son de casa, como la
+    // actividad; y solo las de actividades que esta persona ve.
+    tratos_dia: deLaCasa
+      ? (registro.tratos_dia || []).filter((t) => idsDeEventos.has(t.evento_id))
+      : [],
     // Los conflictos de coordinación solo interesan a quien coordina.
     conflictos: esAdministrador ? registro.conflictos || [] : [],
     // El recuento de quien espera en la puerta, solo para quien puede abrirla.

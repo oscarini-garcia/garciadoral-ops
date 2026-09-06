@@ -49,6 +49,10 @@ const CAMPOS = {
     'fecha', 'turno', 'clase', 'proponente_id', 'destinatario_id',
     'asignado_previo_id', 'estado', 'resuelto_en', 'activo',
   ],
+  trato_dia: [
+    'evento_id', 'fecha', 'campo', 'proponente_id', 'destinatario_id',
+    'previo_id', 'nuevo_id', 'estado', 'resuelto_en', 'activo',
+  ],
   lugar: ['nombre', 'emoji', 'evento_id', 'autor_id', 'activo'],
   apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'hecho', 'autor_id', 'activo'],
   voto: ['apunte_id', 'persona_id', 'activo'],
@@ -116,7 +120,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     eventos, participantesEvento, ideas, orientaciones,
     ocasiones, participantesOcasion, presupuestos,
     regalos, codestinatarios, comentarios, conflictos,
-    paseos, tratos, cuadroLio,
+    paseos, tratos, tratosDia, cuadroLio,
     lugares, apuntes, votos, vistos, calendarios, mejoras,
     diasDeEvento, ausencias, plugins,
   ] = await Promise.all([
@@ -144,6 +148,12 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filasSiLaTablaEsta(
       db,
       `SELECT * FROM trato_paseo WHERE estado = 'pendiente' ${soloActivos ? 'AND activo = 1' : ''}`,
+    ),
+    // Las propuestas sobre un día suelto de una actividad, con la misma regla:
+    // solo viaja lo que hay que contestar.
+    filasSiLaTablaEsta(
+      db,
+      `SELECT * FROM trato_dia WHERE estado = 'pendiente' ${soloActivos ? 'AND activo = 1' : ''}`,
     ),
     leerCuadro(db),
     // Sitios llega por `filasSiLaTablaEsta` como Lío: desplegar el Worker y
@@ -241,6 +251,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     lio_cuadro: cuadroLio,
     paseos: paseos.map((p) => ({ ...p, activo: bool(p.activo) })),
     tratos_paseo: tratos.map((t) => ({ ...t, activo: bool(t.activo) })),
+    tratos_dia: tratosDia.map((t) => ({ ...t, activo: bool(t.activo) })),
     // Sitios: la carpeta, lo que hay dentro y a quién le apetece cada cosa.
     lugares: lugares.map((l) => ({ ...l, activo: bool(l.activo) })),
     apuntes: apuntes.map((a) => ({ ...a, hecho: bool(a.hecho), activo: bool(a.activo) })),
@@ -372,16 +383,21 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
   // (`filtrado.js`) y tampoco los escribe. Y una ausencia también: la lee Lío
   // para pasar los turnos a quien cubre, y se escribe desde la ficha de
   // alguien de casa.
-  if ((tipo === 'paseo' || tipo === 'trato_paseo' || tipo === 'ausencia') && !esDeLaCasa(actor)) {
+  if ((tipo === 'paseo' || tipo === 'trato_paseo' || tipo === 'ausencia' || tipo === 'trato_dia')
+    && !esDeLaCasa(actor)) {
     throw new Rechazo(tipo === 'ausencia'
       ? 'una ausencia la escribe quien vive en casa'
-      : 'los paseos de Lío son de quien vive en casa');
+      : tipo === 'trato_dia'
+        ? 'quién lleva a una actividad se acuerda entre quienes viven en casa'
+        : 'los paseos de Lío son de quien vive en casa');
   }
 
   // Una propuesta la resuelve **su destinatario y nadie más**, que es lo único
   // que la convierte en un trato y no en una imposición. Quien la hizo puede
   // retirarla —marcarla inactiva—, y ahí se acaba lo que puede hacer con ella.
-  if (tipo === 'trato_paseo' && anterior) {
+  // Vale igual para el trato de un día de actividad, que es el mismo contrato
+  // con otra tabla debajo.
+  if ((tipo === 'trato_paseo' || tipo === 'trato_dia') && anterior) {
     const resuelve = 'estado' in campos && campos.estado !== anterior.estado;
     if (resuelve && actor.id !== anterior.destinatario_id) {
       throw new Rechazo('una propuesta la contesta la persona a la que se le hizo');

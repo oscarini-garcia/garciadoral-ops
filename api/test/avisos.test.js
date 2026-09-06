@@ -333,3 +333,80 @@ test('cada aviso lleva a dónde ir al tocarlo', () => {
     tipo: 'lio', fecha: '2026-07-30', turno: 'manana', trato: 't-1',
   });
 });
+
+// ------------------------------------------- Un día de una actividad --
+
+const HIPICA = {
+  id: 'ev-hipica', titulo: '🐴 Hípica', tipo_id: 'entreno', inicio: '2026-09-15T18:00:00',
+  repeticion: 'semanal', plugin_id: 'extraescolar', extra: { dias: [1, 3] }, activo: true,
+  categoria_id: null, participantes: [{ persona_id: 'p-marta', rol: 'protagonista' }],
+};
+
+const tratoDeDia = (extra = {}) => ({
+  id: 'td-1',
+  evento_id: 'ev-hipica',
+  fecha: '2026-09-22',
+  campo: 'lleva',
+  proponente_id: 'p-marta',
+  destinatario_id: 'p-oscar',
+  previo_id: 'p-marta',
+  nuevo_id: 'p-oscar',
+  estado: 'pendiente',
+  activo: true,
+  ...extra,
+});
+
+const cambioDeDia = (extra = {}) => ({ tipo: 'trato_dia', id: 'td-1', novedad: true, ...extra });
+
+test('pedir que otro lleve un día avisa a quien tiene que contestar, con la actividad y el día', () => {
+  const avisos = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [tratoDeDia()] }), MARTA, [cambioDeDia()]);
+  assert.equal(avisos.length, 1);
+  assert.equal(avisos[0].para, 'p-oscar');
+  assert.equal(avisos[0].titulo, '🐴 Hípica: Marta te pide que lleves');
+  assert.equal(avisos[0].cuerpo, 'El martes 22 de septiembre.');
+  assert.equal(avisos[0].categoria, CATEGORIA_CAMBIO);
+  assert.equal(avisos[0].urgente, false);
+  assert.equal(avisos[0].datos.tipo, 'actividad');
+});
+
+test('proponer que nadie recoja se le dice a quien lo tenía', () => {
+  const trato = tratoDeDia({ campo: 'recoge', nuevo_id: null, destinatario_id: 'p-oscar', previo_id: 'p-oscar' });
+  const [aviso] = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [trato] }), MARTA, [cambioDeDia()]);
+  assert.equal(aviso.titulo, '🐴 Hípica: Marta propone que nadie recoja');
+});
+
+test('contestar avisa a quien lo pidió, y dice quién lleva', () => {
+  const aceptado = tratoDeDia({ estado: 'aceptado' });
+  const [aviso] = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [aceptado] }), OSCAR, [cambioDeDia()]);
+  assert.equal(aviso.para, 'p-marta');
+  assert.equal(aviso.titulo, '🐴 Hípica: Óscar acepta');
+  assert.equal(aviso.cuerpo, 'El martes 22 de septiembre lleva Óscar.');
+
+  const rechazado = tratoDeDia({ estado: 'rechazado' });
+  const [no] = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [rechazado] }), OSCAR, [cambioDeDia()]);
+  assert.equal(no.titulo, '🐴 Hípica: Óscar no puede');
+});
+
+test('el trato de un día cuenta en el globo, como el de un turno', () => {
+  const datos = registro({ eventos: [HIPICA], tratos_dia: [tratoDeDia()] });
+  const [aviso] = avisosDe(datos, MARTA, [cambioDeDia()]);
+  assert.equal(aviso.globo, 1);
+});
+
+test('quien no vive en casa no recibe el trato de un día, aunque se le nombre', () => {
+  const trato = tratoDeDia({ destinatario_id: 'p-abuela', nuevo_id: 'p-abuela' });
+  const avisos = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [trato] }), MARTA, [cambioDeDia()]);
+  assert.equal(avisos.length, 0);
+});
+
+// ------------------------------------------------------- Las ausencias --
+
+test('quitarle el turno a quien está fuera no le avisa: ya era de quien cubre', () => {
+  const datos = registro({
+    ausencias: [{ id: 'au1', persona_id: 'p-marta', desde: '2026-07-28', hasta: '2026-07-31', cubre_id: 'p-abuela', activo: true }],
+    paseos: [{ id: 'lio:2026-07-30:manana', fecha: '2026-07-30', turno: 'manana', asignado_id: 'p-oscar', hecho_por_id: null, activo: true }],
+  });
+  const avisos = avisosDe(datos, OSCAR, [{ tipo: 'paseo', id: 'lio:2026-07-30:manana', novedad: true }]);
+  // A la abuela no le llega Lío —no es de casa—, y a Marta ya no era su turno.
+  assert.deepEqual(avisos.map((a) => a.para), []);
+});

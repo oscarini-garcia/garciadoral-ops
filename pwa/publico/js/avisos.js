@@ -32,11 +32,13 @@
 import { guardar } from './sincronizacion.js';
 import { estaActivo } from './modelo.js';
 import { tratosParaMi } from './lio.js';
+import { tratosDeDiaParaMi } from './plugins.js';
 import { parsearMomento } from './semana.js';
 
 /** De dónde puede venir un aviso. Dar de alta un módulo es una línea. */
 const FUENTES = [
   { de: 'lio', clase: 'contestar', buscar: avisosDeLio },
+  { de: 'actividad', clase: 'contestar', buscar: avisosDeActividad },
   { de: 'solicitud', clase: 'contestar', buscar: avisosDeSolicitudes },
   { de: 'comentario', clase: 'nuevo', buscar: avisosDeComentarios },
 ];
@@ -91,6 +93,17 @@ function avisosDeLio(ctx) {
     id: `lio:${trato.id}`,
     emoji: '🐾',
     trato,
+    cuando: trato.creado_en || null,
+  }));
+}
+
+/** Las propuestas sobre un día de una actividad —quién lleva, quién recoge—
+ *  que esperan una respuesta mía. Misma forma que las de Lío. */
+function avisosDeActividad(ctx) {
+  return tratosDeDiaParaMi(ctx.vista.datos).map((trato) => ({
+    id: `actividad:${trato.id}`,
+    emoji: '🐴',
+    tratoDia: trato,
     cuando: trato.creado_en || null,
   }));
 }

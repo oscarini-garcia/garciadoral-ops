@@ -27,6 +27,7 @@
  */
 
 import { guardar } from './sincronizacion.js';
+import { estaActivo, nuevoId } from './modelo.js';
 
 export const PLUGINS = [
   {
@@ -213,6 +214,17 @@ export function marcarAvisoDePlugin(id, valor) {
   escribirLista(CLAVE_AVISOS, avisos);
 }
 
+/** Lo que este aparato tiene puesto de cada plugin, para dárselo al servidor
+ *  con el token: el cron de las mañanas avisa con esta misma antelación. */
+export const avisosDePlugins = () => {
+  const salida = {};
+  for (const plugin of PLUGINS) {
+    if (plugin.id === 'lio' || plugin.id === 'cumples') continue;
+    salida[plugin.id] = avisoDePlugin(plugin.id);
+  }
+  return salida;
+};
+
 /**
  * Con cuántos días de antelación se avisa de una instancia, o `null` si no se
  * avisa. Los cumpleaños van por círculo de quien cumple —la regla es de la
@@ -230,4 +242,78 @@ export function antelacionDe(instantanea, instancia) {
   }
   const antelacion = ANTELACIONES.find((a) => a.valor === avisoDePlugin(plugin));
   return antelacion ? antelacion.dias : 1;
+}
+
+// --------------------------------------------- El trato de un día suelto --
+
+/**
+ * Cambiar quién lleva o recoge un día concreto de una actividad pasa por un
+ * trato, como un turno de Lío (`specs/propuesta-plugins-hojas.html`, K1):
+ * proponer, y que conteste a quien se le pide. Hay dos atajos que no
+ * necesitan permiso, los mismos que en Lío: quedarse uno con el recado, y
+ * soltar el propio cuando no se le carga a nadie.
+ *
+ * Mientras la propuesta está pendiente el día se queda como estaba; aceptar
+ * escribe la fila de `evento_dia` que resulta. Rechazar no deshace nada.
+ */
+const tratosDeDia = (instantanea) => (instantanea?.tratos_dia || [])
+  .filter((t) => t.estado === 'pendiente' && estaActivo(t));
+
+/** La propuesta viva sobre un campo de un día, si la hay. */
+export const tratoDeDia = (instantanea, eventoId, fechaIso, campo) => tratosDeDia(instantanea)
+  .find((t) => t.evento_id === eventoId && t.fecha === fechaIso && t.campo === campo) || null;
+
+/** Lo que le toca contestar a quien mira. Es lo que sube a Hoy y al sobre. */
+export function tratosDeDiaParaMi(instantanea) {
+  const yo = instantanea?.yo?.id;
+  if (!yo) return [];
+  return tratosDeDia(instantanea)
+    .filter((t) => t.destinatario_id === yo)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.campo.localeCompare(b.campo));
+}
+
+/**
+ * Qué hacer con un cambio de quién lleva o recoge: escribirlo o proponerlo.
+ * Devuelve `{ directo: true }` cuando no hace falta preguntar, o
+ * `{ directo: false, destinatario }` con a quién habría que pedírselo.
+ */
+export function comoCambiar(yo, actual, nuevo) {
+  if (nuevo === actual) return null;
+  // Quedarse uno con el recado, o soltar el propio sin cargárselo a nadie.
+  if (nuevo === yo) return { directo: true };
+  if (nuevo === null && actual === yo) return { directo: true };
+  return { directo: false, destinatario: nuevo || actual };
+}
+
+export function proponerCambioDeDia(instantanea, { eventoId, fechaIso, campo, actual, nuevo }) {
+  const yo = instantanea.yo.id;
+  const como = comoCambiar(yo, actual, nuevo);
+  if (!como || como.directo) return null;
+  return guardar('trato_dia', nuevoId(), {
+    evento_id: eventoId,
+    fecha: fechaIso,
+    campo,
+    proponente_id: yo,
+    destinatario_id: como.destinatario,
+    previo_id: actual,
+    nuevo_id: nuevo,
+    estado: 'pendiente',
+    activo: 1,
+  });
+}
+
+/** Retirar lo que uno pidió, mientras nadie haya contestado. */
+export const retirarTratoDeDia = (trato) => guardar('trato_dia', trato.id, { activo: 0 });
+
+/**
+ * Contestar. Aceptar escribe la propuesta resuelta y la fila del día en el
+ * mismo lote; `escribirDia` es quien sabe componer esa fila —vive en la vista,
+ * que conoce el reparto del día— y recibe el campo y el nuevo valor.
+ */
+export async function resolverTratoDeDia(trato, acepta, escribirDia) {
+  await guardar('trato_dia', trato.id, {
+    estado: acepta ? 'aceptado' : 'rechazado',
+    resuelto_en: new Date().toISOString(),
+  });
+  if (acepta && escribirDia) await escribirDia(trato);
 }
