@@ -18,6 +18,15 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.69.0',
+    fecha: '2026-09-06',
+    titulo: 'Arreglo: al caducar la sesión, la aplicación se quedaba atascada',
+    lineas: [
+      'Si la sesión caducaba con una hoja abierta, la hoja se quedaba encima tapando la pantalla de «vuelve a entrar».',
+      'Y el aviso decía «sesion-caducada» en vez de explicarlo con palabras.',
+    ],
+  },
+  {
     version: '1.68.0',
     fecha: '2026-08-14',
     titulo: 'Ajustes vuelve a la esquina de arriba',
