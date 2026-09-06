@@ -18,6 +18,19 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.70.0',
+    fecha: '2026-09-06',
+    titulo: 'La agenda se compone de plugins, y cada uno tiene su hoja',
+    lineas: [
+      'En la Agenda, un botón junto al periodo abre «Qué hay en la agenda»: Lío, Viajes, Cumpleaños y santos, Puntuales, Extraescolares y Fin de semana.',
+      'Cada uno con su interruptor, hasta qué círculo llega y con cuánto aviso; Lío estrena dos filas de atajo, «L a V» y «S y D».',
+      'El «+» pregunta qué es: un evento, una actividad con sus días y quién lleva y recoge, o una escapada con su sitio, quién va y si Lío viene.',
+      'Las fechas se eligen en un calendario propio, no en la rueda del sistema.',
+      'El santo sale de la ficha como el cumpleaños, con un botón que lo busca; y en la ficha se apunta quién está fuera, y sus turnos de Lío pasan a quien cubra.',
+      'Los vuelos de Flighty los pega cada uno con su enlace; ida y vuelta se leen como un viaje y los días de en medio dicen «Óscar fuera».',
+    ],
+  },
+  {
     version: '1.69.0',
     fecha: '2026-09-06',
     titulo: 'Arreglo: al caducar la sesión, la aplicación se quedaba atascada',

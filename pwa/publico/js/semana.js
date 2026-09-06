@@ -12,6 +12,8 @@
  */
 
 import { estaActivo } from './modelo.js';
+import { ajustesDe, seEnsena } from './plugins.js';
+import { eventosDeFuera } from './viajes.js';
 
 export const INICIALES_DIA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -133,24 +135,81 @@ export function formatearHace(momento, ahora = new Date()) {
  * personas del registro, tengan cuenta o no. No se editan directamente: se
  * corrigen en la ficha de la persona, de modo que el dato maestro y su reflejo
  * en la agenda no puedan divergir (specs/modelo-datos.md §7.4).
+ *
+ * **Y los santos, desde la 0021, por el mismo camino**: `persona.santo` guarda
+ * el día como «MM-DD» y de ahí sale «✨ Santo de Lucía» cada año. Se apagan
+ * desde la hoja de Cumpleaños y santos si la casa no los celebra.
+ *
+ * **Y las ausencias**, que son de Lío: quien no está unos días sale como una
+ * banda en la semana —«Marta fuera»— además de ceder sus turnos.
  */
 export function eventosDerivados(instantanea) {
-  if (!instantanea.tipos_evento?.some((t) => t.id === 'cumpleanos')) return [];
-  return (instantanea.personas || [])
-    .filter((p) => estaActivo(p, 'activa') && p.fecha_nacimiento)
-    .map((persona) => ({
-      id: `derivado:cumpleanos:${persona.id}`,
-      titulo: `Cumpleaños de ${persona.nombre}`,
-      tipo_id: 'cumpleanos',
-      inicio: persona.fecha_nacimiento,
-      fin: null,
+  const derivados = [];
+  const tipos = new Set((instantanea.tipos_evento || []).map((t) => t.id));
+  const personas = (instantanea.personas || []).filter((p) => estaActivo(p, 'activa'));
+
+  if (tipos.has('cumpleanos')) {
+    for (const persona of personas) {
+      if (!persona.fecha_nacimiento) continue;
+      derivados.push({
+        id: `derivado:cumpleanos:${persona.id}`,
+        titulo: `Cumpleaños de ${persona.nombre}`,
+        tipo_id: 'cumpleanos',
+        inicio: persona.fecha_nacimiento,
+        fin: null,
+        jornada_completa: true,
+        repeticion: 'anual',
+        origen: 'derivado',
+        persona_origen_id: persona.id,
+        participantes: [{ persona_id: persona.id, rol: 'protagonista' }],
+        activo: true,
+      });
+    }
+  }
+
+  if (tipos.has('santo') && ajustesDe(instantanea, 'cumples').santos) {
+    for (const persona of personas) {
+      const santo = String(persona.santo || '').match(/^(\d{2})-(\d{2})$/);
+      if (!santo) continue;
+      derivados.push({
+        id: `derivado:santo:${persona.id}`,
+        titulo: `Santo de ${persona.nombre}`,
+        tipo_id: 'santo',
+        // Un año cualquiera de antes de que hubiera agenda: el santo no tiene
+        // año, y la repetición anual arranca en el del inicio.
+        inicio: `1900-${santo[1]}-${santo[2]}`,
+        fin: null,
+        jornada_completa: true,
+        repeticion: 'anual',
+        origen: 'derivado',
+        persona_origen_id: persona.id,
+        participantes: [{ persona_id: persona.id, rol: 'protagonista' }],
+        activo: true,
+      });
+    }
+  }
+
+  for (const ausencia of instantanea.ausencias || []) {
+    if (!estaActivo(ausencia)) continue;
+    const persona = personas.find((p) => p.id === ausencia.persona_id);
+    if (!persona || !ausencia.desde) continue;
+    derivados.push({
+      id: `derivado:ausencia:${ausencia.id}`,
+      titulo: `${persona.nombre} fuera`,
+      tipo_id: 'viaje',
+      emoji: '🧳',
+      inicio: ausencia.desde,
+      fin: ausencia.hasta && ausencia.hasta > ausencia.desde ? ausencia.hasta : null,
       jornada_completa: true,
-      repeticion: 'anual',
+      repeticion: 'ninguna',
       origen: 'derivado',
-      persona_origen_id: persona.id,
-      participantes: [{ persona_id: persona.id, rol: 'protagonista' }],
+      extra: { ausencia: ausencia.id, cubre_id: ausencia.cubre_id || null, motivo: ausencia.motivo || '' },
+      participantes: [],
       activo: true,
-    }));
+    });
+  }
+
+  return derivados.concat(eventosDeFuera(instantanea));
 }
 
 /**
@@ -228,11 +287,30 @@ export function ocurrencias(evento, desde, hasta) {
   if (repeticion === 'ninguna') {
     if (admisible(inicio)) arranques.push(inicio);
   } else if (repeticion === 'semanal') {
+    // Una actividad puede caer en varios días de la semana —martes y jueves—,
+    // que es lo que un «se repite: semanal» a secas no sabe decir: `extra.dias`
+    // los lleva con el lunes en 0, y se recorre cada semana entera desde la
+    // del inicio. Sin ellos es la repetición de siempre, el mismo día cada
+    // semana.
+    const diasDeLaSemana = diasSemanalesDe(evento);
     const salto = Math.round((limiteInf - inicio.getTime()) / 86400000);
-    let actual = sumarDias(inicio, Math.max(0, Math.ceil(salto / 7)) * 7);
-    while (actual.getTime() <= limiteSup) {
-      if (admisible(actual)) arranques.push(actual);
-      actual = sumarDias(actual, 7);
+    if (diasDeLaSemana) {
+      const lunes = sumarDias(inicio, -indiceDia(inicio));
+      let semana = sumarDias(lunes, Math.max(0, Math.floor(salto / 7) - 1) * 7);
+      while (semana.getTime() <= limiteSup) {
+        for (const dia of diasDeLaSemana) {
+          const candidato = sumarDias(semana, dia);
+          candidato.setHours(inicio.getHours(), inicio.getMinutes(), 0, 0);
+          if (admisible(candidato)) arranques.push(candidato);
+        }
+        semana = sumarDias(semana, 7);
+      }
+    } else {
+      let actual = sumarDias(inicio, Math.max(0, Math.ceil(salto / 7)) * 7);
+      while (actual.getTime() <= limiteSup) {
+        if (admisible(actual)) arranques.push(actual);
+        actual = sumarDias(actual, 7);
+      }
     }
   } else if (repeticion === 'mensual') {
     const primero = new Date(limiteInf);
@@ -262,9 +340,44 @@ export function ocurrencias(evento, desde, hasta) {
     }));
 }
 
+/** Los días de la semana de una actividad, con el lunes en 0, o `null` si el
+ *  evento no los lleva. Ordenados y sin repetir, vengan como vengan. */
+export function diasSemanalesDe(evento) {
+  const dias = evento?.extra?.dias;
+  if (!Array.isArray(dias)) return null;
+  const limpios = [...new Set(dias.map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort();
+  return limpios.length ? limpios : null;
+}
+
+/**
+ * Lo que le pasa a un día suelto de un evento —que ese día no hay, o que ese
+ * martes lleva otro—, o `null` si nada. Es una fila de `evento_dia`, con el
+ * identificador compuesto como el de un paseo.
+ */
+export const idDiaDeEvento = (eventoId, fechaIso) => `dia:${eventoId}:${fechaIso}`;
+
+export function diaDeEvento(instantanea, eventoId, fechaIso) {
+  const fila = (instantanea?.dias_evento || []).find(
+    (d) => d.id === idDiaDeEvento(eventoId, fechaIso) && estaActivo(d),
+  );
+  return fila || null;
+}
+
+const estaCancelado = (dia) => Boolean(dia?.cancelado) && dia.cancelado !== 0 && dia.cancelado !== '0';
+
+/**
+ * Todas las instancias del tramo, de todos los plugins que se enseñan.
+ *
+ * Aquí se aplican las dos cosas que el Worker no puede: lo apagado en este
+ * aparato y el círculo de lo que se deriva en el dispositivo (`plugins.js`), y
+ * los días de una actividad en los que se dijo que no hay.
+ */
 export function instanciasEn(instantanea, desde, hasta) {
-  const fuentes = [...(instantanea.eventos || []).filter((e) => estaActivo(e)), ...eventosDerivados(instantanea)];
-  return fuentes.flatMap((evento) => ocurrencias(evento, desde, hasta));
+  const fuentes = [...(instantanea.eventos || []).filter((e) => estaActivo(e)), ...eventosDerivados(instantanea)]
+    .filter((evento) => seEnsena(instantanea, evento));
+  return fuentes
+    .flatMap((evento) => ocurrencias(evento, desde, hasta))
+    .filter((instancia) => !estaCancelado(diaDeEvento(instantanea, instancia.evento.id, iso(instancia.inicio))));
 }
 
 /**

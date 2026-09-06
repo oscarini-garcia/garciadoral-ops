@@ -142,13 +142,29 @@ def _antes(desde: str, cuando: datetime) -> bool:
     return inicio <= cuando
 
 
+def con_ausencias(agenda, persona_id: str | None, fecha: date) -> str | None:
+    """Quien está fuera ese día no saca al perro: el turno pasa a quien cubra,
+    y si quien cubre también está fuera, al suyo. Cuatro vueltas bastan para
+    una casa de cuatro, y cortan el bucle de dos que se cubren mutuamente."""
+    quien = persona_id
+    for _vuelta in range(4):
+        if not quien:
+            return quien
+        ausencia = agenda.ausencia_de(quien, fecha)
+        if ausencia is None:
+            return quien
+        quien = ausencia.cubre_id or None
+    return quien
+
+
 def turno_de(agenda, fecha: date, turno: str) -> TurnoLio:
     paseo = agenda.paseos.get(id_paseo(fecha, turno))
     if paseo is not None:
         return TurnoLio(fecha, turno, paseo.asignado_id, paseo.hecho_por_id)
-    # El cuadro que gobierna es el de cuando se abrió la ventana, no el de ahora.
+    # El cuadro que gobierna es el de cuando se abrió la ventana, no el de ahora;
+    # y una ausencia escrita en la ficha pasa el turno a quien cubra.
     cuadro = cuadro_en(agenda.cuadro_lio, inicio_de_ventana(fecha, turno))
-    return TurnoLio(fecha, turno, cuadro[turno][fecha.weekday()], None)
+    return TurnoLio(fecha, turno, con_ausencias(agenda, cuadro[turno][fecha.weekday()], fecha), None)
 
 
 def turnos_de(agenda, fecha: date) -> list[TurnoLio]:

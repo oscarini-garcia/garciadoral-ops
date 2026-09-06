@@ -22,13 +22,17 @@
 import { el, vaciar, abrirHoja, avisar } from '../ui.js';
 import { formatearFechaLarga, hoy, horaDe, instanciasEn, iso, repartirPorDia, sumarDias } from '../semana.js';
 import { comprobarActualizacion, esNativo, toque, versionInstalada } from '../native.js';
-import { escribirLaChispa, escribirLoDeLio, estado } from '../sincronizacion.js';
+import { escribirLaChispa, escribirLoDeLio, estado, guardar } from '../sincronizacion.js';
 import { frasesGuardadas, guardarFrases } from '../almacen.js';
 import { VERSION_APP } from '../version.js';
 import {
-  abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDePropuesta,
+  abrirDetalleEvento, bloqueDePropuesta, filaDeTurno, textoDeLinea, textoDePropuesta,
 } from './semana.js';
 import { hayLio, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
+import { aplicarLioDeEscapada, escapadasDe } from './plugins.js';
+import { irALugar } from './sitios.js';
+import { porClase, estaHecho } from '../sitios.js';
+import { pluginOculto } from '../plugins.js';
 
 /** El bundle OTA que está aplicado, si se ha llegado a preguntar. Se guarda
  *  aquí para que volver a la pestaña no vuelva a enseñar la de origen mientras
@@ -120,11 +124,103 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
   // gesto que se hace dos veces al día. Después ya viene lo que se venía a leer.
   pantalla.append(
     ...bandaDePeticiones(ctx),
+    ...bandaDeEscapadas(dia, ctx),
     laChispa(dia, ctx),
     ...bloqueDeLio(dia, ctx),
     bloqueDelDia(dia, ctx),
     pieDeVersion(),
   );
+}
+
+// ------------------------------------------------------- Las escapadas --
+
+/**
+ * Lo que una escapada le pone a Hoy antes de irse
+ * (`specs/propuesta-plugins-hojas.html`, N2 y O2).
+ *
+ * **La víspera**, la banda con el recuento de la lista de Llevar del sitio
+ * —«faltan 3 de 7»— y la lista a un toque: Llevar existe para mirarse de pie
+ * antes de salir, y Hoy es la pantalla que se mira antes de salir.
+ *
+ * **Dos días antes**, la pregunta que se hace en voz alta el jueves: «¿Lío
+ * viene?». Contestada, desaparece; «se queda con Ana» escribe una ausencia
+ * de cada uno de los que van, con Ana cubriendo. Solo para quien es de casa y
+ * mientras la escapada no lo tenga decidido.
+ */
+function bandaDeEscapadas(dia, ctx) {
+  if (pluginOculto('finde')) return [];
+  const hoyIso = iso(dia);
+  const bandas = [];
+
+  for (const escapada of escapadasDe(ctx)) {
+    const salida = soloFechaDe(escapada.inicio);
+    if (!salida) continue;
+    const vispera = iso(sumarDias(salida, -1));
+    const salidaIso = iso(salida);
+    const extra = escapada.extra || {};
+    const titulo = ctx.vista.caraDe(escapada).titulo;
+    const emoji = ctx.vista.caraDe(escapada).emoji;
+
+    // La banda va la víspera de salir y el propio día de salir: con «salimos
+    // la víspera» el evento arranca ya en esa víspera, y lo que se prepara se
+    // prepara ese mismo día, antes de coger el coche.
+    const cuando = hoyIso === vispera ? 'Mañana' : hoyIso === salidaIso ? 'Hoy' : null;
+    if (cuando) {
+      const lugar = extra.lugar_id ? (ctx.vista.datos.lugares || []).find((l) => l.id === extra.lugar_id) : null;
+      const llevar = lugar ? (porClase(ctx.vista.datos, lugar.id).find((g) => g.clase.id === 'llevar')?.apuntes || []) : [];
+      const faltan = llevar.filter((a) => !estaHecho(a)).length;
+      const recuento = lugar
+        ? (llevar.length ? `Llevar: ${faltan ? `faltan ${faltan} de ${llevar.length}` : 'todo metido'} ›` : 'Ver el sitio ›')
+        : null;
+      bandas.push(el('button', {
+        class: 'hoy-escapada', type: 'button',
+        onclick: () => { toque(); if (lugar) irALugar(lugar.id, ctx); else abrirDetalleEvento(escapada.id, ctx); },
+      }, [
+        el('span', { class: 'hoy-escapada-titulo', texto: `${emoji} ${cuando}, ${titulo.toLowerCase().startsWith('la ') || titulo.toLowerCase().startsWith('el ') ? titulo.toLowerCase() : titulo}` }),
+        recuento ? el('span', { class: 'hoy-escapada-pie', texto: recuento }) : null,
+      ]));
+    }
+
+    const pregunta = hayLio(ctx.vista.datos) && !extra.lio
+      && hoyIso >= iso(sumarDias(salida, -2)) && hoyIso <= salidaIso;
+    if (pregunta) bandas.push(preguntaDeLio(escapada, ctx));
+  }
+  return bandas;
+}
+
+const soloFechaDe = (texto) => {
+  const partes = String(texto || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return partes ? new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3])) : null;
+};
+
+function preguntaDeLio(escapada, ctx) {
+  const extra = escapada.extra || {};
+  const van = new Set(ctx.vista.participantes(escapada));
+  const seQuedan = ctx.vista.personasDe('familia').filter((p) => p.tiene_cuenta && !van.has(p.id));
+  const titulo = ctx.vista.caraDe(escapada).titulo;
+  const cuando = formatearFechaLarga(soloFechaDe(extra.primer_dia || escapada.inicio) || new Date());
+
+  const contestar = async (lio, lioCon) => {
+    toque();
+    const nuevoExtra = { ...extra, lio, lio_con: lioCon || null };
+    await guardar('evento', escapada.id, { extra: nuevoExtra });
+    await aplicarLioDeEscapada(ctx, { ...escapada, extra: nuevoExtra });
+    avisar(lio === 'viene' ? 'Anotado: Lío viene' : `Anotado: Lío se queda${lioCon ? ` con ${ctx.vista.nombre(lioCon)}` : ''}`);
+    ctx.refrescar();
+  };
+
+  return el('div', { class: 'lio-peticion' }, [
+    el('p', { texto: `🐾 El ${cuando} ${van.size === 1 && van.has(ctx.vista.yo.id) ? 'te vas' : 'os vais'} a ${titulo}. ¿Lío viene?` }),
+    el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton crecer', type: 'button', onclick: () => contestar('viene', null) }, ['Viene']),
+      ...seQuedan.map((persona) => el('button', {
+        class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: () => contestar('se_queda', persona.id),
+      }, [`Se queda con ${persona.nombre}`])),
+      seQuedan.length ? null : el('button', {
+        class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: () => contestar('se_queda', null),
+      }, ['Se queda']),
+    ]),
+  ]);
 }
 
 // ------------------------------------------------------- La frase del día --
@@ -393,22 +489,29 @@ function bloqueDelDia(dia, ctx) {
  */
 function tarjetaDelDia(aparicion, ctx) {
   const hora = horaDe(aparicion);
-  const cara = ctx.vista.caraDe(aparicion.evento);
+  const texto = textoDeLinea(aparicion, ctx);
   const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
+  const esEdad = Boolean(texto.de && /^\d+$/.test(texto.de));
 
   const pie = [
     hora ? null : 'Todo el día',
+    texto.de && !esEdad ? texto.de : null,
     aparicion.evento.ubicacion,
     participantes.length ? participantes.join(', ') : null,
+    ...texto.pastillas.map((p) => p.titulo.toLowerCase()),
   ].filter(Boolean).join(' · ');
 
   return el('button', {
     class: 'tarjeta', type: 'button',
+    'data-suave': texto.suave ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     el('div', { class: 'tarjeta-fila' }, [
-      el('span', { class: 'linea-emoji', texto: cara.emoji }),
-      el('h3', { texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
+      el('span', { class: 'linea-emoji', texto: texto.emoji }),
+      el('h3', {}, [
+        texto.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+        esEdad ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
+      ]),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
     ]),
     pie ? el('p', { texto: pie }) : null,

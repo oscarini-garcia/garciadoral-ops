@@ -27,6 +27,48 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **La agenda se compone de plugins, y está construido.** Seis: Lío, Viajes,
+  Cumpleaños y santos, Puntuales, Extraescolares y Fin de semana; **dos familias**
+  —lo derivado de otra cosa y lo escrito a mano— y una hoja, «Qué hay en la
+  agenda», que se abre desde la propia agenda con el botón de capas junto al
+  periodo, con una fila por plugin y su hoja completa detrás. Lo decidido está
+  sellado al pie de `specs/propuesta-plugins-agenda.html` (A1 · B1 · C1 ·
+  D1+D2+D4+D5 · E2) y de `specs/propuesta-plugins-hojas.html` (A3 · B1 · C2 ·
+  D1 · E1 · F2 · G1 · H2 · I1 · J3 · K1 · L3 · M2 · N2 · O2). **Los mandos
+  comunes** —enseñar en mi agenda, hasta qué círculo llega, aviso previo, nombre
+  y emoji— van en `configuracion` bajo `plugins.<id>` (`api/src/plugins.js`,
+  cambio de tipo `plugin`, solo administradores) salvo los dos que son de este
+  aparato, el interruptor y el aviso, que van en `localStorage`
+  (`pwa/publico/js/plugins.js`). **El círculo se aplica en tres sitios y con la
+  misma regla** —`circuloAdmite`, en el Worker al componer la instantánea, en
+  el dispositivo para lo derivado y en `scripts/agenda/plugins.py` para el
+  plan de los domingos—; de origen, lo de casa (Lío, actividades, escapadas)
+  se queda en casa y lo demás llega a todos. **Lo escrito son filas de
+  `evento` con `plugin_id` y `extra`** (migración `0021`): una actividad es una
+  sola fila `semanal` con `extra.dias` y `extra.reparto`, y una escapada un
+  `viaje` con `extra.lugar_id`, `vispera`, `lio` y quién va; así el plan
+  semanal, la redacción y los comentarios les sirven sin más. Los días sueltos
+  —«no hay hípica este día», quién lleva hoy— van en `evento_dia`, con
+  identificador compuesto `dia:<evento>:<fecha>`; **quién está fuera** va en
+  `ausencia`, se escribe desde la ficha, es una banda en la semana y pasa los
+  turnos de Lío a quien cubra (`conAusencias`, en los tres sitios). El santo es
+  una columna de `persona` («MM-DD») y se deriva como el cumpleaños; el botón
+  de buscarlo va por `/api/persona/santo` con el mismo motor de redacción.
+  Los vuelos de Flighty los pega cada uno (`calendario_externo.url_feed`,
+  secreto que no vuelve a salir; `/api/viajes/enlace`), y `viajes.js` empareja
+  ida y vuelta en un viaje y dibuja «Óscar fuera» en gris los días de en
+  medio; una vuelta sin vuelo se escribe a mano en `extra.vuelta` del vuelo de
+  ida. **Las fechas van en un calendario propio** (`selectorDeFecha` en
+  `ui.js`), no en el del sistema. Y Hoy pregunta dos días antes de una
+  escapada si Lío viene, y la víspera y el día de salir enseña cuánto queda por
+  meter de la lista de Llevar del sitio enlazado. Lo que queda abierto: **el
+  cambio de un día suelto de quién lleva no pasa por trato** —se escribe
+  directo en `evento_dia`, cuando la K1 lo quería como en Lío, con propuesta y
+  confirmación—; **el aviso previo se programa solo en local** —el remoto no
+  sabe de plugins todavía—; **la voz de Lío y los avisos del Worker no leen las
+  ausencias** —el plan de los domingos y la aplicación sí—; y el plugin de
+  Puntuales acota los tipos que ofrece el formulario, pero no re-clasifica lo
+  ya escrito.
 - **Un campo autorrellenado por Safari se quedaba sin letras en modo claro.**
   El nombre voluntario de la pantalla de espera (`acceso.js`, `autocomplete:
   'name'`) es justo el tipo de campo que iOS ofrece rellenar solo, y ahí

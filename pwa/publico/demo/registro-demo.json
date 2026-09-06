@@ -829,5 +829,9 @@
       "activo": true
     }
   ],
-  "vistos": []
+  "vistos": [],
+  "dias_evento": [],
+  "ausencias": [],
+  "plugins": {},
+  "calendarios_externos": []
 }

@@ -16,6 +16,7 @@
 import { visible } from './visibilidad.js';
 import { comentariosVisibles } from './comentables.js';
 import { esDeLaCasa } from './lio.js';
+import { circuloAdmite, circuloDe, pluginDeEvento } from './plugins.js';
 
 /** Categorías que el observador puede ver. Las que no, no existen para él.
  *  No se muestra un contenedor bloqueado: la existencia misma de la categoría
@@ -37,7 +38,16 @@ export function componerInstantanea(registro, observador) {
   // dibuja el carril porque no tiene con qué.
   const deLaCasa = esDeLaCasa(observador);
 
-  const eventos = registro.eventos.filter((e) => visible(registro, e, 'evento', observador));
+  // Un evento pasa por dos puertas: la visibilidad de siempre —la categoría
+  // reservada— y el círculo hasta el que está abierto su plugin, que es el
+  // único mando común que se aplica antes de transmitir
+  // (`specs/propuesta-plugins-agenda.html`, D2). Lo derivado en el dispositivo
+  // —cumpleaños y santos— no pasa por aquí: la pantalla ya sabe en qué círculo
+  // está quien mira, y `plugins` viaja con la instantánea para eso.
+  const plugins = registro.plugins || {};
+  const admitePlugin = (evento) => circuloAdmite(circuloDe(plugins, pluginDeEvento(evento)), observador.circulo);
+  const eventos = registro.eventos.filter((e) => visible(registro, e, 'evento', observador) && admitePlugin(e));
+  const idsDeEventos = new Set(eventos.map((e) => e.id));
   const ideas = registro.ideas.filter((i) => visible(registro, i, 'idea', observador));
   const regalos = registro.regalos.filter((r) => visible(registro, r, 'regalo', observador));
 
@@ -75,16 +85,25 @@ export function componerInstantanea(registro, observador) {
       nombre: observador.nombre,
       rol: observador.rol,
       es_administrador: esAdministrador,
+      // Para que el dispositivo aplique el círculo de un plugin a lo que
+      // deriva por su cuenta, que aquí no pasa.
+      circulo: observador.circulo || 'extendida',
     },
     personas: registro.personas,
     atributos_persona: registro.atributos_persona,
     categorias: categoriasVisibles(registro, observador),
     etiquetas: registro.etiquetas,
     tipos_evento: registro.tipos_evento,
-    // Los calendarios externos viajan enteros: su metadato —nombre y sello de
-    // última sincronización— no es secreto (los viajes son públicos en casa,
-    // calendario-viajes.md §8) y Ajustes lo muestra. El feed no está aquí.
-    calendarios_externos: registro.calendarios_externos || [],
+    // Los calendarios externos viajan con su metadato —nombre, dueño y sello de
+    // última sincronización—, que no es secreto (los viajes son públicos en
+    // casa, calendario-viajes.md §8). **El enlace del feed no**: es una
+    // credencial, y de él solo sale si lo hay.
+    calendarios_externos: (registro.calendarios_externos || []).map(({ url_feed: url, ...calendario }) => ({
+      ...calendario,
+      tiene_enlace: Boolean(url),
+    })),
+    // Lo que la casa ha ajustado de cada plugin, para que la pantalla lo lea.
+    plugins,
     emojis_permitidos: registro.emojis_permitidos,
     eventos,
     ideas,
@@ -105,6 +124,11 @@ export function componerInstantanea(registro, observador) {
     vistos: (registro.vistos || []).filter((v) => v.persona_id === observador.id),
     lio_cuadro: deLaCasa ? registro.lio_cuadro || [] : [],
     paseos: deLaCasa ? registro.paseos || [] : [],
+    // Las ausencias son de la casa, como Lío: es él quien las lee.
+    ausencias: deLaCasa ? registro.ausencias || [] : [],
+    // Lo que le pasa a un día suelto de un evento viaja con el evento: quien no
+    // recibe la hípica tampoco recibe que el jueves no la hay.
+    dias_evento: (registro.dias_evento || []).filter((d) => idsDeEventos.has(d.evento_id)),
     // Las propuestas llegan enteras y no solo las dirigidas al lector: quien
     // pidió un cambio tiene que ver que sigue sin contestar, y el carril de la
     // semana marca el turno pedido para los dos.

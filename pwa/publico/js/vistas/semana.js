@@ -15,15 +15,22 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
-  deslizarHorizontal, dobleToque, botonIcono, enfocarAlAbrir, enlazar,
+  deslizarHorizontal, dobleToque, botonIcono, enfocarAlAbrir, enlazar, selectorDeFecha,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
-import { REPETICIONES, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
+import { REPETICIONES, estaActivo, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
-  diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, indiceDia, instanciasEn, iso,
-  isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
+  diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia,
+  instanciasEn, iso, isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
+import { ajustesDe, pluginDeEvento } from '../plugins.js';
+import { viajeDelVuelo } from '../viajes.js';
+import {
+  abrirFormularioActividad, abrirFormularioEscapada, abrirPlugins, quienesVan, tiposVisibles,
+} from './plugins.js';
+import { abrirFicha } from './familia.js';
+import { irALugar } from './sitios.js';
 import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento } from './regalos.js';
 import { bloqueDeComentarios } from '../comentarios.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
@@ -111,7 +118,15 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
         paso('‹', -1, 'Anterior'),
         paso('›', 1, 'Siguiente'),
       ]),
-      el('div', { class: `compartir-periodo${modo === 'lista' ? ' empujar' : ''}` }, accionesDelPeriodo(ctx)),
+      el('div', { class: `compartir-periodo${modo === 'lista' ? ' empujar' : ''}` }, [
+        // «Qué hay en la agenda»: los plugins con su interruptor, a un toque de
+        // la pantalla donde se ven (specs/propuesta-plugins-agenda.html, B1).
+        botonIcono('capas', {
+          etiqueta: 'Qué hay en la agenda', tono: 'discreto',
+          onclick: () => { toque(); abrirPlugins(ctx); },
+        }),
+        ...accionesDelPeriodo(ctx),
+      ]),
       // Volver es tan necesario como irse: con las flechas y el deslizamiento,
       // tres gestos distraídos dejan la agenda en un mes que no le importa a
       // nadie y sin forma evidente de regresar.
@@ -890,23 +905,112 @@ export function textoDePropuesta(trato, ctx) {
 
 const mayuscula = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
 
+/**
+ * Qué escribe una línea de la semana, según el plugin del que viene.
+ *
+ * Es la regla de «banda para lo que enmarca el día, línea para lo demás»
+ * (`specs/propuesta-plugins-agenda.html`, C1) y lo que cada plugin decidió
+ * decir en su línea (`specs/propuesta-plugins-hojas.html`): el vuelo con su
+ * dueño, la escapada con quién va, el cumpleaños con los años, la actividad
+ * con quién lleva y quién recoge en dos pastillas.
+ */
+export function textoDeLinea(aparicion, ctx) {
+  const { evento, dia } = aparicion;
+  const cara = ctx.vista.caraDe(evento);
+  const plugin = pluginDeEvento(evento);
+  const id = String(evento.id || '');
+  const linea = {
+    emoji: cara.emoji,
+    titulo: cara.titulo,
+    de: null,
+    banda: plugin === 'viajes' || plugin === 'finde' || id.startsWith('derivado:ausencia:'),
+    suave: false,
+    pastillas: [],
+  };
+
+  if (id.startsWith('derivado:cumpleanos:')) {
+    linea.titulo = cara.titulo.replace(/^Cumpleaños de /, 'Cumple de ');
+    const persona = ctx.vista.persona(evento.persona_origen_id);
+    const anios = persona ? edadEnElCumple(persona, dia) : null;
+    if (anios && ajustesDe(ctx.vista.datos, 'cumples').edad) linea.de = String(anios);
+  } else if (id.startsWith('derivado:fuera:')) {
+    // Los días de en medio de un viaje: una línea gris, sin banda, que solo
+    // dice que no está.
+    linea.banda = false;
+    linea.suave = true;
+  } else if (plugin === 'viajes') {
+    const dueno = ctx.vista.duenyoDelCalendario?.(evento) || null;
+    if (dueno) linea.de = `de ${dueno.nombre}`;
+  } else if (plugin === 'finde') {
+    const primerDia = evento.extra?.primer_dia || null;
+    linea.de = primerDia && iso(dia) < primerDia
+      ? `salida${horaDe(aparicion) ? ` ${horaDe(aparicion)}` : ''}`
+      : quienesVan(evento, ctx);
+  } else if (plugin === 'extraescolares') {
+    const reparto = repartoDelDia(ctx.vista.datos, evento, dia);
+    const inicialesDe = (personaId) => {
+      const persona = ctx.vista.persona(personaId);
+      return persona ? String(persona.nombre || '').trim().slice(0, 2) : null;
+    };
+    if (reparto.lleva || reparto.recoge) {
+      linea.pastillas = [
+        { clase: 'lleva', texto: reparto.lleva ? inicialesDe(reparto.lleva) : '·', titulo: reparto.lleva ? `Lleva ${ctx.vista.nombre(reparto.lleva)}` : 'Nadie lleva' },
+        { clase: 'recoge', texto: reparto.recoge ? inicialesDe(reparto.recoge) : '·', titulo: reparto.recoge ? `Recoge ${ctx.vista.nombre(reparto.recoge)}` : 'Nadie recoge' },
+      ];
+    }
+  }
+  return linea;
+}
+
+/** Quién lleva y quién recoge ese día: lo dicho para ese día suelto manda
+ *  sobre el cuadro de la actividad. */
+export function repartoDelDia(instantanea, evento, dia) {
+  const suelto = diaDeEvento(instantanea, evento.id, iso(dia));
+  const delCuadro = evento.extra?.reparto?.[indiceDia(dia)] || {};
+  return {
+    lleva: suelto?.lleva_id || delCuadro.lleva || null,
+    recoge: suelto?.recoge_id || delCuadro.recoge || null,
+  };
+}
+
+/** Los años que cumple en ese día concreto, que no siempre es el próximo. */
+export function edadEnElCumple(persona, dia) {
+  const nacimiento = parsearMomento(persona?.fecha_nacimiento);
+  if (!nacimiento || !dia) return null;
+  const anios = dia.getFullYear() - nacimiento.getFullYear();
+  return anios > 0 && anios < 130 ? anios : null;
+}
+
 function lineaDeEvento(aparicion, ctx) {
   const hora = horaDe(aparicion);
-  const cara = ctx.vista.caraDe(aparicion.evento);
+  const texto = textoDeLinea(aparicion, ctx);
   return el('button', {
     class: 'linea', type: 'button',
     'data-continuacion': aparicion.continuacion ? 'si' : 'no',
+    'data-banda': texto.banda ? 'si' : 'no',
+    'data-suave': texto.suave ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
-    // Un evento de varios días se marca con una banda continua en el margen.
-    aparicion.instancia.inicio.getTime() !== aparicion.instancia.fin.getTime()
+    // Un evento de varios días se marca con una banda continua en el margen,
+    // salvo que ya vaya entero como banda.
+    !texto.banda && aparicion.instancia.inicio.getTime() !== aparicion.instancia.fin.getTime()
       ? el('span', { class: 'linea-banda' }) : null,
-    el('span', { class: 'linea-emoji', texto: cara.emoji }),
+    el('span', { class: 'linea-emoji', texto: texto.emoji }),
     // «(cont.)» y no «2/3». La cuenta decía más —por dónde va— y se leía peor:
     // dos cifras y una barra piden descifrarse, y lo que hace falta saber de un
     // vistazo es solo que eso de hoy viene de antes.
-    el('span', { class: 'linea-titulo', texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
-    hora ? el('span', { class: 'linea-hora', texto: hora }) : null,
+    el('span', { class: 'linea-titulo' }, [
+      texto.titulo + (aparicion.continuacion && !texto.banda ? ' (cont.)' : ''),
+      texto.de ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
+      aparicion.continuacion && texto.banda ? el('span', { class: 'linea-de', texto: ' · cont.' }) : null,
+    ]),
+    ...texto.pastillas.map((pastilla) => el('span', {
+      class: `linea-pastilla linea-pastilla-${pastilla.clase}`, title: pastilla.titulo, 'aria-label': pastilla.titulo,
+    }, [
+      el('span', { 'aria-hidden': 'true', texto: pastilla.clase === 'lleva' ? '↑' : '↓' }),
+      pastilla.texto,
+    ])),
+    hora && !texto.pastillas.length ? el('span', { class: 'linea-hora', texto: hora }) : null,
   ]);
 }
 
@@ -923,7 +1027,12 @@ const ORDEN_VIAJE = 0;
 const ORDEN_EVENTO = 1;
 const ORDEN_LIO = 2;
 
-const ordenDeEvento = (evento) => (evento.tipo_id === 'viaje' ? ORDEN_VIAJE : ORDEN_EVENTO);
+const ordenDeEvento = (evento) => {
+  const plugin = pluginDeEvento(evento);
+  const enmarca = evento.tipo_id === 'viaje' || plugin === 'viajes' || plugin === 'finde'
+    || String(evento.id || '').startsWith('derivado:ausencia:');
+  return enmarca ? ORDEN_VIAJE : ORDEN_EVENTO;
+};
 
 const porViajesPrimero = (apariciones) => [...apariciones].sort(
   (a, b) => ordenDeEvento(a.evento) - ordenDeEvento(b.evento),
@@ -1168,21 +1277,32 @@ function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
   // avión ya distingue el vuelo de lo demás.
   const duenyo = ctx.vista.duenyoDelCalendario?.(aparicion.evento) || null;
 
+  const texto = textoDeLinea(aparicion, ctx);
+  const reparto = pluginDeEvento(aparicion.evento) === 'extraescolares'
+    ? repartoDelDia(ctx.vista.datos, aparicion.evento, aparicion.dia) : null;
+
   const pie = [
     conFecha ? formatearFechaLarga(aparicion.dia) : null,
     dias > 1 ? `${dias} días` : null,
     duenyo ? `de ${duenyo.nombre}` : null,
+    texto.de && !duenyo && !texto.de.match(/^\d+$/) ? texto.de : null,
     aparicion.evento.ubicacion,
     participantes.length ? participantes.join(', ') : null,
+    reparto?.lleva ? `lleva ${ctx.vista.nombre(reparto.lleva)}` : null,
+    reparto?.recoge ? `recoge ${ctx.vista.nombre(reparto.recoge)}` : null,
   ].filter(Boolean).join(' · ');
 
   return el('button', {
     class: 'tarjeta', type: 'button',
+    'data-suave': texto.suave ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     el('div', { class: 'tarjeta-fila' }, [
-      el('span', { class: 'linea-emoji', texto: cara.emoji }),
-      el('h3', { texto: cara.titulo + (aparicion.continuacion ? ' (cont.)' : '') }),
+      el('span', { class: 'linea-emoji', texto: texto.emoji }),
+      el('h3', {}, [
+        texto.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+        texto.de && texto.de.match(/^\d+$/) ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
+      ]),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
     ]),
     pie ? el('p', { texto: pie }) : null,
@@ -1195,9 +1315,33 @@ export function abrirDia(fecha, ctx) {
   const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, fecha, fecha), [fecha]);
   const apariciones = reparto.get(iso(fecha)) || [];
 
+  // Lo que ese día se dijo que no hay —«no hay hípica este día»— se enseña
+  // apagado y con su deshacer: un toque quitó la fila y un toque la devuelve.
+  const cancelados = (ctx.vista.datos.dias_evento || [])
+    .filter((d) => d.fecha === iso(fecha) && estaActivo(d) && (d.cancelado === true || d.cancelado === 1))
+    .map((d) => ({ dia: d, evento: ctx.vista.evento(d.evento_id) }))
+    .filter((c) => c.evento && estaActivo(c.evento));
+
   const contenido = abrirHoja(formatearFechaLarga(fecha), (cuerpo) => {
-    if (!apariciones.length) cuerpo.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
+    if (!apariciones.length && !cancelados.length) cuerpo.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
     for (const aparicion of apariciones) cuerpo.append(tarjetaDeEvento(aparicion, ctx));
+    for (const { dia, evento } of cancelados) {
+      cuerpo.append(el('button', {
+        class: 'tarjeta tarjeta-apagada', type: 'button',
+        onclick: async () => {
+          await guardar('evento_dia', dia.id, { cancelado: 0 });
+          avisar('Vuelve a haber');
+          ctx.refrescar();
+          abrirDia(fecha, ctx);
+        },
+      }, [
+        el('div', { class: 'tarjeta-fila' }, [
+          el('span', { class: 'linea-emoji', texto: ctx.vista.caraDe(evento).emoji }),
+          el('h3', { texto: `No hay ${ctx.vista.caraDe(evento).titulo.toLowerCase()}` }),
+        ]),
+        el('p', { texto: 'Tocar para deshacerlo.' }),
+      ]));
+    }
     cuerpo.append(el('button', {
       class: 'boton', type: 'button',
       onclick: () => abrirFormularioEvento(ctx, { fecha }),
@@ -1255,6 +1399,11 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
 
   const inicio = parsearMomento(evento.inicio);
 
+  const identificador = String(evento.id || '');
+  if (identificador.startsWith('derivado:santo:')) return abrirSanto(evento, ctx, aparicion);
+  if (identificador.startsWith('derivado:ausencia:')) return abrirAusencia(evento, ctx);
+  if (identificador.startsWith('derivado:fuera:')) return abrirFuera(evento, ctx);
+
   // Un cumpleaños abre la hoja de cumpleaños, que ya existe en Regalos y sabe
   // cosas que esta no: cuántos cumple, la felicitación y sus regalos. Tener dos
   // hojas para lo mismo solo servía para que se fueran separando. El día que se
@@ -1281,6 +1430,7 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
 
   const derivado = evento.origen !== 'manual';
   const cara = ctx.vista.caraDe(evento);
+  const plugin = pluginDeEvento(evento);
 
   // Compartir usa la hoja nativa dentro de la cáscara de iOS y cae a
   // `navigator.share` —o al portapapeles— en el navegador. Solo sale la cara
@@ -1327,13 +1477,20 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
     const gente = ctx.vista.participantes(evento);
     if (gente.length) {
       cuerpo.append(el('div', { class: 'grupo' }, [
-        el('p', { class: 'grupo-titulo', texto: 'Quién va' }),
+        el('p', { class: 'grupo-titulo', texto: plugin === 'extraescolares' ? 'De quién es' : 'Quién va' }),
         el('div', { class: 'opciones' }, gente.map((id) => {
           const persona = ctx.vista.persona(id);
           return persona ? el('span', { class: 'etiqueta' }, [persona.nombre]) : null;
         })),
       ]));
     }
+
+    // Lo propio de cada plugin escrito: en una actividad, quién lleva y quién
+    // recoge ese día y el verbo de que ese día no hay; en una escapada, el sitio
+    // y lo de Lío; en un vuelo, la vuelta escrita a mano cuando no hay vuelo.
+    if (plugin === 'extraescolares' && aparicion) cuerpo.append(bloqueDelDiaDeActividad(evento, aparicion, ctx));
+    if (plugin === 'finde') cuerpo.append(bloqueDeEscapada(evento, ctx));
+    if (plugin === 'viajes' && evento.origen === 'importado') cuerpo.append(bloqueDeVuelta(evento, ctx));
 
     if (evento.notas) cuerpo.append(bloqueDeNotas(evento));
 
@@ -1360,10 +1517,15 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
   }, [
     // Los dos verbos que se usan van arriba, junto al título. Un cumpleaños o
-    // un evento traído de fuera no se edita: se corrige en su origen.
+    // un evento traído de fuera no se edita: se corrige en su origen. Cada
+    // plugin escrito abre su propio formulario.
     derivado ? null : botonIcono('editar', {
       etiqueta: 'Editar',
-      onclick: () => abrirFormularioEvento(ctx, { id: evento.id }),
+      onclick: () => {
+        if (plugin === 'extraescolares') return abrirFormularioActividad(ctx, { id: evento.id });
+        if (plugin === 'finde') return abrirFormularioEscapada(ctx, { id: evento.id });
+        return abrirFormularioEvento(ctx, { id: evento.id });
+      },
     }),
     botonDeCompartir(ctx, {
       etiqueta: 'Compartir el evento',
@@ -1374,6 +1536,190 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
       redactar: () => redactarDia(iso(dia), [evento.id]),
     }),
   ]);
+}
+
+/**
+ * Un día concreto de una actividad: quién lleva y quién recoge ese día —lo
+ * dicho aquí manda sobre el cuadro de la actividad—, y «no hay hípica este
+ * día» (`specs/propuesta-plugins-hojas.html`, K1 y L3).
+ */
+function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
+  const fechaIso = iso(aparicion.dia);
+  const reparto = repartoDelDia(ctx.vista.datos, evento, aparicion.dia);
+  const casa = [null, ...ctx.vista.personasDe('familia').filter((p) => p.tiene_cuenta).map((p) => p.id)];
+  const nombre = (id) => (id ? ctx.vista.nombre(id) : 'Nadie');
+  const suelto = () => diaDeEvento(ctx.vista.datos, evento.id, fechaIso);
+
+  const escribir = async (campos) => {
+    await guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
+      evento_id: evento.id, fecha: fechaIso, cancelado: 0, autor_id: ctx.vista.yo.id, activo: 1,
+      lleva_id: suelto()?.lleva_id || reparto.lleva || null,
+      recoge_id: suelto()?.recoge_id || reparto.recoge || null,
+      ...campos,
+    });
+  };
+
+  const celda = (clave, actual) => {
+    const boton = el('button', { class: 'lio-dia-turno', type: 'button', 'data-vacio': actual ? 'no' : 'si' }, [
+      el('span', { class: 'lio-dia-nombre', texto: nombre(actual) }),
+    ]);
+    boton.onclick = async () => {
+      toque();
+      const siguiente = casa[(casa.indexOf(actual) + 1) % casa.length];
+      await escribir({ [`${clave}_id`]: siguiente });
+      ctx.refrescar();
+      abrirDetalleEvento(evento.id, ctx, aparicion);
+    };
+    return boton;
+  };
+
+  return el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: `Este ${NOMBRES_DIA[indiceDia(aparicion.dia)]}` }),
+    el('div', { class: 'lio-dias' }, [
+      el('div', { class: 'lio-dia lio-dia-cabecera' }, [el('span'), el('span', { texto: 'Lleva' }), el('span', { texto: 'Recoge' })]),
+      el('div', { class: 'lio-dia' }, [
+        el('span', { class: 'lio-dia-rotulo', texto: String(aparicion.dia.getDate()) }),
+        celda('lleva', reparto.lleva), celda('recoge', reparto.recoge),
+      ]),
+    ]),
+    el('p', { class: 'pista', texto: 'Vale para este día. Todos los días se cambian en la actividad.' }),
+    el('button', {
+      class: 'enlace-discreto', type: 'button',
+      onclick: async () => {
+        await escribir({ cancelado: 1 });
+        toque('media');
+        cerrarHoja();
+        avisar(`Anotado: este día no hay ${ctx.vista.caraDe(evento).titulo.toLowerCase()}`);
+        ctx.refrescar();
+      },
+    }, [`No hay ${ctx.vista.caraDe(evento).titulo.toLowerCase()} este día`]),
+  ]);
+}
+
+/** Lo propio de una escapada en su hoja: el sitio, que se abre, y Lío. */
+function bloqueDeEscapada(evento, ctx) {
+  const extra = evento.extra || {};
+  const lugar = extra.lugar_id ? (ctx.vista.datos.lugares || []).find((l) => l.id === extra.lugar_id) : null;
+  const lineas = [];
+  if (extra.vispera) lineas.push(el('p', { class: 'pista', texto: `Se sale la víspera, el ${formatearFechaLarga(parsearMomento(evento.inicio))}.` }));
+  if (extra.lio === 'viene') lineas.push(el('p', { class: 'pista', texto: '🐾 Lío viene.' }));
+  if (extra.lio === 'se_queda') {
+    lineas.push(el('p', { class: 'pista', texto: `🐾 Lío se queda${extra.lio_con ? ` con ${ctx.vista.nombre(extra.lio_con)}` : ', y sus turnos quedan sin nadie'}.` }));
+  }
+  if (lugar) {
+    lineas.push(el('button', {
+      class: 'enlace-discreto', type: 'button',
+      onclick: () => { cerrarHoja(); irALugar(lugar.id, ctx); },
+    }, [`Ver el sitio: ${lugar.nombre} ›`]));
+  }
+  return lineas.length ? el('div', { class: 'grupo' }, lineas) : el('div', { hidden: true });
+}
+
+/**
+ * La vuelta de un vuelo, escrita a mano cuando no hay vuelo de vuelta que
+ * trazar: quien vuelve en tren no tiene otro vuelo, y sin esto los días de
+ * fuera no se sabrían nunca. Solo aparece en un vuelo sin vuelta emparejada.
+ */
+function bloqueDeVuelta(evento, ctx) {
+  const viaje = viajeDelVuelo(ctx.vista.datos, evento.id);
+  if (!viaje || viaje.vuelta || viaje.ida.id !== evento.id) return el('div', { hidden: true });
+
+  const vuelta = selectorDeFecha({
+    valor: evento.extra?.vuelta || '',
+    min: iso(viaje.desde),
+    vacio: 'Sin vuelta escrita',
+    alCambiar: async (valor) => {
+      await guardar('evento', evento.id, { extra: { ...(evento.extra || {}), vuelta: valor || null } });
+      avisar(valor ? 'Vuelta apuntada' : 'Vuelta quitada');
+      ctx.refrescar();
+    },
+  });
+  return el('div', { class: 'grupo' }, [
+    campo('Vuelve el', vuelta.nodo, 'No hay vuelo de vuelta en el calendario. Si se vuelve de otra manera, ponlo aquí y la agenda dirá hasta cuándo está fuera.'),
+  ]);
+}
+
+/** La hoja de un santo: la fecha y de dónde sale. */
+function abrirSanto(evento, ctx, aparicion) {
+  const persona = ctx.vista.persona(evento.persona_origen_id);
+  const dia = aparicion ? aparicion.dia : parsearMomento(evento.inicio);
+  abrirHoja(`Santo ${persona ? `de ${persona.nombre}` : ''}`.trim(), (cuerpo) => {
+    cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
+      el('span', { style: 'font-size:26px', texto: '✨' }),
+      el('div', {}, [
+        el('p', { texto: formatearFechaLarga(dia) }),
+        el('p', { class: 'pista', texto: 'Sale de la ficha de la persona. Para corregirlo, cambia allí el día de su santo.' }),
+      ]),
+    ]));
+  }, [
+    persona ? botonIcono('informacion', {
+      etiqueta: `Ver la ficha de ${persona.nombre}`, tono: 'discreto',
+      onclick: () => abrirFicha(persona.id, ctx),
+    }) : null,
+  ]);
+}
+
+/** La hoja de una ausencia: entre qué días, y a quién le pasan sus turnos. */
+function abrirAusencia(evento, ctx) {
+  const extra = evento.extra || {};
+  const ausencia = (ctx.vista.datos.ausencias || []).find((a) => a.id === extra.ausencia);
+  const persona = ausencia ? ctx.vista.persona(ausencia.persona_id) : null;
+  abrirHoja(evento.titulo, (cuerpo) => {
+    const desde = parsearMomento(evento.inicio);
+    const hasta = evento.fin ? parsearMomento(evento.fin) : desde;
+    cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
+      el('span', { style: 'font-size:26px', texto: '🧳' }),
+      el('div', {}, [
+        el('p', { texto: iso(desde) === iso(hasta) ? formatearFechaLarga(desde) : `${formatearFechaLarga(desde)} – ${formatearFechaLarga(hasta)}` }),
+        el('p', {
+          class: 'pista',
+          texto: [
+            extra.motivo || null,
+            `🐾 sus turnos: ${extra.cubre_id ? ctx.vista.nombre(extra.cubre_id) : 'nadie'}`,
+          ].filter(Boolean).join(' · '),
+        }),
+      ]),
+    ]));
+    cuerpo.append(el('p', { class: 'pista', texto: 'Se escribe en la ficha de la persona, en Gente, y Lío pasa sus turnos a quien cubra.' }));
+    if (ausencia) {
+      cuerpo.append(el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton', 'data-tono': 'peligro', type: 'button',
+          onclick: async () => {
+            await retirar('ausencia', ausencia.id);
+            cerrarHoja();
+            avisar('Ausencia quitada');
+            ctx.refrescar();
+          },
+        }, ['Quitar la ausencia']),
+      ]));
+    }
+  }, [
+    persona ? botonIcono('informacion', {
+      etiqueta: `Ver la ficha de ${persona.nombre}`, tono: 'discreto',
+      onclick: () => abrirFicha(persona.id, ctx),
+    }) : null,
+  ]);
+}
+
+/** Los días de fuera de un viaje: adónde, hasta cuándo, y el vuelo del que sale. */
+function abrirFuera(evento, ctx) {
+  const extra = evento.extra || {};
+  abrirHoja(evento.titulo, (cuerpo) => {
+    cuerpo.append(el('div', { class: 'tarjeta-fila' }, [
+      el('span', { style: 'font-size:26px', texto: '✈️' }),
+      el('div', {}, [
+        el('p', { texto: extra.destino ? `En ${extra.destino}` : 'De viaje' }),
+        el('p', { class: 'pista', texto: extra.hasta ? `Hasta el ${formatearFechaLarga(parsearMomento(extra.hasta))}.` : '' }),
+      ]),
+    ]));
+    if (extra.viaje) {
+      cuerpo.append(el('button', {
+        class: 'enlace-discreto', type: 'button',
+        onclick: () => abrirDetalleEvento(extra.viaje, ctx),
+      }, ['Ver el vuelo de ida ›']));
+    }
+  });
 }
 
 /**
@@ -1531,26 +1877,27 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
   abrirHoja(existente ? 'Editar evento' : 'Nuevo evento', (cuerpo) => {
     const titulo = entrada({ value: borrador.titulo });
     enfocarAlAbrir(titulo);
-    const dia = el('input', { type: 'date', value: borrador.dia });
 
+    // El calendario propio y no el del sistema: la rueda de iOS tapa media
+    // pantalla y no enseña dónde cae el sábado (`ui.js`, `selectorDeFecha`).
     // «Hasta» va aquí y no detrás de «Más opciones»: es la otra mitad del
     // cuándo, y escondido no lo encuentra quien no sepa ya que existe. Vacío no
     // pregunta nada, que es lo que tiene que pasar el 90 % de las veces.
-    const hasta = el('input', { type: 'date', value: borrador.hasta, min: borrador.dia });
-    dia.addEventListener('change', () => {
-      hasta.min = dia.value;
-      // Un «hasta» que se queda por detrás del día ya no dice nada: se cae solo
-      // en vez de esperar a que el guardado lo reproche.
-      if (hasta.value && hasta.value < dia.value) hasta.value = '';
+    const hasta = selectorDeFecha({ valor: borrador.hasta, min: borrador.dia, vacio: 'Sin fin, es de un día' });
+    const dia = selectorDeFecha({
+      valor: borrador.dia,
+      alCambiar: (valor) => {
+        hasta.min = valor;
+        // Un «hasta» que se queda por detrás del día ya no dice nada: se cae
+        // solo en vez de esperar a que el guardado lo reproche.
+        if (hasta.valor && hasta.valor < valor) hasta.valor = '';
+      },
     });
 
-    // Una debajo de otra y no en la misma fila. A lo ancho no caben: una casilla
-    // de fecha trae su propio ancho mínimo —el navegador dibuja dd/mm/aaaa
-    // dentro—, y a 390 puntos las dos juntas se aprietan hasta cortar el texto.
     cuerpo.append(
       campo('Qué', titulo),
-      campo('Cuándo', dia),
-      campo('Hasta', hasta, 'Déjalo vacío si es de un día. Con fecha, el evento sale en la agenda todos los días que dura.'),
+      campo('Cuándo', dia.nodo),
+      campo('Hasta', hasta.nodo, 'Con fecha, el evento sale en la agenda todos los días que dura.'),
     );
 
     const avanzado = el('div', { class: 'hoja-seccion', hidden: !existente });
@@ -1563,8 +1910,23 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
 
     const hora = el('input', { type: 'time', value: borrador.hora });
     // El tipo va después de la fecha: quien crea un evento tiene en la cabeza el
-    // qué y el cuándo, no la taxonomía (specs/ux.md §10.1).
-    const tipo = seleccion(ctx.vista.tiposEvento().map((t) => ({ valor: t.id, texto: `${t.emoji}  ${t.nombre}` })), borrador.tipo_id);
+    // qué y el cuándo, no la taxonomía (specs/ux.md §10.1). Y son pastillas y
+    // no un desplegable: solo los tipos que la casa tiene marcados en la hoja
+    // de Puntuales, que con cuatro se eligen de un toque sin abrir la rueda de
+    // iOS (`specs/propuesta-plugins-hojas.html`, I1).
+    let tipoElegido = borrador.tipo_id;
+    const tipo = el('div', { class: 'opciones', role: 'group', 'aria-label': 'Qué es' });
+    const pintarTipos = () => {
+      vaciar(tipo);
+      for (const t of tiposVisibles(ctx, tipoElegido)) {
+        tipo.append(el('button', {
+          class: 'opcion', type: 'button',
+          'aria-pressed': t.id === tipoElegido ? 'true' : 'false',
+          onclick: () => { tipoElegido = t.id; pintarTipos(); },
+        }, [`${t.emoji} ${t.nombre}`]));
+      }
+    };
+    pintarTipos();
     const lugar = entrada({ value: borrador.ubicacion });
     const notas = el('textarea', {});
     notas.value = borrador.notas;
@@ -1597,21 +1959,21 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
           if (!titulo.value.trim()) { avisar('Ponle un título'); titulo.focus(); return; }
-          if (hasta.value && hasta.value < dia.value) {
+          if (!dia.valor) { avisar('Falta el día'); return; }
+          if (hasta.valor && hasta.valor < dia.valor) {
             avisar('«Hasta» no puede ir antes del día');
-            hasta.focus();
             return;
           }
           // Un «hasta» igual al día es un evento de un día escrito de dos
           // maneras: se guarda como lo que es, sin fin, para que la agenda no
           // tenga que distinguir dos formas del mismo caso.
-          const finEscrito = hasta.value && hasta.value > dia.value ? hasta.value : null;
+          const finEscrito = hasta.valor && hasta.valor > dia.valor ? hasta.valor : null;
           const jornadaCompleta = !hora.value;
-          const momento = parsearMomento(jornadaCompleta ? dia.value : `${dia.value}T${hora.value}:00`);
+          const momento = parsearMomento(jornadaCompleta ? dia.valor : `${dia.valor}T${hora.value}:00`);
           const campos = {
             titulo: titulo.value.trim(),
-            tipo_id: tipo.value,
-            inicio: jornadaCompleta ? dia.value : isoConHora(momento),
+            tipo_id: tipoElegido,
+            inicio: jornadaCompleta ? dia.valor : isoConHora(momento),
             // El fin lleva la misma hora que el inicio: para el reparto por días
             // solo cuenta su fecha, y con la hora puesta la duración que guarda
             // el evento es la de verdad y no una de madrugada.

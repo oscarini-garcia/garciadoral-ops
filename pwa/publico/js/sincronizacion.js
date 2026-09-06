@@ -33,6 +33,8 @@ const PLURAL = {
   voto: 'votos',
   visto: 'vistos',
   mejora: 'mejoras',
+  evento_dia: 'dias_evento',
+  ausencia: 'ausencias',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -206,6 +208,13 @@ function aplicarEnLocal(cambio) {
   // instantánea, así que se sustituye entero.
   if (cambio.tipo === 'lio_cuadro') {
     instantaneaActual.lio_cuadro = cambio.campos.cuadro;
+    return;
+  }
+
+  // Lo ajustado de un plugin tampoco es una fila: es lo que la casa tiene
+  // puesto de ese plugin, entero, y se sustituye entero.
+  if (cambio.tipo === 'plugin') {
+    instantaneaActual.plugins = { ...(instantaneaActual.plugins || {}), [cambio.id]: cambio.campos };
     return;
   }
 
@@ -492,6 +501,29 @@ export const leerAjustesDeIa = () => peticion('/api/ia');
 /** Fuerza la sincronización del calendario de viajes sin esperar al cron diario.
  *  La descarga la hace el servidor; esto solo la dispara (calendario-viajes.md §5.4). */
 export const refrescarViajes = () => peticion('/api/viajes/refrescar', { method: 'POST' });
+
+/**
+ * El enlace de Flighty de una persona, que va por su ruta y no por la cola: es
+ * una credencial, y por la cola pasaría por IndexedDB y por la instantánea de
+ * ida y vuelta. Entra, se guarda y no vuelve a salir.
+ */
+export const pegarEnlaceDeViajes = (url, personaId = null) =>
+  peticion('/api/viajes/enlace', { method: 'POST', body: JSON.stringify({ url, persona_id: personaId }) });
+
+export const quitarEnlaceDeViajes = (personaId = null) =>
+  peticion('/api/viajes/enlace', { method: 'DELETE', body: JSON.stringify({ persona_id: personaId }) });
+
+/**
+ * El día del santo de un nombre, contestado por un modelo. Devuelve «MM-DD» o
+ * `null` si no lo sabe; lo que vuelve se enseña antes de guardarse.
+ */
+export async function buscarSanto(nombre) {
+  const { santo } = await peticion('/api/persona/santo', {
+    method: 'POST',
+    body: JSON.stringify({ nombre }),
+  });
+  return santo || null;
+}
 
 export const guardarAjustesDeIa = (campos) =>
   peticion('/api/ia', { method: 'POST', body: JSON.stringify(campos) });

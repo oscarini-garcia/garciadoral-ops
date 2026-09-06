@@ -24,6 +24,9 @@
  *   GET    /api/registro    · registro completo para el generador del plan semanal
  *   POST   /api/viajes/sincronizar · descarga el calendario de viajes ahora (servicio)
  *   POST   /api/viajes/refrescar    · lo mismo, desde Ajustes (administradores)
+ *   POST   /api/viajes/enlace  · pega el enlace de Flighty de una persona, y lo lee ya
+ *   DELETE /api/viajes/enlace  · quita ese enlace, y retira sus vuelos
+ *   POST   /api/persona/santo  · el día del santo de un nombre, contestado por un modelo
  *   POST   /api/redactar    · un día o un tramo de días, contado por un modelo
  *   POST   /api/regalo/sugerir · cinco propuestas de regalo para una persona
  *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
@@ -80,10 +83,13 @@ import {
   componerMaterialDeFelicitacion,
   componerMaterialDeLio,
   componerMaterialDeRegalo,
+  componerMaterialDeSanto,
   configuracionPublica,
   guardarConfiguracion,
   INSTRUCCION_EMOJI_POR_DEFECTO,
+  INSTRUCCION_SANTO_POR_DEFECTO,
   interpretarChispas,
+  interpretarSanto,
   interpretarEmojis,
   interpretarFelicitaciones,
   interpretarPropuestas,
@@ -540,6 +546,107 @@ async function refrescarViajes(peticion, env) {
   return json(resumen);
 }
 
+/**
+ * El enlace de Flighty de una persona, pegado desde la hoja de Viajes.
+ *
+ * Una fila de `calendario_externo` por persona —`cal-<persona>`— con el enlace
+ * dentro (`specs/propuesta-plugins-hojas.html`, D1). Va por su ruta y no por la
+ * cola de cambios a propósito: el enlace es una credencial —quien lo tiene lee
+ * el calendario— y por la cola pasaría por IndexedDB y por la instantánea de
+ * ida y vuelta. Aquí entra, se guarda y no vuelve a salir: la instantánea solo
+ * dice si lo hay.
+ *
+ * Cada uno pega el suyo; quien administra puede pegar el de otro de casa. Y se
+ * lee en el acto, para que el vuelo aparezca sin esperar al cron de mañana.
+ */
+async function pegarEnlaceDeViajes(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { url = '', persona_id: pedido } = await peticion.json().catch(() => ({}));
+  const personaId = pedido || lector.id;
+  if (personaId !== lector.id && lector.rol !== 'administrador') {
+    throw new SinPermiso('el enlace de otra persona solo lo pone quien administra');
+  }
+  const enlace = String(url).trim();
+  if (!/^(https?|webcal):\/\/\S+$/i.test(enlace) || enlace.length > 2000) {
+    return json({ error: 'eso no parece un enlace de calendario' }, 400);
+  }
+  const persona = await personaPorId(env.DB, personaId);
+  if (!persona || !persona.activa) return json({ error: 'esa persona no está' }, 404);
+
+  // `webcal://` es `https://` con otro nombre, y `fetch` no lo entiende.
+  const guardable = enlace.replace(/^webcal:\/\//i, 'https://');
+  await env.DB
+    .prepare(
+      `INSERT INTO calendario_externo (id, nombre, identificador_fuente, tipo_evento_id, persona_id, url_feed)
+       VALUES (?, ?, '', 'viaje', ?, ?)
+       ON CONFLICT(id) DO UPDATE SET url_feed = excluded.url_feed, persona_id = excluded.persona_id`,
+    )
+    .bind(`cal-${personaId}`, `Viajes de ${persona.nombre}`, personaId, guardable)
+    .run();
+
+  const resumen = await sincronizarViajes(env, { ahora: new Date().toISOString() });
+  return json({ alta: true, calendario: `cal-${personaId}`, resumen });
+}
+
+/**
+ * Quitar el enlace de una persona. Sus vuelos se retiran con él —se marcan
+ * inactivos, nada se borra—: un calendario sin enlace ya no puede decir que
+ * siguen en pie.
+ */
+async function quitarEnlaceDeViajes(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { persona_id: pedido } = await peticion.json().catch(() => ({}));
+  const personaId = pedido || lector.id;
+  if (personaId !== lector.id && lector.rol !== 'administrador') {
+    throw new SinPermiso('el enlace de otra persona solo lo quita quien administra');
+  }
+  const ahora = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare('UPDATE calendario_externo SET url_feed = NULL WHERE id = ?').bind(`cal-${personaId}`),
+    env.DB.prepare('UPDATE evento SET activo = 0, actualizado_en = ? WHERE calendario_id = ? AND activo = 1')
+      .bind(ahora, `cal-${personaId}`),
+  ]);
+  return json({ baja: true });
+}
+
+/**
+ * El día del santo de un nombre, contestado por un modelo.
+ *
+ * Es el octavo caso, y como el emoji de un sitio no es un encargo: no hay hueco
+ * en Ajustes para reescribir lo que se le pide. La ficha lo llama desde el
+ * destello junto al campo del santo, y lo que vuelve se enseña antes de
+ * guardarse: quien lo pide lo mira y lo corrige, porque el modelo puede
+ * equivocarse y esto sale en la agenda de toda la casa.
+ */
+async function buscarElSanto(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas consultas seguidas; prueba dentro de un minuto');
+  }
+
+  const { nombre = '' } = await peticion.json().catch(() => ({}));
+  const material = componerMaterialDeSanto(nombre);
+  if (!material.lineas.length) return json({ error: 'falta el nombre' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const resultado = await redactar({
+    configuracion, material, instruccion: INSTRUCCION_SANTO_POR_DEFECTO, tope: 40,
+  });
+
+  const santo = interpretarSanto(resultado.texto);
+  if (!resultado.texto) {
+    return json(
+      {
+        santo: null,
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+  return json({ santo, modelo: resultado.modelo, dicho: resultado.texto });
+}
+
 // ------------------------------------------------------- Redacción con IA --
 
 /**
@@ -972,6 +1079,9 @@ const RUTAS = [
   ['GET', '/api/registro', registroCompleto],
   ['POST', '/api/viajes/sincronizar', sincronizarViajesManual],
   ['POST', '/api/viajes/refrescar', refrescarViajes],
+  ['POST', '/api/viajes/enlace', pegarEnlaceDeViajes],
+  ['DELETE', '/api/viajes/enlace', quitarEnlaceDeViajes],
+  ['POST', '/api/persona/santo', buscarElSanto],
   ['POST', '/api/redactar', contarElDia],
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
   ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],

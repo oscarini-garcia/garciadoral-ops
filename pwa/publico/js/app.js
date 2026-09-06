@@ -43,16 +43,13 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { NOMBRES_DIA, formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { VERSION_APP } from './version.js';
 import { NOVEDADES } from './novedades.js';
-import {
-  TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, inicioDeVentana,
-  nombreDeTurno, resolverPropuesta, rotuloDeTurno, turnosDe,
-} from './lio.js';
+import { hayLio, inicioDeVentana, resolverPropuesta, rotuloDeTurno, turnosDe } from './lio.js';
 import { nuevoPieDeVersion, pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
-  abrirDetalleEvento, abrirFormularioEvento, abrirTurnoDeLio, bloqueDePropuesta, fechaQuePropone,
+  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta,
   pintarAgenda, reiniciarAgenda, tituloDeAgenda,
 } from './vistas/semana.js';
 import {
@@ -64,6 +61,8 @@ import {
   abrirApunte, hayFabEnSitios, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
 } from './vistas/sitios.js';
 import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
+import { antelacionDe } from './plugins.js';
+import { abrirMenuDeNuevo } from './vistas/plugins.js';
 
 const PESTANAS = {
   // Hoy tampoco repite su nombre arriba: allí va el saludo, que es lo que esta
@@ -75,7 +74,10 @@ const PESTANAS = {
   // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
   // único de esa pantalla que cambia. Por eso su título es una función: cambia
   // al pasar de semana, y con las demás pestañas no cambia nunca.
-  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirFormularioEvento(ctx, { fecha: fechaQuePropone() }) },
+  // El «+» de la agenda abre una lista corta —un evento, una actividad, un fin
+  // de semana— y no directamente el formulario: los dos plugins escritos se
+  // crean desde donde se piensa (specs/propuesta-plugins-hojas.html, H2).
+  semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirMenuDeNuevo(ctx) },
   regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => nuevoDesdeRegalos(ctx) },
   // La pestaña se llama Gente en la barra; la clave conserva el nombre del
   // módulo que la pinta, que es de donde sale. Y va sin botón flotante: la
@@ -102,7 +104,18 @@ const PESTANAS = {
 let pestana = 'hoy';
 let configuracion = {};
 let sesionActual = null;
-const ctx = { vista: null, refrescar };
+const ctx = {
+  vista: null,
+  refrescar,
+  /** Cambiar de pestaña desde dentro de una pantalla: la escapada abre su sitio. */
+  irA: (cual) => {
+    const boton = document.querySelector(`.tab[data-pestana="${cual}"]`);
+    if (boton) boton.click();
+  },
+  /** Volver a programar los recordatorios con lo que hay: un plugin apagado o
+   *  un aviso cambiado no puede esperar a la siguiente sincronización. */
+  reprogramarAvisos: () => { const datos = instantanea(); if (datos) refrescarRecordatorios(datos); },
+};
 
 arrancar();
 
@@ -279,7 +292,11 @@ function prepararInterfaz() {
 function refrescarRecordatorios(datos) {
   if (!esNativo()) return;
   const desde = hoy();
-  const instancias = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS));
+  // Cada instancia lleva con cuántos días de antelación se avisa, que sale
+  // del plugin del que viene: es el mando común de «avisar», resuelto aquí y
+  // no en la cáscara, que no sabe de plugins.
+  const instancias = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS))
+    .map((instancia) => ({ ...instancia, antelacion: antelacionDe(datos, instancia) }));
   programarRecordatorios(instancias, turnosPropios(datos, desde));
 }
 
@@ -718,24 +735,12 @@ function abrirAjustes() {
     // se tocan: enseñarlas todas abiertas obliga a leerlas enteras para
     // encontrar la única que se venía a buscar.
     //
-    // El cuadro de Lío es el reparto de la casa, no una preferencia de quien
-    // mira: cambiarlo por sorpresa reordena la semana de otras tres personas, y
-    // por eso lo edita quien administra. Un cambio de un día suelto no pasa por
-    // aquí, sino por el turno mismo, que se le pide al otro y él acepta.
-    if (ctx.vista?.esAdministrador() && !demostracion) {
-      cuerpo.append(acordeon('Lío', cuadroDeLio, { icono: 'huella' }));
-    }
-
+    // Lío y Viajes ya no están aquí: son plugins de la agenda y viven en «Qué
+    // hay en la agenda», a un toque del periodo, con los otros cuatro
+    // (specs/propuesta-plugins-agenda.html, B1). Ajustes se queda para la
+    // aplicación: tema, sincronización, la IA, los avisos y la cuenta.
     if (ctx.vista?.esAdministrador() && !demostracion) {
       cuerpo.append(acordeon('Inteligencia artificial', bloqueDeRedaccion, { icono: 'destello' }));
-    }
-
-    // Los viajes vienen de un calendario de Google, y su única palanca desde
-    // aquí es traerlos ahora sin esperar al ciclo diario. La descarga la hace el
-    // servidor; esto solo la dispara, y por eso —como Lío y la IA— es de quien
-    // administra (`specs/calendario-viajes.md` §9).
-    if (ctx.vista?.esAdministrador() && !demostracion) {
-      cuerpo.append(acordeon('Viajes', bloqueDeViajes, { icono: 'avion' }));
     }
 
     // Aquí y no al arrancar. Preguntar por los avisos nada más entrar es lo que
@@ -793,170 +798,6 @@ function abrirAjustes() {
     // dibujada.
     botonIcono('cerrar', { etiqueta: 'Cerrar los ajustes', tono: 'discreto', onclick: cerrarHoja }),
   ]);
-}
-
-/**
- * Quién saca a Lío cada día, si nadie dice lo contrario.
- *
- * De aquí se derivan los turnos de cualquier día que se mire, y por eso
- * cambiarlo cambia el futuro y no el pasado: en cuanto alguien marca un turno o
- * acuerda un cambio, ese día queda escrito y deja de mirar al cuadro.
- *
- * **Una línea por día, con el nombre escrito entero.** Empezó siendo una rejilla
- * de catorce casillas, que es la figura de un cuadro de la nevera y ocupaba un
- * tercio del alto; se cambió porque pedía descifrar. Una casilla decía *cuándo*
- * por dónde estaba y *quién* por dos letras que se parecen entre sí, de modo que
- * lo único que separaba de verdad a una persona de otra era su color, y ese
- * color salía de una cuenta sobre el identificador: cuatro tintes cualesquiera
- * en una pantalla de papel con una sola tinta. Escribiendo «Marta» no hay nada
- * que descifrar y el color deja de tener trabajo. De paso, el blanco del dedo
- * pasa de 30 × 30 puntos a 135 × 34, medidos en la hoja de estilos de verdad.
- *
- * **El turno va pasando de una persona a la siguiente al tocarlo**, y no abre
- * una lista: la lista tendría que ser otra hoja encima de esta, que es la que ya
- * ocupa Ajustes. Se estudió en `specs/prototipo-cuadro-de-lio.html`.
- */
-function cuadroDeLio(seccion) {
-  const casa = genteDeCasa(ctx.vista);
-  if (!casa.length) {
-    seccion.append(el('p', { class: 'pista', texto: 'Todavía no hay nadie en el círculo de casa.' }));
-    return;
-  }
-
-  const cuadro = cuadroDe(instantanea());
-  // «Nadie» es una opción de verdad y va la primera: hay días que no toca nadie,
-  // y sin ella habría que dejar puesto a alguien que no lo va a sacar.
-  const vueltas = [null, ...casa.map((p) => p.id)];
-
-  const dias = el('div', { class: 'lio-dias' });
-  // Qué columna es cuál se dice una vez arriba, con su sol o su luna y con todas
-  // sus letras, en lugar de un emoji repetido catorce veces dentro de las
-  // casillas, donde había que traducirlo en cada línea y le quitaba sitio al
-  // nombre.
-  dias.append(el('div', { class: 'lio-dia lio-dia-cabecera' }, [
-    el('span'),
-    ...TURNOS.map((turno) => el('span', { texto: rotuloDeTurno(turno) })),
-  ]));
-  for (let dia = 0; dia < 7; dia += 1) {
-    dias.append(el('div', { class: 'lio-dia' }, [
-      // Tres letras y no la inicial: lunes y martes empiezan igual, y aquí no
-      // hay una rejilla de siete columnas que sitúe cada día por su posición.
-      el('span', { class: 'lio-dia-rotulo', texto: mayusculaInicial(NOMBRES_DIA[dia].slice(0, 3)) }),
-      ...TURNOS.map((turno) => turnoDelCuadro(cuadro, turno, dia, casa, vueltas)),
-    ]));
-  }
-
-  seccion.append(
-    // Que el cambio vale de ahora en adelante hay que decirlo: es lo único que
-    // esta pantalla hace y que no se ve al hacerlo. Lo que ya pasó se queda como
-    // pasó (`specs/propuesta-cuadro-con-vigencia.html`).
-    el('p', {
-      class: 'pista',
-      texto: 'Toca un turno para pasar a la siguiente persona. Lo que cambies vale de ahora en adelante;'
-        + ' lo que ya pasó se queda como fue.',
-    }),
-    dias,
-    // La leyenda se queda aunque aquí ya no haga falta: en la semana no cabe un
-    // nombre y cada uno sale con sus dos primeras letras, así que este es el
-    // único sitio donde se puede aprender cuál es cuál.
-    el('p', { class: 'pista', texto: `En la semana: ${casa.map((p) => `${inicialesDe(p)} ${p.nombre}`).join(' · ')}` }),
-  );
-}
-
-const mayusculaInicial = (texto) => texto.charAt(0).toUpperCase() + texto.slice(1);
-
-function turnoDelCuadro(cuadro, turno, dia, casa, vueltas) {
-  const boton = el('button', { class: 'lio-dia-turno', type: 'button' });
-  const nombre = el('span', { class: 'lio-dia-nombre' });
-  boton.append(nombre);
-
-  const pintar = () => {
-    const persona = casa.find((p) => p.id === cuadro[turno.id][dia]) || null;
-    nombre.textContent = persona ? persona.nombre : 'Nadie';
-    boton.dataset.vacio = persona ? 'no' : 'si';
-    boton.setAttribute(
-      'aria-label',
-      `${NOMBRES_DIA[dia]} ${nombreDeTurno(turno).toLowerCase()}: ${persona ? persona.nombre : 'nadie'}. Cambiar.`,
-    );
-  };
-
-  boton.onclick = async () => {
-    toque();
-    const actual = vueltas.indexOf(cuadro[turno.id][dia]);
-    cuadro[turno.id][dia] = vueltas[(actual + 1) % vueltas.length];
-    pintar();
-    await guardarCuadro(cuadro);
-  };
-
-  pintar();
-  return boton;
-}
-
-/**
- * La configuración de la inteligencia artificial: la clave, el modelo y las
- * instrucciones de lo que la agenda le pide.
- *
- * La clave y el modelo son de la instalación entera y no de una función: hoy la
- * única que los usa es contar un día o un tramo antes de compartirlo, pero lo
- * que venga después tirará de los mismos. Por eso el apartado se llama por la
- * herramienta y no por el uso, y las instrucciones van dentro, una por función.
- *
- * Solo para administradores, y solo de escritura: la clave se guarda en el
- * servidor y de vuelta llegan sus cuatro últimos caracteres, lo justo para
- * reconocer cuál está puesta sin poder copiarla de esta pantalla.
- *
- * El botón de probar existe porque un fallo aquí es invisible desde la agenda
- * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
- * la clave, el modelo o la instrucción.
- */
-/**
- * El calendario de viajes en Ajustes: cuándo se sincronizó por última vez, un
- * botón para traerlo ahora y un panel de diagnóstico. El contenido de los
- * viajes se corrige en Google (`specs/calendario-viajes.md`); esta pantalla no
- * edita nada, solo dispara la descarga que hace el servidor y muestra en qué
- * quedó, que es lo que hace falta cuando «no sale nada» para saber por qué:
- *
- * - **calendario ausente de la instantánea** → falta la migración 0014, o el
- *   Worker desplegado no lleva el cambio que lo transmite;
- * - **estado `sin-configurar`** → el secreto `VIAJES_ICAL_URL` no llegó al Worker;
- * - **estado `sin-calendario`** → la fila del calendario no está sembrada;
- * - **`ok` con 0 altas y 0 viajes cargados** → el feed no trajo eventos;
- * - **viajes cargados pero ninguno a la vista** → son de fechas ya pasadas.
- */
-function bloqueDeViajes(seccion) {
-  const calendario = () =>
-    (instantanea().calendarios_externos || []).find((c) => c.id === 'cal-viajes');
-  const importados = () =>
-    (instantanea().eventos || []).filter((e) => e.origen === 'importado');
-
-  const diagnostico = el('pre', { class: 'traza' });
-  const pintar = (ultimoIntento) => {
-    const cal = calendario();
-    const viajes = importados();
-    const fechas = viajes.map((e) => e.inicio).filter(Boolean).sort();
-    const lineas = [
-      `Calendario en la instantánea: ${cal ? 'sí' : 'NO — ¿migración 0014 aplicada y Worker desplegado?'}`,
-      cal ? `  última correcta: ${cal.ultima_sincronizacion || 'nunca'}` : null,
-      // Los dos de abajo contestan lo que la fecha de arriba no podía: un feed
-      // que se lee bien y viene vacío y otro que lleva semanas dando 404 dejaban
-      // exactamente el mismo rastro —una fecha cada vez más vieja—, y desde la
-      // agenda los dos se ven igual: sin viaje.
-      cal?.ultimo_intento ? `  último intento:  ${cal.ultimo_intento}` : null,
-      cal?.ultimo_resultado ? `  y salió: ${cal.ultimo_resultado}` : null,
-      `Viajes importados cargados: ${viajes.length}`,
-      fechas.length ? `  fechas: de ${fechas[0]} a ${fechas[fechas.length - 1]}` : null,
-      `Versión de la app: ${VERSION_APP}`,
-      ultimoIntento ? `Último intento: ${ultimoIntento}` : null,
-    ].filter((linea) => linea !== null);
-    diagnostico.textContent = lineas.join('\n');
-  };
-  pintar();
-
-  // Sin botón: traer los viajes ahora es una de las tres cosas que hace
-  // «Comprobar ahora» en Sincronización, y tenerlo dos veces obligaba a elegir
-  // cuál de los dos era el bueno. Lo que queda aquí es el diagnóstico, que es de
-  // quien administra y no de quien se pregunta si está todo al día.
-  seccion.append(diagnostico);
 }
 
 /**
@@ -1186,6 +1027,22 @@ function firmaDeMejora(mejora) {
   return deHoy ? quien : `${quien}, ${cuando}`;
 }
 
+/**
+ * La configuración de la inteligencia artificial: la clave, el modelo y las
+ * instrucciones de lo que la agenda le pide.
+ *
+ * La clave y el modelo son de la instalación entera y no de una función: lo
+ * que venga después tira de los mismos. Por eso el apartado se llama por la
+ * herramienta y no por el uso, y las instrucciones van dentro, una por función.
+ *
+ * Solo para administradores, y solo de escritura: la clave se guarda en el
+ * servidor y de vuelta llegan sus cuatro últimos caracteres, lo justo para
+ * reconocer cuál está puesta sin poder copiarla de esta pantalla.
+ *
+ * El botón de probar existe porque un fallo aquí es invisible desde la agenda
+ * —el día se comparte igual, tal cual— y sin verlo no hay manera de saber si es
+ * la clave, el modelo o la instrucción.
+ */
 function bloqueDeRedaccion(seccion) {
   seccion.append(el('p', { class: 'pista', texto: 'Cargando…' }));
 

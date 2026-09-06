@@ -16,15 +16,17 @@ tener que recorrer la aplicación entera cada vez.
   FuenteNoDisponible · leer_agenda
 - **lio.py** — Los turnos de paseo de Lío, derivados del cuadro semanal.
   TurnoLio · id_paseo · cuadro_normalizado · inicio_de_ventana · versiones_normalizadas
-  cuadro_en · turno_de · turnos_de · hay_lio
+  cuadro_en · con_ausencias · turno_de · turnos_de · hay_lio
 - **mensaje.py** — Composición del texto del plan semanal para WhatsApp.
   formatear_dia · formatear_rango · formatear_lio · formatear_evento · Plan · componer
 - **modelo.py** — Entidades y reglas de integridad de la Agenda Familiar.
   ErrorDeIntegridad · Persona · AtributoPersona · Categoria · Etiqueta · OrientacionIdea
-  Idea · TipoEvento · ParticipanteEvento · Evento · …y 10 más
+  Idea · TipoEvento · ParticipanteEvento · Evento · …y 12 más
+- **plugins.py** — Los plugins de la agenda: de cuál es cada evento y hasta qué círculo llega.
+  circulo_admite · circulo_de · plugin_de_evento · se_recibe · santos_activos
 - **semana.py** — Selección de los eventos de la semana entrante.
-  Semana · semana_entrante · Instancia · Aparicion · eventos_derivados · ocurrencias
-  instancias_de_la_semana · repartir_por_dia
+  Semana · semana_entrante · Instancia · Aparicion · eventos_derivados · dias_semanales_de
+  ocurrencias · instancias_de_la_semana · repartir_por_dia
 - **visibilidad.py** — Función de visibilidad de la Agenda Familiar.
   destinatarios_de_idea · destinatarios_de_regalo · destinatarios_de_evento · visible
   visible_publicamente · comentarios_visibles · es_de_la_casa
@@ -60,11 +62,15 @@ tener que recorrer la aplicación entera cada vez.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
   cuadroEn · tramoLocal · inicioDeVentana · leerCuadro · …y 4 más
+- **plugins.js** — Los plugins de la agenda en el servidor: qué hay, de qué círculo es cada uno y cómo se…
+  PREFIJO · IDS_PLUGIN · CIRCULO_POR_DEFECTO · circuloAdmite · circuloDe · pluginDeEvento
+  normalizarPlugin · leerPlugins · guardarPlugin
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo,…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
   INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
-  INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_EMOJI_POR_DEFECTO · leerConfiguracion · …y 19 más
+  INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_SANTO_POR_DEFECTO · INSTRUCCION_EMOJI_POR_DEFECTO
+  …y 22 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
   administradoresRestantes · aplicarCambio
@@ -112,7 +118,7 @@ tener que recorrer la aplicación entera cada vez.
   campoDeGente
 - **lio.js** — Lío: los turnos de paseo, sus estados y el trato que los cambia de dueño.
   TURNOS · IDS_TURNO · turnoPorId · nombreDeTurno · rotuloDeTurno · idPaseo · cuadroVacio
-  versionesDe · cuadroEn · cuadroDe · …y 18 más
+  versionesDe · cuadroEn · cuadroDe · …y 20 más
 - **modelo.js** — Consultas sobre la instantánea local.
   EMOJI_POR_DEFECTO · emojiVisible · CIRCULOS · TAMANO_FAMILIA · PARENTESCOS
   PARENTESCO_OTRO · nombreCompleto · deQuien · GENEROS · partirEmoji · …y 14 más
@@ -122,23 +128,28 @@ tener que recorrer la aplicación entera cada vez.
   …y 9 más
 - **novedades.js** — Qué cambió cada versión, en el idioma de quien la usa — el registro detrás de las tarjetas…
   NOVEDADES
+- **plugins.js** — Los plugins de la agenda: qué hay, en qué familia está cada uno y qué mandos comparten…
+  PLUGINS · IDS_PLUGIN · pluginPorId · CON_CIRCULO · CON_NOMBRE · CIRCULO_POR_DEFECTO
+  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 10 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
-  soloFecha · iso · isoConHora · sumarDias · …y 15 más
+  soloFecha · iso · isoConHora · sumarDias · …y 18 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 14 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 17 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · enlazar · colorDePersona · iniciales · avatar · icono · botonIcono
-  abrirHoja · cerrarHoja · …y 12 más
+  abrirHoja · cerrarHoja · …y 13 más
 - **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
   VERSION_APP
+- **viajes.js** — Los viajes de cada uno, emparejados a partir de sus vuelos.
+  viajesDe · viajeDelVuelo · eventosDeFuera
 
 ### `pwa/publico/js/vistas/` · Las cinco secciones de la aplicación
 
@@ -146,6 +157,10 @@ tener que recorrer la aplicación entera cada vez.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
   reiniciarHoy · tituloDeHoy · pintarHoy · nuevoPieDeVersion
+- **plugins.js** — «Qué hay en la agenda»: la hoja de los plugins, la de cada uno, y los dos formularios que…
+  abrirPlugins · actividadesDe · escapadasDe · abrirHojaDePlugin · TIPOS_DE_OTROS_PLUGINS
+  tiposVisibles · quienesVan · abrirMenuDeNuevo · abrirFormularioActividad
+  abrirFormularioEscapada · …y 1 más
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
   reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · marcaDeSeleccionada
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
@@ -153,10 +168,10 @@ tener que recorrer la aplicación entera cada vez.
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone · abrirLioDelDia
   filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta
-  …y 4 más
+  …y 7 más
 - **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
-  reiniciarSitios · hayFabEnSitios · tituloDeSitios · nuevoDesdeSitios · pintarSitios
-  abrirApunte
+  reiniciarSitios · hayFabEnSitios · tituloDeSitios · irALugar · nuevoDesdeSitios
+  pintarSitios · abrirApunte
 
 ### `herramientas/` · Utilidades de desarrollo
 
@@ -186,6 +201,9 @@ tener que recorrer la aplicación entera cada vez.
 - `GET  /api/registro` — registro completo para el generador del plan semanal
 - `POST /api/viajes/sincronizar` — descarga el calendario de viajes ahora (servicio)
 - `POST /api/viajes/refrescar` — lo mismo, desde Ajustes (administradores)
+- `POST /api/viajes/enlace` — pega el enlace de Flighty de una persona, y lo lee ya
+- `DELETE /api/viajes/enlace` — quita ese enlace, y retira sus vuelos
+- `POST /api/persona/santo` — el día del santo de un nombre, contestado por un modelo
 - `POST /api/redactar` — un día o un tramo de días, contado por un modelo
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
@@ -275,7 +293,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**346** en total.
+**367** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -284,6 +302,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_mensaje.py` — 12
 - `tests/test_modelo.py` — 25
 - `tests/test_plan_semanal.py` — 11
+- `tests/test_plugins.py` — 9
 - `tests/test_semana.py` — 13
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
@@ -294,6 +313,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23
 - `api/test/mejoras.test.js` — 4
+- `api/test/plugins.test.js` — 12
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
 - `api/test/redaccion-dia.test.js` — 17

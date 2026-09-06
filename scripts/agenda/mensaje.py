@@ -149,6 +149,26 @@ def formatear_lio(agenda: Agenda, turnos: list[TurnoLio]) -> str:
     return f"{EMOJI_LIO} {' · '.join(partes)}" if partes else ""
 
 
+def _reparto(agenda: Agenda, aparicion: Aparicion) -> str:
+    """Quién lleva y quién recoge una actividad ese día: lo escrito para el día
+    suelto manda sobre el cuadro de la actividad (specs/propuesta-plugins-hojas.html,
+    J3 y K1). Vacío cuando no hay nadie apuntado."""
+    evento = aparicion.evento
+    if evento.plugin_id != "extraescolar":
+        return ""
+    reparto = evento.extra.get("reparto") if isinstance(evento.extra, dict) else None
+    del_dia = reparto.get(str(aparicion.dia.weekday()), {}) if isinstance(reparto, dict) else {}
+    suelto = agenda.dia_de_evento(evento.id, aparicion.dia)
+    lleva = (suelto.lleva_id if suelto and suelto.lleva_id else None) or del_dia.get("lleva")
+    recoge = (suelto.recoge_id if suelto and suelto.recoge_id else None) or del_dia.get("recoge")
+    partes = []
+    for verbo, persona_id in (("lleva", lleva), ("recoge", recoge)):
+        persona = agenda.persona(persona_id)
+        if persona is not None:
+            partes.append(f"{verbo} {persona.nombre}")
+    return f" ({', '.join(partes)})" if partes else ""
+
+
 def formatear_evento(agenda: Agenda, aparicion: Aparicion, sangria: int) -> str:
     """Una línea: emoji, título recortado y hora si la tiene."""
     emoji = agenda.emoji_de(aparicion.evento)
@@ -157,7 +177,7 @@ def formatear_evento(agenda: Agenda, aparicion: Aparicion, sangria: int) -> str:
     if aparicion.continuacion:
         sufijo = f" {MARCA_CONTINUACION}"
 
-    titulo = aparicion.evento.titulo + _acompanantes(agenda, aparicion)
+    titulo = aparicion.evento.titulo + (_reparto(agenda, aparicion) or _acompanantes(agenda, aparicion))
     disponible = ANCHO_LINEA - sangria - _ancho(emoji) - 1 - _ancho(sufijo)
     return f"{emoji} {_recortar(titulo, disponible)}{sufijo}"
 

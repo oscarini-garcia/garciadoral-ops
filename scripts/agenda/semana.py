@@ -17,6 +17,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Iterator
 
 from .modelo import Agenda, Evento, ParticipanteEvento
+from .plugins import santos_activos
 
 DIAS_SEMANA = 7
 
@@ -109,34 +110,104 @@ class Aparicion:
 
 
 def eventos_derivados(agenda: Agenda) -> list[Evento]:
-    """Cumpleaños generados a partir de las fechas de nacimiento (§7.4).
+    """Lo que sale de las fichas y no de la tabla de eventos (§7.4).
 
-    Se generan para todas las personas del registro, tengan cuenta o no. No son
-    editables: se corrigen en la ficha de la persona, de modo que el dato maestro
-    y su reflejo en la agenda no puedan divergir.
+    Cumpleaños y santos se generan de la fecha y el santo de cada persona del
+    registro, tenga cuenta o no; no son editables: se corrigen en la ficha, de
+    modo que el dato maestro y su reflejo en la agenda no puedan divergir. Los
+    santos se apagan desde el plugin de cumpleaños. Y una ausencia de alguien
+    de casa es una banda —«Marta fuera»— de sus días, como la dibuja la
+    aplicación (specs/propuesta-plugins-hojas.html, A3 y E1).
     """
-    tipo = "cumpleanos" if "cumpleanos" in agenda.tipos_evento else None
-    if tipo is None:
-        return []
-
     derivados: list[Evento] = []
-    for persona in agenda.personas.values():
-        if not persona.activa or persona.fecha_nacimiento is None:
-            continue
-        derivados.append(
-            Evento(
-                id=f"derivado:cumpleanos:{persona.id}",
-                titulo=f"Cumpleaños de {persona.nombre}",
-                tipo_id=tipo,
-                inicio=datetime.combine(persona.fecha_nacimiento, time.min),
-                jornada_completa=True,
-                repeticion="anual",
-                origen="derivado",
-                persona_origen_id=persona.id,
-                participantes=(ParticipanteEvento(persona.id, "protagonista"),),
+
+    if "cumpleanos" in agenda.tipos_evento:
+        for persona in agenda.personas.values():
+            if not persona.activa or persona.fecha_nacimiento is None:
+                continue
+            derivados.append(
+                Evento(
+                    id=f"derivado:cumpleanos:{persona.id}",
+                    titulo=f"Cumpleaños de {persona.nombre}",
+                    tipo_id="cumpleanos",
+                    inicio=datetime.combine(persona.fecha_nacimiento, time.min),
+                    jornada_completa=True,
+                    repeticion="anual",
+                    origen="derivado",
+                    persona_origen_id=persona.id,
+                    participantes=(ParticipanteEvento(persona.id, "protagonista"),),
+                )
             )
-        )
+
+    if "santo" in agenda.tipos_evento and santos_activos(agenda.plugins):
+        for persona in agenda.personas.values():
+            fecha = _fecha_de_santo(persona.santo)
+            if not persona.activa or fecha is None:
+                continue
+            derivados.append(
+                Evento(
+                    id=f"derivado:santo:{persona.id}",
+                    titulo=f"Santo de {persona.nombre}",
+                    tipo_id="santo",
+                    inicio=datetime.combine(fecha, time.min),
+                    jornada_completa=True,
+                    repeticion="anual",
+                    origen="derivado",
+                    persona_origen_id=persona.id,
+                    participantes=(ParticipanteEvento(persona.id, "protagonista"),),
+                )
+            )
+
+    tipo_banda = "viaje" if "viaje" in agenda.tipos_evento else next(iter(agenda.tipos_evento), None)
+    if tipo_banda is not None:
+        for ausencia in agenda.ausencias:
+            persona = agenda.persona(ausencia.persona_id)
+            if persona is None or not ausencia.activo:
+                continue
+            derivados.append(
+                Evento(
+                    id=f"derivado:ausencia:{ausencia.id}",
+                    titulo=f"{persona.nombre} fuera",
+                    tipo_id=tipo_banda,
+                    inicio=datetime.combine(ausencia.desde, time.min),
+                    fin=datetime.combine(ausencia.hasta, time.min),
+                    jornada_completa=True,
+                    emoji="🧳",
+                    notas=ausencia.motivo,
+                    origen="derivado",
+                    persona_origen_id=persona.id,
+                    participantes=(ParticipanteEvento(persona.id, "protagonista"),),
+                )
+            )
+
     return derivados
+
+
+def _fecha_de_santo(santo: str | None) -> date | None:
+    """«MM-DD» a una fecha del año 1900, que es el que usa la aplicación para
+    lo que se repite cada año sin haber empezado en ninguno."""
+    if not santo or len(santo) != 5 or santo[2] != "-":
+        return None
+    try:
+        return date(1900, int(santo[:2]), int(santo[3:]))
+    except ValueError:
+        return None
+
+
+def dias_semanales_de(evento: Evento) -> list[int] | None:
+    """Los días de la semana de una actividad —lunes en 0—, si lleva varios.
+
+    Una actividad de martes y jueves es una sola fila `semanal` con
+    `extra.dias = [1, 3]`, y no dos filas: el plan y la aplicación la leen
+    igual (`pwa/publico/js/semana.js`).
+    """
+    if evento.repeticion != "semanal":
+        return None
+    dias = evento.extra.get("dias") if isinstance(evento.extra, dict) else None
+    if not isinstance(dias, list):
+        return None
+    limpios = sorted({int(d) for d in dias if isinstance(d, (int, float)) and 0 <= int(d) <= 6})
+    return limpios or None
 
 
 # --------------------------------------------------------------------------- #
@@ -192,13 +263,18 @@ def ocurrencias(evento: Evento, desde: date, hasta: date) -> list[Instancia]:
             arranques.append(evento.inicio)
 
     elif evento.repeticion == "semanal":
-        salto = (limite_inf.date() - evento.inicio.date()).days
-        semanas = max(0, -(-salto // 7))  # techo de la división
-        actual = evento.inicio + timedelta(weeks=semanas)
-        while actual <= limite_sup:
-            if admisible(actual):
-                arranques.append(actual)
-            actual += timedelta(weeks=1)
+        # Una actividad puede ir varios días a la semana: cada uno arranca el
+        # primer día de ese nombre desde el inicio y sigue de siete en siete.
+        dias = dias_semanales_de(evento) or [evento.inicio.weekday()]
+        for dia_semana in dias:
+            primero = evento.inicio + timedelta(days=(dia_semana - evento.inicio.weekday()) % 7)
+            salto = (limite_inf.date() - primero.date()).days
+            semanas = max(0, -(-salto // 7))  # techo de la división
+            actual = primero + timedelta(weeks=semanas)
+            while actual <= limite_sup:
+                if admisible(actual):
+                    arranques.append(actual)
+                actual += timedelta(weeks=1)
 
     elif evento.repeticion == "mensual":
         for anio, mes in _meses(limite_inf.date(), limite_sup.date()):
@@ -229,7 +305,13 @@ def instancias_de_la_semana(
 
     resultado: list[Instancia] = []
     for evento in fuentes:
-        resultado.extend(ocurrencias(evento, semana.lunes, semana.domingo))
+        for instancia in ocurrencias(evento, semana.lunes, semana.domingo):
+            # El día en que se dijo «no hay hípica» no sale: es una fila de
+            # `evento_dia` con `cancelado`, y manda sobre la regla semanal.
+            dia = agenda.dia_de_evento(evento.id, instancia.inicio.date())
+            if dia is not None and dia.cancelado:
+                continue
+            resultado.append(instancia)
     return resultado
 
 

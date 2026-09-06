@@ -75,7 +75,10 @@ export function componerDemo(registro, observadorId) {
   return {
     ...registro,
     generado_en: new Date().toISOString(),
-    yo: { id: observador.id, nombre: observador.nombre, rol: observador.rol, es_administrador: esAdministrador },
+    yo: {
+      id: observador.id, nombre: observador.nombre, rol: observador.rol, es_administrador: esAdministrador,
+      circulo: observador.circulo || 'extendida',
+    },
     categorias: registro.categorias.filter((categoria) => {
       if (categoria.regla === 'publica') return true;
       if (categoria.regla === 'privada') return esAdministrador;
@@ -88,6 +91,12 @@ export function componerDemo(registro, observadorId) {
     comentarios: (registro.comentarios || []).filter((c) => ids[c.objeto_tipo]?.has(c.objeto_id)),
     lio_cuadro: deLaCasa ? registro.lio_cuadro : null,
     paseos: deLaCasa ? registro.paseos || [] : [],
+    // Los plugins: las ausencias son de la casa, como Lío; lo que le pasa a un
+    // día suelto viaja con su evento; y lo ajustado, de origen.
+    ausencias: deLaCasa ? registro.ausencias || [] : [],
+    dias_evento: (registro.dias_evento || []).filter((d) => eventos.some((e) => e.id === d.evento_id)),
+    plugins: registro.plugins || {},
+    calendarios_externos: (registro.calendarios_externos || []).map(({ url_feed, ...c }) => ({ ...c, tiene_enlace: Boolean(url_feed) })),
     tratos_paseo: deLaCasa ? registro.tratos_paseo || [] : [],
     // Sitios es de la casa igual que Lío: con los ojos de la abuela la pestaña
     // enseña que no hay nada, que es lo que enseñaría de verdad.

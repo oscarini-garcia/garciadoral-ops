@@ -8,18 +8,21 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar, botonIcono,
+  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar, botonIcono, icono,
+  selectorDeFecha,
 } from '../ui.js';
 import { compartir, toque } from '../native.js';
-import { guardar } from '../sincronizacion.js';
+import { buscarSanto, guardar, retirar } from '../sincronizacion.js';
 import { bloqueDeSolicitudes } from '../bandeja.js';
 import {
-  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, formatearImporte,
-  nombreCompleto, nuevoId,
+  CIRCULOS, GENEROS, PARENTESCOS, PARENTESCO_OTRO, TAMANO_FAMILIA, estaActivo, formatearImporte,
+  nombreCompleto, nuevoId, redaccionDisponible,
 } from '../modelo.js';
 import {
-  MESES_LARGOS, aniosQueCumple, diasHastaElCumple, parsearMomento, proximoAniversario,
+  MESES_LARGOS, aniosQueCumple, diasHastaElCumple, formatearFechaLarga, hoy, iso, parsearMomento,
+  proximoAniversario, sumarDias,
 } from '../semana.js';
+import { genteDeCasa } from '../lio.js';
 import {
   abrirDetalleIdea, abrirDetalleRegalo, abrirFormularioIdea, marcaDeSeleccionada,
 } from './regalos.js';
@@ -459,8 +462,17 @@ export function abrirFicha(personaId, ctx) {
         persona.fecha_nacimiento
           ? el('p', { class: 'pista', texto: textoDeCumpleanos(persona) })
           : null,
+        persona.santo
+          ? el('p', { class: 'pista', texto: textoDelSanto(persona) })
+          : null,
       ]),
     ]));
+
+    // Quien no está unos días, y a quién le pasan sus turnos de Lío mientras.
+    // Solo para los de casa: es la versión del cuadro con fecha de fin que Lío
+    // no tenía (`specs/propuesta-plugins-hojas.html`, A3), y de aquí sale
+    // también la banda «Marta fuera» de la semana.
+    if (persona.circulo === 'familia' && persona.tiene_cuenta) cuerpo.append(bloqueDeAusencias(persona, ctx));
 
     // Lo que gana valor con el tiempo: tallas, alergias, aficiones.
     const atributos = ctx.vista.atributosDe(personaId);
@@ -772,6 +784,184 @@ function deTextoDeFecha(texto) {
   return `${a}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
+/** «Santo el 13 de diciembre». */
+function textoDelSanto(persona) {
+  const partes = String(persona.santo || '').match(/^(\d{2})-(\d{2})$/);
+  if (!partes) return '';
+  return `Santo el ${Number(partes[2])} de ${MESES_LARGOS[Number(partes[1]) - 1].toLowerCase()}`;
+}
+
+/**
+ * El día del santo, escrito como «dd/mm», con un destello al lado que se lo
+ * pregunta a un modelo (`specs/propuesta-plugins-hojas.html`, E1 y su nota).
+ *
+ * El modelo propone y la persona confirma: lo que vuelve se escribe en la
+ * casilla y no se guarda hasta que se guarde la ficha, porque un santo
+ * inventado saldría en la agenda de toda la casa como si fuera verdad. Vacío
+ * es no tener santo que celebrar.
+ */
+function campoDeSanto(valorInicial, nombreActual, ctx) {
+  const texto = entrada({
+    inputmode: 'numeric', placeholder: 'dd/mm', maxlength: '5', autocomplete: 'off',
+    value: aTextoDeSanto(valorInicial),
+  });
+  texto.addEventListener('input', () => {
+    const digitos = texto.value.replace(/\D/g, '').slice(0, 4);
+    texto.value = digitos.length > 2 ? `${digitos.slice(0, 2)}/${digitos.slice(2)}` : digitos;
+  });
+
+  const nodo = el('div', { class: 'campo', 'data-con-destello': redaccionDisponible(ctx.vista.datos) ? 'si' : null }, [
+    el('label', { texto: 'Santo' }),
+    texto,
+    el('p', { class: 'pista', texto: 'Día y mes. Sale en la agenda cada año, como el cumpleaños. Vacío es no tener santo.' }),
+  ]);
+
+  if (redaccionDisponible(ctx.vista.datos)) {
+    const destello = el('button', {
+      class: 'destello-campo', type: 'button', title: 'Buscar el santo de este nombre',
+      'aria-label': 'Buscar el santo de este nombre',
+      onclick: async () => {
+        const nombre = String(nombreActual() || '').trim();
+        if (!nombre) { avisar('Escribe el nombre primero'); return; }
+        destello.disabled = true;
+        try {
+          const santo = await buscarSanto(nombre);
+          if (!santo) { avisar(`No sé cuándo es el santo de ${nombre}`); return; }
+          texto.value = aTextoDeSanto(santo);
+          avisar('Propuesto: compruébalo antes de guardar');
+        } catch (error) {
+          avisar(error.message || 'No he podido preguntarlo');
+        } finally {
+          destello.disabled = false;
+        }
+      },
+    }, [icono('destello')]);
+    nodo.insertBefore(destello, nodo.lastChild);
+  }
+
+  return {
+    campo: nodo,
+    /** «MM-DD», o `null` si no hay fecha entera y buena. */
+    leer: () => {
+      const partes = texto.value.match(/^(\d{1,2})\/(\d{1,2})$/);
+      if (!partes) return null;
+      const dia = Number(partes[1]);
+      const mes = Number(partes[2]);
+      const tope = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes - 1];
+      if (!tope || dia < 1 || dia > tope) return null;
+      return `${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    },
+  };
+}
+
+const aTextoDeSanto = (mmdd) => {
+  const partes = String(mmdd || '').match(/^(\d{2})-(\d{2})$/);
+  return partes ? `${partes[2]}/${partes[1]}` : '';
+};
+
+/**
+ * Las ausencias de alguien de casa: cuándo no está y a quién le pasan sus
+ * turnos de Lío. Se escriben aquí, en la ficha, porque una ausencia es de la
+ * persona y no del perro; Lío la lee.
+ */
+function bloqueDeAusencias(persona, ctx) {
+  const ayer = iso(sumarDias(hoy(), -1));
+  const ausencias = (ctx.vista.datos.ausencias || [])
+    .filter((a) => estaActivo(a) && a.persona_id === persona.id && (a.hasta || a.desde) >= ayer)
+    .sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
+  const enPalabras = (a) => {
+    const desde = parsearMomento(a.desde);
+    const hasta = parsearMomento(a.hasta || a.desde);
+    return iso(desde) === iso(hasta)
+      ? formatearFechaLarga(desde)
+      : `${formatearFechaLarga(desde)} – ${formatearFechaLarga(hasta)}`;
+  };
+
+  return el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: 'Fuera de casa' }),
+    ausencias.length
+      ? el('div', { class: 'lista' }, ausencias.map((ausencia) => el('div', { class: 'tarjeta ausencia' }, [
+          el('div', { class: 'tarjeta-fila' }, [
+            el('h3', { texto: enPalabras(ausencia) }),
+            el('button', {
+              class: 'enlace-discreto empujar', type: 'button',
+              onclick: async () => {
+                await retirar('ausencia', ausencia.id);
+                avisar('Ausencia quitada');
+                ctx.refrescar();
+                abrirFicha(persona.id, ctx);
+              },
+            }, ['Quitar']),
+          ]),
+          el('p', {
+            texto: [
+              ausencia.motivo || null,
+              `🐾 sus turnos: ${ausencia.cubre_id ? ctx.vista.nombre(ausencia.cubre_id) : 'nadie'}`,
+            ].filter(Boolean).join(' · '),
+          }),
+        ])))
+      : el('p', { class: 'vacio', texto: 'Ninguna a la vista.' }),
+    el('button', {
+      class: 'enlace-discreto', type: 'button',
+      onclick: () => abrirFormularioAusencia(persona, ctx),
+    }, ['Añadir una ausencia']),
+  ]);
+}
+
+function abrirFormularioAusencia(persona, ctx) {
+  const otros = genteDeCasa(ctx.vista).filter((p) => p.id !== persona.id);
+  let cubre = null;
+
+  abrirHoja(`${persona.nombre}, fuera de casa`, (cuerpo) => {
+    const desde = selectorDeFecha({ valor: iso(hoy()) });
+    const hasta = selectorDeFecha({ valor: iso(hoy()), min: iso(hoy()) });
+    desde.nodo.addEventListener('click', () => { hasta.min = desde.valor; if (hasta.valor < desde.valor) hasta.valor = desde.valor; });
+    const motivo = entrada({ placeholder: 'Viaje de trabajo, campamento…' });
+
+    const seg = el('div', { class: 'seg', role: 'group', 'aria-label': 'Sus turnos de Lío' });
+    for (const opcion of [{ id: null, nombre: 'Nadie' }, ...otros]) {
+      seg.append(el('button', {
+        type: 'button', 'aria-pressed': cubre === opcion.id ? 'true' : 'false',
+        onclick: (evento) => {
+          cubre = opcion.id;
+          for (const otro of seg.children) otro.setAttribute('aria-pressed', 'false');
+          evento.currentTarget.setAttribute('aria-pressed', 'true');
+        },
+      }, [opcion.nombre]));
+    }
+
+    cuerpo.append(
+      campo('Desde', desde.nodo),
+      campo('Hasta', hasta.nodo, 'El último día fuera, incluido.'),
+      campo('Por qué', motivo, 'Opcional. Sale en la banda de la semana.'),
+      campo('🐾 Sus turnos, mientras', seg, 'A quién le pasan los turnos de Lío que le tocaban.'),
+      el('div', { class: 'acciones' }, [
+        el('button', {
+          class: 'boton crecer', type: 'button',
+          onclick: async () => {
+            if (!desde.valor || !hasta.valor) { avisar('Faltan las fechas'); return; }
+            if (hasta.valor < desde.valor) { avisar('«Hasta» no puede ir antes que «Desde»'); return; }
+            await guardar('ausencia', nuevoId(), {
+              persona_id: persona.id,
+              desde: desde.valor,
+              hasta: hasta.valor,
+              cubre_id: cubre,
+              motivo: motivo.value.trim(),
+              autor_id: ctx.vista.yo.id,
+              activo: 1,
+            });
+            toque('media');
+            avisar('Ausencia apuntada');
+            ctx.refrescar();
+            abrirFicha(persona.id, ctx);
+          },
+        }, ['Apuntar']),
+        el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: () => abrirFicha(persona.id, ctx) }, ['Cancelar']),
+      ]),
+    );
+  });
+}
+
 /**
  * Alta y edición de personas, reservada a los administradores. La carga inicial
  * del registro es manual a propósito: una importación desde los contactos del
@@ -792,6 +982,7 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
     const nombre = entrada({ value: persona?.nombre || '', placeholder: 'Nombre' });
     const apellidos = entrada({ value: persona?.apellidos || '', placeholder: 'Apellidos' });
     const { control: nacimiento, campo: campoNacimiento } = campoDeFecha(persona?.fecha_nacimiento);
+    const { leer: leerSanto, campo: campoSanto } = campoDeSanto(persona?.santo, () => nombre.value, ctx);
     const genero = seleccion(
       [{ valor: '', texto: 'Sin decir' }, ...Object.entries(GENEROS).map(([valor, texto]) => ({ valor, texto }))],
       persona?.genero || '',
@@ -858,6 +1049,7 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
       campo('Nombre', nombre),
       campo('Apellidos', apellidos),
       campoNacimiento,
+      campoSanto,
       campo('Género', genero, 'Solo sirve para nombrar bien: elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando el parentesco no lo dice.'),
       campo('Círculo', grupo, hayHueco
         ? `${CIRCULOS.familia} es el hogar y son ${TAMANO_FAMILIA}: no es un grupo que crezca.`
@@ -909,6 +1101,7 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
             nombre: nombre.value.trim(),
             apellidos: apellidos.value.trim(),
             fecha_nacimiento: nacimiento.value || null,
+            santo: leerSanto(),
             parentesco: parentesco.value === PARENTESCO_OTRO
               ? otro.value.trim()
               : parentesco.value,
