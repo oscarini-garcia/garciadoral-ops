@@ -1978,3 +1978,13 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .calendario-dia[aria-pressed="true"] { background: var(--tinta); color: var(--paper); }
 .calendario-dia:disabled { opacity: .25; cursor: default; }
 .calendario-pie { display: flex; justify-content: space-between; gap: 8px; padding: 2px 4px 0; }
+
+/* El rótulo pequeño de una fila de chips dentro de un grupo —«Lleva»,
+   «Recoge»—, por debajo del título del grupo y sin su peso. */
+.grupo-subtitulo {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft, var(--ink-faint));
+}

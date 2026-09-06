@@ -38,7 +38,7 @@
  * `redactar` y el mismo `cabeUnaMas` que los otros seis.
  */
 
-import { IDS_TURNO, TURNOS, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
+import { IDS_TURNO, TURNOS, conAusencias, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
 
 const ANTHROPIC = 'https://api.anthropic.com/v1';
 const VERSION_API = '2023-06-01';
@@ -889,7 +889,11 @@ export function componerMaterialDeLio(instantanea, { fecha, ahora = new Date() }
       (paseo) => paseo.activo !== 0 && paseo.fecha === dia && paseo.turno === turnoId,
     );
     const cuadro = cuadroEn(versiones, inicioDeVentana(dia, turnoId));
-    const asignadoId = fila ? fila.asignado_id || null : cuadro[turnoId]?.[indiceDeDia(dia)] || null;
+    // Y una ausencia escrita en la ficha pasa el turno a quien cubra, como en
+    // la pantalla: si no, Lío presumiría de que lo saca quien está de viaje.
+    const asignadoId = fila
+      ? fila.asignado_id || null
+      : conAusencias(instantanea, cuadro[turnoId]?.[indiceDeDia(dia)] || null, dia);
     return {
       turnoId,
       nombre: TURNOS.find((t) => t.id === turnoId)?.nombre || turnoId,

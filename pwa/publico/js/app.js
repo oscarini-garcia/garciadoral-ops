@@ -49,8 +49,7 @@ import { NOVEDADES } from './novedades.js';
 import { hayLio, inicioDeVentana, resolverPropuesta, rotuloDeTurno, turnosDe } from './lio.js';
 import { nuevoPieDeVersion, pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
-  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta,
-  pintarAgenda, reiniciarAgenda, tituloDeAgenda,
+  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, pintarAgenda, reiniciarAgenda, tituloDeAgenda,
 } from './vistas/semana.js';
 import {
   abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
@@ -61,7 +60,7 @@ import {
   abrirApunte, hayFabEnSitios, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
 } from './vistas/sitios.js';
 import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
-import { antelacionDe } from './plugins.js';
+import { antelacionDe, avisosDePlugins, resolverTratoDeDia } from './plugins.js';
 import { abrirMenuDeNuevo } from './vistas/plugins.js';
 
 const PESTANAS = {
@@ -114,7 +113,13 @@ const ctx = {
   },
   /** Volver a programar los recordatorios con lo que hay: un plugin apagado o
    *  un aviso cambiado no puede esperar a la siguiente sincronización. */
-  reprogramarAvisos: () => { const datos = instantanea(); if (datos) refrescarRecordatorios(datos); },
+  reprogramarAvisos: () => {
+    const datos = instantanea();
+    if (datos) refrescarRecordatorios(datos);
+    // Y el servidor se entera de la antelación nueva por el mismo camino que
+    // el token: volver a dar el alta.
+    renovarAvisos().catch(() => {});
+  },
 };
 
 arrancar();
@@ -295,8 +300,15 @@ function refrescarRecordatorios(datos) {
   // Cada instancia lleva con cuántos días de antelación se avisa, que sale
   // del plugin del que viene: es el mando común de «avisar», resuelto aquí y
   // no en la cáscara, que no sabe de plugins.
-  const instancias = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS))
-    .map((instancia) => ({ ...instancia, antelacion: antelacionDe(datos, instancia) }));
+  //
+  // Con los avisos remotos puestos, el aviso previo lo empuja el servidor cada
+  // mañana con estas mismas antelaciones (`api/src/recordatorios.js`), y aquí
+  // no se programa: sonarían dos por lo mismo. El turno de Lío sigue siendo
+  // local en los dos casos, que dice otra cosa y funciona sin red.
+  const instancias = losQuiere() && hayAvisosRemotos()
+    ? []
+    : instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS))
+      .map((instancia) => ({ ...instancia, antelacion: antelacionDe(datos, instancia) }));
   programarRecordatorios(instancias, turnosPropios(datos, desde));
 }
 
@@ -427,9 +439,11 @@ function abrirAvisos() {
     if (pendientes.length) {
       cuerpo.append(el('div', { class: 'grupo' }, [
         el('p', { class: 'grupo-titulo', texto: 'Por contestar' }),
-        ...pendientes.map((aviso) => (aviso.solicitudes
-          ? filaDeSolicitudes(aviso)
-          : bloqueDePropuesta(aviso.trato, ctx))),
+        ...pendientes.map((aviso) => {
+          if (aviso.solicitudes) return filaDeSolicitudes(aviso);
+          if (aviso.tratoDia) return bloqueDePropuestaDeDia(aviso.tratoDia, ctx);
+          return bloqueDePropuesta(aviso.trato, ctx);
+        }),
       ]));
     }
 
@@ -546,7 +560,7 @@ async function renovarAvisos() {
     return;
   }
   const alta = await activarAvisosRemotos();
-  if (alta.estado === 'registrado') await darDeAltaLosAvisos(alta.token, 'ios').catch(() => {});
+  if (alta.estado === 'registrado') await darDeAltaLosAvisos(alta.token, 'ios', avisosDePlugins()).catch(() => {});
 }
 
 function bloqueDeAvisos(dentro) {
@@ -579,7 +593,7 @@ function bloqueDeAvisos(dentro) {
       const alta = await activarAvisosRemotos();
       if (alta.estado === 'registrado') {
         try {
-          await darDeAltaLosAvisos(alta.token, 'ios');
+          await darDeAltaLosAvisos(alta.token, 'ios', avisosDePlugins());
           localStorage.setItem(CLAVE_AVISOS, 'si');
           escribir('Listo: te avisamos en este teléfono.');
         } catch (error) {
@@ -637,6 +651,28 @@ async function atenderUnAviso({ accion, datos }) {
     return;
   }
 
+  if (datos.tipo === 'recordatorio') {
+    if (datos.evento) abrirDetalleEvento(datos.evento, ctx);
+    return;
+  }
+
+  if (datos.tipo === 'actividad') {
+    if (accion === 'aceptar' || accion === 'rechazar') {
+      let trato = tratoDeDiaPorId(datos.trato);
+      if (!trato) {
+        await sincronizar().catch(() => {});
+        trato = tratoDeDiaPorId(datos.trato);
+      }
+      if (trato && trato.estado === 'pendiente') {
+        await resolverTratoDeDia(trato, accion === 'aceptar', (t) => escribirDiaDeTrato(t, ctx));
+        avisar(accion === 'aceptar' ? 'Contestado: queda apuntado' : 'Contestado: se queda como estaba');
+        refrescar();
+      }
+    }
+    if (datos.evento) abrirDetalleEvento(datos.evento, ctx);
+    return;
+  }
+
   if (datos.tipo !== 'lio') return;
 
   if (accion === 'aceptar' || accion === 'rechazar') {
@@ -656,6 +692,7 @@ async function atenderUnAviso({ accion, datos }) {
 }
 
 const tratoPorId = (id) => (instantanea()?.tratos_paseo || []).find((t) => t.id === id) || null;
+const tratoDeDiaPorId = (id) => (instantanea()?.tratos_dia || []).find((t) => t.id === id) || null;
 
 // -------------------------------------------------------------- Ajustes --
 

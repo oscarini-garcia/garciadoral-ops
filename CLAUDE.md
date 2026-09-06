@@ -69,6 +69,27 @@ pendiente. El hook lo inyecta al final del mapa.
   ausencias** —el plan de los domingos y la aplicación sí—; y el plugin de
   Puntuales acota los tipos que ofrece el formulario, pero no re-clasifica lo
   ya escrito.
+  **Y lo que quedó abierto de esa vuelta está cerrado.** El cambio de un día
+  suelto de quién lleva o recoge **pasa por trato** (K1): tabla `trato_dia`
+  (migración `0022`), misma forma y mismas reglas que `trato_paseo` —la
+  resuelve solo su destinatario, caduca al pasar el día—, con los dos atajos
+  de Lío que no preguntan (quedarse uno con el recado, soltar el propio sin
+  cargárselo a nadie; `comoCambiar` en `pwa/publico/js/plugins.js`); en la
+  hoja del día son chips y no un botón que rota, porque cada toque puede ser
+  una propuesta; sube a Hoy y al sobre junto a las de Lío y suena por APNs
+  (`avisosDeTratoDeDia`). **El aviso previo suena desde el servidor**: un
+  segundo cron del Worker (`0 7 * * *`, `api/src/recordatorios.js`) compone
+  cada mañana «Mañana: …» para cada aparato con token, con la antelación de
+  cada plugin; esa antelación sigue siendo del aparato (D4) y viaja con el
+  token en el alta de los avisos (`dispositivo.avisos`), y con los remotos
+  puestos el aparato deja de programar los suyos —salvo el turno de Lío— para
+  que no suenen dos. **Y el Worker lee las ausencias**: `conAusencias` en
+  `api/src/lio.js`, usado por la voz de Lío y por el aviso de «se queda tu
+  turno». Lo que queda: el recordatorio remoto es solo por la mañana —a
+  las nueve de aquí, con la hora de desfase del cambio horario—, así que «ese
+  día» de algo con hora ya no avisa media hora antes como hacía el local; y el
+  trato de un día no se propone desde el cuadro de la actividad, solo desde
+  la hoja del día.
 - **Un campo autorrellenado por Safari se quedaba sin letras en modo claro.**
   El nombre voluntario de la pantalla de espera (`acceso.js`, `autocomplete:
   'name'`) es justo el tipo de campo que iOS ofrece rellenar solo, y ahí

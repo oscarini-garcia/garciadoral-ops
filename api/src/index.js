@@ -56,6 +56,7 @@ import {
   personaPorApple,
   personaPorId,
 } from './repositorio.js';
+import { empujarRecordatorios } from './recordatorios.js';
 import { sincronizarViajes } from './viajes.js';
 import {
   anotarLlegada,
@@ -450,8 +451,16 @@ const aparatoDe = (peticion, lector) => peticion.headers.get('X-Dispositivo') ||
  */
 async function darDeAltaLosAvisos(peticion, env) {
   const lector = await lectorAutenticado(peticion, env);
-  const { token = '', plataforma = 'ios' } = await peticion.json();
+  const { token = '', plataforma = 'ios', avisos = null } = await peticion.json();
   if (!TOKEN_DE_AVISOS.test(token)) return json({ error: 'token de avisos no válido' }, 400);
+  // Con cuánta antelación quiere este aparato que se le avise de cada plugin.
+  // Es del aparato y viaja con el token, no por la cola: el cron de las
+  // mañanas lo lee para componer «Mañana: …» (`recordatorios.js`).
+  const antelaciones = avisos && typeof avisos === 'object'
+    ? JSON.stringify(Object.fromEntries(Object.entries(avisos)
+      .filter(([clave, valor]) => /^[a-z]+$/.test(clave) && /^[a-z]+$/.test(String(valor)))
+      .slice(0, 12)))
+    : null;
 
   const aparato = aparatoDe(peticion, lector);
 
@@ -466,15 +475,16 @@ async function darDeAltaLosAvisos(peticion, env) {
 
   await env.DB
     .prepare(
-      `INSERT INTO dispositivo (id, persona_id, plataforma, token_push, token_push_desde, ultima_sincronizacion)
-       VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+      `INSERT INTO dispositivo (id, persona_id, plataforma, token_push, token_push_desde, avisos, ultima_sincronizacion)
+       VALUES (?, ?, ?, ?, datetime('now'), ?, datetime('now'))
        ON CONFLICT(id) DO UPDATE SET
          persona_id = excluded.persona_id,
          plataforma = excluded.plataforma,
          token_push = excluded.token_push,
-         token_push_desde = excluded.token_push_desde`,
+         token_push_desde = excluded.token_push_desde,
+         avisos = excluded.avisos`,
     )
-    .bind(aparato, lector.id, plataforma, token)
+    .bind(aparato, lector.id, plataforma, token, antelaciones)
     .run();
 
   return json({ alta: true, empuja: hayApnsConfigurado(env) });
@@ -1112,6 +1122,9 @@ async function anotarFalloDeCron(env, ahora, error) {
   }
 }
 
+/** La expresión del segundo cron de `wrangler.toml`, tal cual la escribe. */
+const CRON_RECORDATORIOS = '0 7 * * *';
+
 export default {
   // `ctx` llega hasta aquí por los avisos remotos: son lo único que continúa
   // después de haber contestado, y sin `waitUntil` el isolate se apagaría con
@@ -1157,8 +1170,16 @@ export default {
   // `.catch(() => …)` con el resultado tirado, de modo que una descarga que
   // llevara semanas fallando no lo decía en ningún sitio: lo único que quedaba
   // era una fecha de «última sincronización» cada vez más vieja que nadie mira.
+  //
+  // Hay dos crons y se distinguen por su expresión: el de la madrugada
+  // sincroniza los viajes, y el de las nueve empuja el aviso previo de cada
+  // plugin a cada aparato (`recordatorios.js`).
   async scheduled(controlador, env, ctx) {
     const ahora = new Date().toISOString();
+    if (controlador?.cron === CRON_RECORDATORIOS) {
+      ctx.waitUntil(empujarRecordatorios(env, { leerRegistro }).catch(() => ({ enviados: 0 })));
+      return;
+    }
     ctx.waitUntil(
       sincronizarViajes(env, { ahora }).catch(async (error) => {
         await anotarFalloDeCron(env, ahora, error);

@@ -47,7 +47,8 @@ tener que recorrer la aplicación entera cada vez.
 - **apns.js** — El transporte hasta el teléfono: APNs con autenticación por token.
   hayApnsConfigurado · tokenDeProveedor · olvidarTokenDeProveedor · enviarAviso
 - **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
-  CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · empujarSolicitud · empujar
+  CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · aparatosDe · olvidarToken
+  empujarSolicitud · empujar
 - **comentables.js** — Qué cosas admiten comentario, en un solo sitio.
   COMENTABLES · esComentable · comentariosVisibles
 - **cuentas.js** — Las cuentas del hogar: la mitad de la aprobación que conoce el esquema local.
@@ -61,10 +62,12 @@ tener que recorrer la aplicación entera cada vez.
 - **index.js** — API de la Agenda Familiar sobre Cloudflare Workers y D1.
 - **lio.js** — Lío: el cuadro semanal de paseos y las reglas que lo gobiernan en el servidor.
   CLAVE_CUADRO · TURNOS · IDS_TURNO · cuadroVacio · normalizarCuadro · normalizarVersiones
-  cuadroEn · tramoLocal · inicioDeVentana · leerCuadro · …y 4 más
+  cuadroEn · tramoLocal · inicioDeVentana · leerCuadro · …y 6 más
 - **plugins.js** — Los plugins de la agenda en el servidor: qué hay, de qué círculo es cada uno y cómo se…
   PREFIJO · IDS_PLUGIN · CIRCULO_POR_DEFECTO · circuloAdmite · circuloDe · pluginDeEvento
   normalizarPlugin · leerPlugins · guardarPlugin
+- **recordatorios.js** — El aviso previo desde el servidor: «Mañana: 🐴 Hípica · 18:00».
+  arranquesEntre · antelacionDe · avisosDelAparato · recordatoriosDe · empujarRecordatorios
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo,…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
@@ -130,7 +133,7 @@ tener que recorrer la aplicación entera cada vez.
   NOVEDADES
 - **plugins.js** — Los plugins de la agenda: qué hay, en qué familia está cada uno y qué mandos comparten…
   PLUGINS · IDS_PLUGIN · pluginPorId · CON_CIRCULO · CON_NOMBRE · CIRCULO_POR_DEFECTO
-  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 10 más
+  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 17 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
   soloFecha · iso · isoConHora · sumarDias · …y 18 más
@@ -168,7 +171,7 @@ tener que recorrer la aplicación entera cada vez.
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
   reiniciarAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone · abrirLioDelDia
   filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta
-  …y 7 más
+  …y 10 más
 - **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
   reiniciarSitios · hayFabEnSitios · tituloDeSitios · irALugar · nuevoDesdeSitios
   pintarSitios · abrirApunte
@@ -293,7 +296,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**367** en total.
+**380** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -308,12 +311,13 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
 - `api/test/apns.test.js` — 11
-- `api/test/avisos.test.js` — 23
+- `api/test/avisos.test.js` — 29
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
+- `api/test/recordatorios.test.js` — 7
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
 - `api/test/redaccion-dia.test.js` — 17

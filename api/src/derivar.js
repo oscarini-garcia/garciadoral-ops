@@ -12,7 +12,7 @@
  * transición dispara cada mutación concreta.
  */
 
-import { caducarTratos } from './lio.js';
+import { caducarTratos, caducarTratosDeDia } from './lio.js';
 
 export async function derivarEstados(db) {
   // 0. Propuestas de paseo que ya no pueden aceptarse.
@@ -24,6 +24,7 @@ export async function derivarEstados(db) {
   //    el Worker ya comprueba lo único que sí lo es, que quien contesta sea a
   //    quien se le preguntó. Caducar, en cambio, no lo puede hacer nadie a mano.
   await caducarTratos(db);
+  await caducarTratosDeDia(db);
 
   // 1. Idea promovida a una ocasión -> en curso; entregada -> cerrada.
   //    Cerrada es terminal: para reutilizar la idea se emplea el duplicado.

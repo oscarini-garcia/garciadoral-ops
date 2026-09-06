@@ -239,6 +239,33 @@ export function esDeLaCasa(persona) {
  */
 export const DIAS_DE_GRACIA_CORRECCION = 7;
 
+// ------------------------------------------------------------ Ausencias --
+
+/** La ausencia que cubre a alguien ese día, si la hay. Las ausencias vienen en
+ *  el registro y en la instantánea de casa con el mismo nombre. */
+function ausenciaDe(registro, personaId, fechaIso) {
+  return (registro.ausencias || []).find((a) => a.persona_id === personaId
+    && a.activo !== 0 && a.activo !== false
+    && a.desde <= fechaIso && (a.hasta || a.desde) >= fechaIso) || null;
+}
+
+/**
+ * Quien está fuera ese día no saca al perro: el turno pasa a quien cubra, y si
+ * quien cubre también está fuera, al suyo. Es la misma regla que en el
+ * dispositivo (`pwa/publico/js/lio.js`) y en el plan de los domingos
+ * (`scripts/agenda/lio.py`): cuatro vueltas bastan para una casa de cuatro y
+ * cortan el bucle de dos que se cubren mutuamente.
+ */
+export function conAusencias(registro, personaId, fechaIso) {
+  let quien = personaId;
+  for (let vuelta = 0; vuelta < 4 && quien; vuelta += 1) {
+    const ausencia = ausenciaDe(registro, quien, fechaIso);
+    if (!ausencia) return quien;
+    quien = ausencia.cubre_id || null;
+  }
+  return quien;
+}
+
 /**
  * Igual que en la lectura del registro: entre desplegar el Worker y marcar la
  * casilla de las migraciones hay una ventana en la que la tabla no existe, y
@@ -286,6 +313,28 @@ export async function caducarTratos(db, ahora = new Date()) {
             AND creado_en < ?`,
       )
       .bind(limiteCambio, limiteCambio, limiteCorreccion)
+      .run();
+  } catch (error) {
+    if (!sinTablaTodavia(error)) throw error;
+  }
+}
+
+/**
+ * Lo mismo para las propuestas de un día suelto de una actividad —quién lleva
+ * o recoge ese martes—: pasado el día, ya no hay nada que aceptar. Caducan al
+ * terminar la jornada, en UTC y con el mismo desfase asumido que las de Lío.
+ */
+export async function caducarTratosDeDia(db, ahora = new Date()) {
+  const limite = ahora.toISOString();
+  try {
+    await db
+      .prepare(
+        `UPDATE trato_dia
+            SET estado = 'caducado', resuelto_en = ?, actualizado_en = ?
+          WHERE estado = 'pendiente' AND activo = 1
+            AND fecha || 'T23:59:59' < ?`,
+      )
+      .bind(limite, limite, limite)
       .run();
   } catch (error) {
     if (!sinTablaTodavia(error)) throw error;

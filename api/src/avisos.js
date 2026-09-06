@@ -31,7 +31,7 @@
 
 import { componerInstantanea } from './filtrado.js';
 import { enviarAviso, hayApnsConfigurado } from './apns.js';
-import { TURNOS, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
+import { TURNOS, conAusencias, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
 
 /**
  * Las categorías con botones, que se llaman igual aquí y en `native.js`.
@@ -47,6 +47,7 @@ export const CATEGORIA_CORRECCION = 'LIO_CORRECCION';
 /** De dónde puede venir un aviso. Dar de alta un módulo es una línea. */
 const FUENTES = [
   { de: 'lio', reconoce: (c) => c.tipo === 'trato_paseo' || c.tipo === 'paseo', componer: avisosDeLio },
+  { de: 'actividad', reconoce: (c) => c.tipo === 'trato_dia', componer: avisosDeTratoDeDia },
   { de: 'comentario', reconoce: (c) => c.tipo === 'comentario', componer: avisosDeComentario },
 ];
 
@@ -106,7 +107,7 @@ export function avisosDe(registro, actor, cambios) {
  */
 function porContestarDe(instantanea, personaId) {
   if (!instantanea) return 0;
-  return (instantanea.tratos_paseo || []).filter(
+  return [...(instantanea.tratos_paseo || []), ...(instantanea.tratos_dia || [])].filter(
     (t) => t.destinatario_id === personaId && t.estado === 'pendiente' && t.activo,
   ).length;
 }
@@ -284,7 +285,9 @@ function avisosDeUnPaseo(contexto, cambio) {
     normalizarVersiones(registro.lio_cuadro),
     inicioDeVentana(paseo.fecha, paseo.turno),
   );
-  const previsto = cuadro[paseo.turno]?.[indiceDeDia(paseo.fecha)] || null;
+  // Y con las ausencias puestas: a quien estaba fuera ese día no se le avisa de
+  // que le quitan un turno que ya había pasado a quien cubría.
+  const previsto = conAusencias(registro, cuadro[paseo.turno]?.[indiceDeDia(paseo.fecha)] || null, paseo.fecha);
   if (paseo.asignado_id && previsto && previsto !== paseo.asignado_id) {
     return [{
       ...comun,
@@ -292,6 +295,98 @@ function avisosDeUnPaseo(contexto, cambio) {
       agrupa: `${comun.hilo}:dueno`,
       titulo: `🐾 ${quien} se queda tu turno`,
       cuerpo: `${cuando}. Lo saca ${nombreDe(registro, paseo.asignado_id)}.`,
+    }];
+  }
+
+  return [];
+}
+
+// ------------------------------------------- Un día de una actividad --
+
+/** «el martes 22 de septiembre», para el renglón de debajo. */
+function cuandoEsElDia(fecha) {
+  const [anno, mes, dia] = String(fecha).split('-').map(Number);
+  if (!anno || !mes || !dia) return '';
+  return `el ${DIAS[new Date(Date.UTC(anno, mes - 1, dia)).getUTCDay()]} ${dia} de ${MESES[mes - 1]}`;
+}
+
+/** El nombre de una actividad con su emoji delante: el suyo si lo lleva en el
+ *  título, y si no el de su tipo. */
+function caraDe(registro, evento) {
+  const titulo = String(evento?.titulo || '').trim();
+  if (/^\p{Extended_Pictographic}/u.test(titulo)) return titulo;
+  const tipo = (registro.tipos_evento || []).find((t) => t.id === evento?.tipo_id);
+  return `${evento?.emoji || tipo?.emoji || '📌'} ${titulo}`.trim();
+}
+
+/**
+ * Quién lleva o recoge un día suelto de una actividad, cuando se le pide a
+ * otro. Es el trato de Lío con otra tabla debajo, y suena igual: la petición a
+ * quien tiene que contestarla, la respuesta a quien esperaba, y la retirada a
+ * quien se quedaría contestando a nada (specs/propuesta-plugins-hojas.html, K1).
+ */
+function avisosDeTratoDeDia(contexto, cambio) {
+  const { registro } = contexto;
+  const trato = (registro.tratos_dia || []).find((t) => t.id === cambio.id);
+  if (!trato) return [];
+  const evento = (registro.eventos || []).find((e) => e.id === trato.evento_id);
+  if (!evento) return [];
+
+  const cara = caraDe(registro, evento);
+  const cuando = cuandoEsElDia(trato.fecha);
+  const verbo = trato.campo === 'recoge' ? 'recojas' : 'lleves';
+  const tercera = trato.campo === 'recoge' ? 'recoge' : 'lleva';
+  const proponente = nombreDe(registro, trato.proponente_id);
+  const destinatario = nombreDe(registro, trato.destinatario_id);
+  const comun = {
+    donde: 'tratos_dia',
+    objetoId: trato.id,
+    hilo: `actividad:${trato.evento_id}:${trato.fecha}:${trato.campo}`,
+    // No es de ahora mismo: se pide con días, y puede esperar a que se mire.
+    urgente: false,
+    datos: { tipo: 'actividad', evento: trato.evento_id, fecha: trato.fecha, trato: trato.id },
+  };
+
+  if (!trato.activo || trato.activo === 0) {
+    return [{
+      ...comun,
+      para: trato.destinatario_id,
+      agrupa: `${comun.hilo}:retirado`,
+      titulo: `${cara}: ${proponente} retira lo que te pidió`,
+      cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)} se queda como estaba.`,
+    }];
+  }
+
+  if (trato.estado === 'pendiente') {
+    return [{
+      ...comun,
+      para: trato.destinatario_id,
+      categoria: CATEGORIA_CAMBIO,
+      agrupa: `${comun.hilo}:pendiente`,
+      titulo: trato.nuevo_id
+        ? `${cara}: ${proponente} te pide que ${verbo}`
+        : `${cara}: ${proponente} propone que nadie ${trato.campo === 'recoge' ? 'recoja' : 'lleve'}`,
+      cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)}.`,
+    }];
+  }
+
+  if (trato.estado === 'aceptado') {
+    return [{
+      ...comun,
+      para: trato.proponente_id,
+      agrupa: `${comun.hilo}:resuelto`,
+      titulo: `${cara}: ${destinatario} acepta`,
+      cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)} ${tercera} ${trato.nuevo_id ? nombreDe(registro, trato.nuevo_id) : 'nadie'}.`,
+    }];
+  }
+
+  if (trato.estado === 'rechazado') {
+    return [{
+      ...comun,
+      para: trato.proponente_id,
+      agrupa: `${comun.hilo}:resuelto`,
+      titulo: `${cara}: ${destinatario} no puede`,
+      cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)} se queda como estaba.`,
     }];
   }
 
@@ -378,7 +473,7 @@ function comoSeLlama(registro, tipo, id) {
  * Los aparatos por los que se alcanza a una persona. Puede tener dos, o
  * ninguno: sin token no hay avisos y no pasa nada más.
  */
-async function aparatosDe(db, personaId) {
+export async function aparatosDe(db, personaId) {
   try {
     const { results } = await db
       .prepare('SELECT id, token_push FROM dispositivo WHERE persona_id = ? AND token_push IS NOT NULL')
@@ -393,7 +488,7 @@ async function aparatosDe(db, personaId) {
   }
 }
 
-const olvidarToken = (db, aparatoId) => db
+export const olvidarToken = (db, aparatoId) => db
   .prepare('UPDATE dispositivo SET token_push = NULL, token_push_desde = NULL WHERE id = ?')
   .bind(aparatoId)
   .run()

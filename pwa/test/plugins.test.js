@@ -193,3 +193,30 @@ test('la antelación del aviso sale del plugin, y la de un cumpleaños del círc
   assert.equal(antelacionDe(BASE, { evento: { id: 'e1' } }), 1);
   assert.equal(antelacionDe(BASE, { evento: { id: 'h', plugin_id: 'extraescolar' } }), null);
 });
+
+// ------------------------------------------- El trato de un día suelto --
+
+test('cambiar quién lleva un día: lo mío se escribe, lo de otro se pide', async () => {
+  const { comoCambiar, tratosDeDiaParaMi, tratoDeDia } = await import('../publico/js/plugins.js');
+  // Quedarse uno con el recado no pregunta; soltar el propio sin cargárselo a nadie, tampoco.
+  assert.deepEqual(comoCambiar('p-ana', 'p-oscar', 'p-ana'), { directo: true });
+  assert.deepEqual(comoCambiar('p-ana', 'p-ana', null), { directo: true });
+  // Pedírselo a otro es una propuesta a ese otro.
+  assert.deepEqual(comoCambiar('p-ana', 'p-ana', 'p-oscar'), { directo: false, destinatario: 'p-oscar' });
+  assert.deepEqual(comoCambiar('p-ana', 'p-oscar', 'p-marta'), { directo: false, destinatario: 'p-marta' });
+  // Y que nadie lleve, cuando lo tenía otro, se le pide a quien lo tenía.
+  assert.deepEqual(comoCambiar('p-ana', 'p-oscar', null), { directo: false, destinatario: 'p-oscar' });
+  assert.equal(comoCambiar('p-ana', 'p-oscar', 'p-oscar'), null);
+
+  const datos = {
+    ...BASE,
+    tratos_dia: [
+      { id: 't1', evento_id: 'h', fecha: '2026-09-22', campo: 'lleva', proponente_id: 'p-oscar', destinatario_id: 'p-ana', nuevo_id: 'p-ana', estado: 'pendiente', activo: true },
+      { id: 't2', evento_id: 'h', fecha: '2026-09-24', campo: 'recoge', proponente_id: 'p-ana', destinatario_id: 'p-oscar', nuevo_id: 'p-oscar', estado: 'pendiente', activo: true },
+      { id: 't3', evento_id: 'h', fecha: '2026-09-22', campo: 'recoge', proponente_id: 'p-oscar', destinatario_id: 'p-ana', nuevo_id: 'p-ana', estado: 'aceptado', activo: true },
+    ],
+  };
+  assert.deepEqual(tratosDeDiaParaMi(datos).map((t) => t.id), ['t1']);
+  assert.equal(tratoDeDia(datos, 'h', '2026-09-22', 'lleva').id, 't1');
+  assert.equal(tratoDeDia(datos, 'h', '2026-09-22', 'recoge'), null);
+});

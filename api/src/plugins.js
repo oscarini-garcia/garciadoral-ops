@@ -76,6 +76,13 @@ export function pluginDeEvento(evento) {
   if (evento?.plugin_id === 'extraescolar') return 'extraescolares';
   if (evento?.plugin_id === 'finde') return 'finde';
   if (evento?.origen === 'importado') return 'viajes';
+  // Lo derivado no es fila de `evento` y no pasa por la instantánea, pero el
+  // cron de los recordatorios sí lo deriva aquí, con los mismos
+  // identificadores que el dispositivo (`pwa/publico/js/plugins.js`).
+  const id = String(evento?.id || '');
+  if (id.startsWith('derivado:cumpleanos:') || id.startsWith('derivado:santo:')) return 'cumples';
+  if (id.startsWith('derivado:fuera:')) return 'viajes';
+  if (id.startsWith('derivado:ausencia:')) return 'lio';
   return 'puntuales';
 }
 
