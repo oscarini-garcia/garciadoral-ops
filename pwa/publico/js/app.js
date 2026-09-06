@@ -366,6 +366,11 @@ export const TEXTO_SINCRONIZACION = {
   'sin-conexion': 'sin conexión',
   error: 'sin sincronizar',
   demostracion: 'demostración',
+  // Este estado no se ve casi nunca —caer en él manda a la pantalla de acceso—,
+  // pero sin su renglón el último recurso escribe el propio identificador y la
+  // pantalla acaba diciendo «No se ha podido: sesion-caducada». Ningún estado
+  // debería poder llegar a la pantalla sin pasar por aquí.
+  'sesion-caducada': 'la sesión ha caducado',
 };
 
 /**
@@ -1622,6 +1627,17 @@ function bloqueDeSincronizacion(dentro) {
       contar(pasoQueSeCopia(`No se ha podido: ${dicho}`, informeDelFallo(situacion)));
     }
     escribirLinea();
+
+    // Con la sesión caducada no se sigue: lo que queda son dos peticiones más
+    // con la misma credencial muerta, y cada una añade su propio renglón rojo
+    // diciendo lo mismo con otras palabras. Quien está mirando ya va camino de
+    // la pantalla de acceso, que es lo que ha hecho el suscriptor del estado.
+    if (situacion.estado === 'sesion-caducada') {
+      ocupado = false;
+      boton.disabled = false;
+      boton.textContent = 'Comprobar ahora';
+      return;
+    }
 
     // Los viajes solo los puede traer quien administra, porque la descarga la
     // hace el servidor y esta ruta es suya (`specs/calendario-viajes.md` §9).
