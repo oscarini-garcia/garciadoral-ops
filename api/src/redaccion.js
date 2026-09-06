@@ -213,6 +213,22 @@ export const INSTRUCCION_LIO_POR_DEFECTO = [
  * de la esquina»—, texto libre igual que la pista de un regalo, y por la misma
  * razón: es lo que quien pide acaba de escribir en su propio formulario.
  */
+/**
+ * El encargo del santo, que es el octavo caso y tampoco es un encargo: como el
+ * emoji, su material es texto libre —un nombre de pila— y no hay nada que
+ * reescribir en una instrucción de dos frases, así que no lleva hueco en
+ * Ajustes. Se le pide **una fecha y nada más**, y se le deja decir que no la
+ * sabe: un santo inventado es peor que ninguno, porque sale en la agenda de
+ * toda la casa como si fuera verdad.
+ */
+export const INSTRUCCION_SANTO_POR_DEFECTO = [
+  'Te doy un nombre de pila en español. Contesta con el día en que se celebra su',
+  'santo según el santoral católico que se usa en España, como día y mes en',
+  'cifras —por ejemplo «13/12» para santa Lucía—, y nada más. Si el nombre tiene',
+  'varias fechas, da la más celebrada en España. Si no es un nombre con santo',
+  'reconocido, o no estás seguro, contesta exactamente «no lo sé».',
+].join(' ');
+
 export const INSTRUCCION_EMOJI_POR_DEFECTO = [
   'Sugieres el emoji de un sitio para la agenda de una familia. Te doy el',
   'nombre que le han puesto —la playa, el pueblo, el súper— y a veces los que',
@@ -722,6 +738,50 @@ export function componerMaterialDeEmoji(nombre, descartados = []) {
   }
 
   return { lineas };
+}
+
+/**
+ * El material del santo: el nombre tal cual está escrito en la ficha, y nada de
+ * la instantánea. Se recorta por lo mismo que la pista de un regalo.
+ */
+export function componerMaterialDeSanto(nombre) {
+  const texto = String(nombre || '').trim().slice(0, 60);
+  if (!texto) return { lineas: [] };
+  return { lineas: [`Nombre: ${texto}`] };
+}
+
+const MESES_DEL_SANTO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+const sinAcentos = (texto) => String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/**
+ * La fecha del santo, sacada del texto que devuelve el modelo, como «MM-DD»;
+ * o `null` si dijo que no lo sabe o contestó cualquier otra cosa.
+ *
+ * Se admiten «13/12», «13-12», «13 de diciembre» y «el 13 de diciembre», que es
+ * lo que un modelo escribe aunque se le pida cifras. Una fecha que no exista
+ * —el 31 de febrero— se descarta.
+ */
+export function interpretarSanto(texto) {
+  const plano = sinAcentos(String(texto || '').trim().toLowerCase());
+  if (!plano || /no lo se/.test(plano)) return null;
+
+  let dia = null;
+  let mes = null;
+  const cifras = plano.match(/(\d{1,2})\s*[\/\-.]\s*(\d{1,2})/);
+  const palabras = plano.match(/(\d{1,2})\s+de\s+([a-z]+)/);
+  if (cifras) {
+    dia = Number(cifras[1]);
+    mes = Number(cifras[2]);
+  } else if (palabras) {
+    dia = Number(palabras[1]);
+    mes = MESES_DEL_SANTO.indexOf(palabras[2]) + 1;
+  }
+  if (!dia || !mes || mes < 1 || mes > 12 || dia < 1) return null;
+  const tope = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mes - 1];
+  if (dia > tope) return null;
+  return `${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
 /**

@@ -189,27 +189,14 @@ export async function reconciliarViajes(db, { calendarioId, tipoEventoId, evento
 }
 
 /**
- * Sincroniza el calendario de viajes de punta a punta: descarga, parseo,
- * reconciliación y sello. La usa tanto el cron del Worker como la ruta manual.
+ * Sincroniza **un** calendario de punta a punta: descarga, parseo,
+ * reconciliación y sello.
  *
  * `descargar` se inyecta para poder probar sin red; por defecto es `fetch`.
  * Devuelve un resumen, y en caso de fallo de descarga **no toca nada** y lo
  * refleja en `estado`.
  */
-export async function sincronizarViajes(env, {
-  ahora,
-  descargar = (url) => fetch(url),
-  calendarioId = CALENDARIO_VIAJES,
-} = {}) {
-  const url = (env.VIAJES_ICAL_URL || '').trim();
-  if (!url) return { estado: 'sin-configurar' };
-
-  const cal = await env.DB
-    .prepare('SELECT id, tipo_evento_id FROM calendario_externo WHERE id = ?')
-    .bind(calendarioId)
-    .first();
-  if (!cal) return { estado: 'sin-calendario' };
-
+async function sincronizarUnCalendario(env, { url, calendarioId, tipoEventoId, ahora, descargar }) {
   let texto;
   try {
     const respuesta = await descargar(url);
@@ -231,7 +218,7 @@ export async function sincronizarViajes(env, {
   const { vistos, eventos, ignorados } = inspeccionarICal(texto, ZONA);
   const resumen = await reconciliarViajes(env.DB, {
     calendarioId,
-    tipoEventoId: cal.tipo_evento_id,
+    tipoEventoId,
     eventos,
     ahora,
   });
@@ -250,4 +237,73 @@ export async function sincronizarViajes(env, {
     .run();
 
   return { estado: 'ok', ...resumen, ...lectura };
+}
+
+/**
+ * Los calendarios que tienen enlace propio, que desde la 0021 son uno por
+ * persona (`specs/propuesta-plugins-hojas.html`, D1). Sin la columna todavía
+ * —entre desplegar y migrar— no hay ninguno, y no pasa nada más.
+ */
+async function calendariosConEnlace(db) {
+  try {
+    const { results } = await db
+      .prepare('SELECT id, tipo_evento_id, url_feed FROM calendario_externo WHERE url_feed IS NOT NULL AND url_feed <> \'\'')
+      .all();
+    return results || [];
+  } catch (error) {
+    if (/no such column/i.test(String(error?.message || error))) return [];
+    throw error;
+  }
+}
+
+/**
+ * Sincroniza todos los calendarios de viajes: el de siempre —cuyo enlace es el
+ * secreto `VIAJES_ICAL_URL` del Worker— y los que cada persona haya pegado en
+ * la hoja de Viajes, que llevan el suyo en su propia fila. La usa tanto el cron
+ * del Worker como la ruta manual.
+ *
+ * Devuelve el resumen del calendario de siempre tal como lo devolvía —es lo que
+ * Ajustes ya sabe leer—, más `calendarios` con el de cada uno de los demás. Sin
+ * ningún enlace en ningún sitio contesta `sin-configurar`, como antes.
+ */
+export async function sincronizarViajes(env, {
+  ahora,
+  descargar = (url) => fetch(url),
+  calendarioId = CALENDARIO_VIAJES,
+} = {}) {
+  const urlDeSiempre = (env.VIAJES_ICAL_URL || '').trim();
+  const propios = (await calendariosConEnlace(env.DB)).filter((c) => c.id !== calendarioId || !urlDeSiempre);
+
+  if (!urlDeSiempre && !propios.length) return { estado: 'sin-configurar' };
+
+  let principal = null;
+  if (urlDeSiempre) {
+    const cal = await env.DB
+      .prepare('SELECT id, tipo_evento_id FROM calendario_externo WHERE id = ?')
+      .bind(calendarioId)
+      .first();
+    if (!cal) return { estado: 'sin-calendario' };
+    principal = await sincronizarUnCalendario(env, {
+      url: urlDeSiempre, calendarioId, tipoEventoId: cal.tipo_evento_id, ahora, descargar,
+    });
+  }
+
+  const calendarios = {};
+  for (const cal of propios) {
+    calendarios[cal.id] = await sincronizarUnCalendario(env, {
+      url: cal.url_feed, calendarioId: cal.id, tipoEventoId: cal.tipo_evento_id || 'viaje', ahora, descargar,
+    });
+  }
+
+  if (!principal) {
+    // Sin el de siempre, el resumen que Ajustes lee es la suma de los propios:
+    // lo que importa de una lectura es cuántos vinieron y qué cambió.
+    const suma = { estado: 'ok', vistos: 0, importables: 0, altas: 0, cambios: 0, bajas: 0, ignorados: [] };
+    for (const resumen of Object.values(calendarios)) {
+      if (resumen.estado !== 'ok') { suma.estado = resumen.estado; continue; }
+      for (const clave of ['vistos', 'importables', 'altas', 'cambios', 'bajas']) suma[clave] += resumen[clave] || 0;
+    }
+    return { ...suma, calendarios };
+  }
+  return Object.keys(calendarios).length ? { ...principal, calendarios } : principal;
 }

@@ -296,20 +296,54 @@ function idDeAviso(texto) {
   return Math.abs(acumulado) % 2147483647;
 }
 
-/** Cuándo avisar de una instancia, o `null` si ya no ha lugar. */
+/** A qué hora se avisa cuando el aviso es de otro día: por la mañana, que es
+ *  cuando se planea, y no a la hora del evento de dentro de una semana. */
+const HORA_DE_AVISO = 9;
+
+/**
+ * Cuándo avisar de una instancia, o `null` si ya no ha lugar.
+ *
+ * Cada instancia trae `antelacion`, en días, que sale del plugin del que viene
+ * (`plugins.js`): `null` es no avisar; 0, ese mismo día —media hora antes de
+ * lo que tiene hora y a las nueve de lo que dura todo el día—; 1, la tarde de
+ * la víspera, que es lo que hacía siempre lo de jornada completa; y más, ese
+ * número de días antes por la mañana, que es lo que pide un regalo.
+ */
 function momentoDelAviso(instancia, ahora) {
   const inicio = instancia.inicio;
-  const cuando = instancia.evento.jornada_completa
-    ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() - 1, HORA_VISPERA, 0)
-    : new Date(inicio.getTime() - ANTELACION_MINUTOS * 60 * 1000);
+  const antelacion = instancia.antelacion === undefined ? 1 : instancia.antelacion;
+  if (antelacion === null) return null;
+
+  let cuando;
+  if (antelacion === 0) {
+    cuando = instancia.evento.jornada_completa
+      ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), HORA_DE_AVISO, 0)
+      : new Date(inicio.getTime() - ANTELACION_MINUTOS * 60 * 1000);
+  } else if (antelacion === 1) {
+    cuando = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() - 1, HORA_VISPERA, 0);
+  } else {
+    cuando = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() - antelacion, HORA_DE_AVISO, 0);
+  }
   return cuando > ahora ? cuando : null;
+}
+
+/** «Mañana», «El sábado», «Dentro de 7 días», o la hora si es hoy mismo. */
+function cuandoEs(instancia) {
+  const inicio = instancia.inicio;
+  const antelacion = instancia.antelacion === undefined ? 1 : instancia.antelacion;
+  if (antelacion === 0) {
+    return instancia.evento.jornada_completa
+      ? 'Hoy'
+      : `A las ${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}`;
+  }
+  if (antelacion === 1) return 'Mañana';
+  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  return `El ${dias[inicio.getDay()]} ${inicio.getDate()}, dentro de ${antelacion} días`;
 }
 
 function textoDelAviso(instancia) {
   const { evento } = instancia;
-  const cuerpo = evento.jornada_completa
-    ? 'Mañana'
-    : `A las ${String(instancia.inicio.getHours()).padStart(2, '0')}:${String(instancia.inicio.getMinutes()).padStart(2, '0')}`;
+  const cuerpo = cuandoEs(instancia);
   return {
     title: `${evento.emoji || '📌'} ${evento.titulo}`,
     body: evento.ubicacion ? `${cuerpo} · ${evento.ubicacion}` : cuerpo,

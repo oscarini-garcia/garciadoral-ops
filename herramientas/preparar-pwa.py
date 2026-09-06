@@ -121,6 +121,12 @@ def registro_de_demostracion() -> dict:
         # Nadie ha mirado nada: la demostración empieza siempre de cero, así que
         # lo que haya de comentarios sale como nuevo.
         "vistos": [],
+        # Los plugins: lo que le pasa a un día suelto de un evento, quién no
+        # está unos días, y lo ajustado de cada plugin, que aquí es lo de origen.
+        "dias_evento": agenda.get("dias_evento", []),
+        "ausencias": agenda.get("ausencias", []),
+        "plugins": agenda.get("plugins", {}),
+        "calendarios_externos": agenda.get("calendarios_externos", []),
     }
 
     # La API sirve siempre las filas completas, porque los valores por defecto

@@ -41,6 +41,7 @@ from agenda.fuente import FuenteNoDisponible, leer_agenda
 from agenda.lio import TurnoLio, hay_lio, turnos_de
 from agenda.mensaje import Plan, componer
 from agenda.modelo import Agenda
+from agenda.plugins import se_recibe
 from agenda.semana import (
     Aparicion,
     Instancia,
@@ -139,9 +140,15 @@ def instancias_visibles(
     evento reservado, ya que podría ser una sorpresa que le concierne a él mismo.
     """
     observador = agenda.persona(observador_id)
+    # Cada plugin llega hasta un círculo: las actividades y las escapadas se
+    # quedan en casa salvo que se abran, y a la abuela no se le cuenta la hípica
+    # (specs/propuesta-plugins-agenda.html, D2). A quien no está en el registro
+    # se le trata como al círculo más ancho, que es donde menos llega.
+    circulo = observador.circulo if observador is not None else "amigos"
+    admitidas = [i for i in instancias if se_recibe(agenda.plugins, i.evento, circulo)]
     if observador is None or not observador.tiene_cuenta:
-        return [i for i in instancias if visible_publicamente(agenda, i.evento)]
-    return [i for i in instancias if visible(agenda, i.evento, observador)]
+        return [i for i in admitidas if visible_publicamente(agenda, i.evento)]
+    return [i for i in admitidas if visible(agenda, i.evento, observador)]
 
 
 def componer_para(

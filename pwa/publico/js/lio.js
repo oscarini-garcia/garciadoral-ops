@@ -158,6 +158,35 @@ export function hayLio(instantanea) {
 /** Los de casa, que son los únicos que pueden sacarlo. */
 export const genteDeCasa = (vista) => vista.personasDe('familia').filter((p) => p.tiene_cuenta);
 
+/**
+ * Quién no está ese día, y a quién le pasa lo suyo mientras.
+ *
+ * Una ausencia se escribe en la ficha de la persona —«fuera de casa del 20 al
+ * 27, sus turnos: Óscar»— y es la versión del cuadro con fecha de fin que Lío
+ * no tenía (`specs/propuesta-plugins-hojas.html`, A3). Vale solo para lo que
+ * se deriva del cuadro: una fila de `paseo` ya escrita manda sobre todo, como
+ * siempre.
+ */
+export function ausenciaDe(instantanea, personaId, fechaIso) {
+  if (!personaId) return null;
+  return (instantanea?.ausencias || []).find((a) => estaActivo(a)
+    && a.persona_id === personaId && a.desde && a.hasta
+    && a.desde <= fechaIso && fechaIso <= a.hasta) || null;
+}
+
+/** A quién le toca de verdad, con las ausencias aplicadas: quien cubre, o
+ *  nadie si nadie cubre. Una cadena de ausencias —quien cubre también está
+ *  fuera— se sigue hasta cuatro veces, que es la casa entera. */
+export function conAusencias(instantanea, personaId, fechaIso) {
+  let quien = personaId;
+  for (let vuelta = 0; vuelta < 4 && quien; vuelta += 1) {
+    const ausencia = ausenciaDe(instantanea, quien, fechaIso);
+    if (!ausencia) return quien;
+    quien = ausencia.cubre_id || null;
+  }
+  return quien;
+}
+
 /** Las dos primeras letras del nombre: «Ós», «Ma». Cabe en una casilla del
  *  carril y distingue a dos personas que empiezan igual, que es lo que una sola
  *  inicial no hacía. */
@@ -221,7 +250,9 @@ export function turnoDe(instantanea, fecha, turnoId, referencia = new Date()) {
   const cuadro = cuadroEn(instantanea, inicioDeVentana(dia, turnoId));
   // Y la fila manda sobre el cuadro: si existe es porque ese día no fue como
   // estaba previsto, y eso ya no lo cambia ningún reparto.
-  const asignadoId = paseo ? paseo.asignado_id || null : cuadro[turnoId]?.[indiceDia(dia)] || null;
+  const asignadoId = paseo
+    ? paseo.asignado_id || null
+    : conAusencias(instantanea, cuadro[turnoId]?.[indiceDia(dia)] || null, fechaIso);
   const hechoPorId = paseo?.hecho_por_id || null;
   const hechoEn = paseo?.hecho_en || null;
   const vencido = referencia >= finDeVentana(dia, turnoId);

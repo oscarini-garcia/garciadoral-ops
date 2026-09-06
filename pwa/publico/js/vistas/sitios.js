@@ -84,6 +84,17 @@ export function tituloDeSitios(ctx) {
   ]);
 }
 
+/**
+ * Abrir un sitio desde otra pestaña —la escapada de la agenda, la banda de la
+ * víspera en Hoy—: se deja puesto cuál y se cambia a Sitios, que lo pinta.
+ */
+export function irALugar(lugarId, ctx) {
+  lugarAbierto = lugarId;
+  claseEnAlta = null;
+  if (ctx?.irA) ctx.irA('sitios');
+  else ctx?.refrescar?.();
+}
+
 /** Lo que hace el botón flotante, que depende de la altura. */
 export function nuevoDesdeSitios(ctx) {
   if (lugarAbierto) return abrirFormularioApunte(ctx, { lugarId: lugarAbierto });

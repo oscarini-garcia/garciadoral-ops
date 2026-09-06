@@ -137,6 +137,14 @@ const ICONOS = {
   // los diecisiete puntos a los que se dibuja, una segunda onda se apelmaza
   // con la primera en vez de leerse como sonido.
   megafono: '<path d="M5 9.5L17 5v14L5 14.5z"/><path d="M19.3 8.6a6.2 6.2 0 0 1 0 6.8"/>',
+  // Tres capas apiladas: es el dibujo de «qué hay en la agenda», la hoja que
+  // lista los plugins con su interruptor, al lado del periodo en la agenda.
+  capas: '<path d="M12 3.6 3.4 8.3 12 13l8.6-4.7z"/><path d="M3.4 12.6 12 17.3l8.6-4.7"/>'
+    + '<path d="M3.4 16.6 12 21.3l8.6-4.7"/>',
+  // El «‹» y el «›» del calendario propio, dibujados para que no dependan de
+  // la fuente como los del paso de periodo.
+  izquierda: '<path d="m14.5 6-6 6 6 6"/>',
+  derecha: '<path d="m9.5 6 6 6-6 6"/>',
 };
 
 export function icono(nombre) {
@@ -590,6 +598,149 @@ export function carruselDePropuestas({
       nodo.hidden = true;
     },
     hay: () => tanda.length > 0,
+  };
+}
+
+// ---------------------------------------------------------- El calendario --
+
+const NOMBRES_DIA_CORTO = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const NOMBRES_DIA_LARGO = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const NOMBRES_MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
+  'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+const aIso = (fecha) => `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+const deIso = (texto) => {
+  const partes = String(texto || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return partes ? new Date(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3])) : null;
+};
+const enPalabras = (iso) => {
+  const fecha = deIso(iso);
+  if (!fecha) return '';
+  return `${NOMBRES_DIA_LARGO[(fecha.getDay() + 6) % 7]} ${fecha.getDate()} de ${NOMBRES_MES[fecha.getMonth()].toLowerCase()}`
+    + (fecha.getFullYear() === new Date().getFullYear() ? '' : ` de ${fecha.getFullYear()}`);
+};
+
+/**
+ * Un campo de fecha con calendario propio, en lugar del selector del sistema.
+ *
+ * El del sistema —`<input type="date">`— abre en iOS una rueda que tapa media
+ * pantalla y que no enseña el mes: para una cena del sábado hay que rodar
+ * tres cilindros sin ver dónde cae el sábado. Aquí el campo es un botón que
+ * escribe la fecha en palabras, y al tocarlo despliega debajo un mes de siete
+ * columnas, con hoy marcado y el día elegido relleno; se pasa de mes con las
+ * flechas y se cierra al elegir. Es la figura del calendario de la agenda,
+ * que ya se sabe leer.
+ *
+ * `vacio` es el texto que se enseña sin fecha, y ofrecerlo es lo que hace que
+ * la fecha se pueda quitar: «Hasta» de un evento está vacío el 90 % de las
+ * veces. Sin `vacio`, el campo siempre tiene una fecha. `min` deja sin tocar
+ * los días anteriores.
+ *
+ * Devuelve `{ nodo, valor }`: el nodo va dentro de `campo()` y `valor` es el
+ * ISO de diez caracteres, o cadena vacía. Se puede escribir para moverlo desde
+ * fuera —«Hasta» se cae solo cuando «Cuándo» lo adelanta—.
+ */
+export function selectorDeFecha({ valor = '', min = null, vacio = null, alCambiar = () => {} } = {}) {
+  let elegido = deIso(valor) ? valor.slice(0, 10) : '';
+  let minimo = min ? String(min).slice(0, 10) : null;
+  let abierto = false;
+  let mirando = deIso(elegido) || new Date();
+
+  const boton = el('button', { class: 'fecha-boton', type: 'button', 'aria-expanded': 'false' });
+  const rotulo = el('span', { class: 'calendario-mes' });
+  const rejilla = el('div', { class: 'calendario-rejilla', role: 'grid' });
+  const panel = el('div', { class: 'calendario', hidden: true }, [
+    el('div', { class: 'calendario-cabecera' }, [
+      el('button', {
+        class: 'calendario-paso', type: 'button', 'aria-label': 'Mes anterior',
+        onclick: () => { mirando = new Date(mirando.getFullYear(), mirando.getMonth() - 1, 1); pintarMes(); },
+      }, [icono('izquierda')]),
+      rotulo,
+      el('button', {
+        class: 'calendario-paso', type: 'button', 'aria-label': 'Mes siguiente',
+        onclick: () => { mirando = new Date(mirando.getFullYear(), mirando.getMonth() + 1, 1); pintarMes(); },
+      }, [icono('derecha')]),
+    ]),
+    rejilla,
+    el('div', { class: 'calendario-pie' }, [
+      el('button', {
+        class: 'enlace-discreto', type: 'button',
+        onclick: () => { mirando = new Date(); pintarMes(); },
+      }, ['Ir a hoy']),
+      vacio !== null ? el('button', {
+        class: 'enlace-discreto', type: 'button',
+        onclick: () => { poner(''); cerrar(); },
+      }, ['Quitar la fecha']) : null,
+    ]),
+  ]);
+  const nodo = el('div', { class: 'fecha-propia' }, [boton, panel]);
+
+  const escribirBoton = () => {
+    boton.textContent = elegido ? enPalabras(elegido) : (vacio || 'Elegir un día');
+    boton.dataset.vacio = elegido ? 'no' : 'si';
+  };
+
+  const poner = (iso, avisar = true) => {
+    elegido = iso || '';
+    if (elegido) mirando = deIso(elegido);
+    escribirBoton();
+    if (avisar) alCambiar(elegido);
+  };
+
+  function pintarMes() {
+    rotulo.textContent = `${NOMBRES_MES[mirando.getMonth()]} de ${mirando.getFullYear()}`;
+    vaciar(rejilla);
+    for (const inicial of NOMBRES_DIA_CORTO) {
+      rejilla.append(el('span', { class: 'calendario-dia-nombre', 'aria-hidden': 'true', texto: inicial }));
+    }
+    const primero = new Date(mirando.getFullYear(), mirando.getMonth(), 1);
+    const arranque = new Date(primero);
+    arranque.setDate(primero.getDate() - ((primero.getDay() + 6) % 7));
+    const hoyIso = aIso(new Date());
+    for (let i = 0; i < 42; i += 1) {
+      const dia = new Date(arranque);
+      dia.setDate(arranque.getDate() + i);
+      const iso = aIso(dia);
+      const fuera = dia.getMonth() !== mirando.getMonth();
+      // La sexta fila solo cuando el mes la necesita; sin esto, un mes de
+      // cinco semanas arrastra siete días del siguiente que no dicen nada.
+      if (i >= 35 && fuera) break;
+      const antes = minimo && iso < minimo;
+      rejilla.append(el('button', {
+        class: 'calendario-dia', type: 'button',
+        'data-fuera': fuera ? 'si' : 'no',
+        'data-hoy': iso === hoyIso ? 'si' : 'no',
+        'aria-pressed': iso === elegido ? 'true' : 'false',
+        'aria-label': enPalabras(iso),
+        disabled: antes ? true : null,
+        onclick: () => { poner(iso); cerrar(); },
+      }, [String(dia.getDate())]));
+    }
+  }
+
+  const abrir = () => {
+    abierto = true;
+    mirando = deIso(elegido) || (minimo && deIso(minimo) > new Date() ? deIso(minimo) : new Date());
+    pintarMes();
+    panel.hidden = false;
+    boton.setAttribute('aria-expanded', 'true');
+  };
+  const cerrar = () => {
+    abierto = false;
+    panel.hidden = true;
+    boton.setAttribute('aria-expanded', 'false');
+  };
+
+  boton.onclick = () => (abierto ? cerrar() : abrir());
+  escribirBoton();
+
+  return {
+    nodo,
+    get valor() { return elegido; },
+    set valor(iso) { poner(iso, false); },
+    /** Mover el mínimo desde fuera: «Hasta» no puede ir antes que «Cuándo». */
+    set min(iso) { minimo = iso ? String(iso).slice(0, 10) : null; if (abierto) pintarMes(); },
+    cerrar,
   };
 }
 

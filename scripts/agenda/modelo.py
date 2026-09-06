@@ -77,6 +77,9 @@ class Persona:
     nombre: str
     apellidos: str = ""
     fecha_nacimiento: date | None = None
+    #: El santo, «MM-DD». Sale en la agenda cada año como el cumpleaños; vacío
+    #: es no tener santo (specs/propuesta-plugins-hojas.html, E1).
+    santo: str | None = None
     parentesco: str = ""
     tiene_cuenta: bool = False
     identificador_apple: str | None = None
@@ -201,6 +204,13 @@ class Evento:
     persona_origen_id: str | None = None
     calendario_id: str | None = None
     participantes: tuple[ParticipanteEvento, ...] = ()
+    #: De qué plugin escrito es: `extraescolar` o `finde`. Lo demás va sin él.
+    plugin_id: str | None = None
+    #: Lo propio de cada plugin, sin columna: los días de la semana y el reparto
+    #: de una actividad, el sitio y la víspera de una escapada, la vuelta
+    #: escrita a mano de un vuelo. Fuera del hash a propósito: un diccionario
+    #: no se puede picar y la instancia sí tiene que poderse.
+    extra: dict[str, Any] = field(default_factory=dict, compare=False, hash=False)
     activo: bool = True
 
     @property
@@ -299,6 +309,37 @@ class Comentario:
     activo: bool = True
 
 
+@dataclass(frozen=True)
+class DiaEvento:
+    """Un día concreto de una actividad: si ese día no hay, o quién lleva y
+    recoge solo ese día. `id` es `dia:<evento>:<fecha>` (§2.4)."""
+
+    id: str
+    evento_id: str
+    fecha: date
+    cancelado: bool = False
+    lleva_id: str | None = None
+    recoge_id: str | None = None
+    activo: bool = True
+
+
+@dataclass(frozen=True)
+class Ausencia:
+    """Alguien de casa fuera unos días: sale como banda en la semana y sus
+    turnos de Lío pasan a quien cubra (specs/propuesta-plugins-hojas.html, A3)."""
+
+    id: str
+    persona_id: str
+    desde: date
+    hasta: date
+    cubre_id: str | None = None
+    motivo: str = ""
+    activo: bool = True
+
+    def cubre(self, dia: date) -> bool:
+        return self.activo and self.desde <= dia <= self.hasta
+
+
 # --------------------------------------------------------------------------- #
 # Contenedor
 # --------------------------------------------------------------------------- #
@@ -332,6 +373,13 @@ class Agenda:
         default_factory=list
     )
     paseos: dict[str, Paseo] = field(default_factory=dict)
+    #: Los días sueltos de las actividades, por su identificador compuesto.
+    dias_evento: dict[str, DiaEvento] = field(default_factory=dict)
+    #: Quién de casa está fuera y cuándo.
+    ausencias: list[Ausencia] = field(default_factory=list)
+    #: Los ajustes de cada plugin, por su identificador: círculo, nombre,
+    #: emoji, tipos, avisos y si salen los santos. Vacío es lo de origen.
+    plugins: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # -- consultas ---------------------------------------------------------- #
 
@@ -363,6 +411,19 @@ class Agenda:
     def eventos_activos(self) -> Iterator[Evento]:
         return (e for e in self.eventos.values() if e.activo)
 
+    def dia_de_evento(self, evento_id: str, dia: date) -> DiaEvento | None:
+        """Lo escrito para un día suelto de una actividad, si hay algo."""
+        fila = self.dias_evento.get(f"dia:{evento_id}:{dia.isoformat()}")
+        return fila if fila is not None and fila.activo else None
+
+    def ausencia_de(self, persona_id: str | None, dia: date) -> Ausencia | None:
+        if not persona_id:
+            return None
+        for ausencia in self.ausencias:
+            if ausencia.persona_id == persona_id and ausencia.cubre(dia):
+                return ausencia
+        return None
+
     def personas_con_cuenta(self) -> Iterator[Persona]:
         return (p for p in self.personas.values() if p.tiene_cuenta and p.activa)
 
@@ -392,6 +453,17 @@ def _fecha(valor: Any) -> date | None:
     if isinstance(valor, date) and not isinstance(valor, datetime):
         return valor
     return date.fromisoformat(str(valor)[:10])
+
+
+def _extra(valor: Any) -> dict[str, Any]:
+    """`extra` llega como texto JSON desde la base y como objeto desde el
+    registro de ejemplo; lo que no sea un objeto se lee como nada."""
+    if isinstance(valor, str) and valor.strip():
+        try:
+            valor = json.loads(valor)
+        except ValueError:
+            return {}
+    return dict(valor) if isinstance(valor, dict) else {}
 
 
 def _momento(valor: Any) -> datetime | None:
@@ -446,6 +518,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             nombre=bruto["nombre"],
             apellidos=bruto.get("apellidos", ""),
             fecha_nacimiento=_fecha(bruto.get("fecha_nacimiento")),
+            santo=bruto.get("santo") or None,
             parentesco=bruto.get("parentesco", ""),
             tiene_cuenta=bool(bruto.get("tiene_cuenta", False)),
             identificador_apple=bruto.get("identificador_apple"),
@@ -506,6 +579,8 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
                 ParticipanteEvento(p["persona_id"], p.get("rol", "asistente"))
                 for p in bruto.get("participantes", [])
             ),
+            plugin_id=bruto.get("plugin_id") or None,
+            extra=_extra(bruto.get("extra")),
             activo=bool(bruto.get("activo", True)),
         )
 
@@ -607,6 +682,44 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             activo=True,
         )
 
+    for bruto in datos.get("dias_evento", []):
+        if not bool(bruto.get("activo", True)):
+            continue
+        fecha = _fecha(bruto["fecha"])
+        assert fecha is not None
+        agenda.dias_evento[bruto["id"]] = DiaEvento(
+            id=bruto["id"],
+            evento_id=bruto["evento_id"],
+            fecha=fecha,
+            cancelado=bool(bruto.get("cancelado", False)),
+            lleva_id=bruto.get("lleva_id") or None,
+            recoge_id=bruto.get("recoge_id") or None,
+            activo=True,
+        )
+
+    for bruto in datos.get("ausencias", []):
+        if not bool(bruto.get("activo", True)):
+            continue
+        desde, hasta = _fecha(bruto["desde"]), _fecha(bruto.get("hasta"))
+        assert desde is not None
+        agenda.ausencias.append(
+            Ausencia(
+                id=bruto["id"],
+                persona_id=bruto["persona_id"],
+                desde=desde,
+                hasta=hasta or desde,
+                cubre_id=bruto.get("cubre_id") or None,
+                motivo=bruto.get("motivo", "") or "",
+                activo=True,
+            )
+        )
+
+    plugins = datos.get("plugins")
+    if isinstance(plugins, dict):
+        agenda.plugins = {
+            clave: valor for clave, valor in plugins.items() if isinstance(valor, dict)
+        }
+
     _normalizar(agenda)
     problemas = validar(agenda)
     if problemas:
@@ -679,6 +792,12 @@ def validar(agenda: Agenda) -> list[str]:
                 problemas.append(
                     f"acceso a {categoria_id}: {persona_id} no tiene cuenta"
                 )
+
+    for ausencia in agenda.ausencias:
+        if ausencia.persona_id not in agenda.personas:
+            problemas.append(f"ausencia {ausencia.id}: persona desconocida")
+        if ausencia.hasta < ausencia.desde:
+            problemas.append(f"ausencia {ausencia.id}: termina antes de empezar")
 
     for evento in agenda.eventos.values():
         if evento.tipo_id not in agenda.tipos_evento:

@@ -1,0 +1,1134 @@
+<meta charset="utf-8">
+<title>Las hojas de cada plugin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #F2EFE8;
+    --card: #FFFDFA;
+    --lift: #FBF9F5;
+    --ink: #1C2B33;
+    --sub: #5F7280;
+    --faint: #64747F;
+    --line: #E2DED4;
+    --line-hard: #C9C3B6;
+    --ac: #0E6E62;
+    --ac-soft: #DCEDE9;
+    --ac-ink: #FFFFFF;
+    --rec: #5B7288;
+    --regalo: #8E3B5E;
+    --aviso: #A8641B;
+    --paper-3: #EAE6DC;
+    --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+    --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10171A;
+      --card: #1E282D;
+      --lift: #172025;
+      --ink: #E7EEF1;
+      --sub: #9CB0BA;
+      --faint: #748994;
+      --line: #263238;
+      --line-hard: #3C4A52;
+      --ac: #55C9B4;
+      --ac-soft: #12312E;
+      --ac-ink: #10171A;
+      --rec: #9CB0BA;
+      --regalo: #E48FAE;
+      --aviso: #E0A253;
+      --paper-3: #1F2A30;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10171A;
+    --card: #1E282D;
+    --lift: #172025;
+    --ink: #E7EEF1;
+    --sub: #9CB0BA;
+    --faint: #748994;
+    --line: #263238;
+    --line-hard: #3C4A52;
+    --ac: #55C9B4;
+    --ac-soft: #12312E;
+    --ac-ink: #10171A;
+    --rec: #9CB0BA;
+    --regalo: #E48FAE;
+    --aviso: #E0A253;
+    --paper-3: #1F2A30;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 44px 20px 150px; }
+  .mono { font-family: var(--mono); }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: 34px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 62ch; }
+  .stand em { color: var(--ink); font-style: italic; font-family: var(--serif); font-size: 17px; }
+  .q { margin-top: 52px; }
+  .qhead { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sub); margin: 0 0 6px; }
+  .qtitle { font-family: var(--serif); font-weight: 500; font-size: 24px; line-height: 1.25; margin: 0 0 8px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 16px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--ac); flex: none; }
+  .oname { font-weight: 600; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 8px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--lift); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--faint); font-size: 12px; letter-spacing: 0.02em; }
+
+  /* ---- maquetas: la semana ---- */
+  .sem { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .sem-cab, .dia { display: grid; grid-template-columns: 38px 56px 1fr; column-gap: 4px; align-items: start; padding: 6px 10px; }
+  .sem-cab { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .dia { border-top: 1px solid var(--line); padding: 8px 10px; }
+  .dia:first-of-type { border-top: 0; }
+  .num { display: block; font-family: var(--serif); font-size: 22px; line-height: 1; }
+  .dow { display: block; font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-top: 2px; }
+  .pastillas { display: flex; flex-direction: column; gap: 3px; padding-top: 2px; }
+  .past { display: inline-flex; align-items: center; gap: 3px; width: 44px; height: 18px; font-family: var(--mono); font-size: 9.5px; border: 1px solid var(--line-hard); border-radius: 9px; padding: 0 5px; color: var(--ink); }
+  .past.hecho { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .past.mio { background: var(--ac-soft); border-color: transparent; }
+  .evs { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-left: 16px; }
+  .ev { display: block; font-size: 13px; line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev .h { font-family: var(--mono); font-size: 11px; color: var(--sub); margin-right: 4px; }
+  .ev .de { color: var(--sub); }
+  .ev .tag { font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-left: 6px; }
+  .ev .rep { color: var(--faint); font-size: 11px; margin-left: 4px; }
+  .banda { display: block; background: var(--paper-3); border-radius: 5px; padding: 2px 8px; font-size: 12.5px; margin-bottom: 2px; }
+  .ev .pt { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .pt.c1 { background: #3B6FA8; } .pt.c2 { background: var(--regalo); } .pt.c3 { background: var(--ac); } .pt.c4 { background: var(--aviso); }
+  .evs.sinlio { padding-left: 0; }
+
+  /* ---- maquetas: hojas y listas ---- */
+  .hoja { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .hoja-t { display: block; font-family: var(--serif); font-size: 17px; padding: 8px 12px 4px; }
+  .hoja-s { display: block; font-size: 11.5px; color: var(--sub); padding: 0 12px 6px; }
+  .fila { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 7px 12px; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .fila .sec { color: var(--sub); font-size: 12px; margin-left: 6px; }
+  .fila .chev { color: var(--faint); font-size: 12px; }
+  .conm { display: inline-block; width: 32px; height: 19px; border-radius: 10px; background: var(--line-hard); position: relative; vertical-align: middle; }
+  .conm::after { content: ""; position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 50%; background: var(--card); }
+  .conm.on { background: var(--ac); }
+  .conm.on::after { left: 15px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-hard); border-radius: 8px; overflow: hidden; font-size: 12px; }
+  .seg span { padding: 3px 9px; border-left: 1px solid var(--line-hard); }
+  .seg span:first-child { border-left: 0; }
+  .seg .sel { background: var(--ink); color: var(--card); }
+  .casillas { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; }
+  .casillas span::before { content: ""; display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--line-hard); border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .casillas span.si::before { background: var(--ac); border-color: var(--ac); }
+  .campo { display: block; border: 1px solid var(--line-hard); border-radius: 8px; padding: 6px 10px; font-size: 14px; background: var(--card); }
+  .campo .ph { color: var(--faint); }
+  .rotulo { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 0 0 4px; }
+
+  /* ---- maquetas: diagramas ---- */
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .col { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .col .rotulo { margin-bottom: 6px; }
+  .item { display: block; font-size: 12.5px; line-height: 1.5; padding: 2px 0; border-top: 1px solid var(--line); }
+  .item:first-of-type { border-top: 0; }
+  .item .src { display: block; color: var(--sub); font-size: 11px; font-family: var(--mono); }
+  .lista { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .lista .item { padding: 5px 10px; }
+  .fich { display: block; font-family: var(--mono); font-size: 11.5px; padding: 3px 10px; border-top: 1px solid var(--line); }
+  .fich:first-of-type { border-top: 0; }
+  .fich .q2 { color: var(--sub); }
+
+  /* ---- maquetas: tabla de opciones por plugin ---- */
+  .tabla { display: grid; grid-template-columns: 112px 1fr; font-size: 12.5px; line-height: 1.45; }
+  .tabla > span { padding: 6px 8px; border-top: 1px solid var(--line); }
+  .tabla > span:nth-child(-n+2) { border-top: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+  .tabla .pl { font-weight: 600; }
+  .tabla .mas { color: var(--ac); }
+
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 52px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .foot p { margin: 0 0 10px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+  @media (max-width: 480px) { .dos { grid-template-columns: 1fr; } .tabla { grid-template-columns: 90px 1fr; } }
+
+  /* ---- maquetas de esta ronda ---- */
+  .grupo { font-family: var(--serif); font-weight: 500; font-size: 30px; margin: 72px 0 -28px; padding-top: 24px; border-top: 1px solid var(--line-hard); letter-spacing: -0.01em; }
+  .comunes { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding: 2px 12px 7px; border-bottom: 1px solid var(--line); }
+  .fila.faint { color: var(--faint); font-size: 12px; }
+  .faint { color: var(--faint); }
+  .banda.faint { color: var(--faint); background: transparent; border: 1px dashed var(--line-hard); }
+  .linea { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; padding: 6px 12px; border-top: 1px solid var(--line); font-size: 13px; }
+  .linea.cab { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); border-top: 0; padding-bottom: 2px; }
+  .linea.atajo { background: var(--paper-3); }
+  .linea.faint { color: var(--faint); font-size: 12px; }
+  .chips { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+  .chips span { font-size: 12px; border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 9px; }
+  .chips .sel { background: var(--ink); color: var(--card); border-color: var(--ink); }
+  .chips .faint { border-style: dashed; }
+  .mes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 6px 12px; font-family: var(--mono); font-size: 11px; text-align: center; }
+  .mes span { padding: 3px 0; }
+  .mes .pto { text-decoration: underline; text-decoration-color: var(--ac); text-underline-offset: 3px; }
+  .mes .tachado { color: var(--faint); text-decoration: line-through; }
+  .past { flex: none; }
+</style>
+
+<div class="wrap">
+  <h1>Las hojas de cada plugin</h1>
+  <p class="stand"><em>«Una o más preguntas por plugin, con ejemplos visuales.»</em></p>
+  <p class="stand">Queda decidido de la ronda anterior: dos familias de plugin, la hoja «Qué hay en la agenda» desde la propia agenda, banda para lo que enmarca el día y línea para lo demás, y en cada plugin los cuatro mandos comunes —enseñar en mi agenda, quién lo ve, aviso previo, nombre y emoji—. Aquí cada plugin tiene sus preguntas, y cada opción enseña cómo quedaría en la semana, en Hoy o en la hoja. Una respuesta por pregunta. Los nombres son de muestra.</p>
+
+  <!-- ═══════════════════════ 🐾 LÍO ═══════════════════════ -->
+  <h2 class="grupo">🐾 Lío</h2>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Lío · Ausencias</p>
+    <p class="qtitle">¿Cómo se dice que alguien no está una semana?</p>
+    <p class="qwhy">Hoy unas vacaciones se resuelven cambiando turno a turno. Las tres formas escriben lo mismo —una versión del cuadro con fecha de fin— y se distinguen por desde dónde se escribe.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Una lista de ausencias en la hoja de Lío</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🐾 Lío</span>
+            <span class="comunes">enseñar · lo ve casa · avisar · nombre</span>
+            <span class="rotulo" style="padding: 8px 12px 0">Ausencias</span>
+            <span class="fila"><span>Marta, del 20 al 27 de diciembre</span><span class="sec">sus turnos: Óscar</span></span>
+            <span class="fila"><span>Lucía, 3 y 4 de octubre</span><span class="sec">sus turnos: nadie</span></span>
+            <span class="fila" style="color: var(--ac)"><span>+ Añadir ausencia</span><span></span></span>
+          </span>
+          <span class="caption">Quién falta, entre qué fechas y a quién van sus turnos; «nadie» vale.</span>
+        </span>
+        <p class="obody">Se escribe donde vive el reparto y se ve de un vistazo quién falta este mes. <b>Lo escribe quien administra o quien se va</b>, y al pasar la fecha vuelve solo el cuadro de antes. Lo que cuesta: la vigencia del cuadro hoy solo tiene inicio; hay que darle fin.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Desde el turno: «¿Que lo saque otro?» hasta una fecha</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">☀️ Por la mañana · sábado 20</span>
+            <span class="hoja-s">Te toca a ti</span>
+            <span class="fila"><span>¿Que lo saque otro?</span><span class="seg"><span class="sel">solo este</span><span>hasta el…</span></span></span>
+            <span class="fila"><span></span><span class="seg"><span>Óscar</span><span>Lucía</span><span>Ana</span><span class="faint">Cancelar</span></span></span>
+          </span>
+          <span class="caption">La hoja del turno de siempre, con un segundo modo: pedir el cambio de todos los turnos propios hasta una fecha.</span>
+        </span>
+        <p class="obody">No hay pantalla nueva: <b>es el trato de Lío con un rango</b>, y quien lo recibe acepta la semana entera de una vez. Lo que cuesta: un trato de siete turnos es un trato o son siete, y si es uno hay que decidir qué pasa cuando el otro acepta el lunes y el martes no.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">En la ficha de la persona: «fuera de casa»</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Marta</span>
+            <span class="hoja-s">casa</span>
+            <span class="fila"><span>Fuera de casa</span><span class="sec">20 – 27 de diciembre</span></span>
+            <span class="fila"><span>🐾 Sus turnos mientras</span><span class="sec">Óscar</span></span>
+            <span class="fila faint"><span>También sale como banda en la semana: «Marta fuera».</span><span></span></span>
+          </span>
+          <span class="caption">La ausencia es de la persona y no del perro: la ficha de Gente la guarda y Lío la lee.</span>
+        </span>
+        <p class="obody">Una ausencia sirve a más de un plugin: <b>la hípica de esa semana tampoco la lleva quien no está</b>. Lo que cuesta: la ficha de Gente gana un campo con fechas, que hoy no tiene ninguno, y el finde de la casa entera serían cuatro ausencias a mano.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Las vacaciones siguen resolviéndose turno a turno.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Lío · Los catorce toques</p>
+    <p class="qtitle">¿Cómo se rellena el cuadro sin tocar catorce veces?</p>
+    <p class="qwhy">Casi todas las casas reparten igual de lunes a viernes. Las tres maquetas son el cuadro de Ajustes, que ya va escrito con nombres enteros.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Dos filas de atajo encima de las siete</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="linea cab"><span></span><span>☀️ Por la mañana</span><span>🌙 Por la noche</span></span>
+            <span class="linea atajo"><span>Lunes a viernes</span><span>Marta</span><span>Óscar</span></span>
+            <span class="linea atajo"><span>Fin de semana</span><span>Óscar</span><span>Lucía</span></span>
+            <span class="linea"><span>Lunes</span><span>Marta</span><span>Óscar</span></span>
+            <span class="linea"><span>Martes</span><span>Marta</span><span>Óscar</span></span>
+            <span class="linea"><span>Miércoles</span><span>Ana</span><span>Óscar</span></span>
+            <span class="linea faint"><span>… jueves a domingo</span><span></span><span></span></span>
+          </span>
+          <span class="caption">Tocar el atajo escribe las cinco o las dos; el miércoles distinto se toca después y el atajo pasa a decir «varios».</span>
+        </span>
+        <p class="obody">Se ve el reparto y la excepción a la vez. <b>Las siete filas siguen ahí y siguen mandando</b>. Lo que cuesta: dos filas más en una pantalla de 304 puntos, y un atajo pisado que tiene que decir «varios» y no mentir.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Un segmentado que cambia la vista: por tramos o día a día</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="fila" style="grid-template-columns: 1fr; padding-bottom: 2px"><span class="seg"><span class="sel">Por tramos</span><span>Día a día</span></span></span>
+            <span class="linea cab"><span></span><span>☀️ Por la mañana</span><span>🌙 Por la noche</span></span>
+            <span class="linea"><span>Lunes a viernes</span><span>Marta</span><span>Óscar</span></span>
+            <span class="linea"><span>Fin de semana</span><span>Óscar</span><span>Lucía</span></span>
+            <span class="fila faint"><span>El miércoles de Ana solo se ve en «Día a día».</span><span></span></span>
+          </span>
+          <span class="caption">Dos filas o siete, nunca las dos; el cuadro entero cabe en 90 puntos en «Por tramos».</span>
+        </span>
+        <p class="obody">La pantalla más corta. <b>Lo que se paga es que la excepción se esconde</b>: en «Por tramos» el miércoles de Ana no está, y una vista que no enseña lo que hay es lo que ya se descartó con la rejilla de catorce casillas.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Un verbo en el lunes: «copiar a toda la semana»</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="linea cab"><span></span><span>☀️ Por la mañana</span><span>🌙 Por la noche</span></span>
+            <span class="linea"><span>Lunes</span><span>Marta</span><span>Óscar</span></span>
+            <span class="fila" style="padding-top: 0"><span style="color: var(--ac); font-size: 12px">Copiar el lunes a martes – viernes</span><span></span></span>
+            <span class="linea"><span>Martes</span><span>Marta</span><span>Óscar</span></span>
+            <span class="linea"><span>Miércoles</span><span>Marta</span><span>Óscar</span></span>
+            <span class="linea faint"><span>… jueves a domingo</span><span></span><span></span></span>
+          </span>
+          <span class="caption">Un enlace bajo el lunes; se rellena el lunes y se copia.</span>
+        </span>
+        <p class="obody">No cambia la forma del cuadro: <b>una línea de enlace y ya</b>. Lo que cuesta: es un verbo que hay que ver para saber que existe, y sirve una vez; después de copiar, el cuadro no se acuerda de que era un tramo.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">El cuadro se queda con sus catorce toques.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ═══════════════════════ ✈️ VIAJES ═══════════════════════ -->
+  <h2 class="grupo">✈️ Viajes de Flighty</h2>
+
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · Viajes · Ida y vuelta</p>
+    <p class="qtitle">¿Cómo se ve en la semana un viaje de ida y vuelta?</p>
+    <p class="qwhy">Flighty manda dos vuelos; hoy la agenda enseña dos líneas sueltas, y los días de en medio no dicen que Óscar no está. Las tres maquetas son la misma semana: sale el sábado 12 y vuelve el martes 15.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Una banda del vuelo de ida al de vuelta</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 LU</span></span><span class="evs"><span class="banda">✈️ Bolonia <span class="de">· de Óscar · sale 7:40</span></span></span></span>
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 LU</span></span><span class="evs"><span class="banda faint">✈️ Bolonia <span class="de">· cont.</span></span></span></span>
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="banda">✈️ Bolonia <span class="de">· vuelve 21:10</span></span></span></span>
+          </span>
+          <span class="caption">Ida y vuelta son un solo viaje de cuatro días; el primero y el último llevan la hora del vuelo.</span>
+        </span>
+        <p class="obody">Contesta lo que se pregunta —«¿está Óscar esta semana?»— y no lo que manda el feed. <b>Es el evento de varios días que la agenda ya sabe dibujar</b>. Lo que cuesta: emparejar dos vuelos en un viaje, que el importador no hace; con escalas o con vuelta desde otra ciudad hay que decidir cuándo dos vuelos son el mismo viaje.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Banda los días de vuelo y «fuera» en medio</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 LU</span></span><span class="evs"><span class="banda">✈️ Madrid → Bolonia <span class="de">· 7:40 · de Óscar</span></span></span></span>
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 LU</span></span><span class="evs"><span class="ev faint">Óscar fuera</span></span></span>
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="banda">✈️ Bolonia → Madrid <span class="de">· 21:10</span></span></span></span>
+          </span>
+          <span class="caption">Los vuelos siguen siendo dos; los días de en medio llevan una línea gris derivada.</span>
+        </span>
+        <p class="obody">Conserva los dos vuelos tal cual llegan y <b>añade lo que faltaba sin inventar un viaje</b>. Lo que cuesta: la línea gris cuenta para el techo de tres, y sigue habiendo que emparejar ida y vuelta para saber entre qué días va.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Dos vuelos sueltos, como hoy</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 LU</span></span><span class="evs"><span class="ev"><span class="h">7:40</span>✈️ Madrid → Bolonia <span class="de">· de Óscar</span></span></span></span>
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 LU</span></span><span class="evs"><span class="ev faint">nada</span></span></span>
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="ev"><span class="h">21:10</span>✈️ Bolonia → Madrid <span class="de">· de Óscar</span></span></span></span>
+          </span>
+          <span class="caption">Lo que hay: cada vuelo es un evento importado con su hora.</span>
+        </span>
+        <p class="obody">No cuesta nada y no miente. <b>Pero el domingo no dice que Óscar no está</b>, y como viaje no es una banda sino dos líneas, va contra lo decidido en la ronda anterior: lo que enmarca el día, en banda.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="D">
+    <p class="qhead">Pregunta D · Viajes · El enlace</p>
+    <p class="qtitle">¿Dónde se pega el enlace de Flighty de cada uno?</p>
+    <p class="qwhy">Hoy hay un solo enlace, en una variable del Worker, con el dueño puesto por una migración que buscó por nombre. Una segunda Flighty en casa no cabe.</p>
+    <div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Una fila por persona en la hoja del plugin</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">✈️ Viajes</span>
+            <span class="comunes">enseñar · lo ve casa · avisar la víspera · nombre</span>
+            <span class="fila"><span>Óscar <span class="sec">Flighty · hoy a las 9:12 ✓</span></span><span class="chev">›</span></span>
+            <span class="fila"><span>Marta <span class="sec">Flighty · hoy a las 9:12 ✓</span></span><span class="chev">›</span></span>
+            <span class="fila"><span>Lucía <span class="sec">sin calendario</span></span><span class="sec" style="color: var(--ac)">Pegar enlace</span></span>
+          </span>
+          <span class="caption">El dueño es el de la fila; la última descarga se lee sin verbo, porque «Comprobar ahora» sigue en Sincronización.</span>
+        </span>
+        <p class="obody">Todo lo del plugin en su hoja, y <b>una segunda Flighty entra sin tocar el Worker</b>. Lo que cuesta: la URL pasa de variable a fila de <span class="mono">calendario_externo</span> —que ya tiene el sitio— y es un secreto que hay que guardar como tal.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">En la ficha de cada persona, en Gente</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Óscar</span>
+            <span class="hoja-s">casa · administra</span>
+            <span class="fila"><span>🎂 Cumpleaños</span><span class="sec">2 de mayo</span></span>
+            <span class="fila"><span>✈️ Calendario de vuelos</span><span class="sec">Flighty · hoy 9:12 ✓ ›</span></span>
+            <span class="fila faint"><span>Solo lo ve y lo edita esa persona.</span><span></span></span>
+          </span>
+          <span class="caption">El enlace vive con el resto de datos de la persona; la hoja del plugin solo lista quién tiene uno.</span>
+        </span>
+        <p class="obody">El enlace es de cada uno y <b>solo lo pega su dueño</b>, que es lo natural con un secreto. Lo que cuesta: es el primer dato de la ficha que no es de la persona sino de una cuenta suya, y la hoja del plugin se queda sin nada que hacer.</p>
+      </button>
+      <button class="opt" data-t="D3" aria-pressed="false">
+        <span class="optrow"><span class="tok">D3</span><span class="oname">Un solo enlace, con el dueño elegido</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">✈️ Viajes</span>
+            <span class="comunes">enseñar · lo ve casa · avisar la víspera · nombre</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Enlace de Flighty</span><span class="campo">webcal://flighty.com/…/a91f.ics</span></span></span>
+            <span class="fila"><span>De quién es</span><span class="seg"><span class="sel">Óscar</span><span>Marta</span><span>Lucía</span><span>Ana</span></span></span>
+          </span>
+          <span class="caption">Lo de hoy, con el dueño como segmentado en vez de por migración.</span>
+        </span>
+        <p class="obody">El cambio más corto. <b>Sigue siendo uno</b>, y el día que Marta tenga Flighty vuelve la pregunta.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">El enlace se queda como variable del Worker.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ═══════════════════════ 🎂 CUMPLEAÑOS Y SANTOS ═══════════════════════ -->
+  <h2 class="grupo">🎂 Cumpleaños y santos</h2>
+
+  <section class="q" data-q="E">
+    <p class="qhead">Pregunta E · Cumpleaños · El santo</p>
+    <p class="qtitle">¿De dónde sale el santo y cómo se ve?</p>
+    <p class="qwhy">Hoy no hay santos. Cada maqueta enseña la ficha de donde sale y la línea de la semana que produce.</p>
+    <div class="opts">
+      <button class="opt" data-t="E1" aria-pressed="false">
+        <span class="optrow"><span class="tok">E1</span><span class="oname">Escrito en la ficha, y en la semana como línea propia</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Lucía</span>
+            <span class="fila"><span>🎂 Cumpleaños</span><span class="sec">14 de marzo de 2014</span></span>
+            <span class="fila"><span>✨ Santo</span><span class="sec">13 de diciembre</span></span>
+          </span>
+          <span class="sem" style="margin-top: 8px">
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="ev">✨ Santo de Lucía</span></span></span>
+          </span>
+          <span class="caption">Un campo más en la ficha, día y mes; en la semana, la misma línea que un cumpleaños con su emoji.</span>
+        </span>
+        <p class="obody">Lo escribe quien lo sabe, una vez, y vacío es no tener santo. <b>Es el mismo derivado que el cumpleaños con otro campo</b>. Lo que cuesta: una columna en <span class="mono">persona</span> y el campo en el formulario.</p>
+      </button>
+      <button class="opt" data-t="E2" aria-pressed="false">
+        <span class="optrow"><span class="tok">E2</span><span class="oname">Deducido del nombre con un santoral, corregible</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Lucía</span>
+            <span class="fila"><span>🎂 Cumpleaños</span><span class="sec">14 de marzo de 2014</span></span>
+            <span class="fila"><span>✨ Santo</span><span class="sec">13 de diciembre <span class="faint">· por el nombre · cambiar</span></span></span>
+          </span>
+          <span class="sem" style="margin-top: 8px">
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="ev">✨ Santo de Lucía</span></span></span>
+          </span>
+          <span class="caption">La aplicación lo propone desde una tabla de nombres; la ficha deja corregirlo.</span>
+        </span>
+        <p class="obody">Nadie escribe nada. <b>Lo que cuesta es la tabla</b>: acierta con «Lucía» y no sabe qué hacer con «Ainhoa» ni con un nombre compuesto, y un santo mal puesto por la aplicación es peor que ninguno.</p>
+      </button>
+      <button class="opt" data-t="E3" aria-pressed="false">
+        <span class="optrow"><span class="tok">E3</span><span class="oname">Escrito en la ficha, pero solo en Hoy y en la lista, no en la semana</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Hoy · domingo 13</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span>✨ Hoy es el santo de Lucía</span></span>
+          </span>
+          <span class="sem" style="margin-top: 8px">
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="ev faint">nada</span></span></span>
+          </span>
+          <span class="caption">El santo sale el día, donde se felicita; la semana no lo cuenta.</span>
+        </span>
+        <p class="obody">Un santo no se prepara: se felicita esa mañana. <b>Fuera de la semana no gasta una de las tres líneas del día</b>. Lo que cuesta: es la primera cosa de la agenda que está en Hoy y no en la semana, y hay que explicarlo en algún sitio.</p>
+      </button>
+      <button class="opt none" data-t="E0" aria-pressed="false">
+        <span class="optrow"><span class="tok">E0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Sin santos: el plugin son solo los cumpleaños.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre E</summary><textarea data-n="E" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="F">
+    <p class="qhead">Pregunta F · Cumpleaños · La línea</p>
+    <p class="qtitle">¿Cómo se escribe el cumpleaños en la semana?</p>
+    <p class="qwhy">Hoy dice «Cumple de Lucía». La edad ya se sabe por el año de nacimiento y es lo que se pregunta cada vez.</p>
+    <div class="opts">
+      <button class="opt" data-t="F1" aria-pressed="false">
+        <span class="optrow"><span class="tok">F1</span><span class="oname">«Lucía cumple 12»</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">14</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 LU</span></span><span class="evs"><span class="ev">🎂 Lucía cumple 12</span><span class="ev">🎂 La abuela cumple años</span></span></span>
+          </span>
+          <span class="caption">Con edad para casa y familia cercana; «cumple años» para quien tiene la fecha sin año, o para quien lo pide en su ficha.</span>
+        </span>
+        <p class="obody">Contesta la pregunta en la línea. <b>Quien no quiera su edad escrita la quita en su ficha</b>, no en el plugin. Lo que cuesta: una casilla más en la ficha, y decidir el valor de origen para la familia extendida.</p>
+      </button>
+      <button class="opt" data-t="F2" aria-pressed="false">
+        <span class="optrow"><span class="tok">F2</span><span class="oname">«Cumple de Lucía · 12»</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">14</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 LU</span></span><span class="evs"><span class="ev">🎂 Cumple de Lucía <span class="de">· 12</span></span><span class="ev">🎂 Cumple de la abuela</span></span></span>
+          </span>
+          <span class="caption">La línea de hoy con la cifra detrás, en gris, como el «· de Óscar» de un vuelo.</span>
+        </span>
+        <p class="obody">No cambia el texto que ya se conoce y <b>la cifra va donde ya van los datos secundarios</b>. Lo que cuesta: «· 12» pide leerse; «cumple 12» se entiende sin pensar.</p>
+      </button>
+      <button class="opt" data-t="F3" aria-pressed="false">
+        <span class="optrow"><span class="tok">F3</span><span class="oname">Sin edad en la semana; la edad en Hoy y en la ficha</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">14</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 LU</span></span><span class="evs"><span class="ev">🎂 Cumple de Lucía</span><span class="ev">🎂 Cumple de la abuela</span></span></span>
+          </span>
+          <span class="hoja" style="margin-top: 8px"><span class="fila" style="grid-template-columns: 1fr"><span>🎂 Lucía cumple 12 hoy</span></span></span>
+          <span class="caption">La semana como está; la edad, el día, en Hoy.</span>
+        </span>
+        <p class="obody">La semana se mira para planear y Hoy para felicitar, y <b>la edad se necesita al felicitar</b>. Lo que cuesta: el regalo se compra la semana antes, y ahí la edad también ayuda.</p>
+      </button>
+      <button class="opt none" data-t="F0" aria-pressed="false">
+        <span class="optrow"><span class="tok">F0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La línea se queda como está en todas partes.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre F</summary><textarea data-n="F" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="G">
+    <p class="qhead">Pregunta G · Cumpleaños · El aviso</p>
+    <p class="qtitle">¿Cómo se pide la antelación del aviso?</p>
+    <p class="qwhy">El aviso previo es un mando común, con una cifra. Aquí el círculo cambia cuánto importa: una semana para el regalo de casa, el mismo día para felicitar a un amigo.</p>
+    <div class="opts">
+      <button class="opt" data-t="G1" aria-pressed="false">
+        <span class="optrow"><span class="tok">G1</span><span class="oname">Una cifra por círculo, en la hoja del plugin</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🎂 Cumpleaños y santos</span>
+            <span class="comunes">enseñar · lo ve cada círculo · nombre</span>
+            <span class="fila"><span>Casa</span><span class="seg"><span>ese día</span><span>la víspera</span><span class="sel">una semana</span></span></span>
+            <span class="fila"><span>Familia</span><span class="seg"><span>ese día</span><span class="sel">la víspera</span><span>una semana</span></span></span>
+            <span class="fila"><span>Amigos</span><span class="seg"><span class="sel">ese día</span><span>la víspera</span><span>una semana</span></span></span>
+          </span>
+          <span class="caption">El mando común desplegado en tres; ocupa el sitio del aviso previo en la cabecera.</span>
+        </span>
+        <p class="obody">Tres cifras y se acabó. <b>Es el único plugin donde el aviso común no basta con una</b>. Lo que cuesta: tres avisos locales por cumpleaños dentro del tope del dispositivo.</p>
+      </button>
+      <button class="opt" data-t="G2" aria-pressed="false">
+        <span class="optrow"><span class="tok">G2</span><span class="oname">Una sola cifra, como cualquier plugin</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🎂 Cumpleaños y santos</span>
+            <span class="comunes">enseñar · lo ve cada círculo · nombre</span>
+            <span class="fila"><span>Avisar</span><span class="seg"><span>ese día</span><span class="sel">la víspera</span><span>una semana</span></span></span>
+          </span>
+          <span class="caption">El mando común tal cual.</span>
+        </span>
+        <p class="obody">Nada que aprender. <b>Lo que se pierde es la diferencia entre el regalo y la felicitación</b>: con «una semana» los amigos avisan pronto de más, con «la víspera» el regalo de casa llega tarde.</p>
+      </button>
+      <button class="opt" data-t="G3" aria-pressed="false">
+        <span class="optrow"><span class="tok">G3</span><span class="oname">Por persona, en su ficha</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">La abuela</span>
+            <span class="hoja-s">familia</span>
+            <span class="fila"><span>🎂 Cumpleaños</span><span class="sec">22 de septiembre</span></span>
+            <span class="fila"><span>Avisarme</span><span class="seg"><span>ese día</span><span>la víspera</span><span class="sel">una semana</span></span></span>
+          </span>
+          <span class="caption">El aviso vive con la persona; el plugin pone el valor de origen por círculo.</span>
+        </span>
+        <p class="obody">Lo más fino: <b>la abuela una semana, el primo lejano ese día</b>. Lo que cuesta: es un dato de quien mira y no de la persona, así que va en preferencias y no en la ficha, y hay que abrir treinta fichas para ponerlo.</p>
+      </button>
+      <button class="opt none" data-t="G0" aria-pressed="false">
+        <span class="optrow"><span class="tok">G0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Sin aviso previo para cumpleaños.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre G</summary><textarea data-n="G" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ═══════════════════════ 🍽️ PUNTUALES ═══════════════════════ -->
+  <h2 class="grupo">🍽️ Puntuales</h2>
+
+  <section class="q" data-q="H">
+    <p class="qhead">Pregunta H · Puntuales · El «+»</p>
+    <p class="qtitle">¿Qué abre el «+» de la agenda?</p>
+    <p class="qwhy">Es el gesto más corriente de la agenda. Con dos plugins nuevos que se escriben —actividad y escapada— el «+» tiene que ofrecerlos sin estorbar a la cena de siempre.</p>
+    <div class="opts">
+      <button class="opt" data-t="H1" aria-pressed="false">
+        <span class="optrow"><span class="tok">H1</span><span class="oname">El formulario de siempre, con chips arriba</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Nuevo</span>
+            <span class="fila" style="grid-template-columns: 1fr; padding-top: 2px"><span class="chips"><span class="sel">Evento</span><span>🐴 Actividad</span><span>🧳 Finde</span><span class="faint">Cena en casa</span><span class="faint">Cita médica</span></span></span>
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Qué</span><span class="campo"><span class="ph">Cena con los Pérez</span></span></span></span>
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Cuándo</span><span class="campo">sábado 12</span></span></span>
+          </span>
+          <span class="caption">Los dos plugins escritos y las plantillas de la casa, como chips encima del título; el resto es la hoja rápida de hoy.</span>
+        </span>
+        <p class="obody">El «+» sigue abriendo un campo donde escribir, y <b>cambiar de plugin es un chip y no otra hoja</b>. Los chips grises son las plantillas de la casa, si las hay. Lo que cuesta: una fila de chips en una hoja que se diseñó para pedir dos cosas.</p>
+      </button>
+      <button class="opt" data-t="H2" aria-pressed="false">
+        <span class="optrow"><span class="tok">H2</span><span class="oname">Una lista corta: qué quieres apuntar</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Nuevo</span>
+            <span class="fila"><span>📌 Evento</span><span class="chev">›</span></span>
+            <span class="fila"><span>🐴 Actividad</span><span class="chev">›</span></span>
+            <span class="fila"><span>🧳 Fin de semana</span><span class="chev">›</span></span>
+            <span class="fila faint"><span>🍽️ Cena en casa · 🩺 Cita médica</span><span class="chev">›</span></span>
+          </span>
+          <span class="caption">Una hoja intermedia; cada fila abre su formulario.</span>
+        </span>
+        <p class="obody">Se entiende sin explicar. <b>Lo que se paga es un toque más en la cena del sábado</b>, que es lo que más se apunta, y la aplicación no tiene hoy ninguna hoja de menú.</p>
+      </button>
+      <button class="opt" data-t="H3" aria-pressed="false">
+        <span class="optrow"><span class="tok">H3</span><span class="oname">El «+» es solo para eventos; lo demás se crea desde su plugin</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🐴 Extraescolares</span>
+            <span class="comunes">enseñar · lo ve casa · avisar · nombre</span>
+            <span class="fila"><span>Hípica <span class="sec">Lucía · martes y jueves</span></span><span class="chev">›</span></span>
+            <span class="fila" style="color: var(--ac)"><span>+ Nueva actividad</span><span></span></span>
+          </span>
+          <span class="caption">La actividad y la escapada se crean desde «Qué hay en la agenda › su plugin»; el «+» no cambia.</span>
+        </span>
+        <p class="obody">El «+» se queda exactamente igual. <b>Lo que cuesta es el camino</b>: una actividad nueva son tres toques desde la agenda, y una escapada del finde que viene se apunta desde una hoja de configuración, que no es donde se piensa.</p>
+      </button>
+      <button class="opt none" data-t="H0" aria-pressed="false">
+        <span class="optrow"><span class="tok">H0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre H</summary><textarea data-n="H" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="I">
+    <p class="qhead">Pregunta I · Puntuales · «Qué es»</p>
+    <p class="qtitle">¿Cómo se acorta el desplegable de tipos?</p>
+    <p class="qwhy">El catálogo tiene diez tipos; tres pasan a otros plugins y la casa usa cuatro. Las maquetas son el campo «Qué es» del formulario completo.</p>
+    <div class="opts">
+      <button class="opt" data-t="I1" aria-pressed="false">
+        <span class="optrow"><span class="tok">I1</span><span class="oname">Solo los tipos marcados en el plugin</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Qué es</span><span class="chips"><span class="sel">🎉 Celebración</span><span>🩺 Cita médica</span><span>🏆 Competición</span><span>📌 Otro</span></span></span></span>
+            <span class="fila faint"><span>Los otros se marcan en «Qué hay en la agenda › Puntuales».</span><span></span></span>
+          </span>
+          <span class="caption">Cuatro chips en vez de un desplegable de diez; los que la casa desmarcó no están.</span>
+        </span>
+        <p class="obody">Con cuatro caben como chips y <b>se elige de un toque sin abrir la rueda de iOS</b>, que era el problema del tema en Ajustes. Lo que cuesta: un dato de la casa en <span class="mono">configuracion</span>; y si marcan ocho, vuelven a hacer falta dos filas.</p>
+      </button>
+      <button class="opt" data-t="I2" aria-pressed="false">
+        <span class="optrow"><span class="tok">I2</span><span class="oname">Los más usados y «más…»</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Qué es</span><span class="chips"><span class="sel">🎉 Celebración</span><span>🩺 Cita médica</span><span>📌 Otro</span><span class="faint">más…</span></span></span></span>
+          </span>
+          <span class="caption">La aplicación cuenta cuáles se usan y enseña los tres primeros; «más…» abre el desplegable entero.</span>
+        </span>
+        <p class="obody">Nada que configurar. <b>Lo que cuesta es que el orden cambia solo</b>, y un chip que se mueve de sitio entre un evento y el siguiente se toca mal.</p>
+      </button>
+      <button class="opt" data-t="I3" aria-pressed="false">
+        <span class="optrow"><span class="tok">I3</span><span class="oname">El desplegable de siempre, con siete</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="rotulo">Qué es</span><span class="campo">🎉 Celebración <span class="faint" style="float: right">⌄</span></span></span></span>
+            <span class="fila faint"><span>Celebración · Cita médica · Competición · Entreno · Fecha escolar · Aniversario · Otro</span><span></span></span>
+          </span>
+          <span class="caption">Lo de hoy menos cumpleaños, santo y viaje.</span>
+        </span>
+        <p class="obody">Solo quita lo que se ha ido a otros plugins. <b>Sigue siendo una rueda</b>, y sigue teniendo tipos que nadie de casa ha usado.</p>
+      </button>
+      <button class="opt none" data-t="I0" aria-pressed="false">
+        <span class="optrow"><span class="tok">I0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">El campo se queda como está, con los diez.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre I</summary><textarea data-n="I" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ═══════════════════════ 🐴 EXTRAESCOLARES ═══════════════════════ -->
+  <h2 class="grupo">🐴 Extraescolares</h2>
+
+  <section class="q" data-q="J">
+    <p class="qhead">Pregunta J · Extraescolares · La línea</p>
+    <p class="qtitle">¿Cómo se ve la actividad en la semana?</p>
+    <p class="qwhy">Hípica, martes y jueves a las 18:00, la lleva Óscar y la recoge Marta. Las cuatro maquetas son el martes.</p>
+    <div class="opts">
+      <button class="opt" data-t="J1" aria-pressed="false">
+        <span class="optrow"><span class="tok">J1</span><span class="oname">Hora, título y quién lleva y recoge, en iniciales</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="ev"><span class="h">18:00</span>🐴 Hípica <span class="de">· OS → MA</span></span><span class="ev"><span class="h">20:30</span>🍽️ Cena con los Pérez</span></span></span>
+          </span>
+          <span class="caption">Las iniciales de quien lleva y quien recoge, con la flecha en medio, en el hueco del «· de Óscar».</span>
+        </span>
+        <p class="obody">Dice lo que se pregunta el martes por la tarde —«¿quién recoge?»— <b>con las mismas dos letras que ya usan Lío y el voto de Sitios</b>. Lo que cuesta: ocho caracteres del título; con un nombre largo se recorta antes.</p>
+      </button>
+      <button class="opt" data-t="J2" aria-pressed="false">
+        <span class="optrow"><span class="tok">J2</span><span class="oname">Hora y título, con la marca de que se repite</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="ev"><span class="h">18:00</span>🐴 Hípica<span class="rep">↻</span></span><span class="ev"><span class="h">20:30</span>🍽️ Cena con los Pérez</span></span></span>
+          </span>
+          <span class="caption">Lo decidido en la ronda anterior, sin más: quién lleva se lee en la hoja.</span>
+        </span>
+        <p class="obody">La línea más limpia y <b>la que ya se eligió en C1 de la ronda anterior</b>. Lo que cuesta: quién recoge está a un toque, y es la pregunta del día.</p>
+      </button>
+      <button class="opt" data-t="J3" aria-pressed="false">
+        <span class="optrow"><span class="tok">J3</span><span class="oname">Dos pastillas como las de Lío, a la derecha</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="ev" style="display: flex; justify-content: space-between; align-items: center"><span><span class="h">18:00</span>🐴 Hípica</span><span style="display: inline-flex; gap: 3px"><span class="past" style="width: 40px">↑ OS</span><span class="past mio" style="width: 40px">↓ MA</span></span></span><span class="ev"><span class="h">20:30</span>🍽️ Cena con los Pérez</span></span></span>
+          </span>
+          <span class="caption">Llevar y recoger como dos pastillas con el estado en el color, igual que un turno: hecho, previsto, propio.</span>
+        </span>
+        <p class="obody">Es Lío otra vez, con su color de estado, y <b>tocar una pastilla abriría el trato para cambiarla</b>. Lo que cuesta: dos dibujos de pastilla en la misma fila —los del perro y estos— y una línea de evento que ya no es una línea sino una fila con controles.</p>
+      </button>
+      <button class="opt" data-t="J4" aria-pressed="false">
+        <span class="optrow"><span class="tok">J4</span><span class="oname">Como banda, porque ocupa la tarde</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">15</span><span class="dow">mar</span></span><span class="pastillas"><span class="past">☀️ MA</span><span class="past">🌙 OS</span></span><span class="evs"><span class="banda">🐴 Hípica <span class="de">· 18:00 – 19:30 · lleva Óscar, recoge Marta</span></span><span class="ev"><span class="h">20:30</span>🍽️ Cena con los Pérez</span></span></span>
+          </span>
+          <span class="caption">Con fondo, como un viaje; el texto entero cabe porque la banda no lleva hora delante.</span>
+        </span>
+        <p class="obody">Cabe todo y se distingue de la cena a primera vista. <b>Pero va contra lo decidido: la banda es para lo que enmarca el día</b>, y una hora y media no enmarca nada; con dos actividades, la semana se llena de fondos.</p>
+      </button>
+      <button class="opt none" data-t="J0" aria-pressed="false">
+        <span class="optrow"><span class="tok">J0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre J</summary><textarea data-n="J" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="K">
+    <p class="qhead">Pregunta K · Extraescolares · Llevar y recoger</p>
+    <p class="qtitle">¿Dónde se escribe quién lleva y quién recoge?</p>
+    <p class="qwhy">Es lo que hace que la actividad sea de la casa y no solo de la niña. Las tres son la misma regla que Lío —un reparto, y un día suelto se cambia con trato— escrita desde tres sitios.</p>
+    <div class="opts">
+      <button class="opt" data-t="K1" aria-pressed="false">
+        <span class="optrow"><span class="tok">K1</span><span class="oname">Un cuadro en la ficha de la actividad, por día</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🐴 Hípica</span>
+            <span class="hoja-s">actividad de Lucía · martes y jueves, 18:00 – 19:30</span>
+            <span class="linea cab"><span></span><span>Lleva</span><span>Recoge</span></span>
+            <span class="linea"><span>Martes</span><span>Óscar</span><span>Marta</span></span>
+            <span class="linea"><span>Jueves</span><span>Marta</span><span>Marta</span></span>
+          </span>
+          <span class="caption">Dos columnas por día de actividad, con nombre entero, como el cuadro de Lío; tocar pasa al siguiente de casa.</span>
+        </span>
+        <p class="obody">El reparto de siempre vive con la actividad y se lee entero. <b>Un día suelto se cambia desde la agenda con el trato de Lío</b>. Lo que cuesta: generalizar el motor de turnos, que hoy sabe de mañanas y noches y no de martes a las 18:00.</p>
+      </button>
+      <button class="opt" data-t="K2" aria-pressed="false">
+        <span class="optrow"><span class="tok">K2</span><span class="oname">En la hoja del día, tocando la línea</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🐴 Hípica · martes 15</span>
+            <span class="hoja-s">18:00 – 19:30 · Club de campo</span>
+            <span class="fila"><span>Lleva</span><span class="seg"><span class="sel">Óscar</span><span>Marta</span><span>Ana</span></span></span>
+            <span class="fila"><span>Recoge</span><span class="seg"><span>Óscar</span><span class="sel">Marta</span><span>Ana</span></span></span>
+            <span class="fila faint"><span>Vale para este martes. «Todos los martes» está en la ficha.</span><span></span></span>
+          </span>
+          <span class="caption">La hoja que abre la línea de la semana; sin cuadro, cada día se decide al tocarlo.</span>
+        </span>
+        <p class="obody">No hay reparto que aprender: <b>se toca el martes y se dice quién va</b>. Lo que cuesta: sin cuadro no hay valor de origen, así que cada martes está vacío hasta que alguien lo rellena, y eso es lo que Lío resolvió con el cuadro.</p>
+      </button>
+      <button class="opt" data-t="K3" aria-pressed="false">
+        <span class="optrow"><span class="tok">K3</span><span class="oname">Hoy pregunta por la mañana: «¿quién recoge?»</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Hoy · martes 15</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span>🐴 Hípica a las 18:00 · ¿quién recoge a Lucía?</span></span>
+            <span class="fila" style="grid-template-columns: 1fr"><span class="seg"><span>Óscar</span><span>Marta</span><span>Ana</span></span></span>
+          </span>
+          <span class="caption">Una banda de Hoy que espera respuesta, como una petición de Lío; contestada, desaparece.</span>
+        </span>
+        <p class="obody">Se decide cuando se decide de verdad, la mañana del martes. <b>Lo que cuesta es que es una pregunta cada martes para siempre</b>, y Hoy se diseñó para que lo que espera respuesta sea lo excepcional.</p>
+      </button>
+      <button class="opt none" data-t="K0" aria-pressed="false">
+        <span class="optrow"><span class="tok">K0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Quién lleva y recoge no se escribe en la aplicación.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre K</summary><textarea data-n="K" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="L">
+    <p class="qhead">Pregunta L · Extraescolares · Las pausas</p>
+    <p class="qtitle">¿Cómo se dice que en Navidad no hay hípica?</p>
+    <p class="qwhy">Sin pausas la actividad sale el 25 de diciembre y el 1 de noviembre, justo cuando más se mira la semana.</p>
+    <div class="opts">
+      <button class="opt" data-t="L1" aria-pressed="false">
+        <span class="optrow"><span class="tok">L1</span><span class="oname">Un calendario escolar en el plugin, para todas las actividades</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🐴 Extraescolares</span>
+            <span class="comunes">enseñar · lo ve casa · avisar · nombre</span>
+            <span class="rotulo" style="padding: 8px 12px 0">Se paran en</span>
+            <span class="fila"><span>Navidad</span><span class="sec">23 dic – 7 ene</span></span>
+            <span class="fila"><span>Semana Santa</span><span class="sec">28 mar – 6 abr</span></span>
+            <span class="fila"><span>12 oct · 1 nov · 6 dic · 8 dic</span><span></span></span>
+            <span class="fila" style="color: var(--ac)"><span>+ Añadir pausa</span><span></span></span>
+          </span>
+          <span class="caption">Se escribe una vez por curso; todas las actividades lo heredan y una puede añadir las suyas.</span>
+        </span>
+        <p class="obody">Es lo que hace un colegio: <b>un calendario para todo</b>. Lo que cuesta: una lista de rangos en <span class="mono">configuracion</span> y una regla más al derivar; no se puede importar de ningún sitio, porque cada colegio tiene el suyo.</p>
+      </button>
+      <button class="opt" data-t="L2" aria-pressed="false">
+        <span class="optrow"><span class="tok">L2</span><span class="oname">Marcando días en el mes: «esta semana no hay»</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Diciembre</span>
+            <span class="mes">
+              <span class="faint">L</span><span class="faint">M</span><span class="faint">X</span><span class="faint">J</span><span class="faint">V</span><span class="faint">S</span><span class="faint">D</span>
+              <span>15</span><span class="pto">16</span><span>17</span><span class="pto">18</span><span>19</span><span>20</span><span>21</span>
+              <span>22</span><span class="tachado">23</span><span class="tachado">24</span><span class="tachado">25</span><span class="tachado">26</span><span class="tachado">27</span><span class="tachado">28</span>
+              <span class="tachado">29</span><span class="tachado">30</span><span class="tachado">31</span><span class="tachado">1</span><span class="tachado">2</span><span class="tachado">3</span><span class="tachado">4</span>
+            </span>
+            <span class="fila faint"><span>Toca un día de hípica y elige «no hay hasta el…».</span><span></span></span>
+          </span>
+          <span class="caption">Desde el mes, sobre la actividad: la pausa se pinta donde se ve.</span>
+        </span>
+        <p class="obody">Se escribe mirando el calendario, que es como se piensa. <b>Lo que cuesta es que es por actividad</b>: con dos actividades se marca dos veces, y el mes gana su primer gesto de selección de rango.</p>
+      </button>
+      <button class="opt" data-t="L3" aria-pressed="false">
+        <span class="optrow"><span class="tok">L3</span><span class="oname">Sin pausas: se quita cada día desde su hoja</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🐴 Hípica · jueves 25</span>
+            <span class="hoja-s">18:00 – 19:30</span>
+            <span class="fila"><span style="color: var(--ac)">No hay hípica este día</span><span class="faint">Cancelar</span></span>
+          </span>
+          <span class="caption">Un verbo en la hoja del día; cada día que falte, un toque.</span>
+        </span>
+        <p class="obody">Lo mínimo, y sirve para el martes que llueve. <b>Para Navidad son cuatro toques por actividad</b>, y se hacen cuando ya ha salido mal una vez.</p>
+      </button>
+      <button class="opt none" data-t="L0" aria-pressed="false">
+        <span class="optrow"><span class="tok">L0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre L</summary><textarea data-n="L" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <!-- ═══════════════════════ 🧳 FIN DE SEMANA ═══════════════════════ -->
+  <h2 class="grupo">🧳 Fin de semana</h2>
+
+  <section class="q" data-q="M">
+    <p class="qhead">Pregunta M · Fin de semana · La banda</p>
+    <p class="qtitle">¿Qué dice la banda de una escapada?</p>
+    <p class="qwhy">Ya se decidió que va como banda. Lo que falta es qué lleva escrito: la sierra, el sábado 12 y el domingo 13, van todos.</p>
+    <div class="opts">
+      <button class="opt" data-t="M1" aria-pressed="false">
+        <span class="optrow"><span class="tok">M1</span><span class="oname">El sitio con su emoji, y cuánto dura</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="banda">🏔️ La sierra <span class="de">· 2 días</span></span></span></span>
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ LU</span><span class="past">🌙 OS</span></span><span class="evs"><span class="banda faint">🏔️ La sierra <span class="de">· cont.</span></span></span></span>
+          </span>
+          <span class="caption">El emoji es el del sitio de Sitios; tocar la banda abre la escapada, y desde ella, el sitio.</span>
+        </span>
+        <p class="obody">La banda dice dónde, que es lo que se pregunta al mirar la semana. <b>El emoji del sitio hace el trabajo del 🧳</b>. Lo que cuesta: nada que no cueste ya el enlace al sitio.</p>
+      </button>
+      <button class="opt" data-t="M2" aria-pressed="false">
+        <span class="optrow"><span class="tok">M2</span><span class="oname">El sitio y quién va</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="banda">🏔️ La sierra <span class="de">· todos</span></span></span></span>
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ LU</span><span class="past">🌙 OS</span></span><span class="evs"><span class="banda faint">🏔️ La sierra <span class="de">· cont.</span></span></span></span>
+          </span>
+          <span class="caption">«todos», o las iniciales de quien va cuando no van todos: «OS · LU».</span>
+        </span>
+        <p class="obody">Útil cuando se parte la casa —dos a la sierra y dos se quedan—. <b>Lo que cuesta: cuando van todos, «todos» no dice nada</b>, y es el caso normal.</p>
+      </button>
+      <button class="opt" data-t="M3" aria-pressed="false">
+        <span class="optrow"><span class="tok">M3</span><span class="oname">Como un evento de varios días, sin sitio</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="banda">🧳 Finde en la sierra <span class="de">· 2 días</span></span></span></span>
+            <span class="dia"><span><span class="num">13</span><span class="dow">dom</span></span><span class="pastillas"><span class="past">☀️ LU</span><span class="past">🌙 OS</span></span><span class="evs"><span class="banda faint">🧳 Finde en la sierra <span class="de">· cont.</span></span></span></span>
+          </span>
+          <span class="caption">Lo que ya dibuja un evento con «Hasta», con el tipo viaje.</span>
+        </span>
+        <p class="obody">Es lo que hay hoy con la banda decidida. <b>Sin enlace al sitio</b>, así que la lista de Llevar de la sierra no sabe que este finde se va.</p>
+      </button>
+      <button class="opt none" data-t="M0" aria-pressed="false">
+        <span class="optrow"><span class="tok">M0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre M</summary><textarea data-n="M" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="N">
+    <p class="qhead">Pregunta N · Fin de semana · La víspera</p>
+    <p class="qtitle">¿Qué pone Hoy el viernes antes de irse?</p>
+    <p class="qwhy">La lista de Llevar de un sitio existe para mirarse de pie y antes de salir, y Hoy es la pantalla que se mira antes de salir. Las tres son el viernes 11.</p>
+    <div class="opts">
+      <button class="opt" data-t="N1" aria-pressed="false">
+        <span class="optrow"><span class="tok">N1</span><span class="oname">La banda y la lista de Llevar, tachable desde aquí</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Hoy · viernes 11</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="banda">🏔️ Mañana, la sierra <span class="de">· faltan 3 de 7</span></span></span></span>
+            <span class="fila"><span>☐ Cargador del coche</span><span></span></span>
+            <span class="fila"><span>☐ Botas de Lucía</span><span></span></span>
+            <span class="fila"><span>☐ Pienso de Lío</span><span></span></span>
+            <span class="fila faint"><span>☑ Chubasqueros · ☑ Linterna · y 2 más</span><span></span></span>
+          </span>
+          <span class="caption">Lo que falta arriba y sin tachar, lo hecho abajo; se tacha aquí y en el sitio a la vez.</span>
+        </span>
+        <p class="obody">Es la lista donde se necesita, con su regla de siempre: <b>lo que falta arriba</b>. Lo que cuesta: Hoy gana su primer bloque de otra pestaña, y hay que decidir si la lista se pone en blanco al volver o la siguiente vez.</p>
+      </button>
+      <button class="opt" data-t="N2" aria-pressed="false">
+        <span class="optrow"><span class="tok">N2</span><span class="oname">La banda con el recuento, y la lista a un toque</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Hoy · viernes 11</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="banda">🏔️ Mañana, la sierra <span class="de">· Llevar: faltan 3 de 7 ›</span></span></span></span>
+            <span class="fila faint"><span>18:00 🐴 Hípica</span><span></span></span>
+          </span>
+          <span class="caption">Una línea; tocarla abre la lista en Sitios.</span>
+        </span>
+        <p class="obody">Hoy no crece y <b>el recuento ya dice si hay que abrirla</b>. Lo que cuesta: tachar es en otra pestaña, y «3 de 7» obliga a ir a ver cuáles.</p>
+      </button>
+      <button class="opt" data-t="N3" aria-pressed="false">
+        <span class="optrow"><span class="tok">N3</span><span class="oname">Solo la banda, como cualquier aviso previo</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Hoy · viernes 11</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span><span class="banda">🏔️ Mañana, la sierra</span></span></span>
+            <span class="fila faint"><span>18:00 🐴 Hípica</span><span></span></span>
+          </span>
+          <span class="caption">El aviso previo común, sin nada del sitio.</span>
+        </span>
+        <p class="obody">Igual que un vuelo o un cumpleaños. <b>La lista de Llevar se queda en Sitios</b>, que es donde ya está y donde ya se mira; lo que se pierde es el recordatorio de que existe.</p>
+      </button>
+      <button class="opt none" data-t="N0" aria-pressed="false">
+        <span class="optrow"><span class="tok">N0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Hoy no dice nada la víspera.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre N</summary><textarea data-n="N" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <section class="q" data-q="O">
+    <p class="qhead">Pregunta O · Fin de semana · El perro</p>
+    <p class="qtitle">¿Cómo se dice qué pasa con Lío ese finde?</p>
+    <p class="qwhy">Es la pregunta que se hace en voz alta el jueves. Con las ausencias de la pregunta A hay dónde escribirlo; sin ellas, no.</p>
+    <div class="opts">
+      <button class="opt" data-t="O1" aria-pressed="false">
+        <span class="optrow"><span class="tok">O1</span><span class="oname">Un segmentado en la ficha de la escapada</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">🏔️ La sierra</span>
+            <span class="hoja-s">sáb 12 – dom 13 · van todos</span>
+            <span class="fila"><span>🐾 Lío</span><span class="seg"><span class="sel">viene</span><span>se queda con Ana</span></span></span>
+          </span>
+          <span class="sem" style="margin-top: 8px">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ AN</span><span class="past">🌙 AN</span></span><span class="evs"><span class="banda">🏔️ La sierra <span class="de">· 2 días</span></span></span></span>
+          </span>
+          <span class="caption">«Se queda» escribe una ausencia de quienes van, y el cuadro de ese finde pasa a quien se queda; «viene» no cambia nada.</span>
+        </span>
+        <p class="obody">Se contesta al apuntar el finde, que es cuando se decide. <b>Necesita A1 o A3</b>: es una ausencia con otro nombre. Lo que cuesta: cuando van todos y Lío se queda con alguien de fuera, el cuadro dice «nadie» y el turno no se marca.</p>
+      </button>
+      <button class="opt" data-t="O2" aria-pressed="false">
+        <span class="optrow"><span class="tok">O2</span><span class="oname">Hoy pregunta el jueves: «¿Lío viene a la sierra?»</span></span>
+        <span class="mock">
+          <span class="hoja">
+            <span class="hoja-t">Hoy · jueves 10</span>
+            <span class="fila" style="grid-template-columns: 1fr"><span>🐾 El sábado os vais a la sierra. ¿Lío viene?</span></span>
+            <span class="fila" style="grid-template-columns: 1fr"><span class="seg"><span>Viene</span><span>Se queda con…</span></span></span>
+          </span>
+          <span class="caption">Una banda de Hoy que espera respuesta, dos días antes; contestada, hace lo mismo que O1.</span>
+        </span>
+        <p class="obody">No hay que acordarse al apuntar el finde: <b>la aplicación lo pregunta cuando toca</b>. Lo que cuesta: una pregunta más en Hoy, y quien apunta el finde el viernes ya no la recibe.</p>
+      </button>
+      <button class="opt" data-t="O3" aria-pressed="false">
+        <span class="optrow"><span class="tok">O3</span><span class="oname">Nada: los turnos de ese finde se cambian a mano</span></span>
+        <span class="mock">
+          <span class="sem">
+            <span class="dia"><span><span class="num">12</span><span class="dow">sáb</span></span><span class="pastillas"><span class="past">☀️ OS</span><span class="past">🌙 MA</span></span><span class="evs"><span class="banda">🏔️ La sierra <span class="de">· 2 días</span></span></span></span>
+          </span>
+          <span class="caption">El cuadro sigue diciendo Óscar y Marta, que están en la sierra; se corrige turno a turno o se marca igual.</span>
+        </span>
+        <p class="obody">Lo de hoy. <b>Si Lío viene, el cuadro está bien y no hay nada que hacer</b>, que es el caso más frecuente; si se queda, cuatro turnos a mano.</p>
+      </button>
+      <button class="opt none" data-t="O0" aria-pressed="false">
+        <span class="optrow"><span class="tok">O0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre O</summary><textarea data-n="O" placeholder="Viaja con la letra en el bloque que se copia."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p><b>Lo que no se dibuja a propósito.</b> Los cuatro mandos comunes van en cada hoja por encima de lo que aquí se elige y no se vuelven a preguntar. Tampoco se dibujan la hoja «Qué hay en la agenda» ni la regla de banda y línea, que están en la ronda anterior. La voz de Lío y la cadencia de Flighty se quedan donde están.</p>
+    <p><b>Dependencias entre respuestas.</b> O1 y O2 necesitan A1 o A3. J3 y K1 comparten el motor de turnos de Lío. M1 y N1 necesitan el enlace de la escapada al sitio, que M3 no tiene. E1 y E2 se excluyen.</p>
+    <p><b>Decidido:</b> A3 · B1 · C2 · D1 · E1 · F2 · G1 · H2 · I1 · J3 · K1 · L3 · M2 · N2 · O2. Con cuatro notas que van dentro: en C, la vuelta se puede escribir a mano cuando no hay vuelo de vuelta que trazar; en E, un botón busca el santo por el nombre con la IA; en H, las fechas van en un calendario propio y no en el del sistema; y en N, la escapada añade el día anterior cuando se sale la víspera, para poder planificar. Construido en la 1.70.0.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  const KEY = "options.plugins-hojas";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t];
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía. Toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: selecciónalo abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>

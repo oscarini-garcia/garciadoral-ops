@@ -10,11 +10,12 @@
 import { contarPendientes } from './portero/solicitudes.js';
 import { Rechazo } from './portero/errores.js';
 import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
+import { guardarPlugin, leerPlugins } from './plugins.js';
 
 const CAMPOS = {
   persona: [
     'nombre', 'apellidos', 'fecha_nacimiento', 'parentesco',
-    'tiene_cuenta', 'identificador_apple', 'rol', 'circulo', 'genero', 'rama', 'activa',
+    'tiene_cuenta', 'identificador_apple', 'rol', 'circulo', 'genero', 'rama', 'santo', 'activa',
   ],
   atributo_persona: ['persona_id', 'clave', 'valor', 'activo'],
   categoria: ['nombre', 'regla', 'orden', 'activa'],
@@ -23,7 +24,16 @@ const CAMPOS = {
     'titulo', 'tipo_id', 'emoji', 'inicio', 'fin', 'jornada_completa',
     'ubicacion', 'notas', 'repeticion', 'repeticion_hasta', 'lleva_regalos',
     'categoria_id', 'origen', 'persona_origen_id', 'calendario_id', 'autor_id', 'activo',
+    // De qué plugin escrito viene y lo que ese plugin sabe de suyo, en JSON
+    // (`api/migraciones/0021_plugins.unavez.sql`).
+    'plugin_id', 'extra',
   ],
+  // Lo que le pasa a una aparición concreta de un evento que se repite: que ese
+  // día no hay, o que ese martes lleva y recoge otro. El identificador se
+  // compone —`dia:<evento>:<fecha>`— como el de un paseo de Lío.
+  evento_dia: ['evento_id', 'fecha', 'cancelado', 'lleva_id', 'recoge_id', 'autor_id', 'activo'],
+  // Que alguien no está unos días. Se escribe en su ficha y la lee Lío.
+  ausencia: ['persona_id', 'desde', 'hasta', 'cubre_id', 'motivo', 'autor_id', 'activo'],
   idea: [
     'tipo', 'titulo', 'descripcion', 'categoria_id', 'precio_min', 'precio_max',
     'enlace', 'establecimiento', 'estado', 'autor_id', 'activa',
@@ -82,6 +92,18 @@ async function filasSiLaTablaEsta(db, sql, ...parametros) {
   }
 }
 
+/** El JSON de `evento.extra`, o `null` si no hay nada o no se puede leer. */
+function extraDe(texto) {
+  if (texto === null || texto === undefined || texto === '') return null;
+  if (typeof texto === 'object') return texto;
+  try {
+    const valor = JSON.parse(texto);
+    return valor && typeof valor === 'object' ? valor : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Lee el registro completo. `soloActivos` deja fuera lo marcado como inactivo,
  * que es lo que quieren tanto la sincronización como el generador del plan.
@@ -96,6 +118,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     regalos, codestinatarios, comentarios, conflictos,
     paseos, tratos, cuadroLio,
     lugares, apuntes, votos, vistos, calendarios, mejoras,
+    diasDeEvento, ausencias, plugins,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -133,6 +156,10 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filasSiLaTablaEsta(db, 'SELECT * FROM visto'),
     filas(db, 'SELECT * FROM calendario_externo ORDER BY nombre'),
     filasSiLaTablaEsta(db, `SELECT * FROM mejora ${activo('activo')} ORDER BY creado_en DESC`),
+    // Los plugins llegan con la 0021, y por el mismo resguardo que Lío y Sitios.
+    filasSiLaTablaEsta(db, `SELECT * FROM evento_dia ${activo('activo')} ORDER BY fecha`),
+    filasSiLaTablaEsta(db, `SELECT * FROM ausencia ${activo('activo')} ORDER BY desde`),
+    leerPlugins(db),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -166,13 +193,19 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     tipos_evento: tipos.map((t) => ({ ...t, lleva_regalos: bool(t.lleva_regalos) })),
     // Los calendarios externos que se importan (§2.4): su metadato —nombre y
     // sello de última sincronización— viaja para que Ajustes pueda mostrarlo. El
-    // secreto del feed no está aquí; vive fuera, en el servidor (calendario-viajes §8).
+    // secreto del feed sale de aquí con la fila —`url_feed`, desde la 0021— y lo
+    // recorta `filtrado.js` antes de transmitir: fuera del Worker solo se sabe
+    // si hay enlace, nunca cuál.
     calendarios_externos: calendarios,
     eventos: eventos.map((e) => ({
       ...e,
       jornada_completa: bool(e.jornada_completa),
       lleva_regalos: e.lleva_regalos === null ? null : bool(e.lleva_regalos),
       activo: bool(e.activo),
+      // Lo propio del plugin viaja ya interpretado: la base guarda texto y el
+      // dispositivo quiere un objeto, y un JSON a medias no puede tumbar la
+      // sincronización de todo el hogar.
+      extra: extraDe(e.extra),
       participantes: (porEvento.get(e.id) || []).map((p) => ({
         persona_id: p.persona_id,
         rol: p.rol,
@@ -215,6 +248,11 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     // Las mejoras son sobre la aplicación y no sobre la casa, así que no tienen
     // destinatario y no pasan por la visibilidad: las ve quien tiene cuenta.
     mejoras: mejoras.map((m) => ({ ...m, hecho: bool(m.hecho), activo: bool(m.activo) })),
+    // Los plugins: lo que le pasa a un día suelto de un evento que se repite,
+    // quién no está unos días, y lo que la casa ha ajustado de cada plugin.
+    dias_evento: diasDeEvento.map((d) => ({ ...d, cancelado: bool(d.cancelado), activo: bool(d.activo) })),
+    ausencias: ausencias.map((a) => ({ ...a, activo: bool(a.activo) })),
+    plugins,
     // Lo visto no se recorta por visibilidad sino por dueño, y eso lo hace
     // `filtrado.js`: las filas de una persona no le sirven de nada a otra.
     vistos,
@@ -317,7 +355,7 @@ export async function administradoresRestantes(db, exceptoId) {
 /** Quién puede tocar qué. La configuración del hogar es de los administradores;
  *  los contenidos, de cualquier miembro (spec funcional §2). */
 function comprobarPermiso(tipo, actor, anterior, campos) {
-  const soloAdministradores = ['persona', 'categoria', 'etiqueta', 'presupuesto', 'lio_cuadro'];
+  const soloAdministradores = ['persona', 'categoria', 'etiqueta', 'presupuesto', 'lio_cuadro', 'plugin'];
   if (soloAdministradores.includes(tipo) && actor.rol !== 'administrador') {
     throw new Rechazo(`solo un administrador puede modificar ${tipo}`);
   }
@@ -331,9 +369,13 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
   }
 
   // Los paseos son de la casa: quien no está en el círculo cerrado no los ve
-  // (`filtrado.js`) y tampoco los escribe.
-  if ((tipo === 'paseo' || tipo === 'trato_paseo') && !esDeLaCasa(actor)) {
-    throw new Rechazo('los paseos de Lío son de quien vive en casa');
+  // (`filtrado.js`) y tampoco los escribe. Y una ausencia también: la lee Lío
+  // para pasar los turnos a quien cubre, y se escribe desde la ficha de
+  // alguien de casa.
+  if ((tipo === 'paseo' || tipo === 'trato_paseo' || tipo === 'ausencia') && !esDeLaCasa(actor)) {
+    throw new Rechazo(tipo === 'ausencia'
+      ? 'una ausencia la escribe quien vive en casa'
+      : 'los paseos de Lío son de quien vive en casa');
   }
 
   // Una propuesta la resuelve **su destinatario y nadie más**, que es lo único
@@ -390,8 +432,11 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
 
   // De los tres orígenes solo el manual admite edición completa; en los otros
   // dos son editables el emoji, la asociación de regalos y los avisos (§4.2).
+  // Y `extra`, desde la 0021: es donde un vuelo importado guarda la vuelta
+  // puesta a mano cuando la de verdad no se puede trazar, que es un dato de
+  // esta aplicación y no del feed —el importador no lo toca—.
   if (tipo === 'evento' && anterior && anterior.origen !== 'manual') {
-    const permitidos = new Set(['emoji', 'lleva_regalos']);
+    const permitidos = new Set(['emoji', 'lleva_regalos', 'extra']);
     const intrusos = Object.keys(campos).filter((c) => !permitidos.has(c));
     if (intrusos.length) {
       throw new Rechazo(
@@ -498,6 +543,20 @@ export async function aplicarCambio(db, actor, cambio) {
     return { aplicado: true };
   }
 
+  // Lo ajustado de un plugin es una casilla de `configuracion`, como el cuadro
+  // de Lío: viaja por la cola con su identificador de plugin y se escribe de
+  // una vez, porque los mandos de una hoja son un solo dato.
+  if (tipo === 'plugin') {
+    try {
+      comprobarPermiso(tipo, actor, null, campos);
+      await guardarPlugin(db, actor, id, campos);
+    } catch (error) {
+      if (error instanceof Rechazo) return { aplicado: false, motivo: error.message };
+      return { aplicado: false, motivo: String(error.message || error) };
+    }
+    return { aplicado: true };
+  }
+
   if (tipo === 'presupuesto') {
     comprobarPermiso(tipo, actor, null, campos);
     await db
@@ -546,6 +605,10 @@ export async function aplicarCambio(db, actor, cambio) {
   const propuestos = Object.fromEntries(
     Object.entries(campos).filter(([clave]) => columnas.includes(clave)),
   );
+  // `extra` llega como objeto y la base guarda texto.
+  if ('extra' in propuestos && propuestos.extra !== null && typeof propuestos.extra === 'object') {
+    propuestos.extra = JSON.stringify(propuestos.extra);
+  }
 
   if (anterior && anterior.actualizado_en > ahora) {
     // El servidor tiene una versión más reciente. Se descarta la que llega,
