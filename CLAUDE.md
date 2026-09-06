@@ -585,16 +585,22 @@ pendiente. El hook lo inyecta al final del mapa.
   que lleva su propia versión desde antes; aquí el apartado se llama Novedades
   y no «What's new», y el icono es una bocina nueva en `ICONOS`, a juego con el
   resto de Ajustes.
-- **El botón de Ajustes se fue de la cabecera a la barra de abajo**, el sexto y
-  a la derecha. Arriba a la derecha es lo que peor alcanza el pulgar de una mano
-  sola, y es justo el sitio al que hay que estirarse cuando algo no va. De paso
-  la cabecera se queda con una sola cosa: el sobre, que solo existe cuando hay
-  algo que contestar, de modo que esa esquina está vacía casi siempre. **No es
-  una pestaña**: no lleva `data-pestana`, abre la hoja y la barra se queda como
-  estaba, y por eso nunca toma `aria-current` y se queda en gris mientras la
-  pestaña de verdad está en tinta. El bucle que cablea las pestañas filtra ahora
-  por `.tab[data-pestana]`; sin ese filtro, tocar Ajustes le pondría a `pestana`
-  un valor que no existe.
+- **El botón de Ajustes ha vuelto a la cabecera, arriba a la derecha.** Estuvo
+  un tiempo de sexto botón en la barra de abajo, con el argumento del pulgar:
+  arriba a la derecha es lo que peor alcanza una mano sola, y es justo el sitio
+  al que hay que estirarse cuando algo no va. Vuelve porque el alcance no es el
+  único criterio y ahí perdía contra el otro: **es la esquina donde se busca**,
+  la que usa iOS y la que usa `meeting-ops-air`, y un ajuste que no está donde
+  se busca cuesta más que un estirón de pulgar. De paso la barra vuelve a cinco
+  entradas, que son cinco secciones y nada más: el bucle que las cablea ya no
+  necesita filtrar por `data-pestana`. **Sigue sin ser una pestaña**: abre la
+  hoja, la barra se queda como estaba y nunca toma `aria-current`. **Y va en la
+  esquina del todo, a la derecha del sobre**, aunque el que aparece y desaparece
+  sea el sobre: es lo único de esa fila que está siempre, y si el fijo fuera el
+  de dentro, cada aviso que llegara le daría a Ajustes un salto lateral. Por eso
+  el margen negativo que alinea el dibujo con el margen de la página se aplica
+  solo al último de la fila y no a los dos, que se comerían la mitad del hueco
+  que los separa.
 - **Las mejoras son ideas sobre la propia aplicación**, apuntadas desde el móvil
   y guardadas en `mejora`. **No se llaman «idea» a propósito**: aquí una idea es
   una idea de regalo y está en el centro del modelo de ocultación, y compartir el

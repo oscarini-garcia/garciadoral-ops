@@ -299,10 +299,14 @@ textarea:-webkit-autofill:focus {
 .icono-cabecera {
   display: inline-flex; align-items: center; justify-content: center;
   align-self: center;
-  width: 32px; height: 32px; margin: -6px -6px -6px 0;
+  width: 32px; height: 32px; margin: -6px 0;
   border-radius: 50%;
   color: var(--ink-faint);
 }
+/* El margen negativo, solo en el último: es lo que alinea el dibujo con el
+   margen de la página en lugar de dejar el aire de su área de toque. Aplicado a
+   los dos se comería la mitad del hueco que los separa. */
+.cabecera-fila > .icono-cabecera:last-child { margin-right: -6px; }
 .icono-cabecera:hover, .icono-cabecera:focus-visible { color: var(--ink-soft); background: var(--paper-2); }
 
 /* Progreso de la actualización: una línea por fase, con la que está en curso
@@ -384,7 +388,7 @@ textarea:-webkit-autofill:focus {
    desplazamiento del documento. */
 .tabbar {
   flex: none; z-index: 30;
-  display: grid; grid-template-columns: repeat(6, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-top: 1px solid var(--line);

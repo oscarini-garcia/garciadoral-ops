@@ -58,6 +58,14 @@ const TEXTO_ESPERA = {
 };
 
 export function mostrarAcceso(mensaje = null) {
+  // Lo primero, cerrar la hoja que hubiera abierta. `#hoja` y `#scrim` son
+  // hermanos de `#aplicacion` y no hijos suyos, así que ocultar la aplicación
+  // no se los lleva por delante: sin esto, caer aquí desde dentro —una sesión
+  // que caduca mientras alguien mira Ajustes— borra la sesión y deja al usuario
+  // mirando una hoja de una sesión que ya no existe, con la pantalla de «vuelve
+  // a entrar» detrás y tapada.
+  cerrarHoja();
+
   document.getElementById('aplicacion').hidden = true;
   document.getElementById('espera').hidden = true;
   const acceso = document.getElementById('acceso');
