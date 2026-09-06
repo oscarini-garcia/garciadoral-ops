@@ -197,10 +197,7 @@ function prepararInterfaz() {
   document.getElementById('acceso').hidden = true;
   document.getElementById('aplicacion').hidden = false;
 
-  // Solo las que son pestaña: el sexto botón de la barra es Ajustes, que abre
-  // una hoja y no cambia de sección, y sin este filtro el clic le pondría a
-  // `pestana` un valor que no existe.
-  for (const boton of document.querySelectorAll('.tab[data-pestana]')) {
+  for (const boton of document.querySelectorAll('.tab')) {
     // Quien vuelve a entrar después de cerrar sesión lo hace por Hoy, y la
     // barra tiene que estar de acuerdo con eso: el marcado la deja en Hoy, pero
     // en memoria podía haber quedado otra de la sesión anterior.
@@ -209,7 +206,7 @@ function prepararInterfaz() {
 
     boton.onclick = () => {
       pestana = boton.dataset.pestana;
-      for (const otro of document.querySelectorAll('.tab[data-pestana]')) otro.removeAttribute('aria-current');
+      for (const otro of document.querySelectorAll('.tab')) otro.removeAttribute('aria-current');
       boton.setAttribute('aria-current', 'page');
       document.getElementById('pantalla').scrollTo(0, 0);
       refrescar();
