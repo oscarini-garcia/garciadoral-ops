@@ -190,7 +190,7 @@ export function conAusencias(instantanea, personaId, fechaIso) {
 /** Las dos primeras letras del nombre: «Ós», «Ma». Cabe en una casilla del
  *  carril y distingue a dos personas que empiezan igual, que es lo que una sola
  *  inicial no hacía. */
-export const inicialesDe = (persona) => String(persona?.nombre || '').trim().slice(0, 2) || '··';
+export const inicialesDe = (persona) => String(persona?.apodo || persona?.nombre || '').trim().slice(0, 2) || '··';
 
 // ------------------------------------------------------------- Los turnos --
 

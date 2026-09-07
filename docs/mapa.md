@@ -296,7 +296,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**386** en total.
+**390** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -320,7 +320,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/recordatorios.test.js` — 8
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
-- `api/test/redaccion-dia.test.js` — 17
+- `api/test/redaccion-dia.test.js` — 21
 - `api/test/redaccion-emoji.test.js` — 9
 - `api/test/redaccion-lio.test.js` — 8
 - `api/test/redaccion-regalo.test.js` — 14

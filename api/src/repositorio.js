@@ -15,7 +15,7 @@ import { guardarPlugin, leerPlugins } from './plugins.js';
 const CAMPOS = {
   persona: [
     'nombre', 'apellidos', 'fecha_nacimiento', 'parentesco',
-    'tiene_cuenta', 'identificador_apple', 'rol', 'circulo', 'genero', 'rama', 'santo', 'activa',
+    'tiene_cuenta', 'identificador_apple', 'rol', 'circulo', 'genero', 'rama', 'santo', 'apodo', 'activa',
   ],
   atributo_persona: ['persona_id', 'clave', 'valor', 'activo'],
   categoria: ['nombre', 'regla', 'orden', 'activa'],

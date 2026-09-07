@@ -80,6 +80,8 @@ class Persona:
     #: El santo, «MM-DD». Sale en la agenda cada año como el cumpleaños; vacío
     #: es no tener santo (specs/propuesta-plugins-hojas.html, E1).
     santo: str | None = None
+    #: Cómo se la llama en casa cuando no es por su nombre («Falu»).
+    apodo: str | None = None
     parentesco: str = ""
     tiene_cuenta: bool = False
     identificador_apple: str | None = None
@@ -97,6 +99,11 @@ class Persona:
     @property
     def es_administrador(self) -> bool:
         return self.tiene_cuenta and self.rol == "administrador"
+
+    @property
+    def nombre_corto(self) -> str:
+        """El apodo si lo hay, y si no el nombre: lo que se dice en casa."""
+        return self.apodo or self.nombre
 
     @property
     def iniciales(self) -> str:
@@ -530,6 +537,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             apellidos=bruto.get("apellidos", ""),
             fecha_nacimiento=_fecha(bruto.get("fecha_nacimiento")),
             santo=bruto.get("santo") or None,
+            apodo=bruto.get("apodo") or None,
             parentesco=bruto.get("parentesco", ""),
             tiene_cuenta=bool(bruto.get("tiene_cuenta", False)),
             identificador_apple=bruto.get("identificador_apple"),

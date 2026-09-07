@@ -984,6 +984,7 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
   abrirHoja(persona ? `Ficha de ${persona.nombre}` : 'Nueva persona', (cuerpo) => {
     const nombre = entrada({ value: persona?.nombre || '', placeholder: 'Nombre' });
     const apellidos = entrada({ value: persona?.apellidos || '', placeholder: 'Apellidos' });
+    const apodo = entrada({ value: persona?.apodo || '', placeholder: 'Falu', autocomplete: 'off' });
     const { control: nacimiento, campo: campoNacimiento } = campoDeFecha(persona?.fecha_nacimiento);
     const { leer: leerSanto, campo: campoSanto } = campoDeSanto(persona?.santo, () => nombre.value, ctx);
     const genero = seleccion(
@@ -1051,6 +1052,7 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
     cuerpo.append(
       campo('Nombre', nombre),
       campo('Apellidos', apellidos),
+      campo('Cómo la llamáis', apodo, 'El apodo, si en casa no se usa el nombre. Sale en las dos letras de la semana, en Lío y en lo que redacta la IA; la ficha sigue con el nombre.'),
       campoNacimiento,
       campoSanto,
       campo('Género', genero, 'Solo sirve para nombrar bien: elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando el parentesco no lo dice.'),
@@ -1103,6 +1105,7 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
           await guardar('persona', persona ? persona.id : nuevoId(), {
             nombre: nombre.value.trim(),
             apellidos: apellidos.value.trim(),
+            apodo: apodo.value.trim() || null,
             fecha_nacimiento: nacimiento.value || null,
             santo: leerSanto(),
             parentesco: parentesco.value === PARENTESCO_OTRO

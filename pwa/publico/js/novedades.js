@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.74.0',
+    fecha: '2026-09-07',
+    titulo: 'Cada día en su tarjeta, y la IA cuenta el día entero',
+    lineas: [
+      'En la semana, cada día es una tarjeta con aire entre una y otra; hoy conserva su tinte.',
+      'Al redactar un día con la IA entra todo lo que pasa: Lío, quién lleva y recoge, quién va a la escapada, los santos y quién está fuera.',
+      'Y cuenta en futuro lo que está por venir, en presente lo de hoy.',
+      'Cada persona puede tener un apodo en su ficha —Mariona es Falu—, que es lo que sale en las dos letras de la semana, en Lío y en lo que redacta la IA.',
+    ],
+  },
+  {
     version: '1.73.0',
     fecha: '2026-09-07',
     titulo: 'Las horas de la actividad, alineadas; y Lío con su hora',

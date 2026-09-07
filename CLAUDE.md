@@ -27,6 +27,26 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Cada día en su tarjeta, la IA cuenta el día entero y el apodo (1.74.0).**
+  La separación entre días se decidió como A4 en
+  `specs/propuesta-separacion-dias.html`: `.dia` es una tarjeta con borde y
+  fondo, `.semana` reparte 10 puntos entre ellas y hoy conserva su tinte como
+  fondo. **La redacción con IA de un día lo cuenta todo**: `componerMaterial`
+  en `api/src/redaccion.js` resuelve ya los santos, las ausencias y los «fuera»
+  de un viaje (`visiblesDe`), pone la hora de ese día de la semana en una
+  actividad con horario, añade quién lleva y quién recoge —de casa o «otro»,
+  con el día suelto mandando— y quiénes van a una escapada, y cierra con la
+  línea de Lío (`lineaDeLio`, con la fila escrita y las ausencias). **Y el
+  tiempo verbal lo dice el material y no la instrucción**: `nota` —«es dentro
+  de tres días: cuéntalo en futuro», «es hoy: en presente»— va entre el título
+  y la lista, con `hoy` calculado en hora de Madrid en `index.js`
+  (`hoyEnCasa`), para que no dependa de la instrucción editable de Ajustes.
+  Lo mismo para un periodo, por su primer día. **El apodo** es una columna
+  de `persona` (migración `0024`) que se escribe en la ficha («Cómo la
+  llamáis») y se usa donde se habla en casa: `inicialesDe` (Lío y las
+  pastillas de la semana), la redacción (`nombreCorto`) y el plan de los
+  domingos (`nombre_corto`); Gente y la ficha siguen con el nombre. Mariona es
+  Falu, y eso se escribe en su ficha.
 - **Ocho cosas de la agenda, decididas y construidas (1.72.0).** La ronda
   está en `specs/propuesta-ocho-cosas.html` (A4 · B1 · C4 · D1 · E1 · F1 ·
   G1 · H1). **Sin red ya no se queda en negro**: `iniciar`
