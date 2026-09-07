@@ -141,7 +141,13 @@ export async function iniciar({ base, token, demostracion = false, inicial = nul
   window.addEventListener('offline', alPerderLaRed);
   document.addEventListener('visibilitychange', alCambiarVisibilidad);
 
-  await sincronizar();
+  // La primera sincronización no se espera (A4 en
+  // specs/propuesta-ocho-cosas.html): la instantánea guardada ya está en
+  // memoria y es lo que se pinta; la red se busca detrás y, si llega, la
+  // suscripción repinta. Sin red se quedaba en negro esperando aquí. Solo se
+  // espera cuando no hay nada guardado: entonces no hay con qué pintar.
+  const primera = sincronizar();
+  if (!instantaneaActual) await primera;
   return instantaneaActual;
 }
 

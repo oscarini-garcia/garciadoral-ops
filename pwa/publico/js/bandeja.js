@@ -14,7 +14,7 @@
 
 import { abrirHoja, avisar, campo, cerrarHoja, el, entrada, seleccion, vaciar } from './ui.js';
 import { listarSolicitudes, resolverSolicitud, sincronizar } from './sincronizacion.js';
-import { CIRCULOS, TAMANO_FAMILIA } from './modelo.js';
+import { TAMANO_FAMILIA } from './modelo.js';
 import { formatearHace } from './semana.js';
 
 /**
@@ -121,8 +121,13 @@ function tarjetaDeSolicitud(solicitud, ctx) {
  * que alguien falta no se distingue —y el Worker lo rechaza de todas formas—.
  */
 function abrirAprobacion(solicitud, ctx) {
-  const registro = [...ctx.vista.personas()]
+  // Solo los de casa tienen cuenta (H1 en specs/propuesta-ocho-cosas.html), y
+  // se ofrecen tengan cuenta o no: aprobar sobre quien ya la tiene es volver a
+  // vincularla —cambio de teléfono, copia restaurada, baja y vuelta—, que
+  // antes no se podía hacer desde ningún sitio.
+  const registro = ctx.vista.personasDe('familia')
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  const hayHueco = registro.length < TAMANO_FAMILIA;
 
   const rotulo = solicitud.nombre_declarado
     ? `Dar acceso a ${solicitud.nombre_declarado}`
@@ -131,33 +136,21 @@ function abrirAprobacion(solicitud, ctx) {
   abrirHoja(rotulo, (cuerpo) => {
     const quien = seleccion(
       [
-        { valor: '', texto: 'Crear una ficha nueva' },
+        { valor: '', texto: hayHueco ? 'Crear una ficha nueva en casa' : 'Crear una ficha nueva — no queda sitio en casa', desactivada: !hayHueco },
         ...registro.map((p) => ({
           valor: p.id,
-          texto: p.tiene_cuenta ? `${p.nombre} — ya tiene cuenta` : `Es ${p.nombre}, que ya está`,
-          desactivada: Boolean(p.tiene_cuenta),
+          texto: p.tiene_cuenta ? `Es ${p.nombre}, que ya tiene cuenta` : `Es ${p.nombre}, que ya está`,
         })),
       ],
-      '',
+      hayHueco ? '' : (registro[0]?.id || ''),
     );
     const rol = seleccion(
       [{ valor: 'miembro', texto: 'Miembro' }, { valor: 'administrador', texto: 'Administrador' }],
       'miembro',
     );
 
-    // El círculo se decide aquí porque en ningún otro sitio se va a decidir: el
-    // valor por defecto de la columna es «extendida», y con él una persona
-    // aprobada quedaba fuera de Lío y de Sitios sin que nada lo dijera. Familia
-    // solo se ofrece si queda sitio, como en la ficha (specs/ux.md §7.1).
-    const hayHueco = ctx.vista.personasDe('familia').length < TAMANO_FAMILIA;
-    const circulo = seleccion(
-      [
-        hayHueco ? { valor: 'familia', texto: CIRCULOS.familia } : null,
-        { valor: 'extendida', texto: CIRCULOS.extendida },
-        { valor: 'amigos', texto: CIRCULOS.amigos },
-      ].filter(Boolean),
-      hayHueco ? 'familia' : 'extendida',
-    );
+    // Sin círculo que elegir: una cuenta es de casa, y la ficha nueva nace en
+    // Familia. Si no queda sitio, lo que queda es vincular a uno de los cuatro.
 
     const nombre = entrada({ value: solicitud.nombre_declarado || '' });
     const apellidos = entrada();
@@ -165,15 +158,23 @@ function abrirAprobacion(solicitud, ctx) {
     const nueva = el('div', {}, [
       campo('Nombre', nombre),
       campo('Apellidos', apellidos),
-      campo('Círculo', circulo, 'Quien ya estaba conserva el suyo; esto es solo para la ficha nueva.'),
     ]);
+    const aviso = el('p', { class: 'pista aviso-vinculo', hidden: true });
 
-    const ajustar = () => { nueva.hidden = Boolean(quien.value); };
+    const ajustar = () => {
+      nueva.hidden = Boolean(quien.value);
+      const elegida = registro.find((p) => p.id === quien.value);
+      aviso.hidden = !elegida?.tiene_cuenta;
+      if (elegida?.tiene_cuenta) {
+        aviso.textContent = `${elegida.nombre} ya entra con otro Apple ID. Al dar acceso, esta solicitud pasa a ser su cuenta: su teléfono anterior deja de entrar y sus avisos se dan de baja hasta que los active en el nuevo.`;
+      }
+    };
     quien.addEventListener('change', ajustar);
     ajustar();
 
     cuerpo.append(
-      campo('Quién es', quien, 'Si ya estaba en el registro sin cuenta, vincúlala a su ficha: así conserva su cumpleaños y su historial.'),
+      campo('Quién es', quien, 'Los de casa, tengan cuenta o no: vincular a su ficha conserva su cumpleaños y su historial, y sobre quien ya tiene cuenta vuelve a engancharla.'),
+      aviso,
       nueva,
       campo('Acceso', rol, 'Un administrador gestiona personas y categorías. Un miembro usa la agenda.'),
     );
@@ -192,7 +193,7 @@ function abrirAprobacion(solicitud, ctx) {
             persona: quien.value
               ? null
               : { nombre: nombre.value.trim(), apellidos: apellidos.value.trim() },
-            ...(quien.value ? {} : { circulo: circulo.value }),
+            ...(quien.value ? {} : { circulo: 'familia' }),
           }, ctx, 'Acceso concedido');
         },
       }, ['Dar acceso']),

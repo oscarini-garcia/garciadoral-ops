@@ -27,6 +27,45 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Ocho cosas de la agenda, decididas y construidas (1.72.0).** La ronda
+  está en `specs/propuesta-ocho-cosas.html` (A4 · B1 · C4 · D1 · E1 · F1 ·
+  G1 · H1). **Sin red ya no se queda en negro**: `iniciar`
+  (`sincronizacion.js`) no espera a la primera sincronización si hay
+  instantánea guardada, y `arrancarAplicacion` lleva un vigilante de dos
+  segundos que pinta con lo que haya y lo dice. **Una actividad va cada día
+  a su hora**: `extra.horario[dia] = {desde, hasta}`, una fila de reloj por
+  día marcado en el formulario, y lo leen `ocurrencias` en los tres sitios
+  (`horarioDelDia` / `horario_del_dia`) y el aviso previo del Worker; el
+  inicio y el fin del evento se quedan con los del primer día, para quien no
+  sabe de horarios. **«Otro» en quién lleva y recoge**: alguien que no es de
+  casa, como texto, y viaja como `otro:<nombre>` allí donde cabe un
+  identificador de persona (`esOtro`, `comoOtro`, `columnasDeQuien` en
+  `pwa/publico/js/plugins.js`); en la base son columnas aparte
+  —`evento_dia.lleva_otro/recoge_otro`, `trato_dia.nuevo_otro`, migración
+  `0023`— porque las de identificador son claves a `persona`; los últimos
+  escritos vuelven como chips (`agenda.otros`). Pasárselo a «otro» desde lo
+  de otro es una propuesta a quien lo tenía. **El reloj propio**
+  (`selectorDeHora` en `ui.js`, dos columnas: horas y cuartos) sustituye a
+  los tres campos de hora del sistema, y las dos fechas que quedaban
+  —nacimiento en la ficha, fecha de ocasión— van por `selectorDeFecha`.
+  **Lío va en orden**: la mañana cuenta como las 8 y abre el día, la noche
+  como las 21 y lo cierra, como primera y última línea de la semana
+  (`lineaDeLio`), y con el mismo orden en la lista y en el detalle del mes;
+  el carril y su cabecera se retiraron. **La semana no tiene techo**: se
+  ven todas las líneas del día y `TECHO_EVENTOS_DIA` deja de usarse allí.
+  **La barra del margen es por fecha**: `iso(inicio) !== iso(fin)`, que es
+  lo que se quiso escribir; comparaba instantes y marcaba cualquier cosa con
+  hora de fin. **Solo los de casa tienen cuenta, y se vuelve a enganchar a
+  quien ya la tiene**: la bandeja ofrece a los de Familia tengan cuenta o
+  no, sin selector de círculo, y aprobar sobre quien ya tiene sustituye su
+  Apple ID y barre sus aparatos y preferencias (`prepararVinculo` en
+  `api/src/cuentas.js`, con `restosDeCuenta`); las sesiones del teléfono
+  anterior caducan solas porque buscan a la persona por su Apple ID. Una
+  ficha nueva con cuenta nace en Familia y solo si queda sitio. Lo que
+  queda: el desplazamiento del reloj a la hora elegida se hace al abrir y
+  no anima; el «otro» no entra en tratos como destinatario ni en avisos,
+  a propósito; y las cuentas que ya existían fuera de casa (la abuela de la
+  demostración) se quedan como están.
 - **La agenda se compone de plugins, y está construido.** Seis: Lío, Viajes,
   Cumpleaños y santos, Puntuales, Extraescolares y Fin de semana; **dos familias**
   —lo derivado de otra cosa y lo escrito a mano— y una hoja, «Qué hay en la

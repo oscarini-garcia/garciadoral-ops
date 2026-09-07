@@ -18,6 +18,18 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.72.0',
+    fecha: '2026-09-07',
+    titulo: 'Ocho cosas de la agenda',
+    lineas: [
+      'Sin red, la aplicación abre con lo último guardado en vez de quedarse en negro; si algo se atasca, a los dos segundos se enseña igual.',
+      'Una actividad puede ir varios días y cada día a su hora, y en quién lleva y recoge cabe «otro»: la abuela, el autobús, con su nombre.',
+      'La hora se elige en un reloj propio, de hora en hora y de cuarto en cuarto; las dos fechas que quedaban del sistema van ya en el calendario propio.',
+      'En la semana, Lío es la primera y la última línea del día, la mañana a las 8 y la noche a las 21; y se ven todas las cosas de cada día.',
+      'La barra del margen solo marca lo que dura más de un día. Y en la gente que espera se puede vincular a quien ya tiene cuenta, que solo puede ser de casa.',
+    ],
+  },
+  {
     version: '1.71.0',
     fecha: '2026-09-06',
     titulo: 'Quién lleva un día suelto se acuerda, y el aviso previo llega del servidor',

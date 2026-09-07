@@ -276,12 +276,17 @@ export function ocurrencias(evento, desde, hasta) {
 
   const admisible = (momento) => {
     const t = momento.getTime();
-    if (t < inicio.getTime() || t < limiteInf || t > limiteSup) return false;
+    // Por fecha frente al inicio y no por instante: el martes de una actividad
+    // con horario propio puede empezar antes que la hora escrita en el evento.
+    if (soloFecha(momento) < soloFecha(inicio) || t < limiteInf || t > limiteSup) return false;
     if (tope && soloFecha(momento) > soloFecha(tope)) return false;
     return true;
   };
 
   const arranques = [];
+  // La duración de un arranque concreto cuando no es la del evento: la de su
+  // día de la semana, en una actividad con horario propio.
+  const duraciones = new Map();
   const repeticion = evento.repeticion || 'ninguna';
 
   if (repeticion === 'ninguna') {
@@ -300,8 +305,14 @@ export function ocurrencias(evento, desde, hasta) {
       while (semana.getTime() <= limiteSup) {
         for (const dia of diasDeLaSemana) {
           const candidato = sumarDias(semana, dia);
-          candidato.setHours(inicio.getHours(), inicio.getMinutes(), 0, 0);
-          if (admisible(candidato)) arranques.push(candidato);
+          // Cada día a su hora (B1): el horario del día si la actividad lo
+          // lleva, y si no la hora del evento. Y la duración va con él.
+          const propio = horarioDelDia(evento, dia);
+          candidato.setHours(propio ? propio.desde.h : inicio.getHours(), propio ? propio.desde.m : inicio.getMinutes(), 0, 0);
+          if (admisible(candidato)) {
+            arranques.push(candidato);
+            if (propio) duraciones.set(candidato.getTime(), propio.duracion);
+          }
         }
         semana = sumarDias(semana, 7);
       }
@@ -336,8 +347,40 @@ export function ocurrencias(evento, desde, hasta) {
     .map((arranque) => ({
       evento,
       inicio: arranque,
-      fin: new Date(arranque.getTime() + duracion),
+      fin: new Date(arranque.getTime() + (duraciones.has(arranque.getTime()) ? duraciones.get(arranque.getTime()) : duracion)),
     }));
+}
+
+/**
+ * El horario propio de un día de la semana de una actividad, o `null`:
+ * `extra.horario[dia] = { desde: 'HH:MM', hasta: 'HH:MM' }` (B1 en
+ * specs/propuesta-ocho-cosas.html). Devuelve las horas partidas y la
+ * duración en milisegundos, para que quien expande no tenga que parsear.
+ */
+export function horarioDelDia(evento, dia) {
+  const fila = evento?.extra?.horario?.[dia] ?? evento?.extra?.horario?.[String(dia)];
+  const partir = (texto) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(texto || ''));
+    return m ? { h: Number(m[1]), m: Number(m[2]) } : null;
+  };
+  const desde = fila ? partir(fila.desde) : null;
+  if (!desde) return null;
+  const hasta = partir(fila.hasta);
+  const minutos = hasta ? (hasta.h * 60 + hasta.m) - (desde.h * 60 + desde.m) : 0;
+  return { desde, hasta, duracion: Math.max(0, minutos) * 60000 };
+}
+
+/**
+ * Quién lleva o recoge según una fila de `evento_dia`: la persona por su
+ * identificador, o «otro» —alguien que no es de casa— como `otro:<nombre>`
+ * (C4). Un solo valor para las dos formas, que es lo que deja a la pantalla y
+ * al trato tratar las dos igual; las columnas se parten al guardar.
+ */
+export function quienDelDia(fila, campo) {
+  if (!fila) return null;
+  if (fila[`${campo}_id`]) return fila[`${campo}_id`];
+  if (fila[`${campo}_otro`]) return `otro:${fila[`${campo}_otro`]}`;
+  return null;
 }
 
 /** Los días de la semana de una actividad, con el lunes en 0, o `null` si el

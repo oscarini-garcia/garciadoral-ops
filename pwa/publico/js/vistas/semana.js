@@ -14,18 +14,15 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar, icono,
-  deslizarHorizontal, dobleToque, botonIcono, enfocarAlAbrir, enlazar, selectorDeFecha,
+  abrirHoja, avisar, botonIcono, campo, cerrarHoja, deslizarHorizontal, dobleToque, el, enfocarAlAbrir, enlazar, entrada, icono, seleccion, selectorDeFecha, selectorDeHora, vaciar,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, estaActivo, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
 import {
-  INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA,
-  diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia,
-  instanciasEn, iso, isoConHora, lunesDe, parsearMomento, repartirPorDia, soloFecha, sumarDias,
+  INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA, diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia, instanciasEn, iso, isoConHora, lunesDe, parsearMomento, quienDelDia, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import {
-  ajustesDe, comoCambiar, pluginDeEvento, proponerCambioDeDia, resolverTratoDeDia, retirarTratoDeDia, tratoDeDia,
+  ajustesDe, columnasDeQuien, comoCambiar, comoOtro, esOtro, inicialesDeOtro, nombreDeOtro, otrosRecientes, pluginDeEvento, proponerCambioDeDia, recordarOtro, resolverTratoDeDia, retirarTratoDeDia, tratoDeDia,
 } from '../plugins.js';
 import { viajeDelVuelo } from '../viajes.js';
 import {
@@ -356,33 +353,31 @@ function vistaSemana(ctx) {
   const dias = diasDeLaSemana(lunesDe(ancla));
   const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, dias[0], dias[6]), dias);
   const conLio = hayLio(ctx.vista.datos);
-  const marco = el('div', { class: 'semana', 'data-lio': conLio ? 'si' : 'no' });
+  const marco = el('div', { class: 'semana' });
   const clavehoy = iso(hoy());
 
   for (const dia of dias) {
     const apariciones = reparto.get(iso(dia)) || [];
     const vacio = !apariciones.length;
     const contenido = el('div', { class: 'dia-contenido' });
+    // Lío en orden (E1 en specs/propuesta-ocho-cosas.html): la mañana cuenta
+    // como las 8:00 y abre el día; la noche, como las 21:00, lo cierra. El
+    // carril de la izquierda se fue con esto.
+    const turnos = conLio ? turnosDe(ctx.vista.datos, dia) : [];
+    const manana = turnos.find((t) => t.turno.id === 'manana');
+    const noche = turnos.find((t) => t.turno.id === 'noche');
 
-    if (vacio) {
+    if (manana) contenido.append(lineaDeLio(manana, ctx));
+    if (vacio && !turnos.length) {
       // Los días vacíos son información y no espacio desperdiciado: enseñan la
       // forma de la semana, que es justo lo que se quiere ver al planificar.
       contenido.append(el('div', { class: 'dia-vacio', texto: '—' }));
     } else {
-      for (const aparicion of apariciones.slice(0, TECHO_EVENTOS_DIA)) {
-        contenido.append(lineaDeEvento(aparicion, ctx));
-      }
-      // El recuento se calcula sobre lo visible para quien mira. Un enlace que
-      // anunciara dos eventos más y mostrase uno al abrirlo revelaría justo lo
-      // que se pretendía ocultar (specs/ux.md §10.2).
-      const restantes = apariciones.length - TECHO_EVENTOS_DIA;
-      if (restantes > 0) {
-        contenido.append(el('button', {
-          class: 'desbordamiento', type: 'button',
-          onclick: () => abrirDia(dia, ctx),
-        }, [`y ${restantes} más`]));
-      }
+      // Todo lo del día, sin techo ni «y N más» (F1): lo que hay se ve, y el
+      // día crece lo que haga falta.
+      for (const aparicion of apariciones) contenido.append(lineaDeEvento(aparicion, ctx));
     }
+    if (noche) contenido.append(lineaDeLio(noche, ctx));
 
     // Un día con una sola cosa abre esa cosa, no la lista de una cosa: la hoja
     // del día sería un rodeo con un único destino a la vista. Con dos o más sí
@@ -409,7 +404,6 @@ function vistaSemana(ctx) {
         el('div', { class: 'dia-inicial', texto: INICIALES_DIA[(dia.getDay() + 6) % 7] }),
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
       ]),
-      columnaDeLio(dia, ctx),
       contenido,
     ]);
 
@@ -429,73 +423,34 @@ function vistaSemana(ctx) {
   // entero de un renglón —qué día es, quién saca al perro, qué hay— y la parte
   // de arriba de la pantalla, que es la única que se ve sin desplazar, se queda
   // para la semana (specs/ux.md §10.3).
-  const cabecera = cabeceraDeLio(ctx);
-  return cabecera ? el('div', { class: 'agenda-semana' }, [cabecera, marco]) : marco;
+  return marco;
 }
 
 // ----------------------------------------------------------------- Lío --
 
 /**
- * La semana de Lío en dos renglones: siete columnas, mañana arriba y noche
- * abajo, con las dos primeras letras de quien tiene cada turno.
- *
- * Solo en la vista de semana. En el mes no hay siete columnas donde ponerlo y
- * en la lista no hay semana; allí Lío no se enseña, que es preferible a
- * inventarle un segundo dibujo que diría lo mismo de otra manera.
- *
- * No aparece mientras nadie haya puesto el cuadro en Ajustes, ni para quien no
- * vive en casa: a esa persona el servidor ni siquiera le manda los paseos.
+ * Un turno de Lío como línea del día (E1): el sol o la luna, «Lío» y las dos
+ * letras de quien lo tiene, en tinta suave para no pesar como un evento.
+ * Abre el día de Lío con los dos turnos y sus verbos, como hacía el carril:
+ * marcar de verdad sigue viviendo en Hoy.
  */
-function cabeceraDeLio(ctx) {
-  if (!hayLio(ctx.vista.datos)) return null;
-  // Los tres rótulos nombran las tres columnas, y con la raya debajo la semana
-  // se lee como la tabla que es. La huella va pegada a «Lío» y no suelta: sola
-  // no diría de qué columna habla, y menos una semana sin turnos puestos, que
-  // es cuando la columna del medio está vacía y hay que explicarla.
-  return el('div', { class: 'semana-cabecera' }, [
-    el('span', { texto: 'Día' }),
-    el('span', { texto: '🐾 Lío' }),
-    el('span', { texto: 'Evento' }),
+function lineaDeLio(turno, ctx) {
+  const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
+  return el('button', {
+    class: 'linea', type: 'button',
+    'data-lio': 'si',
+    'data-estado': turno.estado,
+    'data-mio': turno.mio ? 'si' : 'no',
+    'data-pedido': turno.trato ? 'si' : 'no',
+    'aria-label': `Lío ${nombreDeTurno(turno.turno).toLowerCase()}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
+    onclick: () => { toque(); abrirLioDelDia(turno.fecha, ctx); },
+  }, [
+    el('span', { class: 'linea-emoji', texto: turno.turno.emoji }),
+    el('span', { class: 'linea-titulo' }, [
+      'Lío ',
+      el('span', { class: 'linea-lio-quien', texto: quien ? inicialesDe(quien) : '·' }),
+    ]),
   ]);
-}
-
-/**
- * La columna de Lío de un día: el sol y la luna con quien tiene cada turno.
- *
- * **Es un solo botón y no dos.** Cada pastilla mide unos 40 × 18 puntos, la
- * mitad de lo que pide un blanco cómodo, así que tocar un turno concreto sería
- * apuntar. La columna entera sí es un blanco holgado, y abre el día de Lío con
- * los dos turnos y sus verbos: marcar cuesta un toque más, pero no se falla
- * nunca. Y el gesto de marcar de verdad vive en Hoy; a la agenda se viene a
- * mirar (specs/propuesta-lio-en-la-fila.html).
- */
-function columnaDeLio(dia, ctx) {
-  if (!hayLio(ctx.vista.datos)) return null;
-
-  const turnos = turnosDe(ctx.vista.datos, dia);
-  const columna = el('button', {
-    class: 'lio-col', type: 'button',
-    'aria-label': `Lío el ${formatearFechaLarga(dia)}: `
-      + turnos.map((t) => `${nombreDeTurno(t.turno).toLowerCase()}, ${resumenDeTurno(t, ctx)}`).join('; '),
-    onclick: () => { toque(); abrirLioDelDia(dia, ctx); },
-  });
-
-  for (const turno of turnos) {
-    const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
-    columna.append(el('span', {
-      class: 'lio-marca',
-      'data-estado': turno.estado,
-      'data-mio': turno.mio ? 'si' : 'no',
-      'data-pedido': turno.trato ? 'si' : 'no',
-    }, [
-      el('span', { class: 'lio-marca-turno', 'aria-hidden': 'true', texto: turno.turno.emoji }),
-      // Sin color propio de cada persona: a quién le toca lo dicen sus dos
-      // letras, y el color queda para decir en qué está el turno
-      // (specs/prototipo-cuadro-de-lio.html).
-      el('span', { texto: quien ? inicialesDe(quien) : '·' }),
-    ]));
-  }
-  return columna;
 }
 
 /**
@@ -950,14 +905,17 @@ export function textoDeLinea(aparicion, ctx) {
       : quienesVan(evento, ctx);
   } else if (plugin === 'extraescolares') {
     const reparto = repartoDelDia(ctx.vista.datos, evento, dia);
-    const inicialesDe = (personaId) => {
-      const persona = ctx.vista.persona(personaId);
+    // Las dos letras de alguien de casa, o las tres de «otro» —«Abu»— (C4).
+    const letras = (quien) => {
+      if (esOtro(quien)) return inicialesDeOtro(quien);
+      const persona = ctx.vista.persona(quien);
       return persona ? String(persona.nombre || '').trim().slice(0, 2) : null;
     };
+    const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : ctx.vista.nombre(quien));
     if (reparto.lleva || reparto.recoge) {
       linea.pastillas = [
-        { clase: 'lleva', texto: reparto.lleva ? inicialesDe(reparto.lleva) : '·', titulo: reparto.lleva ? `Lleva ${ctx.vista.nombre(reparto.lleva)}` : 'Nadie lleva' },
-        { clase: 'recoge', texto: reparto.recoge ? inicialesDe(reparto.recoge) : '·', titulo: reparto.recoge ? `Recoge ${ctx.vista.nombre(reparto.recoge)}` : 'Nadie recoge' },
+        { clase: 'lleva', texto: reparto.lleva ? letras(reparto.lleva) : '·', titulo: reparto.lleva ? `Lleva ${nombre(reparto.lleva)}` : 'Nadie lleva' },
+        { clase: 'recoge', texto: reparto.recoge ? letras(reparto.recoge) : '·', titulo: reparto.recoge ? `Recoge ${nombre(reparto.recoge)}` : 'Nadie recoge' },
       ];
     }
   }
@@ -970,8 +928,8 @@ export function repartoDelDia(instantanea, evento, dia) {
   const suelto = diaDeEvento(instantanea, evento.id, iso(dia));
   const delCuadro = evento.extra?.reparto?.[indiceDia(dia)] || {};
   return {
-    lleva: suelto?.lleva_id || delCuadro.lleva || null,
-    recoge: suelto?.recoge_id || delCuadro.recoge || null,
+    lleva: quienDelDia(suelto, 'lleva') || delCuadro.lleva || null,
+    recoge: quienDelDia(suelto, 'recoge') || delCuadro.recoge || null,
   };
 }
 
@@ -995,7 +953,9 @@ function lineaDeEvento(aparicion, ctx) {
   }, [
     // Un evento de varios días se marca con una banda continua en el margen,
     // salvo que ya vaya entero como banda.
-    !texto.banda && aparicion.instancia.inicio.getTime() !== aparicion.instancia.fin.getTime()
+    // Por fecha y no por instante (G1): una actividad de 17:00 a 18:30 tiene
+    // inicio y fin distintos y no dura más de un día.
+    !texto.banda && iso(aparicion.instancia.inicio) !== iso(aparicion.instancia.fin)
       ? el('span', { class: 'linea-banda' }) : null,
     el('span', { class: 'linea-emoji', texto: texto.emoji }),
     // «(cont.)» y no «2/3». La cuenta decía más —por dónde va— y se leía peor:
@@ -1025,6 +985,7 @@ function lineaDeEvento(aparicion, ctx) {
  * final porque es lo único que se repite todos los días: puesto arriba, taparía
  * lo que hace distinto a ese día de los demás.
  */
+const ORDEN_LIO_MANANA = -1;
 const ORDEN_VIAJE = 0;
 const ORDEN_EVENTO = 1;
 const ORDEN_LIO = 2;
@@ -1074,8 +1035,10 @@ function vistaMes(ctx) {
   const turnos = hayLio(ctx.vista.datos) ? turnosDe(ctx.vista.datos, ancla) : [];
 
   if (!delDia.length && !turnos.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
+  // La mañana de Lío abre el día y la noche lo cierra (E1).
+  for (const turno of turnos.filter((t) => t.turno.id === 'manana')) detalle.append(filaDeTurno(turno, ctx));
   for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx, { conFecha: false }));
-  for (const turno of turnos) detalle.append(filaDeTurno(turno, ctx));
+  for (const turno of turnos.filter((t) => t.turno.id !== 'manana')) detalle.append(filaDeTurno(turno, ctx));
 
   // El día del mes que no tiene ningún evento se llena igual que la fila vacía
   // de la semana: doblando el toque sobre su hueco. Los turnos de Lío no cuentan
@@ -1159,8 +1122,9 @@ function vistaLista(ctx) {
       const dia = sumarDias(desde, i);
       if (dia > hasta) break;
       for (const turno of turnosDe(ctx.vista.datos, dia)) {
+        // La mañana abre el día y la noche lo cierra (E1), como en la semana.
         cosas.push({
-          dia, orden: ORDEN_LIO, momento: inicioDeVentana(dia, turno.turno.id),
+          dia, orden: turno.turno.id === 'manana' ? ORDEN_LIO_MANANA : ORDEN_LIO, momento: inicioDeVentana(dia, turno.turno.id),
           pintar: () => filaDeTurno(turno, ctx),
         });
       }
@@ -1290,8 +1254,8 @@ function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
     texto.de && !duenyo && !texto.de.match(/^\d+$/) ? texto.de : null,
     aparicion.evento.ubicacion,
     participantes.length ? participantes.join(', ') : null,
-    reparto?.lleva ? `lleva ${ctx.vista.nombre(reparto.lleva)}` : null,
-    reparto?.recoge ? `recoge ${ctx.vista.nombre(reparto.recoge)}` : null,
+    reparto?.lleva ? `lleva ${esOtro(reparto.lleva) ? nombreDeOtro(reparto.lleva) : ctx.vista.nombre(reparto.lleva)}` : null,
+    reparto?.recoge ? `recoge ${esOtro(reparto.recoge) ? nombreDeOtro(reparto.recoge) : ctx.vista.nombre(reparto.recoge)}` : null,
   ].filter(Boolean).join(' · ');
 
   return el('button', {
@@ -1551,13 +1515,14 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
   const fechaIso = iso(aparicion.dia);
   const reparto = repartoDelDia(datos, evento, aparicion.dia);
   const casa = [null, ...ctx.vista.personasDe('familia').filter((p) => p.tiene_cuenta).map((p) => p.id)];
-  const nombre = (id) => (id ? ctx.vista.nombre(id) : 'Nadie');
+  const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : quien ? ctx.vista.nombre(quien) : 'Nadie');
   const volver = () => { ctx.refrescar(); abrirDetalleEvento(evento.id, ctx, aparicion); };
 
+  // Las columnas de la fila del día: la persona en `_id` o «otro» en `_otro`.
   const escribir = async (campos) => {
     await guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
       evento_id: evento.id, fecha: fechaIso, cancelado: 0, autor_id: yo, activo: 1,
-      lleva_id: reparto.lleva, recoge_id: reparto.recoge,
+      ...columnasDeQuien('lleva', reparto.lleva), ...columnasDeQuien('recoge', reparto.recoge),
       ...campos,
     });
   };
@@ -1575,26 +1540,49 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
     if (pendiente) return [cabecera, bloqueDePropuestaDeDia(pendiente, ctx, { alTerminar: volver })];
 
     const chips = el('div', { class: 'opciones' });
+    const elegir = async (quien) => {
+      const como = comoCambiar(yo, actual, quien);
+      if (!como) return;
+      toque();
+      if (esOtro(quien)) recordarOtro(nombreDeOtro(quien));
+      if (como.directo) {
+        await escribir(columnasDeQuien(campo, quien));
+        volver();
+        return;
+      }
+      await proponerCambioDeDia(datos, { eventoId: evento.id, fechaIso, campo, actual, nuevo: quien });
+      avisar(`Propuesto a ${nombre(como.destinatario)}`);
+      volver();
+    };
     for (const id of casa) {
       chips.append(el('button', {
         class: 'opcion', type: 'button',
         'aria-pressed': id === actual ? 'true' : 'false',
-        onclick: async () => {
-          const como = comoCambiar(yo, actual, id);
-          if (!como) return;
-          toque();
-          if (como.directo) {
-            await escribir({ [`${campo}_id`]: id });
-            volver();
-            return;
-          }
-          await proponerCambioDeDia(datos, { eventoId: evento.id, fechaIso, campo, actual, nuevo: id });
-          avisar(`Propuesto a ${nombre(como.destinatario)}`);
-          volver();
-        },
+        onclick: () => elegir(id),
       }, [nombre(id)]));
     }
-    return [cabecera, chips];
+    // «Otro» (C4): los últimos escritos de un toque, y un nombre nuevo a mano.
+    for (const otro of otrosRecientes()) {
+      chips.append(el('button', {
+        class: 'opcion', type: 'button',
+        'aria-pressed': comoOtro(otro) === actual ? 'true' : 'false',
+        onclick: () => elegir(comoOtro(otro)),
+      }, [otro]));
+    }
+    if (esOtro(actual) && !otrosRecientes().some((o) => comoOtro(o) === actual)) {
+      chips.append(el('button', { class: 'opcion', type: 'button', 'aria-pressed': 'true' }, [nombreDeOtro(actual)]));
+    }
+    const texto = entrada({ placeholder: 'Otro: la abuela, el autobús…', 'aria-label': `Otro que ${campo === 'lleva' ? 'lleva' : 'recoge'}, con su nombre` });
+    texto.addEventListener('keydown', (evento) => {
+      if (evento.key !== 'Enter') return;
+      evento.preventDefault();
+      if (texto.value.trim()) elegir(comoOtro(texto.value));
+    });
+    const filaOtro = el('div', { class: 'fila-otro' }, [
+      texto,
+      el('button', { class: 'boton', type: 'button', onclick: () => { if (texto.value.trim()) elegir(comoOtro(texto.value)); } }, ['Vale']),
+    ]);
+    return [cabecera, chips, filaOtro];
   };
 
   return el('div', { class: 'grupo' }, [
@@ -1638,6 +1626,14 @@ function queHacer(trato, ctx, persona) {
 export function textoDeTratoDia(trato, ctx) {
   const yo = ctx.vista.yo.id;
   const nombre = (id) => ctx.vista.nombre(id);
+  if (trato.nuevo_otro) {
+    // Que lo haga alguien que no es de casa (C4): se le propone a quien lo tenía.
+    const verbo = trato.campo === 'recoge' ? 'recoja' : 'lleve';
+    const que = queHacer(trato, ctx, 3).replace(/^\S+\s*/, '');
+    if (trato.proponente_id === yo) return `Propones a ${nombre(trato.destinatario_id)} que ${trato.nuevo_otro} ${verbo} ${que}.`;
+    if (trato.destinatario_id === yo) return `${nombre(trato.proponente_id)} propone que ${trato.nuevo_otro} ${verbo} ${que}, que te tocaba a ti.`;
+    return `${nombre(trato.proponente_id)} propone que ${trato.nuevo_otro} ${verbo} ${que}.`;
+  }
   if (!trato.nuevo_id) {
     // Se propone que ese día no lo haga nadie: se le pide a quien lo tenía.
     if (trato.proponente_id === yo) return `Propones a ${nombre(trato.destinatario_id)} que nadie ${queHacer(trato, ctx, 3)}.`;
@@ -1655,10 +1651,11 @@ export function escribirDiaDeTrato(trato, ctx) {
   const datos = ctx.vista.datos;
   const evento = datos.eventos.find((e) => e.id === trato.evento_id);
   const reparto = evento ? repartoDelDia(datos, evento, parsearMomento(trato.fecha)) : { lleva: null, recoge: null };
+  const nuevo = trato.nuevo_id || (trato.nuevo_otro ? comoOtro(trato.nuevo_otro) : null);
   return guardar('evento_dia', idDiaDeEvento(trato.evento_id, trato.fecha), {
     evento_id: trato.evento_id, fecha: trato.fecha, cancelado: 0, autor_id: ctx.vista.yo.id, activo: 1,
-    lleva_id: trato.campo === 'lleva' ? trato.nuevo_id : reparto.lleva,
-    recoge_id: trato.campo === 'recoge' ? trato.nuevo_id : reparto.recoge,
+    ...columnasDeQuien('lleva', trato.campo === 'lleva' ? nuevo : reparto.lleva),
+    ...columnasDeQuien('recoge', trato.campo === 'recoge' ? nuevo : reparto.recoge),
   });
 }
 
@@ -2022,7 +2019,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     if (!existente) cuerpo.append(conmutador);
     cuerpo.append(avanzado);
 
-    const hora = el('input', { type: 'time', value: borrador.hora });
+    const hora = selectorDeHora({ valor: borrador.hora, vacio: 'Todo el día' });
     // El tipo va después de la fecha: quien crea un evento tiene en la cabeza el
     // qué y el cuándo, no la taxonomía (specs/ux.md §10.1). Y son pastillas y
     // no un desplegable: solo los tipos que la casa tiene marcados en la hoja
@@ -2047,7 +2044,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     const repite = seleccion(REPETICIONES.map((r) => ({ valor: r.valor, texto: r.texto })), borrador.repeticion);
 
     avanzado.append(
-      campo('A qué hora', hora, 'Déjala vacía si dura todo el día.'),
+      campo('A qué hora', hora.nodo, 'Sin hora, dura todo el día.'),
       campo('Qué es', tipo, 'El tipo elige el emoji y propone si el evento lleva regalos. Para otro emoji, empieza el título con él.'),
       campoDeGente(ctx, {
         etiqueta: 'De quién es',
@@ -2082,8 +2079,8 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
           // maneras: se guarda como lo que es, sin fin, para que la agenda no
           // tenga que distinguir dos formas del mismo caso.
           const finEscrito = hasta.valor && hasta.valor > dia.valor ? hasta.valor : null;
-          const jornadaCompleta = !hora.value;
-          const momento = parsearMomento(jornadaCompleta ? dia.valor : `${dia.valor}T${hora.value}:00`);
+          const jornadaCompleta = !hora.valor;
+          const momento = parsearMomento(jornadaCompleta ? dia.valor : `${dia.valor}T${hora.valor}:00`);
           const campos = {
             titulo: titulo.value.trim(),
             tipo_id: tipoElegido,
@@ -2092,7 +2089,7 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
             // solo cuenta su fecha, y con la hora puesta la duración que guarda
             // el evento es la de verdad y no una de madrugada.
             fin: finEscrito
-              ? (jornadaCompleta ? finEscrito : `${finEscrito}T${hora.value}:00`)
+              ? (jornadaCompleta ? finEscrito : `${finEscrito}T${hora.valor}:00`)
               : null,
             jornada_completa: jornadaCompleta ? 1 : 0,
             ubicacion: lugar.value.trim(),

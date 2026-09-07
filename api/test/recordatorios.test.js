@@ -123,3 +123,12 @@ test('el cron empuja a cada aparato lo suyo, y olvida el token caducado', async 
   assert.deepEqual(enviados, [['tok', '🎉 Cena con los vecinos'], ['viejo', '🎉 Cena con los vecinos']]);
   assert.equal(olvidados.length, 1);
 });
+
+test('una actividad con horario por día avisa a la hora de ese día', () => {
+  const conHorario = { ...HIPICA, extra: { dias: [1, 3], horario: { 1: { desde: '17:00', hasta: '18:30' }, 3: { desde: '18:00', hasta: '19:30' } } } };
+  const datos = registro({ eventos: [conHorario, CENA] });
+  const martes = recordatoriosDe(datos, aparato({ avisos: '{"extraescolares":"dia"}' }), '2026-09-15');
+  assert.equal(martes.find((a) => a.titulo === '🐴 Hípica').cuerpo, 'Hoy a las 17:00 · El picadero');
+  const jueves = recordatoriosDe(datos, aparato({ avisos: '{"extraescolares":"dia"}' }), '2026-09-17');
+  assert.equal(jueves.find((a) => a.titulo === '🐴 Hípica').cuerpo, 'Hoy a las 18:00 · El picadero');
+});

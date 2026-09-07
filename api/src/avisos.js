@@ -338,6 +338,9 @@ function avisosDeTratoDeDia(contexto, cambio) {
   const tercera = trato.campo === 'recoge' ? 'recoge' : 'lleva';
   const proponente = nombreDe(registro, trato.proponente_id);
   const destinatario = nombreDe(registro, trato.destinatario_id);
+  // Quien lo tendría: alguien de casa, «otro» con su nombre escrito (C4), o
+  // nadie.
+  const quien = trato.nuevo_id ? nombreDe(registro, trato.nuevo_id) : (trato.nuevo_otro || null);
   const comun = {
     donde: 'tratos_dia',
     objetoId: trato.id,
@@ -365,7 +368,7 @@ function avisosDeTratoDeDia(contexto, cambio) {
       agrupa: `${comun.hilo}:pendiente`,
       titulo: trato.nuevo_id
         ? `${cara}: ${proponente} te pide que ${verbo}`
-        : `${cara}: ${proponente} propone que nadie ${trato.campo === 'recoge' ? 'recoja' : 'lleve'}`,
+        : `${cara}: ${proponente} propone que ${quien ? `${tercera} ${quien}` : `nadie ${trato.campo === 'recoge' ? 'recoja' : 'lleve'}`}`,
       cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)}.`,
     }];
   }
@@ -376,7 +379,7 @@ function avisosDeTratoDeDia(contexto, cambio) {
       para: trato.proponente_id,
       agrupa: `${comun.hilo}:resuelto`,
       titulo: `${cara}: ${destinatario} acepta`,
-      cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)} ${tercera} ${trato.nuevo_id ? nombreDe(registro, trato.nuevo_id) : 'nadie'}.`,
+      cuerpo: `${cuando[0].toUpperCase()}${cuando.slice(1)} ${tercera} ${quien || 'nadie'}.`,
     }];
   }
 

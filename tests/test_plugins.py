@@ -154,3 +154,22 @@ class Circulos(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HorarioYOtro(unittest.TestCase):
+    def test_cada_dia_a_su_hora(self):
+        con_horario = dict(HIPICA, extra={"dias": [1, 3], "horario": {"1": {"desde": "17:00", "hasta": "18:30"}, "3": {"desde": "18:00", "hasta": "19:30"}}})
+        agenda = agenda_minima(personas=CASA, eventos=[con_horario])
+        instancias = ocurrencias(agenda.eventos["h"], LUNES, date(2026, 9, 20))
+        self.assertEqual([(i.inicio.hour, (i.fin - i.inicio).seconds // 60) for i in instancias], [(17, 90), (18, 90)])
+
+    def test_otro_lleva_y_se_escribe_con_su_nombre(self):
+        agenda = agenda_minima(
+            personas=CASA,
+            eventos=[HIPICA],
+            dias_evento=[{"id": "dia:h:2026-09-15", "evento_id": "h", "fecha": "2026-09-15", "lleva_otro": "la abuela"}],
+        )
+        instancias = instancias_de_la_semana(agenda, Semana(LUNES))
+        martes = next(i for i in instancias if i.evento.id == "h" and i.inicio.date() == date(2026, 9, 15))
+        self.assertIn("(lleva la abuela", formatear_evento(agenda, Aparicion(martes, martes.inicio.date()), 0))
+        self.assertEqual(agenda.dia_de_evento("h", date(2026, 9, 15)).quien("lleva"), "otro:la abuela")

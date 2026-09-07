@@ -177,23 +177,35 @@ const PENDIENTE = {
 test('aprobar vinculando conserva la ficha que ya estaba', async () => {
   const db = baseFalsa({
     ...PENDIENTE,
-    'SELECT * FROM persona WHERE id = ?': { id: 'p-abuela', nombre: 'la abuela', tiene_cuenta: 0 },
+    'SELECT * FROM persona WHERE id = ?': { id: 'p-lucia', nombre: 'Lucía', tiene_cuenta: 0, circulo: 'familia' },
   });
 
   const resultado = await aprobarSolicitud(db, cuentas, {
-    id: 's1', personaId: 'p-abuela', rol: 'miembro',
+    id: 's1', personaId: 'p-lucia', rol: 'miembro',
   });
 
-  assert.equal(resultado.persona_id, 'p-abuela');
-  // Lo importante es lo que **no** ocurre: no se crea una segunda abuela.
+  assert.equal(resultado.persona_id, 'p-lucia');
+  // Lo importante es lo que **no** ocurre: no se crea una segunda Lucía.
   assert.equal(sql(db, 'INSERT INTO persona').length, 0);
+  assert.equal(sql(db, 'DELETE FROM dispositivo').length, 0);
 
   const [vinculo] = sql(db, 'UPDATE persona');
-  assert.deepEqual(vinculo.args, ['miembro', '000123.abc', 'p-abuela']);
+  assert.deepEqual(vinculo.args, ['miembro', '000123.abc', 'p-lucia']);
 });
 
-test('aprobar sin persona crea una ficha con cuenta', async () => {
-  const db = baseFalsa(PENDIENTE);
+test('solo los de casa tienen cuenta: vincular a quien no lo es se rechaza', async () => {
+  const db = baseFalsa({
+    ...PENDIENTE,
+    'SELECT * FROM persona WHERE id = ?': { id: 'p-abuela', nombre: 'la abuela', tiene_cuenta: 0, circulo: 'extendida' },
+  });
+  await assert.rejects(
+    () => aprobarSolicitud(db, cuentas, { id: 's1', personaId: 'p-abuela', rol: 'miembro' }),
+    /no es de casa/,
+  );
+});
+
+test('aprobar sin persona crea una ficha con cuenta, en casa', async () => {
+  const db = baseFalsa({ ...PENDIENTE, 'COUNT(*) AS cuantos': { cuantos: 3 } });
 
   const resultado = await aprobarSolicitud(db, cuentas, {
     id: 's1', persona: { nombre: 'Marta', apellidos: 'Ruiz' }, rol: 'miembro',
@@ -202,29 +214,42 @@ test('aprobar sin persona crea una ficha con cuenta', async () => {
   const [alta] = sql(db, 'INSERT INTO persona');
   assert.ok(alta.args.includes('000123.abc'), 'la ficha nueva queda vinculada a Apple');
   assert.ok(alta.args.includes(resultado.persona_id));
+  assert.ok(alta.args.includes('familia'), 'la ficha nueva con cuenta nace en casa');
   assert.equal(sql(db, 'UPDATE persona').length, 0);
+});
+
+test('con la casa llena no se crea una ficha nueva: hay que vincular a uno de los cuatro', async () => {
+  const db = baseFalsa({ ...PENDIENTE, 'COUNT(*) AS cuantos': { cuantos: 4 } });
+  await assert.rejects(
+    () => aprobarSolicitud(db, cuentas, { id: 's1', persona: { nombre: 'Marta' }, rol: 'miembro' }),
+    /no queda sitio en casa/,
+  );
 });
 
 test('aprobar borra la solicitud en lugar de marcarla', async () => {
   // Si se conservara, quedaría el correo de alguien que ya está en el hogar
   // guardado para siempre: ninguna caducidad alcanza a una solicitud resuelta a
   // favor. Quien entró se busca en `persona`, que es donde está.
-  const db = baseFalsa(PENDIENTE);
+  const db = baseFalsa({ ...PENDIENTE, 'COUNT(*) AS cuantos': { cuantos: 3 } });
   await aprobarSolicitud(db, cuentas, { id: 's1', persona: { nombre: 'Marta' }, rol: 'miembro' });
 
   assert.equal(sql(db, 'DELETE FROM solicitud_acceso').length, 1);
   assert.equal(sql(db, 'UPDATE solicitud_acceso').length, 0);
 });
 
-test('no se aprueba sobre una persona que ya tiene cuenta', async () => {
+test('aprobar sobre quien ya tiene cuenta la vuelve a vincular y barre lo que dejó', async () => {
+  // Cambio de teléfono, copia restaurada, baja y vuelta: llega con otro Apple
+  // ID y hay que volver a engancharla (H1 en specs/propuesta-ocho-cosas.html).
   const db = baseFalsa({
     ...PENDIENTE,
-    'SELECT * FROM persona WHERE id = ?': { id: 'p-marta', nombre: 'Marta', tiene_cuenta: 1 },
+    'SELECT * FROM persona WHERE id = ?': { id: 'p-marta', nombre: 'Marta', tiene_cuenta: 1, circulo: 'familia' },
   });
-  await assert.rejects(
-    () => aprobarSolicitud(db, cuentas, { id: 's1', personaId: 'p-marta', rol: 'miembro' }),
-    /ya tiene cuenta/,
-  );
+  const resultado = await aprobarSolicitud(db, cuentas, { id: 's1', personaId: 'p-marta', rol: 'miembro' });
+  assert.equal(resultado.persona_id, 'p-marta');
+  // Los aparatos del teléfono anterior, con su token, se van con la cuenta vieja.
+  assert.equal(sql(db, 'DELETE FROM dispositivo').length, 1);
+  const [vinculo] = sql(db, 'UPDATE persona');
+  assert.deepEqual(vinculo.args, ['miembro', '000123.abc', 'p-marta']);
 });
 
 test('un identificador de Apple que ya está en otra ficha detiene la aprobación', async () => {

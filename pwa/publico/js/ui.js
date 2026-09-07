@@ -803,3 +803,97 @@ export function seleccion(opciones, valor, atributos = {}) {
   return nodo;
 }
 
+
+/**
+ * Un campo de hora con reloj propio, de hora en hora y de cuarto en cuarto,
+ * en lugar de la rueda del sistema (D1 en specs/propuesta-ocho-cosas.html).
+ *
+ * La misma figura que el calendario propio: el campo es un botón que escribe
+ * la hora, y al tocarlo despliega debajo dos columnas que se desplazan —la
+ * hora a la izquierda, :00 :15 :30 :45 a la derecha—, con lo elegido relleno.
+ * Cabe cualquier hora del día en dos gestos y no tapa la hoja. `vacio` es el
+ * texto sin hora, y ofrecerlo es lo que deja quitarla: un evento sin hora es
+ * de jornada completa.
+ *
+ * Devuelve `{ nodo, valor }`: `valor` es `HH:MM` o cadena vacía, y se puede
+ * escribir desde fuera.
+ */
+export function selectorDeHora({ valor = '', vacio = null, alCambiar = () => {} } = {}) {
+  const valida = (t) => /^\d{2}:\d{2}$/.test(String(t || ''));
+  let elegido = valida(valor) ? valor : '';
+  let abierto = false;
+
+  const boton = el('button', { class: 'fecha-boton hora-boton', type: 'button', 'aria-expanded': 'false' });
+  const horas = el('div', { class: 'reloj-columna', role: 'listbox', 'aria-label': 'Hora' });
+  const cuartos = el('div', { class: 'reloj-columna', role: 'listbox', 'aria-label': 'Minutos' });
+  const panel = el('div', { class: 'reloj', hidden: true }, [
+    el('div', { class: 'reloj-columnas' }, [horas, cuartos]),
+    vacio !== null ? el('div', { class: 'calendario-pie' }, [
+      el('button', { class: 'enlace-discreto', type: 'button', onclick: () => { poner(''); cerrar(); } }, ['Quitar la hora']),
+    ]) : null,
+  ]);
+  const nodo = el('div', { class: 'fecha-propia' }, [boton, panel]);
+
+  const partes = () => {
+    const m = /^(\d{2}):(\d{2})$/.exec(elegido);
+    return m ? { h: Number(m[1]), q: Math.round(Number(m[2]) / 15) * 15 % 60 } : { h: 18, q: 0 };
+  };
+  const escribirBoton = () => {
+    boton.textContent = elegido || (vacio || 'Elegir una hora');
+    boton.dataset.vacio = elegido ? 'no' : 'si';
+  };
+  const poner = (texto, avisar = true) => {
+    elegido = valida(texto) ? texto : '';
+    escribirBoton();
+    if (avisar) alCambiar(elegido);
+  };
+
+  function pintar() {
+    const { h, q } = partes();
+    vaciar(horas);
+    vaciar(cuartos);
+    for (let hora = 0; hora < 24; hora += 1) {
+      horas.append(el('button', {
+        class: 'reloj-paso', type: 'button', role: 'option',
+        'aria-selected': hora === h ? 'true' : 'false',
+        onclick: () => { poner(`${String(hora).padStart(2, '0')}:${String(q).padStart(2, '0')}`); pintar(); },
+      }, [String(hora).padStart(2, '0')]));
+    }
+    for (const minuto of [0, 15, 30, 45]) {
+      cuartos.append(el('button', {
+        class: 'reloj-paso', type: 'button', role: 'option',
+        'aria-selected': minuto === q ? 'true' : 'false',
+        onclick: () => { poner(`${String(h).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`); pintar(); cerrar(); },
+      }, [`:${String(minuto).padStart(2, '0')}`]));
+    }
+    // La hora elegida, a la vista: la columna se desplaza hasta ella sin
+    // animación, que aquí sería un carrusel cada vez que se abre.
+    const marcada = horas.querySelector('[aria-selected="true"]');
+    if (marcada) horas.scrollTop = Math.max(0, marcada.offsetTop - horas.clientHeight / 2 + marcada.offsetHeight / 2);
+  }
+
+  const abrir = () => {
+    abierto = true;
+    pintar();
+    panel.hidden = false;
+    boton.setAttribute('aria-expanded', 'true');
+    // El desplazamiento solo se puede medir con el panel a la vista.
+    const marcada = horas.querySelector('[aria-selected="true"]');
+    if (marcada) horas.scrollTop = Math.max(0, marcada.offsetTop - horas.clientHeight / 2 + marcada.offsetHeight / 2);
+  };
+  const cerrar = () => {
+    abierto = false;
+    panel.hidden = true;
+    boton.setAttribute('aria-expanded', 'false');
+  };
+
+  boton.onclick = () => (abierto ? cerrar() : abrir());
+  escribirBoton();
+
+  return {
+    nodo,
+    get valor() { return elegido; },
+    set valor(texto) { poner(texto, false); },
+    cerrar,
+  };
+}

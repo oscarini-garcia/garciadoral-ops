@@ -667,7 +667,11 @@ const textoDelDato = (atributo) =>
  * guardado. `control.value` es siempre el ISO que se guarda, o cadena vacía.
  */
 function campoDeFecha(valorInicial) {
-  const control = el('input', { type: 'date', value: valorInicial || '' });
+  // El calendario propio y no el del sistema (D1): la casilla de texto sigue
+  // al lado para las fechas de hace setenta años, que en un calendario son
+  // ochocientos meses de flechas.
+  const selector = selectorDeFecha({ valor: valorInicial || '', vacio: 'Sin fecha', alCambiar: (iso) => { texto.value = aTextoDeFecha(iso); } });
+  const control = { get value() { return selector.valor; }, set value(iso) { selector.valor = iso || ''; } };
   const texto = entrada({
     inputmode: 'numeric', placeholder: 'dd/mm/aaaa', 'aria-label': 'Fecha de nacimiento escrita',
     maxlength: '10', autocomplete: 'off',
@@ -692,7 +696,6 @@ function campoDeFecha(valorInicial) {
     onpointerdown: (evento) => { evento.preventDefault(); texto.blur(); },
   }, ['Listo']);
 
-  control.addEventListener('input', () => { texto.value = aTextoDeFecha(control.value); });
   texto.addEventListener('focus', () => { listo.hidden = false; });
   texto.addEventListener('input', () => {
     aplicarMascara(texto);
@@ -715,7 +718,7 @@ function campoDeFecha(valorInicial) {
     campo: el('div', { class: 'campo' }, [
       el('label', { texto: 'Fecha de nacimiento' }),
       el('div', { class: 'fecha-doble' }, [
-        control,
+        selector.nodo,
         el('div', { class: 'fecha-escrita' }, [texto, listo]),
       ]),
       el('p', {

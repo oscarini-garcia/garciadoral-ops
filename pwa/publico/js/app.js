@@ -205,13 +205,31 @@ async function arrancarDemostracion(observadorId) {
   prepararInterfaz();
 }
 
+/** Si algo del arranque se cuelga, a los dos segundos se pinta con lo que haya. */
+const VIGILANTE_MS = 2000;
+let interfazLista = false;
+
 async function arrancarAplicacion(sesion) {
   sesionActual = sesion;
-  await iniciar({ base: configuracion.api || '', token: sesion.token });
-  prepararInterfaz();
+  // El vigilante (A4): el arranque ya no espera a la red, pero cualquier otra
+  // cosa que se cuelgue —una petición que no contesta, un almacén que no
+  // abre— dejaría la pantalla en negro igual. A los dos segundos se enseña lo
+  // que haya y se dice por qué, en vez de esperar a que vuelva la cobertura.
+  const reloj = setTimeout(() => {
+    if (interfazLista) return;
+    prepararInterfaz();
+    avisar('No he podido arrancar del todo: se enseña lo último guardado');
+  }, VIGILANTE_MS);
+  try {
+    await iniciar({ base: configuracion.api || '', token: sesion.token });
+  } finally {
+    clearTimeout(reloj);
+  }
+  if (!interfazLista) prepararInterfaz();
 }
 
 function prepararInterfaz() {
+  interfazLista = true;
   document.getElementById('acceso').hidden = true;
   document.getElementById('aplicacion').hidden = false;
 

@@ -13,9 +13,7 @@
  */
 
 import {
-  el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avisar,
-  acordeon, botonIcono, carruselDePropuestas, cerrarDeslizada, conVerbosAlDeslizar,
-  dobleToque, enfocarAlAbrir, icono,
+  abrirHoja, acordeon, avisar, botonIcono, campo, carruselDePropuestas, cerrarDeslizada, cerrarHoja, conVerbosAlDeslizar, dobleToque, el, enfocarAlAbrir, entrada, icono, seleccion, selectorDeFecha, vaciar,
 } from '../ui.js';
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
@@ -1747,8 +1745,9 @@ function abrirFormularioOcasion(ctx, { id = null } = {}) {
 
   abrirHoja(titulo, (cuerpo) => {
     const nombre = entrada({ value: existente ? existente.nombre : '' });
-    const fecha = el('input', { type: 'date', value: existente ? existente.fecha : iso(hoy()) });
-    cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha));
+    // El calendario propio, como en todas partes (D1).
+    const fecha = selectorDeFecha({ valor: existente ? existente.fecha : iso(hoy()) });
+    cuerpo.append(campo('Cómo se llama', nombre), campo('Cuándo', fecha.nodo));
     cuerpo.append(campoDeGente(ctx, {
       etiqueta: 'Para quién',
       elegidos: participantes,
@@ -1759,7 +1758,7 @@ function abrirFormularioOcasion(ctx, { id = null } = {}) {
         class: 'boton crecer', type: 'button',
         onclick: async () => {
           if (!nombre.value.trim()) { avisar('Ponle un nombre'); return; }
-          const campos = { nombre: nombre.value.trim(), fecha: fecha.value, participantes };
+          const campos = { nombre: nombre.value.trim(), fecha: fecha.valor, participantes };
           if (!existente) Object.assign(campos, { estado: 'abierta', autor_id: ctx.vista.yo.id, activa: 1 });
 
           await guardar('ocasion', existente ? existente.id : nuevoId(), campos);
