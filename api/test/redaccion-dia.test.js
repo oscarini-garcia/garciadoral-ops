@@ -217,3 +217,57 @@ test('un mes desbordado se corta por arriba en lugar de mandarlo entero', () => 
   const deEventos = material.lineas.filter((l) => l.startsWith('  '));
   assert.equal(deEventos.length, 40);
 });
+
+// ------------------------------------- Todo lo que pasa el día, y el tiempo --
+
+const CASA = {
+  personas: [
+    { id: 'p-oscar', nombre: 'Óscar', circulo: 'familia', activa: 1 },
+    { id: 'p-mariona', nombre: 'Mariona', apodo: 'Falu', circulo: 'familia', activa: 1, santo: '09-16' },
+  ],
+  eventos: [
+    {
+      id: 'h', titulo: 'Hípica', tipo_id: 'entreno', inicio: '2026-09-15T17:00:00', jornada_completa: 0,
+      plugin_id: 'extraescolar', repeticion: 'semanal',
+      extra: { dias: [1, 3], horario: { 1: { desde: '17:00' }, 3: { desde: '18:00' } }, reparto: { 3: { lleva: 'p-mariona', recoge: 'otro:la abuela' } } },
+      participantes: [],
+    },
+    { id: 'esc', titulo: 'La sierra', tipo_id: 'viaje', inicio: '2026-09-19', jornada_completa: 1, plugin_id: 'finde', extra: { lio: 'viene' }, participantes: [{ persona_id: 'p-oscar' }, { persona_id: 'p-mariona' }] },
+  ],
+  dias_evento: [{ id: 'dia:h:2026-09-15', evento_id: 'h', fecha: '2026-09-15', lleva_id: 'p-oscar', activo: 1 }],
+  ausencias: [{ id: 'au1', persona_id: 'p-oscar', desde: '2026-09-20', hasta: '2026-09-22', cubre_id: 'p-mariona', activo: 1 }],
+  lio_cuadro: { manana: ['p-oscar', 'p-oscar', 'p-oscar', 'p-oscar', 'p-oscar', 'p-oscar', 'p-oscar'], noche: ['p-mariona', 'p-mariona', 'p-mariona', 'p-mariona', 'p-mariona', 'p-mariona', 'p-mariona'] },
+  paseos: [],
+  calendarios_externos: [],
+};
+
+test('la actividad cuenta la hora de ese día y quién lleva y recoge, con el apodo y con «otro»', () => {
+  const jueves = componerMaterial(CASA, '2026-09-17', ['h']);
+  assert.equal(jueves.lineas[0], '18:00 · Hípica · lleva Falu, recoge la abuela');
+  // El martes manda el día suelto sobre el cuadro, y lleva Óscar.
+  const martes = componerMaterial(CASA, '2026-09-15', ['h']);
+  assert.equal(martes.lineas[0], '17:00 · Hípica · lleva Óscar');
+});
+
+test('el día entero: la escapada con quién va, y Lío al final con quien lo saca', () => {
+  const material = componerMaterial(CASA, '2026-09-19', ['esc']);
+  assert.equal(material.lineas[0], 'todo el día · La sierra · van Óscar, Falu, Lío viene');
+  assert.equal(material.lineas[1], 'Lío (el perro): lo saca por la mañana Óscar y por la noche Falu');
+});
+
+test('el santo y quien está fuera se resuelven, y una ausencia pasa el turno de Lío', () => {
+  const material = componerMaterial(CASA, '2026-09-21', ['derivado:santo:p-mariona', 'derivado:ausencia:au1']);
+  assert.deepEqual(material.omitidos, []);
+  assert.equal(material.lineas[0], 'todo el día · Santo de Mariona');
+  assert.equal(material.lineas[1], 'todo el día · Óscar fuera de casa');
+  assert.equal(material.lineas[2], 'Lío (el perro): lo saca por la mañana Falu y por la noche Falu');
+});
+
+test('la nota dice en qué tiempo contarlo: futuro si está por venir, presente si no', () => {
+  assert.equal(componerMaterial(CASA, '2026-09-20', ['esc'], { hoy: '2026-09-17' }).nota, 'Es dentro de 3 días: cuéntalo en futuro.');
+  assert.equal(componerMaterial(CASA, '2026-09-17', ['h'], { hoy: '2026-09-17' }).nota, 'Es hoy: cuéntalo en presente.');
+  assert.match(componerMaterial(CASA, '2026-09-15', ['h'], { hoy: '2026-09-17' }).nota, /^Fue hace 2 días: cuéntalo en presente/);
+  assert.equal(componerMaterial(CASA, '2026-09-15', ['h']).nota, null);
+  const periodo = componerMaterialDePeriodo(CASA, { desde: '2026-09-21', hasta: '2026-09-27', dias: [{ fecha: '2026-09-22', eventos: ['h'] }], hoy: '2026-09-20' });
+  assert.equal(periodo.nota, 'Es dentro de un día: cuéntalo en futuro.');
+});

@@ -145,7 +145,7 @@ def formatear_lio(agenda: Agenda, turnos: list[TurnoLio]) -> str:
         persona = agenda.persona(turno.responsable_id)
         if persona is None:
             continue
-        partes.append(f"{turno.emoji} {persona.nombre}")
+        partes.append(f"{turno.emoji} {persona.nombre_corto}")
     return f"{EMOJI_LIO} {' · '.join(partes)}" if partes else ""
 
 
@@ -171,7 +171,7 @@ def _reparto(agenda: Agenda, aparicion: Aparicion) -> str:
             continue
         persona = agenda.persona(quien)
         if persona is not None:
-            partes.append(f"{verbo} {persona.nombre}")
+            partes.append(f"{verbo} {persona.nombre_corto}")
     return f" ({', '.join(partes)})" if partes else ""
 
 

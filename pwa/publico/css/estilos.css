@@ -727,17 +727,23 @@ textarea:-webkit-autofill:focus {
 
 /* -------------------------------------------------------- Vista de semana -- */
 
-.semana { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+/* Cada día en su tarjeta (A4 en specs/propuesta-separacion-dias.html): con
+   Lío como primera y última línea todos los días tienen tres renglones y con
+   una raya fina se pegaban. Entre tarjetas se ve el fondo de la página, como
+   entre las de Regalos; hoy conserva su tinte, ahora como fondo de su tarjeta. */
+.semana { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
 
 .dia {
   display: grid;
   grid-template-columns: 52px 1fr;
   gap: 10px;
-  border-bottom: 1px solid var(--line);
-  padding: 9px 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
   min-height: 58px;
 }
-.dia[data-hoy="si"] { background: var(--tinta-suave); margin: 0 -12px; padding: 9px 12px; border-radius: 8px; }
+.dia[data-hoy="si"] { background: var(--tinta-suave); border-color: var(--tinta-suave); }
 .dia-fecha { text-align: left; }
 .dia-inicial { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-faint); }
 .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }

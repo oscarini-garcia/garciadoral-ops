@@ -916,9 +916,10 @@ export function textoDeLinea(aparicion, ctx) {
     const letras = (quien) => {
       if (esOtro(quien)) return inicialesDeOtro(quien);
       const persona = ctx.vista.persona(quien);
-      return persona ? String(persona.nombre || '').trim().slice(0, 2) : null;
+      // El apodo si lo hay: «Fa» de Falu y no «Ma» de Mariona.
+      return persona ? String(persona.apodo || persona.nombre || '').trim().slice(0, 2) : null;
     };
-    const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : ctx.vista.nombre(quien));
+    const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : (ctx.vista.persona(quien)?.apodo || ctx.vista.nombre(quien)));
     if (reparto.lleva || reparto.recoge) {
       linea.pastillas = [
         { clase: 'lleva', texto: reparto.lleva ? letras(reparto.lleva) : '·', titulo: reparto.lleva ? `Lleva ${nombre(reparto.lleva)}` : 'Nadie lleva' },

@@ -456,14 +456,49 @@ function horaDe(evento) {
  */
 function visiblesDe(instantanea) {
   const porId = new Map((instantanea.eventos || []).map((e) => [e.id, e]));
+  const nombre = (persona) => nombreCorto(instantanea, persona?.id) || persona?.nombre || '';
 
   for (const persona of instantanea.personas || []) {
-    if (!persona.fecha_nacimiento) continue;
     if (persona.activa === 0 || persona.activa === false) continue;
-    porId.set(`derivado:cumpleanos:${persona.id}`, {
-      id: `derivado:cumpleanos:${persona.id}`,
-      titulo: `Cumpleaños de ${persona.nombre}`,
-      inicio: persona.fecha_nacimiento,
+    if (persona.fecha_nacimiento) {
+      porId.set(`derivado:cumpleanos:${persona.id}`, {
+        id: `derivado:cumpleanos:${persona.id}`,
+        titulo: `Cumpleaños de ${persona.nombre}`,
+        inicio: persona.fecha_nacimiento,
+        jornada_completa: true,
+      });
+    }
+    // El santo, como el cumpleaños: sale de la ficha y se deriva en el aparato.
+    if (persona.santo) {
+      porId.set(`derivado:santo:${persona.id}`, {
+        id: `derivado:santo:${persona.id}`,
+        titulo: `Santo de ${persona.nombre}`,
+        inicio: `1900-${persona.santo}`,
+        jornada_completa: true,
+      });
+    }
+  }
+
+  // Quien está fuera unos días, y los días de en medio de un viaje: los dos
+  // son bandas derivadas en el aparato, y sin resolverlos aquí se caían.
+  for (const ausencia of instantanea.ausencias || []) {
+    const persona = (instantanea.personas || []).find((p) => p.id === ausencia.persona_id);
+    if (!persona) continue;
+    porId.set(`derivado:ausencia:${ausencia.id}`, {
+      id: `derivado:ausencia:${ausencia.id}`,
+      titulo: `${nombre(persona)} fuera de casa`,
+      inicio: ausencia.desde,
+      jornada_completa: true,
+    });
+  }
+  for (const vuelo of instantanea.eventos || []) {
+    if (vuelo.origen !== 'importado') continue;
+    const calendario = (instantanea.calendarios_externos || []).find((c) => c.id === vuelo.calendario_id);
+    const dueno = (instantanea.personas || []).find((p) => p.id === calendario?.persona_id);
+    porId.set(`derivado:fuera:${vuelo.id}`, {
+      id: `derivado:fuera:${vuelo.id}`,
+      titulo: `${dueno ? nombre(dueno) : 'Alguien'} fuera, de viaje`,
+      inicio: vuelo.inicio,
       jornada_completa: true,
     });
   }
@@ -471,25 +506,101 @@ function visiblesDe(instantanea) {
   return porId;
 }
 
-export function componerMaterial(instantanea, fecha, ids = []) {
+/** El apodo si lo hay, y si no el nombre: lo que se dice en casa. */
+function nombreCorto(instantanea, personaId) {
+  const persona = (instantanea.personas || []).find((p) => p.id === personaId);
+  return persona ? (persona.apodo || persona.nombre) : null;
+}
+
+/** «hoy», «dentro de 3 días» o «hace 2 días», y en qué tiempo verbal contarlo:
+ *  en futuro lo que está por venir y en presente lo demás. */
+function notaDeTiempo(fecha, hoy) {
+  if (!hoy || !fecha) return null;
+  const dias = Math.round((Date.parse(String(fecha).slice(0, 10)) - Date.parse(String(hoy).slice(0, 10))) / 86400000);
+  if (!Number.isFinite(dias)) return null;
+  if (dias > 0) return `Es dentro de ${dias === 1 ? 'un día' : `${dias} días`}: cuéntalo en futuro.`;
+  if (dias === 0) return 'Es hoy: cuéntalo en presente.';
+  return `Fue hace ${-dias === 1 ? 'un día' : `${-dias} días`}: cuéntalo en presente, como lo que hay ese día.`;
+}
+
+/** Los turnos de Lío de un día, en una línea, si hay cuadro: quien lo saca
+ *  por la mañana y por la noche, con la fila escrita mandando sobre el cuadro
+ *  y las ausencias pasando el turno a quien cubre. */
+function lineaDeLio(instantanea, fecha) {
+  const versiones = normalizarVersiones(instantanea.lio_cuadro);
+  if (!versiones.length && !(instantanea.paseos || []).length) return null;
+  const dia = String(fecha).slice(0, 10);
+  const partes = [];
+  for (const turnoId of IDS_TURNO) {
+    const fila = (instantanea.paseos || []).find((p) => p.activo !== 0 && p.fecha === dia && p.turno === turnoId);
+    const cuadro = cuadroEn(versiones, inicioDeVentana(dia, turnoId));
+    const asignadoId = fila ? fila.asignado_id || null : conAusencias(instantanea, cuadro[turnoId]?.[indiceDeDia(dia)] || null, dia);
+    const quien = nombreCorto(instantanea, fila?.hecho_por_id) || nombreCorto(instantanea, asignadoId);
+    if (quien) partes.push(`${turnoId === 'manana' ? 'por la mañana' : 'por la noche'} ${quien}`);
+  }
+  return partes.length ? `Lío (el perro): lo saca ${partes.join(' y ')}` : null;
+}
+
+export function componerMaterial(instantanea, fecha, ids = [], { hoy = null } = {}) {
   const visibles = visiblesDe(instantanea);
   const lineas = [];
   const omitidos = [];
 
   for (const id of ids.slice(0, MAXIMO_EVENTOS)) {
     const evento = visibles.get(id);
-    if (evento) lineas.push(lineaDe(evento));
+    if (evento) lineas.push(lineaDe(evento, instantanea, fecha));
     else if (omitidos.length < MAXIMO_OMITIDOS) omitidos.push(id);
   }
+  // Todo lo que pasa ese día, también lo que no es un evento: el perro.
+  const lio = lineaDeLio(instantanea, fecha);
+  if (lio) lineas.push(lio);
 
-  return { titulo: formatearFecha(fecha), lineas, omitidos };
+  return { titulo: formatearFecha(fecha), nota: notaDeTiempo(fecha, hoy), lineas, omitidos };
 }
 
-function lineaDe(evento) {
-  const hora = horaDe(evento);
-  return [hora ? `${hora} ·` : 'todo el día ·', evento.titulo, evento.ubicacion ? `· ${evento.ubicacion}` : null]
+/**
+ * Una línea por cosa, con todo lo que se sabe de ella ese día: la hora de ese
+ * día de la semana si la actividad la lleva (`extra.horario`), quién lleva y
+ * quién recoge —de casa o «otro», con lo escrito para el día suelto mandando
+ * sobre el cuadro—, y quiénes van a una escapada.
+ */
+function lineaDe(evento, instantanea = {}, fecha = null) {
+  const hora = horaDeEseDia(evento, fecha);
+  const extras = [];
+  if (evento.plugin_id === 'extraescolar' && fecha) {
+    const diaSemana = indiceDeDia(fecha);
+    const suelto = (instantanea.dias_evento || []).find((d) => d.evento_id === evento.id && d.fecha === String(fecha).slice(0, 10) && d.activo !== 0);
+    const delCuadro = evento.extra?.reparto?.[diaSemana] || evento.extra?.reparto?.[String(diaSemana)] || {};
+    const quien = (campo) => {
+      if (suelto?.[`${campo}_id`]) return nombreCorto(instantanea, suelto[`${campo}_id`]);
+      if (suelto?.[`${campo}_otro`]) return suelto[`${campo}_otro`];
+      const valor = delCuadro[campo];
+      if (typeof valor === 'string' && valor.startsWith('otro:')) return valor.slice(5);
+      return valor ? nombreCorto(instantanea, valor) : null;
+    };
+    const lleva = quien('lleva');
+    const recoge = quien('recoge');
+    if (lleva) extras.push(`lleva ${lleva}`);
+    if (recoge) extras.push(`recoge ${recoge}`);
+  }
+  if (evento.plugin_id === 'finde') {
+    const van = (evento.participantes || []).map((p) => nombreCorto(instantanea, p.persona_id)).filter(Boolean);
+    if (van.length) extras.push(`van ${van.join(', ')}`);
+    if (evento.extra?.lio === 'viene') extras.push('Lío viene');
+    if (evento.extra?.lio === 'se_queda') extras.push('Lío se queda');
+  }
+  return [hora ? `${hora} ·` : 'todo el día ·', evento.titulo, evento.ubicacion ? `· ${evento.ubicacion}` : null, extras.length ? `· ${extras.join(', ')}` : null]
     .filter(Boolean)
     .join(' ');
+}
+
+/** La hora de un día concreto: la de su día de la semana si la actividad
+ *  lleva horario propio, y si no la del evento. */
+function horaDeEseDia(evento, fecha) {
+  if (evento.jornada_completa) return null;
+  const propia = fecha ? evento.extra?.horario?.[indiceDeDia(fecha)]?.desde ?? evento.extra?.horario?.[String(indiceDeDia(fecha))]?.desde : null;
+  if (typeof propia === 'string' && /^\d{2}:\d{2}$/.test(propia)) return propia;
+  return horaDe(evento);
 }
 
 /**
@@ -503,7 +614,7 @@ function lineaDe(evento) {
  * poder colarse nada: el título, la hora y el sitio salen de la instantánea
  * filtrada de quien pide, y el encabezado se compone aquí a partir del tramo.
  */
-export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = [] }) {
+export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = [], hoy = null }) {
   const visibles = visiblesDe(instantanea);
   const lineas = [];
   const omitidos = [];
@@ -518,15 +629,18 @@ export function componerMaterialDePeriodo(instantanea, { desde, hasta, dias = []
         if (omitidos.length < MAXIMO_OMITIDOS) omitidos.push(id);
         continue;
       }
-      delDia.push(`  ${lineaDe(evento)}`);
+      delDia.push(`  ${lineaDe(evento, instantanea, jornada.fecha)}`);
       cuenta += 1;
     }
+    // El perro también, en los días que tienen algo más: son los que se cuentan.
+    const lio = delDia.length ? lineaDeLio(instantanea, jornada.fecha) : null;
+    if (lio) delDia.push(`  ${lio}`);
     // Los días sin nada no se le cuentan al modelo: son la mayoría de un mes y
     // solo servirían para que redactara sobre lo que no pasa.
     if (delDia.length) lineas.push(`${formatearFecha(jornada.fecha)}:`, ...delDia);
   }
 
-  return { titulo: formatearRango(desde, hasta), lineas, omitidos };
+  return { titulo: formatearRango(desde, hasta), nota: notaDeTiempo(desde, hoy), lineas, omitidos };
 }
 
 /**
@@ -1006,7 +1120,10 @@ async function intentar({ clave, modelo, instruccion, material, tope, buscar }) 
     system: instruccion,
     messages: [{
       role: 'user',
-      content: `${material.titulo}\n${material.lineas.join('\n')}`,
+      // La nota —«es dentro de tres días: cuéntalo en futuro»— va entre el
+      // título y la lista, para que el tiempo verbal no dependa de que la
+      // instrucción editable de Ajustes lo diga.
+      content: [material.titulo, material.nota, ...material.lineas].filter(Boolean).join('\n'),
     }],
   };
 

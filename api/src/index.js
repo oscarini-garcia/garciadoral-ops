@@ -673,9 +673,13 @@ async function conBanderaDeRedaccion(env, instantanea) {
  * petición porque para quien la hace es el mismo gesto: contar lo que está
  * mirando, sea un día, una semana o lo que viene.
  */
+/** Qué día es hoy en casa, para que la redacción sepa si cuenta el futuro. */
+const hoyEnCasa = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
+
 function materialDe(instantanea, { fecha, eventos = [], desde, hasta, dias }) {
-  if (desde) return componerMaterialDePeriodo(instantanea, { desde, hasta: hasta || desde, dias });
-  return componerMaterial(instantanea, fecha, eventos);
+  const hoy = hoyEnCasa();
+  if (desde) return componerMaterialDePeriodo(instantanea, { desde, hasta: hasta || desde, dias, hoy });
+  return componerMaterial(instantanea, fecha, eventos, { hoy });
 }
 
 /**
