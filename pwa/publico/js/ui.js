@@ -872,7 +872,13 @@ export function selectorDeHora({ valor = '', vacio = null, alCambiar = () => {} 
     if (marcada) horas.scrollTop = Math.max(0, marcada.offsetTop - horas.clientHeight / 2 + marcada.offsetHeight / 2);
   }
 
+  // Un reloj abierto cierra a los demás: dos abiertos a la vez en una hoja
+  // de horarios por día eran cuatro columnas y ninguna fila alineada.
+  document.addEventListener('agenda:reloj-abierto', (evento) => {
+    if (evento.detail !== panel && abierto) cerrar();
+  });
   const abrir = () => {
+    document.dispatchEvent(new CustomEvent('agenda:reloj-abierto', { detail: panel }));
     abierto = true;
     pintar();
     panel.hidden = false;

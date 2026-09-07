@@ -450,8 +450,15 @@ function lineaDeLio(turno, ctx) {
       'Lío ',
       el('span', { class: 'linea-lio-quien', texto: quien ? inicialesDe(quien) : '·' }),
     ]),
+    // La hora como en cualquier línea: la mañana cuenta como las 8 y la
+    // noche como las 21, que es lo que las ordena.
+    el('span', { class: 'linea-hora', texto: HORA_DE_LIO[turno.turno.id] || '' }),
   ]);
 }
+
+/** A qué hora se lee cada turno en la agenda (E1): no la ventana entera, sino
+ *  el momento en que se cuenta. */
+const HORA_DE_LIO = { manana: '08:00', noche: '21:00' };
 
 /**
  * El día de Lío: los dos turnos, con lo que se puede hacer con cada uno.

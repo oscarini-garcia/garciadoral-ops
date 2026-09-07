@@ -2009,7 +2009,11 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 
 /* --- Cada día a su hora, y «otro» en el reparto (B1, C4) --------------- */
 .horario-dias { display: flex; flex-direction: column; gap: 6px; }
-.horario-dia { display: grid; grid-template-columns: 32px 1fr auto 1fr; gap: 6px; align-items: center; }
+/* Arriba y no al centro: con un reloj abierto la fila crece hacia abajo, y el
+   rótulo del día, el guion y el otro campo se quedan a la altura de los
+   botones, que es donde se leen. */
+.horario-dia { display: grid; grid-template-columns: 32px 1fr auto 1fr; gap: 6px; align-items: start; }
+.horario-dia > .lio-dia-rotulo, .horario-dia > .horario-guion { display: flex; align-items: center; min-height: 46px; }
 .horario-guion { color: var(--ink-faint); text-align: center; }
 .reparto-eligiendo { padding: 4px 0 10px; }
 .reparto-opciones { margin: 0 0 8px; }

@@ -18,6 +18,15 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.73.0',
+    fecha: '2026-09-07',
+    titulo: 'Las horas de la actividad, alineadas; y Lío con su hora',
+    lineas: [
+      'En la actividad, abrir un reloj ya no descoloca la fila: el día, el guion y el otro campo se quedan arriba, y un reloj abierto cierra los demás.',
+      'En la semana, las líneas de Lío llevan su hora como cualquier otra: 08:00 la mañana y 21:00 la noche.',
+    ],
+  },
+  {
     version: '1.72.0',
     fecha: '2026-09-07',
     titulo: 'Ocho cosas de la agenda',

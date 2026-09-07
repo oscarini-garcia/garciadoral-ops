@@ -1,0 +1,344 @@
+<meta charset="utf-8">
+<title>Separación entre días</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d;
+      --card: #1e242b;
+      --lift: #242b33;
+      --ink: #dce5ee;
+      --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12);
+      --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8;
+      --ac-ink: #10181d;
+      --rec: #7f92a5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d;
+    --card: #1e242b;
+    --lift: #242b33;
+    --ink: #dce5ee;
+    --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12);
+    --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8;
+    --ac-ink: #10181d;
+    --rec: #7f92a5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin: 0 0 4px;
+  }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ac);
+    flex: none;
+  }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec {
+    margin-left: auto;
+    flex: none;
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    color: var(--rec);
+    border: 1px solid var(--line-hard);
+    border-radius: 99px;
+    padding: 2px 8px;
+  }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  /* Mockup block: a static preview of the option, drawn at the same fidelity
+     as its rivals. Never put a button, link or input in here — the card is
+     itself a button and would swallow the tap. */
+  .mock {
+    margin: 12px 0 2px;
+    background: var(--lift);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+  .mock svg { display: block; width: 100%; height: auto; max-height: 200px; }
+  .mock .sample { color: var(--ink); font-size: 14px; line-height: 1.55; margin: 0; }
+  .mock .sample + .sample { margin-top: 8px; }
+  .mock .caption {
+    display: block;
+    margin-top: 8px;
+    color: var(--sub);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary {
+    cursor: pointer;
+    color: var(--sub);
+    font-size: 13.5px;
+    list-style: none;
+    display: inline-block;
+    border-bottom: 1px dashed var(--line-hard);
+  }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 60px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--lift);
+    border-top: 1px solid var(--line);
+    padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy {
+    flex: none;
+    background: var(--ac);
+    color: var(--ac-ink);
+    border: 0;
+    border-radius: 99px;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: 620;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+</style>
+<style>.mock svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }</style>
+<div class="wrap">
+  <h1>Separación entre días</h1>
+  <p class="stand">Con Lío como primera y última línea, cada día de la semana tiene tres líneas como mínimo y los días se pegan: <em>añade un poco más de separación entre días</em>. Hoy hay 9 puntos de aire arriba y abajo de cada día y una raya fina entre uno y otro. Cuatro maneras de separarlos; la primera es la que se recomienda.</p>
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Entre días</p>
+    <p class="qtitle">¿Cómo se separan los días en la semana?</p>
+    <p class="qwhy">Lo que se decide es cuánto aire y qué marca. Más aire cuesta pantalla —una semana de siete días con tres líneas cada uno ya no cabe de un vistazo— y una marca más fuerte cuesta ruido en una pantalla que se mira todos los días.</p>
+    <div class="opts">
+      
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Más aire, la misma raya</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 230" role="img" aria-label="Más aire arriba y abajo de cada día, misma raya"><rect x="0" y="0" width="320" height="230" rx="8" fill="var(--card)" stroke="var(--line-hard)"/><text x="14" y="26" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">L</text><text x="14" y="44" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">7</text><text x="52" y="26" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="26" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">📌</text><text x="72" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Llamar pilates</text><text x="52" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="60" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><line x1="6" y1="86" x2="314" y2="86" stroke="var(--line)"/><text x="14" y="106" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">M</text><text x="14" y="124" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">8</text><text x="52" y="106" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="106" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Am</text><text x="52" y="123" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">✈️</text><text x="72" y="123" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Madrid</text><text x="52" y="140" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🐴</text><text x="72" y="140" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Hípica Falu</text><text x="52" y="157" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="157" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><line x1="6" y1="184" x2="314" y2="184" stroke="var(--line)"/><text x="14" y="204" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">X</text><text x="14" y="222" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">9</text><text x="52" y="204" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="204" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="221" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="221" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text></svg></span>
+        <p class="obody">El día pasa de 9 a 14 puntos de aire arriba y abajo, y la raya se queda como está. Es lo que menos cambia: la semana se lee igual, solo más holgada. <b>Lo que cuesta:</b> unos 70 puntos más por semana, una línea y media de pantalla.</p>
+      </button>
+      
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">La misma separación, con la raya más fuerte</span></span>
+        <span class="mock"><svg viewBox="0 0 320 230" role="img" aria-label="La misma separación, con la raya más fuerte"><rect x="0" y="0" width="320" height="230" rx="8" fill="var(--card)" stroke="var(--line-hard)"/><text x="14" y="26" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">L</text><text x="14" y="44" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">7</text><text x="52" y="26" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="26" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">📌</text><text x="72" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Llamar pilates</text><text x="52" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="60" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><line x1="6" y1="82" x2="314" y2="82" stroke="var(--line-hard)"/><text x="14" y="102" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">M</text><text x="14" y="120" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">8</text><text x="52" y="102" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="102" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Am</text><text x="52" y="119" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">✈️</text><text x="72" y="119" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Madrid</text><text x="52" y="136" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🐴</text><text x="72" y="136" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Hípica Falu</text><text x="52" y="153" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="153" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><line x1="6" y1="176" x2="314" y2="176" stroke="var(--line-hard)"/><text x="14" y="196" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">X</text><text x="14" y="214" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">9</text><text x="52" y="196" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="196" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="213" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="213" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text></svg></span>
+        <p class="obody">El aire sube un poco menos (12 puntos) y la raya entre días pasa al tono fuerte, el que ya separa los apartados de Sitios. Separa más por menos alto; <b>siete rayas fuertes en una pantalla son siete rayas</b>, que es la queja que hubo en Sitios.</p>
+      </button>
+      
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Días alternos con fondo</span></span>
+        <span class="mock"><svg viewBox="0 0 320 230" role="img" aria-label="Días alternos con fondo, sin rayas"><rect x="0" y="0" width="320" height="230" rx="8" fill="var(--card)" stroke="var(--line-hard)"/><text x="14" y="26" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">L</text><text x="14" y="44" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">7</text><text x="52" y="26" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="26" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">📌</text><text x="72" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Llamar pilates</text><text x="52" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="60" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><rect x="6" y="86" width="308" height="82" rx="6" fill="var(--lift)"/><text x="14" y="100" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">M</text><text x="14" y="118" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">8</text><text x="52" y="100" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="100" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Am</text><text x="52" y="117" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">✈️</text><text x="72" y="117" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Madrid</text><text x="52" y="134" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🐴</text><text x="72" y="134" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Hípica Falu</text><text x="52" y="151" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="151" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><text x="14" y="190" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">X</text><text x="14" y="208" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">9</text><text x="52" y="190" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="190" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="207" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="207" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text></svg></span>
+        <p class="obody">Sin rayas: un día sí y otro no llevan el fondo suave que ya usa el día de hoy. Los días se distinguen sin gastar alto. <b>Lo que cuesta:</b> el fondo de hoy deja de ser único —hoy tendría que marcarse de otra manera— y en el tema claro el contraste entre dos fondos es poco.</p>
+      </button>
+      
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Cada día en su tarjeta</span></span>
+        <span class="mock"><svg viewBox="0 0 320 240" role="img" aria-label="Cada día en su tarjeta, con el fondo de la página entre ellas"><rect x="0" y="0" width="320" height="240" rx="8" fill="var(--card)" stroke="var(--line-hard)"/><text x="14" y="26" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">L</text><text x="14" y="44" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">7</text><text x="52" y="26" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="26" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">📌</text><text x="72" y="43" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Llamar pilates</text><text x="52" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="60" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><rect x="6" y="82" width="308" height="10" fill="var(--bg)"/><text x="14" y="110" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">M</text><text x="14" y="128" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">8</text><text x="52" y="110" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="110" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Am</text><text x="52" y="127" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">✈️</text><text x="72" y="127" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Madrid</text><text x="52" y="144" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🐴</text><text x="72" y="144" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">Hípica Falu</text><text x="52" y="161" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="161" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text><rect x="6" y="184" width="308" height="10" fill="var(--bg)"/><text x="14" y="212" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start">X</text><text x="14" y="230" font-size="16" fill="var(--ink)" font-weight="600" text-anchor="start">9</text><text x="52" y="212" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">☀️</text><text x="72" y="212" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ma</text><text x="52" y="229" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start">🌙</text><text x="72" y="229" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start">Lío Ós</text></svg></span>
+        <p class="obody">Cada día es una tarjeta con su borde, y entre tarjetas se ve el fondo de la página, como en Regalos. Es la separación más clara y la más cara: <b>unos 20 puntos por día entre borde y hueco</b>, y la semana deja de ser una tabla para ser una lista de tarjetas.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Se queda como está, o lo que diga la nota.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <div class="foot">
+    <p><b>Lo que no se pregunta.</b> La alineación de las filas de hora en la actividad y la hora en las líneas de Lío van directas, sin opciones: están en la 1.73.0.</p>
+    <p><b>Decidido:</b> — pendiente.</p>
+  </div>
+</div>
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+<script>
+  // ⟪Set once per round: a slug unique to this document, so two rounds never
+  // share a saved review.⟫
+  const KEY = "options.separacion-entre-dias";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  // A question opts into combining by carrying data-multi="true".
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  // Picks are held per letter as a list of tokens, so a single-pick question and
+  // a combining one share one shape. An empty list means undecided; the list
+  // ["A0"] means the options were seen and none served.
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t]; // "none of these" stands alone
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: está abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>
