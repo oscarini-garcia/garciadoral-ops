@@ -250,13 +250,17 @@ def ocurrencias(evento: Evento, desde: date, hasta: date) -> list[Instancia]:
     limite_sup = datetime.combine(hasta, time.max)
 
     def admisible(arranque: datetime) -> bool:
-        if arranque < evento.inicio or arranque < limite_inf or arranque > limite_sup:
+        # Por fecha frente al inicio, no por instante: una actividad cuyo
+        # martes empieza antes que la hora escrita en el evento sigue
+        # arrancando el mismo día.
+        if arranque.date() < evento.inicio.date() or arranque < limite_inf or arranque > limite_sup:
             return False
         if evento.repeticion_hasta and arranque.date() > evento.repeticion_hasta:
             return False
         return True
 
     arranques: list[datetime] = []
+    duraciones: dict[datetime, timedelta] = {}
 
     if evento.repeticion == "ninguna":
         if limite_inf <= evento.inicio <= limite_sup:
@@ -268,12 +272,19 @@ def ocurrencias(evento: Evento, desde: date, hasta: date) -> list[Instancia]:
         dias = dias_semanales_de(evento) or [evento.inicio.weekday()]
         for dia_semana in dias:
             primero = evento.inicio + timedelta(days=(dia_semana - evento.inicio.weekday()) % 7)
+            # Cada día a su hora (B1): el horario del día si lo lleva, y la
+            # duración con él.
+            horario = horario_del_dia(evento, dia_semana)
+            if horario is not None:
+                primero = primero.replace(hour=horario[0].hour, minute=horario[0].minute)
             salto = (limite_inf.date() - primero.date()).days
             semanas = max(0, -(-salto // 7))  # techo de la división
             actual = primero + timedelta(weeks=semanas)
             while actual <= limite_sup:
                 if admisible(actual):
                     arranques.append(actual)
+                    if horario is not None:
+                        duraciones[actual] = horario[1]
                 actual += timedelta(weeks=1)
 
     elif evento.repeticion == "mensual":
@@ -290,9 +301,30 @@ def ocurrencias(evento: Evento, desde: date, hasta: date) -> list[Instancia]:
                 arranques.append(candidato)
 
     return [
-        Instancia(evento=evento, inicio=arranque, fin=arranque + duracion)
+        Instancia(evento=evento, inicio=arranque, fin=arranque + duraciones.get(arranque, duracion))
         for arranque in sorted(set(arranques))
     ]
+
+
+def horario_del_dia(evento: Evento, dia: int) -> tuple[time, timedelta] | None:
+    """La hora de inicio y la duración de un día de la semana de una actividad
+    con horario propio —`extra.horario[dia] = {desde, hasta}`—, o `None`."""
+    horario = evento.extra.get("horario") if isinstance(evento.extra, dict) else None
+    fila = (horario or {}).get(str(dia)) or (horario or {}).get(dia)
+    if not isinstance(fila, dict):
+        return None
+    try:
+        desde = time.fromisoformat(str(fila.get("desde", "")))
+    except ValueError:
+        return None
+    try:
+        hasta = time.fromisoformat(str(fila.get("hasta", "")))
+    except ValueError:
+        hasta = None
+    minutos = 0
+    if hasta is not None:
+        minutos = max(0, (hasta.hour * 60 + hasta.minute) - (desde.hour * 60 + desde.minute))
+    return desde, timedelta(minutes=minutos)
 
 
 def instancias_de_la_semana(

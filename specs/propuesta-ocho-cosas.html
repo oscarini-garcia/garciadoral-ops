@@ -1,0 +1,572 @@
+<meta charset="utf-8">
+<title>Ocho cosas de la agenda</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d;
+      --card: #1e242b;
+      --lift: #242b33;
+      --ink: #dce5ee;
+      --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12);
+      --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8;
+      --ac-ink: #10181d;
+      --rec: #7f92a5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d;
+    --card: #1e242b;
+    --lift: #242b33;
+    --ink: #dce5ee;
+    --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12);
+    --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8;
+    --ac-ink: #10181d;
+    --rec: #7f92a5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin: 0 0 4px;
+  }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ac);
+    flex: none;
+  }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec {
+    margin-left: auto;
+    flex: none;
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    color: var(--rec);
+    border: 1px solid var(--line-hard);
+    border-radius: 99px;
+    padding: 2px 8px;
+  }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  /* Mockup block: a static preview of the option, drawn at the same fidelity
+     as its rivals. Never put a button, link or input in here — the card is
+     itself a button and would swallow the tap. */
+  .mock {
+    margin: 12px 0 2px;
+    background: var(--lift);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+  .mock svg { display: block; width: 100%; height: auto; max-height: 200px; }
+  .mock .sample { color: var(--ink); font-size: 14px; line-height: 1.55; margin: 0; }
+  .mock .sample + .sample { margin-top: 8px; }
+  .mock .caption {
+    display: block;
+    margin-top: 8px;
+    color: var(--sub);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary {
+    cursor: pointer;
+    color: var(--sub);
+    font-size: 13.5px;
+    list-style: none;
+    display: inline-block;
+    border-bottom: 1px dashed var(--line-hard);
+  }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 60px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--lift);
+    border-top: 1px solid var(--line);
+    padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy {
+    flex: none;
+    background: var(--ac);
+    color: var(--ac-ink);
+    border: 0;
+    border-radius: 99px;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: 620;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+</style>
+
+<style>
+  .mock svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .mock .ph { fill: var(--card); stroke: var(--line-hard); }
+</style>
+
+<div class="wrap">
+  <h1>Ocho cosas de la agenda</h1>
+  <p class="stand">Ocho cosas dichas de una vez, con una captura de la semana: <em>sin conexión se queda en negro; las extraescolares pueden ser varios días y cada día a su hora; un «otro» en quién lleva; selectores de hora y de fecha propios, de cuarto en cuarto y en todas partes; Lío en orden en el tiempo, la mañana a las 8 y la noche a las 21; que la semana enseñe todo lo de cada día; sin la barra antes del caballo; y que la gente que espera se pueda enlazar con quien ya tiene cuenta, que solo puede ser de casa</em>. Una pregunta por cosa; en cada una, la primera opción es la que se recomienda. Toca para elegir y copia el bloque al final.</p>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Arranque sin red</p>
+    <p class="qtitle">¿Cómo arranca la aplicación cuando no hay red?</p>
+    <p class="qwhy">Se abre y se queda en negro. Lo que el código enseña: el arranque <b>espera a la primera sincronización</b> antes de pintar nada (<code>iniciar</code> en <code>sincronizacion.js</code> hace <code>await sincronizar()</code>), y sin red esa espera no pinta la pantalla que ya tiene guardada.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Pintar primero con lo guardado, sincronizar después</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Hoy pintado con la instantánea guardada y una línea de sin conexión"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="14" y="22" font-size="14" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Hoy</text><text x="306" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">Sin conexión · lo de ayer a las 22:10</text><text x="14" y="50" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">🐾 LÍO</text><text x="14" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">☀️ Por la mañana · te toca a ti</text><text x="14" y="86" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">PARA HOY</text><text x="14" y="104" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴 Hípica · 18:00</text></svg></span>
+        <p class="obody">La instantánea del último uso está en el teléfono: se pinta en el acto y la red se busca detrás, como ya hace al volver de segundo plano. Una línea en la subcabecera de Hoy dice «Sin conexión · lo de ayer a las 22:10». <b>Lo que cuesta:</b> nada visible; solo que la primera pantalla puede ir un segundo por detrás de lo que otro haya escrito, que es lo que la línea avisa.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Un vigilante de dos segundos</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Vigilante: si algo se cuelga, a los dos segundos se pinta lo que haya"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="160" y="40" font-size="22" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">…</text><text x="160" y="62" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">2 segundos</text><line x1="14" y1="76" x2="306" y2="76" stroke="var(--line)"/><text x="14" y="96" font-size="14" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Hoy</text><text x="306" y="96" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">No he podido arrancar del todo: sin red</text><text x="14" y="112" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐾 LÍO · ☀️ te toca a ti</text></svg></span>
+        <p class="obody">Se deja el arranque como está y se le pone un reloj: si a los dos segundos no ha pintado, se pinta con lo que haya y se dice por qué. <b>Cubre cualquier cuelgue</b>, no solo el de la red, pero tarda dos segundos en negro cada vez que falla, y el motivo se escribe genérico.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Pantalla de espera con estado</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Pantalla de espera con estado y un botón para seguir sin red"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="160" y="44" font-size="14" fill="var(--ink)" font-weight="600" text-anchor="middle" opacity="1">Buscando la red…</text><text x="160" y="64" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">Lo último que se bajó es de ayer a las 22:10</text><rect x="90" y="80" width="140" height="26" rx="13" fill="var(--ac)" opacity="0.9"/><text x="160" y="97" font-size="11" fill="var(--ac-ink)" font-weight="600" text-anchor="middle" opacity="1">Seguir sin red</text></svg></span>
+        <p class="obody">Una pantalla propia mientras busca la red, con qué es lo último bajado y un botón «Seguir sin red». Se ve lo que pasa, pero <b>mete una pantalla y un toque</b> donde la aplicación siempre ha abierto directa; un móvil sin cobertura en el ascensor pediría el toque cada vez.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">A1 y A2 juntos</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="A1 y A2 a la vez"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="14" y="22" font-size="14" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Hoy</text><text x="306" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">Sin conexión</text><text x="14" y="50" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">🐾 LÍO</text><text x="14" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">☀️ Por la mañana · te toca a ti</text><rect x="14" y="80" width="292" height="28" rx="6" fill="var(--sub)" opacity="0.12"/><text x="24" y="98" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Y si algo se cuelga, el vigilante de A2 pinta igual a los 2 s</text></svg></span>
+        <p class="obody">Pintar primero con lo guardado, y además el vigilante para lo que no sea la red. <b>Es lo más robusto</b> y lo más largo de probar: dos caminos donde había uno.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">El negro sigue hasta que vuelva la red; con la nota de abajo diciendo qué se ve exactamente (negro del todo, o la cabecera y nada debajo) se afina el diagnóstico.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Actividades a su hora</p>
+    <p class="qtitle">¿Cómo se escribe una actividad que va varios días y cada día a su hora?</p>
+    <p class="qwhy">Hoy una actividad lleva <b>una sola hora</b> para todos sus días (<code>extra.dias</code> y el inicio del evento). La hípica de los martes a las cinco y la de los jueves a las seis no caben.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Una fila de hora por día marcado</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Una fila de hora por cada día marcado"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">QUÉ DÍAS</text><rect x="14" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="27.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">L</text><rect x="46" y="28" width="26" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="59.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">M</text><rect x="78" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="91.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">X</text><rect x="110" y="28" width="26" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="123.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">J</text><rect x="142" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="155.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">V</text><text x="14" y="72" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">A QUÉ HORA</text><text x="14" y="92" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Martes</text><rect x="80" y="78" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="104.0" y="92" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">17:00</text><text x="134" y="92" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">–</text><rect x="146" y="78" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="170.0" y="92" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">18:30</text><text x="14" y="118" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Jueves</text><rect x="80" y="104" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="104.0" y="118" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">18:00</text><text x="134" y="118" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">–</text><rect x="146" y="104" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="170.0" y="118" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">19:30</text></svg></span>
+        <p class="obody">Bajo «Qué días», cada día marcado despliega su inicio y su fin; se guarda como <code>extra.horario[dia]</code> y la agenda, el plan de los domingos y el aviso previo leen la hora de cada día. <b>Lo que cuesta:</b> el formulario crece una fila por día, que con cinco días son cinco filas.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Una hora común y excepciones</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Una hora común y una excepción por día"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">QUÉ DÍAS</text><rect x="14" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="27.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">L</text><rect x="46" y="28" width="26" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="59.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">M</text><rect x="78" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="91.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">X</text><rect x="110" y="28" width="26" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="123.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">J</text><rect x="142" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="155.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">V</text><text x="14" y="72" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">A QUÉ HORA</text><rect x="14" y="78" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="38.0" y="92" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">18:00</text><text x="68" y="92" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">–</text><rect x="80" y="78" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="104.0" y="92" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">19:30</text><text x="14" y="118" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Distinta el jueves</text><rect x="120" y="104" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="144.0" y="118" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">17:00</text><text x="174" y="118" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">–</text><rect x="186" y="104" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="210.0" y="118" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">18:30</text></svg></span>
+        <p class="obody">La hora de siempre y, si hace falta, «distinta el jueves». El caso normal sigue siendo una fila; <b>la excepción es un paso más</b> y con tres días distintos se vuelve más largo que B1.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Una actividad por horario</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Una actividad por horario, agrupadas por nombre"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">ACTIVIDADES</text><text x="14" y="42" font-size="12" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">🐴 Hípica</text><text x="90" y="42" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Falu · martes · 17:00–18:30</text><text x="14" y="66" font-size="12" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">🐴 Hípica</text><text x="90" y="66" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Falu · jueves · 18:00–19:30</text><line x1="14" y1="80" x2="306" y2="80" stroke="var(--line)"/><text x="14" y="102" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Cada horario es una actividad; se agrupan por nombre</text><text x="14" y="120" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">y el «no hay hípica» y el reparto van por separado</text></svg></span>
+        <p class="obody">Dos filas de Hípica, una por horario, y la lista las agrupa por nombre. No hay que tocar el modelo, pero <b>el reparto, el «no hay este día» y el trato se duplican</b> por cada horario, y renombrar es renombrar dos.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">La hora dentro del chip del día</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="La hora dentro del propio chip del día"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">QUÉ DÍAS</text><rect x="14" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="27.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">L</text><rect x="46" y="28" width="26" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="59.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">M</text><rect x="78" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="91.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">X</text><rect x="110" y="28" width="26" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="123.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">J</text><rect x="142" y="28" width="26" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="155.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">V</text><text x="14" y="72" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">LA HORA VA EN EL DÍA</text><rect x="14" y="80" width="96" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="62.0" y="94" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">M 17:00–18:30</text><rect x="116" y="80" width="96" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="164.0" y="94" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">J 18:00–19:30</text><text x="14" y="120" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Tocar un día marcado abre su hora</text></svg></span>
+        <p class="obody">El chip del día enseña su hora; tocarlo la abre. Es lo más compacto y <b>lo menos evidente</b>: la hora queda escondida detrás de un toque que no dice que existe.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Se queda con una hora para todos los días, como ahora.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · Otro en quién lleva</p>
+    <p class="qtitle">¿Qué es «Otro» en quién lleva y quién recoge?</p>
+    <p class="qwhy">El reparto solo ofrece a los cuatro de casa y «Nadie». Lleva la abuela, el padre de una amiga o el autobús, y no hay manera de decirlo.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">«Otro» con un nombre escrito</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Otro con un nombre escrito a mano"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">LLEVA</text><rect x="14" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="36.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Nadie</text><rect x="64" y="28" width="38" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="83.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Ana</text><rect x="108" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="130.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Óscar</text><rect x="158" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="180.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Marta</text><rect x="208" y="28" width="42" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="229.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Lucía</text><rect x="256" y="28" width="40" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="276.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">Otro</text><text x="14" y="76" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Quién</text><rect x="14" y="82" width="200" height="24" rx="6" fill="var(--lift)" stroke="var(--line-hard)"/><text x="22" y="98" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">la abuela</text><text x="224" y="98" font-size="10" fill="var(--ac)" font-weight="400" text-anchor="start" opacity="1">Guardar</text></svg></span>
+        <p class="obody">Un chip más que pide un nombre libre —la abuela, el autobús, el padre de Falu— y se guarda como texto en el reparto (<code>reparto[dia].lleva = {otro: 'la abuela'}</code>). La semana lo enseña como «↑ Abu». <b>Lo que cuesta:</b> no es una persona del registro, así que no entra en tratos ni en avisos; es un apunte.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">«Otro» elige de Gente</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Otro elige entre la gente que no es de casa"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">LLEVA</text><rect x="14" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="36.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Nadie</text><rect x="64" y="28" width="38" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="83.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Ana</text><rect x="108" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="130.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Óscar</text><rect x="158" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="180.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Marta</text><rect x="208" y="28" width="42" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="229.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Lucía</text><rect x="256" y="28" width="40" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="276.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">Otro</text><text x="14" y="76" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">De Gente</text><rect x="14" y="82" width="66" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="47.0" y="96" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">la abuela</text><rect x="86" y="82" width="76" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="124.0" y="96" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">tía Carmen</text><rect x="168" y="82" width="84" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="210.0" y="96" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Pablo (Falu)</text></svg></span>
+        <p class="obody">El chip abre la gente que no es de casa. Queda enlazado a una ficha, con lo que <b>el autobús o el padre de una amiga no caben</b> salvo dándoles ficha, que es lo que Gente no quiere.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">«Otro» sin nombre</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Otro sin nombre"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">LLEVA</text><rect x="14" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="36.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Nadie</text><rect x="64" y="28" width="38" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="83.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Ana</text><rect x="108" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="130.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Óscar</text><rect x="158" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="180.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Marta</text><rect x="208" y="28" width="42" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="229.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Lucía</text><rect x="256" y="28" width="40" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="276.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">Otro</text><text x="14" y="84" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">En la semana: «↑ Otro». Sin nombre a propósito:</text><text x="14" y="100" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">basta saber que no es de casa.</text></svg></span>
+        <p class="obody">Un chip fijo que solo dice «no es de casa». Lo más corto de construir y de usar; <b>lo que no dice es quién</b>, que a las siete de la tarde es justo la pregunta.</p>
+      </button>
+      <button class="opt" data-t="C4" aria-pressed="false">
+        <span class="optrow"><span class="tok">C4</span><span class="oname">C1 con memoria</span></span>
+        <span class="mock"><svg viewBox="0 0 320 120" role="img" aria-label="Otro con los últimos escritos como chips"><rect x="0" y="0" width="320" height="120" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">LLEVA</text><rect x="14" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="36.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Nadie</text><rect x="64" y="28" width="38" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="83.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Ana</text><rect x="108" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="130.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Óscar</text><rect x="158" y="28" width="44" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="180.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Marta</text><rect x="208" y="28" width="42" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="229.0" y="42" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Lucía</text><rect x="256" y="28" width="40" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="276.0" y="42" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">Otro</text><text x="14" y="76" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Últimos</text><rect x="14" y="82" width="66" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="47.0" y="96" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">la abuela</text><rect x="86" y="82" width="58" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="115.0" y="96" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">autobús</text><rect x="150" y="82" width="70" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="185.0" y="96" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">+ Escribir…</text></svg></span>
+        <p class="obody">Como C1, y los últimos nombres escritos vuelven como chips para repetirlos de un toque. Cuesta guardar una lista más en el aparato, y con dos o tres nombres de verdad <b>es lo que se acaba usando</b>.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">El reparto se queda en los de casa y «Nadie».</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="D">
+    <p class="qhead">Pregunta D · Selector de hora propio</p>
+    <p class="qtitle">¿Qué forma tiene el selector de hora propio, de hora en hora y de cuarto en cuarto?</p>
+    <p class="qwhy">Las tres horas que se escriben —la del evento, la de la actividad y la de salida de una escapada— van todavía por la rueda de iOS. Y quedan dos fechas del sistema: la de nacimiento en la ficha y la de una ocasión en Regalos; <b>en todas partes</b> pasan al calendario propio, decida lo que decida esta pregunta.</p>
+    <div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Dos columnas, horas y cuartos</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 140" role="img" aria-label="Dos columnas que se desplazan: horas y cuartos"><rect x="0" y="0" width="320" height="140" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">A QUÉ HORA</text><rect x="90" y="30" width="60" height="100" rx="8" fill="var(--lift)" stroke="var(--line)"/><rect x="170" y="30" width="60" height="100" rx="8" fill="var(--lift)" stroke="var(--line)"/><text x="120" y="52" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">16</text><text x="120" y="72" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">17</text><rect x="94" y="78" width="52" height="22" rx="6" fill="var(--ac)" opacity="0.2"/><text x="120" y="94" font-size="14" fill="var(--ink)" font-weight="700" text-anchor="middle" opacity="1">18</text><text x="120" y="116" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">19</text><text x="200" y="52" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">:00</text><text x="200" y="72" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">:15</text><rect x="174" y="78" width="52" height="22" rx="6" fill="var(--ac)" opacity="0.2"/><text x="200" y="94" font-size="14" fill="var(--ink)" font-weight="700" text-anchor="middle" opacity="1">:30</text><text x="200" y="116" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">:45</text></svg></span>
+        <p class="obody">La misma familia que el calendario propio: un panel bajo el campo con dos columnas que se desplazan, la hora a la izquierda y :00 :15 :30 :45 a la derecha. Cabe cualquier hora del día en dos gestos. <b>Lo que cuesta:</b> es la figura de la rueda de iOS, a la que se le reprocha la agresividad; aquí es pequeña y no tapa la hoja.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Rejilla de chips</span></span>
+        <span class="mock"><svg viewBox="0 0 320 140" role="img" aria-label="Rejilla de chips: horas y los cuatro cuartos"><rect x="0" y="0" width="320" height="140" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">A QUÉ HORA</text><rect x="14" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="29.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">15</text><rect x="50" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="65.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">16</text><rect x="86" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="101.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">17</text><rect x="122" y="30" width="30" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="137.0" y="44" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">18</text><rect x="158" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="173.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">19</text><rect x="194" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="209.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">20</text><rect x="230" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="245.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">21</text><rect x="266" y="30" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="281.0" y="44" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">22</text><rect x="14" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="29.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">7</text><rect x="50" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="65.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">8</text><rect x="86" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="101.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">9</text><rect x="122" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="137.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">10</text><rect x="158" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="173.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">11</text><rect x="194" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="209.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">12</text><rect x="230" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="245.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">13</text><rect x="266" y="56" width="30" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="281.0" y="70" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">14</text><text x="14" y="92" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Y CUÁNTO PASA</text><rect x="14" y="100" width="40" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="34.0" y="114" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">:00</text><rect x="60" y="100" width="40" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="80.0" y="114" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">:15</text><rect x="106" y="100" width="40" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="126.0" y="114" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">:30</text><rect x="152" y="100" width="40" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="172.0" y="114" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">:45</text></svg></span>
+        <p class="obody">Todas las horas como chips en dos filas y los cuatro cuartos debajo: <b>de un toque y sin desplazar</b>, y se ve entera. Cuesta más alto en la hoja (unas tres filas) y las horas de madrugada ocupan sitio que nadie usa.</p>
+      </button>
+      <button class="opt" data-t="D3" aria-pressed="false">
+        <span class="optrow"><span class="tok">D3</span><span class="oname">Un carrete de cuartos</span></span>
+        <span class="mock"><svg viewBox="0 0 320 140" role="img" aria-label="Un carrete horizontal de cuartos de hora"><rect x="0" y="0" width="320" height="140" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">A QUÉ HORA</text><rect x="14" y="40" width="292" height="34" rx="8" fill="var(--lift)" stroke="var(--line)"/><text x="30" y="62" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">17:45</text><text x="76" y="62" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">18:00</text><text x="122" y="62" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">18:15</text><text x="168" y="62" font-size="11" fill="var(--ink)" font-weight="700" text-anchor="middle" opacity="1">18:30</text><text x="214" y="62" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">18:45</text><text x="260" y="62" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="middle" opacity="1">19:00</text><rect x="146" y="44" width="52" height="26" rx="6" fill="none" stroke="var(--ac)"/><text x="14" y="104" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Se arrastra de cuarto en cuarto, de 6:00 a 23:45; la hora elegida va en el centro</text></svg></span>
+        <p class="obody">Una tira horizontal de 6:00 a 23:45 que se arrastra de cuarto en cuarto. Un solo gesto y muy poco alto; <b>ir de las 8 a las 20 son cuarenta y ocho cuartos</b> de arrastre.</p>
+      </button>
+      <button class="opt" data-t="D4" aria-pressed="false">
+        <span class="optrow"><span class="tok">D4</span><span class="oname">Cifra grande con ±15</span></span>
+        <span class="mock"><svg viewBox="0 0 320 140" role="img" aria-label="Cifra grande con más y menos quince"><rect x="0" y="0" width="320" height="140" rx="8" class="ph"/><text x="14" y="20" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">A QUÉ HORA</text><rect x="80" y="34" width="160" height="40" rx="10" fill="var(--lift)" stroke="var(--line-hard)"/><text x="160" y="61" font-size="20" fill="var(--ink)" font-weight="700" text-anchor="middle" opacity="1">18:30</text><rect x="14" y="44" width="50" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="39.0" y="58" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">−15</text><rect x="256" y="44" width="50" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="281.0" y="58" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">+15</text><text x="14" y="104" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Tocar la cifra la deja escribir; los dos botones mueven de cuarto en cuarto</text></svg></span>
+        <p class="obody">La hora en grande y dos botones de un cuarto; tocar la cifra la deja escribir con el teclado numérico. Lo más simple de leer; <b>mover dos horas son ocho toques</b>, y el teclado vuelve a ser del sistema.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Se quedan los campos de hora de iOS.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="E">
+    <p class="qhead">Pregunta E · Lío en orden</p>
+    <p class="qtitle">¿Cómo se colocan los turnos de Lío en el tiempo del día, en la semana?</p>
+    <p class="qwhy">Hoy van en un carril aparte, a la izquierda, fuera del orden de los eventos. La decisión es que la mañana <b>cuenta como las 8:00</b> y la noche <b>como las 21:00</b>, y que se lean en secuencia con lo demás.</p>
+    <div class="opts">
+      <button class="opt" data-t="E1" aria-pressed="false">
+        <span class="optrow"><span class="tok">E1</span><span class="oname">Dos líneas en la lista, primera y última</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 130" role="img" aria-label="Los turnos como primera y última línea del día"><rect x="0" y="0" width="320" height="130" rx="8" class="ph"/><text x="14" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">DÍA</text><text x="48" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">EVENTO</text><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="52" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">☀️</text><text x="72" y="46" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Lío · Am</text><text x="52" y="66" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="72" y="66" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="52" y="86" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="86" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="86" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="52" y="106" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="106" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="106" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="52" y="124" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🌙</text><text x="72" y="124" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Lío · Ós</text></svg></span>
+        <p class="obody">El carril desaparece: «☀️ Lío · Am» abre el día y «🌙 Lío · Ós» lo cierra, en gris suave para no pesar como un evento. La misma regla vale para la lista y para el mes. <b>Lo que cuesta:</b> dos líneas por día en vez de una columna, y el día crece dos renglones siempre que haya cuadro.</p>
+      </button>
+      <button class="opt" data-t="E2" aria-pressed="false">
+        <span class="optrow"><span class="tok">E2</span><span class="oname">El carril se queda, partido</span></span>
+        <span class="mock"><svg viewBox="0 0 320 130" role="img" aria-label="El carril se queda, con el sol arriba y la luna abajo"><rect x="0" y="0" width="320" height="130" rx="8" class="ph"/><text x="14" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">DÍA</text><text x="48" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">🐾 LÍO</text><text x="110" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">EVENTO</text><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><rect x="48" y="36" width="46" height="18" rx="9" fill="var(--sub)" opacity="0.15"/><rect x="48" y="36" width="46" height="18" rx="9" fill="none" stroke="var(--sub)" opacity="0.7"/><text x="71.0" y="49" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">☀️ Am</text><rect x="48" y="106" width="46" height="18" rx="9" fill="var(--ac)" opacity="0.18"/><rect x="48" y="106" width="46" height="18" rx="9" fill="none" stroke="var(--ac)" opacity="0.7"/><text x="71.0" y="119" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">🌙 Ós</text><text x="112" y="50" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="132" y="50" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="112" y="70" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="132" y="70" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="70" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="112" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="132" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="90" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><line x1="70" y1="58" x2="70" y2="102" stroke="var(--line)" stroke-dasharray="2 3"/></svg></span>
+        <p class="obody">Se mantiene la columna, pero el sol se alinea arriba con la primera línea y la luna abajo con la última. Nada cambia de sitio y <b>el orden solo se insinúa</b>: con un día de una línea, arriba y abajo son lo mismo.</p>
+      </button>
+      <button class="opt" data-t="E3" aria-pressed="false">
+        <span class="optrow"><span class="tok">E3</span><span class="oname">En la lista, con la hora escrita</span></span>
+        <span class="mock"><svg viewBox="0 0 320 130" role="img" aria-label="Con la hora escrita delante, en columna"><rect x="0" y="0" width="320" height="130" rx="8" class="ph"/><text x="14" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">DÍA</text><text x="48" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">EVENTO</text><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="52" y="46" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">08:00</text><text x="84" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">☀️</text><text x="104" y="46" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Lío · Am</text><text x="84" y="66" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="104" y="66" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="52" y="86" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">17:00</text><text x="84" y="86" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="104" y="86" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="52" y="106" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">18:00</text><text x="84" y="106" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="104" y="106" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="52" y="124" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">21:00</text><text x="84" y="124" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🌙</text><text x="104" y="124" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Lío · Ós</text></svg></span>
+        <p class="obody">Como E1 y además cada línea del día lleva su hora en una columna a la izquierda, con las 08:00 y las 21:00 escritas para Lío. Es lo más literal; <b>cuesta 32 puntos de ancho</b> en una fila que ya recorta títulos.</p>
+      </button>
+      <button class="opt" data-t="E4" aria-pressed="false">
+        <span class="optrow"><span class="tok">E4</span><span class="oname">Solo la noche baja</span></span>
+        <span class="mock"><svg viewBox="0 0 320 130" role="img" aria-label="Solo la noche baja al final de la lista"><rect x="0" y="0" width="320" height="130" rx="8" class="ph"/><text x="14" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">DÍA</text><text x="48" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">🐾</text><text x="110" y="22" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">EVENTO</text><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><rect x="48" y="36" width="46" height="18" rx="9" fill="var(--sub)" opacity="0.15"/><rect x="48" y="36" width="46" height="18" rx="9" fill="none" stroke="var(--sub)" opacity="0.7"/><text x="71.0" y="49" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">☀️ Am</text><text x="112" y="50" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="132" y="50" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="112" y="70" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="132" y="70" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="70" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="112" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="132" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="90" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="112" y="112" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🌙</text><text x="132" y="112" font-size="12" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Lío · Ós</text></svg></span>
+        <p class="obody">La mañana se queda arriba en el carril, que ya es el principio del día, y solo la noche pasa al final de la lista. Lo mínimo; <b>dos formas para dos turnos</b> que son la misma cosa.</p>
+      </button>
+      <button class="opt none" data-t="E0" aria-pressed="false">
+        <span class="optrow"><span class="tok">E0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Los turnos se quedan en su carril como ahora.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre E</summary><textarea data-n="E" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="F">
+    <p class="qhead">Pregunta F · Todo el día a la vista</p>
+    <p class="qtitle">¿Se enseñan todas las líneas de cada día en la semana?</p>
+    <p class="qwhy">Hoy la semana corta a tres por día y escribe «y 1 más» (<code>TECHO_EVENTOS_DIA</code>). Lo que se pide es ver todo sin abrir el día.</p>
+    <div class="opts">
+      <button class="opt" data-t="F1" aria-pressed="false">
+        <span class="optrow"><span class="tok">F1</span><span class="oname">Sin techo</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Las cinco líneas, el día crece"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="52" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="72" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="52" y="65" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="65" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="65" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="52" y="84" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="84" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="84" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="52" y="103" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🎉</text><text x="72" y="103" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Cine</text><text x="306" y="103" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">19:00</text><text x="52" y="122" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🍽️</text><text x="72" y="122" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Cena vecinos</text><text x="306" y="122" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">21:30</text></svg></span>
+        <p class="obody">Se quita el corte: cada día enseña todas sus líneas y crece lo que haga falta. <b>Lo que cuesta:</b> un sábado de siete cosas mide siete renglones y la semana deja de caber en una pantalla; lo compensa que ya no hay nada escondido.</p>
+      </button>
+      <button class="opt" data-t="F2" aria-pressed="false">
+        <span class="optrow"><span class="tok">F2</span><span class="oname">Sin techo, y más apretado a partir de cuatro</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Todas, más apretadas cuando hay más de tres"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="52" y="46" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️ Madrid</text><text x="52" y="61" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴 Hípica Falu 1</text><text x="306" y="61" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="52" y="76" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴 Hípica Amaya 1</text><text x="306" y="76" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="52" y="91" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🎉 Cine</text><text x="306" y="91" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">19:00</text><text x="52" y="106" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🍽️ Cena vecinos</text><text x="306" y="106" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">21:30</text><text x="52" y="136" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">a partir de cuatro, las líneas se aprietan</text></svg></span>
+        <p class="obody">Todas las líneas, y cuando un día pasa de tres se pintan con un renglón más bajo. Cabe más; <b>dos tamaños de fila</b> en la misma pantalla se notan.</p>
+      </button>
+      <button class="opt" data-t="F3" aria-pressed="false">
+        <span class="optrow"><span class="tok">F3</span><span class="oname">Techo más alto</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Techo de seis; «y N más» solo por encima"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="52" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="72" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="52" y="65" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="65" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="65" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="52" y="84" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="84" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="84" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="52" y="103" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🎉</text><text x="72" y="103" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Cine</text><text x="306" y="103" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">19:00</text><text x="52" y="124" font-size="11" fill="var(--ac)" font-weight="400" text-anchor="start" opacity="1">y 3 más</text></svg></span>
+        <p class="obody">Se sube el corte a seis y «y N más» solo aparece por encima. Casi nunca se ve; <b>sigue existiendo un día que esconde algo</b>.</p>
+      </button>
+      <button class="opt" data-t="F4" aria-pressed="false">
+        <span class="optrow"><span class="tok">F4</span><span class="oname">Todo lo escrito, lo derivado plegado</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Todo lo escrito, y lo derivado plegado en una línea"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="52" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="46" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="52" y="65" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="72" y="65" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="65" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="52" y="84" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🎉</text><text x="72" y="84" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Cine</text><text x="306" y="84" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">19:00</text><text x="52" y="103" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🍽️</text><text x="72" y="103" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Cena vecinos</text><text x="306" y="103" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">21:30</text><text x="52" y="124" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">✈️ Madrid · 🧳 Ana fuera</text></svg></span>
+        <p class="obody">Lo apuntado a mano sale entero; lo derivado —vuelos, «fuera», bandas— se pliega en una línea al pie. Ahorra sitio justo donde más se acumula; <b>la escapada o el viaje dejan de verse como línea propia</b>.</p>
+      </button>
+      <button class="opt none" data-t="F0" aria-pressed="false">
+        <span class="optrow"><span class="tok">F0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Se queda el corte de tres y el «y N más».</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre F</summary><textarea data-n="F" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="G">
+    <p class="qhead">Pregunta G · La barra del caballo</p>
+    <p class="qtitle">¿Qué se hace con la barra vertical que sale antes del caballo?</p>
+    <p class="qwhy">La barra marca «esto dura más de un día», y la hípica la lleva porque la comprobación <b>compara instantes y no fechas</b>: una actividad de 17:00 a 18:30 tiene inicio y fin distintos y pasa por evento largo. Es un fallo, y la pregunta es qué regla se pone en su lugar.</p>
+    <div class="opts">
+      <button class="opt" data-t="G1" aria-pressed="false">
+        <span class="optrow"><span class="tok">G1</span><span class="oname">La barra solo para lo que dura más de un día, por fecha</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 110" role="img" aria-label="Sin barra en las actividades; la barra solo en lo de más de un día"><rect x="0" y="0" width="320" height="110" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="60" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="80" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="60" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="68" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="60" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="90" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text></svg></span>
+        <p class="obody">Se corrige la comprobación: barra cuando el primer día y el último son distintos. Las actividades y todo lo que tiene hora se quedan sin ella; un viaje de tres días la conserva. <b>Lo que cuesta:</b> nada; es la regla que se quiso escribir.</p>
+      </button>
+      <button class="opt" data-t="G2" aria-pressed="false">
+        <span class="optrow"><span class="tok">G2</span><span class="oname">Sin barra en ningún sitio</span></span>
+        <span class="mock"><svg viewBox="0 0 320 110" role="img" aria-label="Sin barra en ningún sitio"><rect x="0" y="0" width="320" height="110" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="60" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="80" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="60" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="68" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="60" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="90" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><text x="60" y="106" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">lo de varios días lo dice «(cont.)» y nada más</text></svg></span>
+        <p class="obody">Se retira la barra del todo y lo de varios días lo dice solo «(cont.)». Una cosa menos que dibujar; <b>el primer día de un viaje pierde la marca</b> de que sigue mañana.</p>
+      </button>
+      <button class="opt" data-t="G3" aria-pressed="false">
+        <span class="optrow"><span class="tok">G3</span><span class="oname">Un punto en vez de barra</span></span>
+        <span class="mock"><svg viewBox="0 0 320 110" role="img" aria-label="Un punto en vez de una barra"><rect x="0" y="0" width="320" height="110" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><text x="60" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="80" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="60" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="68" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><circle cx="52" cy="65" r="3" fill="var(--ac)"/><text x="60" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="90" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text><circle cx="52" cy="87" r="3" fill="var(--ac)"/></svg></span>
+        <p class="obody">La marca de varios días pasa a ser un punto junto al emoji, con la regla de G1. Es más discreto que la barra; <b>un punto de color ya significa «sin leer»</b> en los comentarios.</p>
+      </button>
+      <button class="opt" data-t="G4" aria-pressed="false">
+        <span class="optrow"><span class="tok">G4</span><span class="oname">La barra solo en las bandas</span></span>
+        <span class="mock"><svg viewBox="0 0 320 110" role="img" aria-label="La barra solo en las bandas: viajes y ausencias"><rect x="0" y="0" width="320" height="110" rx="8" class="ph"/><text x="14" y="42" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">M</text><text x="14" y="62" font-size="18" fill="var(--ink)" font-weight="600" text-anchor="start" opacity="1">8</text><rect x="52" y="35" width="3" height="16" rx="1.5" fill="var(--ac)" opacity="0.7"/><text x="60" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">✈️</text><text x="80" y="46" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Madrid</text><text x="60" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="68" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Falu 1</text><text x="306" y="68" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">17:00</text><text x="60" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">🐴</text><text x="80" y="90" font-size="12" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Hípica Amaya 1</text><text x="306" y="90" font-size="10" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">18:00</text></svg></span>
+        <p class="obody">Solo la llevan los que ya van como banda —viajes, ausencias, escapadas— y ningún evento de línea. Es G1 con una excepción menos que pensar; <b>un evento escrito a mano de dos días se queda sin marca</b>.</p>
+      </button>
+      <button class="opt none" data-t="G0" aria-pressed="false">
+        <span class="optrow"><span class="tok">G0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La barra se queda como está.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre G</summary><textarea data-n="G" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="H">
+    <p class="qhead">Pregunta H · Re-enganchar a quien ya tiene cuenta</p>
+    <p class="qtitle">¿Cómo se vuelve a dar acceso a alguien que ya tenía cuenta?</p>
+    <p class="qwhy">La bandeja apaga a quien ya tiene cuenta («ya tiene cuenta») y el Worker lo rechaza. Quien cambia de teléfono, restaura una copia o se dio de baja se queda fuera sin manera de volver. Y la regla nueva: <b>solo los de casa pueden tener cuenta</b>; con Familia en cuatro, son como mucho cuatro cuentas.</p>
+    <div class="opts">
+      <button class="opt" data-t="H1" aria-pressed="false">
+        <span class="optrow"><span class="tok">H1</span><span class="oname">Elegir a quien ya tiene cuenta, solo de casa</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Se puede elegir a quien ya tiene cuenta; solo casa"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="22" font-size="13" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Dar acceso a Lucía</text><text x="14" y="42" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">QUIÉN ES</text><text x="14" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Crear una ficha nueva</text><text x="14" y="78" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es Ana, que ya tiene cuenta</text><text x="306" y="78" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">se vinculará a este Apple ID</text><text x="14" y="96" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es Marta, que ya tiene cuenta</text><text x="306" y="96" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">se vinculará a este Apple ID</text><text x="14" y="114" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es Lucía, que ya tiene cuenta</text><text x="306" y="114" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">se vinculará a este Apple ID</text><text x="14" y="138" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Solo los de casa; su teléfono anterior deja de entrar</text></svg></span>
+        <p class="obody">La lista ofrece a los cuatro de casa tengan cuenta o no, y aprobar sobre uno con cuenta sustituye su Apple ID: se avisa antes de que su teléfono anterior deja de entrar, y sus dispositivos y avisos se limpian. El círculo deja de preguntarse: es Familia. <b>Lo que cuesta:</b> un administrador puede, por error, dar tu cuenta a otra persona; el aviso escrito es la red.</p>
+      </button>
+      <button class="opt" data-t="H2" aria-pressed="false">
+        <span class="optrow"><span class="tok">H2</span><span class="oname">Cualquiera de Gente, y al aprobar pasa a casa</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Cualquier círculo; al aprobar se fuerza a casa"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="22" font-size="13" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Dar acceso a Lucía</text><text x="14" y="42" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">QUIÉN ES</text><text x="14" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Crear una ficha nueva</text><text x="14" y="78" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es Lucía, que ya tiene cuenta</text><text x="306" y="78" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">se vinculará a este Apple ID</text><text x="14" y="96" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es la abuela, que ya está</text><text x="306" y="96" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">pasará a Familia</text><text x="14" y="114" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es tía Carmen, que ya está</text><text x="306" y="114" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">pasará a Familia</text><text x="14" y="138" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Cualquiera se puede elegir; al aprobar entra en casa, si hay hueco</text></svg></span>
+        <p class="obody">Como H1, pero se puede elegir a cualquiera del registro y aprobar lo mete en Familia si queda hueco. Sirve para quien entra por primera vez y ya tenía ficha en otro círculo; <b>si no hay hueco, la aprobación falla</b> después de haberla decidido.</p>
+      </button>
+      <button class="opt" data-t="H3" aria-pressed="false">
+        <span class="optrow"><span class="tok">H3</span><span class="oname">Quien espera dice quién es</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="Quien espera dice quién es y el administrador confirma"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="22" font-size="13" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Esperando</text><text x="14" y="44" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Tu solicitud está enviada. Si ya tenías cuenta,</text><text x="14" y="60" font-size="11" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">di quién eres y quien administra lo confirma.</text><text x="14" y="86" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">SOY</text><rect x="14" y="94" width="40" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="34.0" y="108" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Ana</text><rect x="60" y="94" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="84.0" y="108" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Óscar</text><rect x="114" y="94" width="48" height="20" rx="10" fill="var(--lift)" opacity="1" stroke="var(--line-hard)"/><text x="138.0" y="108" font-size="10" fill="var(--ink)" font-weight="400" text-anchor="middle" opacity="1">Marta</text><rect x="168" y="94" width="44" height="20" rx="10" fill="var(--ac)" opacity="0.9" stroke="var(--ac)"/><text x="190.0" y="108" font-size="10" fill="var(--ac-ink)" font-weight="400" text-anchor="middle" opacity="1">Lucía</text><text x="14" y="134" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">En la bandeja: «Dice que es Lucía · Confirmar»</text></svg></span>
+        <p class="obody">En la pantalla de espera, «Soy Lucía» entre los de casa; la bandeja enseña «Dice que es Lucía» y el administrador solo confirma. Quita el acierto de la lista al administrador; <b>enseña los nombres de casa a cualquiera que llegue a la sala de espera</b>.</p>
+      </button>
+      <button class="opt" data-t="H4" aria-pressed="false">
+        <span class="optrow"><span class="tok">H4</span><span class="oname">H1 y «Volver a vincular» en la ficha</span></span>
+        <span class="mock"><svg viewBox="0 0 320 150" role="img" aria-label="H1 y un verbo en la ficha para dejar la cuenta a la espera"><rect x="0" y="0" width="320" height="150" rx="8" class="ph"/><text x="14" y="22" font-size="13" fill="var(--ink)" font-weight="700" text-anchor="start" opacity="1">Dar acceso a Lucía</text><text x="14" y="42" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">QUIÉN ES</text><text x="14" y="60" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Crear una ficha nueva</text><text x="14" y="78" font-size="11" fill="var(--ink)" font-weight="400" text-anchor="start" opacity="1">Es Lucía, que ya tiene cuenta</text><text x="306" y="78" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="end" opacity="1">se vinculará a este Apple ID</text><text x="14" y="104" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">Y en la ficha de Lucía:</text><rect x="14" y="110" width="150" height="24" rx="6" fill="var(--lift)" stroke="var(--line-hard)"/><text x="22" y="126" font-size="11" fill="var(--ac)" font-weight="400" text-anchor="start" opacity="1">Volver a vincular</text><text x="172" y="126" font-size="9" fill="var(--sub)" font-weight="400" text-anchor="start" opacity="1">deja la cuenta a la espera</text></svg></span>
+        <p class="obody">Como H1, y además desde la ficha se puede dejar la cuenta de alguien a la espera antes de que cambie de teléfono: su próxima solicitud se enlaza sola. Es lo más ordenado; <b>son dos caminos para un caso que pasa dos veces al año</b>.</p>
+      </button>
+      <button class="opt none" data-t="H0" aria-pressed="false">
+        <span class="optrow"><span class="tok">H0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Quien ya tiene cuenta sigue sin poder elegirse; volver es dar de baja y crear de nuevo.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre H</summary><textarea data-n="H" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <div class="foot">
+    <p><b>Lo que no se pregunta.</b> Que las fechas del sistema que quedan —nacimiento en la ficha y fecha de ocasión en Regalos— pasan al calendario propio: está decidido con la H2 de la ronda anterior y se hace sin más. Que la mañana de Lío cuenta como las 8:00 y la noche como las 21:00: es la instrucción, y la E solo pregunta cómo se dibuja. Y que solo los de casa tienen cuenta: la H lo da por hecho.</p>
+    <p><b>Decidido:</b> A4 · B1 · C4 · D1 · E1 · F1 · G1 · H1. Pintar con lo guardado y vigilante de dos segundos; una fila de hora por día marcado; «otro» con nombre escrito y memoria de los últimos; el reloj de dos columnas, y las dos fechas que quedaban al calendario propio; los turnos de Lío como primera y última línea del día, también en la lista y en el mes; la semana sin techo; la barra solo por fecha; y en la bandeja los de casa tengan cuenta o no, con el Apple ID sustituido al aprobar. Construido como 1.72.0.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  // ⟪Set once per round: a slug unique to this document, so two rounds never
+  // share a saved review.⟫
+  const KEY = "options.ocho-cosas-de-la-agenda";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  // A question opts into combining by carrying data-multi="true".
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  // Picks are held per letter as a list of tokens, so a single-pick question and
+  // a combining one share one shape. An empty list means undecided; the list
+  // ["A0"] means the options were seen and none served.
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t]; // "none of these" stands alone
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: está abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>

@@ -16,20 +16,17 @@
  */
 
 import {
-  abrirHoja, avisar, botonIcono, campo, cerrarHoja, el, enfocarAlAbrir, entrada, icono,
-  selectorDeFecha, vaciar,
+  abrirHoja, avisar, botonIcono, campo, cerrarHoja, el, enfocarAlAbrir, entrada, icono, selectorDeFecha, selectorDeHora, vaciar,
 } from '../ui.js';
 import {
   guardar, instantanea, pegarEnlaceDeViajes, quitarEnlaceDeViajes, retirar, sincronizar,
 } from '../sincronizacion.js';
 import {
-  ANTELACIONES, CON_CIRCULO, CON_NOMBRE, PLUGINS, ajustesDe, avisoDePlugin,
-  guardarAjustesDePlugin, marcarAvisoDePlugin, marcarPluginOculto, pluginOculto,
+  ANTELACIONES, CON_CIRCULO, CON_NOMBRE, PLUGINS, ajustesDe, avisoDePlugin, comoOtro, esOtro, guardarAjustesDePlugin, marcarAvisoDePlugin, marcarPluginOculto, nombreDeOtro, otrosRecientes, pluginOculto, recordarOtro,
 } from '../plugins.js';
 import { CIRCULOS, emojiVisible, estaActivo, nuevoId, partirEmoji } from '../modelo.js';
 import {
-  INICIALES_DIA, NOMBRES_DIA, diasSemanalesDe, formatearFechaLarga, formatearHace, hoy, indiceDia,
-  iso, parsearMomento, soloFecha, sumarDias,
+  INICIALES_DIA, NOMBRES_DIA, diasSemanalesDe, formatearFechaLarga, formatearHace, horarioDelDia, hoy, indiceDia, iso, parsearMomento, soloFecha, sumarDias,
 } from '../semana.js';
 import {
   TURNOS, cuadroDe, genteDeCasa, guardarCuadro, hayLio, inicialesDe, nombreDeTurno, rotuloDeTurno,
@@ -619,6 +616,15 @@ function bloqueDeExtraescolares(cuerpo, ctx) {
 }
 
 const horaDeActividad = (evento) => {
+  // Cada día a su hora (B1): «M 17:00 · J 18:00» cuando difieren.
+  const dias = diasSemanalesDe(evento) || [];
+  const propios = dias.map((d) => [d, horarioDelDia(evento, d)]).filter(([, h]) => h);
+  if (propios.length) {
+    const hh = (t) => `${String(t.h).padStart(2, '0')}:${String(t.m).padStart(2, '0')}`;
+    const distintas = new Set(propios.map(([, h]) => hh(h.desde)));
+    if (distintas.size > 1) return propios.map(([d, h]) => `${INICIALES_DIA[d]} ${hh(h.desde)}`).join(' · ');
+    return [...distintas][0];
+  }
   if (evento.jornada_completa) return null;
   const inicio = parsearMomento(evento.inicio);
   const fin = evento.fin ? parsearMomento(evento.fin) : null;
@@ -742,9 +748,36 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
     });
     desde.nodo.querySelector('.fecha-boton').addEventListener('click', () => { /* nada: el mínimo se ajusta al elegir */ });
 
-    const hora = el('input', { type: 'time', value: existente && !existente.jornada_completa ? hh(inicio) : '18:00' });
-    const horaFin = el('input', { type: 'time', value: hh(finDeSesion) });
     const lugar = entrada({ value: existente?.ubicacion || '' });
+
+    // Cada día a su hora (B1): una fila de inicio y fin por día marcado, con
+    // el reloj propio. Se guarda en `extra.horario[dia]`; el inicio y el fin
+    // del evento se quedan con los del primer día, que es lo que lee todo lo
+    // que no sabe de horarios.
+    const horaPorDefecto = existente && !existente.jornada_completa ? hh(inicio) : '18:00';
+    const finPorDefecto = hh(finDeSesion);
+    const horario = { ...(extra.horario || {}) };
+    const filasDeHora = el('div', { class: 'horario-dias' });
+    const relojes = new Map();
+    const pintarHoras = () => {
+      vaciar(filasDeHora);
+      const dias = [...borrador.dias].sort();
+      for (const dia of dias) {
+        if (!relojes.has(dia)) {
+          const guardado = horario[dia] || horario[String(dia)] || {};
+          const desde = selectorDeHora({ valor: guardado.desde || horaPorDefecto });
+          const hasta = selectorDeHora({ valor: guardado.hasta || finPorDefecto, vacio: 'Sin fin' });
+          relojes.set(dia, { desde, hasta });
+        }
+        const reloj = relojes.get(dia);
+        filasDeHora.append(el('div', { class: 'horario-dia' }, [
+          el('span', { class: 'lio-dia-rotulo', texto: mayusculaInicial(NOMBRES_DIA[dia].slice(0, 3)) }),
+          reloj.desde.nodo,
+          el('span', { class: 'horario-guion', texto: '–', 'aria-hidden': 'true' }),
+          reloj.hasta.nodo,
+        ]));
+      }
+    };
 
     // Los días de la semana como pastillas: es lo que un «se repite: semanal»
     // no sabe decir.
@@ -763,11 +796,17 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
           },
         }, [INICIALES_DIA[dia]]));
       }
+      pintarHoras();
       pintarReparto();
     };
 
     const casa = opcionesDeCasa(ctx);
-    const nombreDe = (personaId) => (personaId ? ctx.vista.nombre(personaId) : 'Nadie');
+    const nombreDe = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : quien ? ctx.vista.nombre(quien) : 'Nadie');
+    // Quién lleva y quién recoge: los de casa, «otro» con nombre —la abuela, el
+    // autobús— y los últimos otros escritos, de un toque (C4). El toque en una
+    // casilla despliega debajo sus opciones en vez de rotar: con nombres libres
+    // rotar sería pasar por todos para llegar a escribir.
+    let abierta = null; // `${dia}:${clave}` de la casilla desplegada
     const pintarReparto = () => {
       vaciar(reparto);
       const dias = [...borrador.dias].sort();
@@ -778,12 +817,14 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
       for (const dia of dias) {
         const fila = borrador.reparto[dia] || {};
         const celda = (clave) => {
-          const boton = el('button', { class: 'lio-dia-turno', type: 'button', 'data-vacio': fila[clave] ? 'no' : 'si' }, [
-            el('span', { class: 'lio-dia-nombre', texto: nombreDe(fila[clave]) }),
+          const boton = el('button', {
+            class: 'lio-dia-turno', type: 'button', 'data-vacio': fila[clave] ? 'no' : 'si',
+            'aria-expanded': abierta === `${dia}:${clave}` ? 'true' : 'false',
+          }, [
+            el('span', { class: 'lio-dia-nombre', texto: nombreDe(fila[clave] || null) }),
           ]);
           boton.onclick = () => {
-            const siguiente = casa[(casa.indexOf(fila[clave] || null) + 1) % casa.length];
-            borrador.reparto[dia] = { ...fila, [clave]: siguiente };
+            abierta = abierta === `${dia}:${clave}` ? null : `${dia}:${clave}`;
             pintarReparto();
           };
           return boton;
@@ -792,6 +833,42 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
           el('span', { class: 'lio-dia-rotulo', texto: mayusculaInicial(NOMBRES_DIA[dia].slice(0, 3)) }),
           celda('lleva'), celda('recoge'),
         ]));
+        if (abierta && abierta.startsWith(`${dia}:`)) {
+          const clave = abierta.split(':')[1];
+          const elegir = (quien) => {
+            if (esOtro(quien)) recordarOtro(nombreDeOtro(quien));
+            borrador.reparto[dia] = { ...fila, [clave]: quien };
+            abierta = null;
+            pintarReparto();
+          };
+          const chips = el('div', { class: 'opciones reparto-opciones' });
+          for (const quien of casa) {
+            chips.append(el('button', {
+              class: 'opcion', type: 'button', 'aria-pressed': (fila[clave] || null) === quien ? 'true' : 'false',
+              onclick: () => elegir(quien),
+            }, [nombreDe(quien)]));
+          }
+          for (const nombre of otrosRecientes()) {
+            chips.append(el('button', {
+              class: 'opcion', type: 'button', 'aria-pressed': fila[clave] === comoOtro(nombre) ? 'true' : 'false',
+              onclick: () => elegir(comoOtro(nombre)),
+            }, [nombre]));
+          }
+          const texto = entrada({ placeholder: 'Otro: la abuela, el autobús…', 'aria-label': 'Otro, con su nombre' });
+          texto.addEventListener('keydown', (evento) => {
+            if (evento.key !== 'Enter') return;
+            evento.preventDefault();
+            if (texto.value.trim()) elegir(comoOtro(texto.value));
+          });
+          reparto.append(el('div', { class: 'reparto-eligiendo' }, [
+            el('p', { class: 'grupo-subtitulo', texto: `${clave === 'lleva' ? 'Lleva' : 'Recoge'} el ${NOMBRES_DIA[dia]}` }),
+            chips,
+            el('div', { class: 'fila-otro' }, [
+              texto,
+              el('button', { class: 'boton', type: 'button', onclick: () => { if (texto.value.trim()) elegir(comoOtro(texto.value)); } }, ['Vale']),
+            ]),
+          ]));
+        }
       }
     };
     pintarDias();
@@ -808,8 +885,8 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
       el('div', { class: 'campo' }, [el('label', { texto: 'Qué días' }), chips]),
       el('div', { class: 'campo' }, [
         el('label', { texto: 'A qué hora' }),
-        el('div', { class: 'fecha-doble' }, [hora, horaFin]),
-        el('p', { class: 'pista', texto: 'Empieza y termina. La segunda puede quedarse vacía.' }),
+        filasDeHora,
+        el('p', { class: 'pista', texto: 'Cada día a la suya. Empieza y termina; el fin puede quedarse vacío.' }),
       ]),
       campo('Dónde', lugar),
       campo('Desde', desde.nodo, 'El primer día del curso.'),
@@ -817,7 +894,7 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
       el('div', { class: 'campo' }, [
         el('label', { texto: 'Quién lleva y quién recoge' }),
         reparto,
-        el('p', { class: 'pista', texto: 'Toca para pasar a la siguiente persona de casa. Un día suelto se cambia desde la agenda.' }),
+        el('p', { class: 'pista', texto: 'Toca una casilla para elegir: alguien de casa, u otro con su nombre. Un día suelto se cambia desde la agenda.' }),
       ]),
     );
 
@@ -827,14 +904,24 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
         onclick: async () => {
           if (!titulo.value.trim()) { avisar('Ponle un nombre'); titulo.focus(); return; }
           if (!borrador.dias.size) { avisar('Elige al menos un día'); return; }
-          if (!hora.value) { avisar('Dile a qué hora'); hora.focus(); return; }
           const dias = [...borrador.dias].sort();
+          const horarioNuevo = {};
+          for (const dia of dias) {
+            const reloj = relojes.get(dia);
+            if (!reloj?.desde.valor) { avisar(`Dile a qué hora el ${NOMBRES_DIA[dia]}`); return; }
+            horarioNuevo[dia] = {
+              desde: reloj.desde.valor,
+              hasta: reloj.hasta.valor && reloj.hasta.valor > reloj.desde.valor ? reloj.hasta.valor : null,
+            };
+          }
           // El inicio es el primer día del curso que caiga en uno de los días
-          // elegidos: la repetición arranca ahí y no antes.
+          // elegidos: la repetición arranca ahí y no antes. Su hora es la de
+          // ese día, y el fin también: es lo que lee quien no sabe de horarios.
           let primero = parsearMomento(desde.valor);
           for (let i = 0; i < 7 && !dias.includes(indiceDia(primero)); i += 1) primero = sumarDias(primero, 1);
-          const inicioIso = `${iso(primero)}T${hora.value}:00`;
-          const finIso = horaFin.value && horaFin.value > hora.value ? `${iso(primero)}T${horaFin.value}:00` : null;
+          const delPrimero = horarioNuevo[indiceDia(primero)];
+          const inicioIso = `${iso(primero)}T${delPrimero.desde}:00`;
+          const finIso = delPrimero.hasta ? `${iso(primero)}T${delPrimero.hasta}:00` : null;
           const reparto = {};
           for (const dia of dias) if (borrador.reparto[dia]) reparto[dia] = borrador.reparto[dia];
 
@@ -849,7 +936,7 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
             notas: existente?.notas || '',
             repeticion: 'semanal',
             repeticion_hasta: hasta.valor || null,
-            extra: { ...extra, dias, reparto },
+            extra: { ...extra, dias, reparto, horario: horarioNuevo },
             categoria_id: existente?.categoria_id || null,
             origen: 'manual',
             autor_id: existente?.autor_id || ctx.vista.yo.id,
@@ -930,9 +1017,12 @@ export function abrirFormularioEscapada(ctx, { id = null, fecha = null } = {}) {
 
     const vispera = el('input', { type: 'checkbox' });
     vispera.checked = Boolean(extra.vispera);
-    const horaSalida = el('input', { type: 'time', value: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : '' });
+    const horaSalida = selectorDeHora({
+      valor: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : '',
+      vacio: 'Sin hora',
+    });
     const filaHora = el('div', { class: 'campo', hidden: !vispera.checked }, [
-      el('label', { texto: 'A qué hora salimos' }), horaSalida,
+      el('label', { texto: 'A qué hora salimos' }), horaSalida.nodo,
       el('p', { class: 'pista', texto: 'Puede quedarse vacía.' }),
     ]);
     vispera.addEventListener('change', () => { filaHora.hidden = !vispera.checked; });
@@ -981,7 +1071,7 @@ export function abrirFormularioEscapada(ctx, { id = null, fecha = null } = {}) {
           const primero = desde.valor;
           const ultimo = hasta.valor && hasta.valor >= primero ? hasta.valor : primero;
           const diaDeSalida = vispera.checked ? iso(sumarDias(parsearMomento(primero), -1)) : primero;
-          const conHora = vispera.checked && horaSalida.value;
+          const conHora = vispera.checked && horaSalida.valor;
           const nuevoExtra = {
             ...extra,
             lugar_id: sitio.value || null,
@@ -995,8 +1085,8 @@ export function abrirFormularioEscapada(ctx, { id = null, fecha = null } = {}) {
             titulo: titulo.value.trim(),
             tipo_id: 'viaje',
             plugin_id: 'finde',
-            inicio: conHora ? `${diaDeSalida}T${horaSalida.value}:00` : diaDeSalida,
-            fin: ultimo > diaDeSalida ? (conHora ? `${ultimo}T${horaSalida.value}:00` : ultimo) : null,
+            inicio: conHora ? `${diaDeSalida}T${horaSalida.valor}:00` : diaDeSalida,
+            fin: ultimo > diaDeSalida ? (conHora ? `${ultimo}T${horaSalida.valor}:00` : ultimo) : null,
             jornada_completa: conHora ? 0 : 1,
             ubicacion: existente?.ubicacion || '',
             notas: existente?.notas || '',

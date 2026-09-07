@@ -220,3 +220,42 @@ test('cambiar quién lleva un día: lo mío se escribe, lo de otro se pide', asy
   assert.equal(tratoDeDia(datos, 'h', '2026-09-22', 'lleva').id, 't1');
   assert.equal(tratoDeDia(datos, 'h', '2026-09-22', 'recoge'), null);
 });
+
+// ------------------------------------------ Cada día a su hora, y «otro» --
+
+test('una actividad con horario por día sale cada día a su hora, con su duración', async () => {
+  const { horarioDelDia, quienDelDia } = await import('../publico/js/semana.js');
+  const hipica = {
+    id: 'h', titulo: 'Hípica', tipo_id: 'entreno', plugin_id: 'extraescolar',
+    inicio: '2026-09-15T17:00:00', fin: '2026-09-15T18:30:00', jornada_completa: false,
+    repeticion: 'semanal', extra: { dias: [1, 3], horario: { 1: { desde: '17:00', hasta: '18:30' }, 3: { desde: '18:00', hasta: '19:30' } } }, activo: true,
+  };
+  assert.deepEqual(horarioDelDia(hipica, 3), { desde: { h: 18, m: 0 }, hasta: { h: 19, m: 30 }, duracion: 90 * 60000 });
+  assert.equal(horarioDelDia(hipica, 5), null);
+  const [martes, jueves] = ocurrencias(hipica, dia('2026-09-14'), dia('2026-09-20'));
+  assert.equal(martes.inicio.getHours(), 17);
+  assert.equal(jueves.inicio.getHours(), 18);
+  assert.equal((jueves.fin - jueves.inicio) / 60000, 90);
+
+  assert.equal(quienDelDia({ lleva_id: 'p-ana', lleva_otro: null }, 'lleva'), 'p-ana');
+  assert.equal(quienDelDia({ lleva_id: null, lleva_otro: 'la abuela' }, 'lleva'), 'otro:la abuela');
+  assert.equal(quienDelDia({ recoge_id: null, recoge_otro: null }, 'recoge'), null);
+});
+
+test('«otro» se escribe como texto, se parte en columnas y no pasa por trato como destinatario', async () => {
+  const { columnasDeQuien, comoCambiar, comoOtro, esOtro, inicialesDeOtro, nombreDeOtro } = await import('../publico/js/plugins.js');
+  assert.equal(comoOtro('la abuela'), 'otro:la abuela');
+  assert.equal(esOtro('otro:la abuela'), true);
+  assert.equal(esOtro('p-ana'), false);
+  assert.equal(nombreDeOtro('otro:la abuela'), 'la abuela');
+  assert.equal(inicialesDeOtro('otro:la abuela'), 'Abu');
+  assert.equal(inicialesDeOtro('otro:autobús'), 'Aut');
+  assert.deepEqual(columnasDeQuien('lleva', 'otro:la abuela'), { lleva_id: null, lleva_otro: 'la abuela' });
+  assert.deepEqual(columnasDeQuien('recoge', 'p-ana'), { recoge_id: 'p-ana', recoge_otro: null });
+  // Pasárselo a la abuela desde lo mío se escribe; desde lo de otro se le pide a ese otro.
+  assert.deepEqual(comoCambiar('p-ana', 'p-ana', 'otro:la abuela'), { directo: true });
+  assert.deepEqual(comoCambiar('p-ana', 'p-oscar', 'otro:la abuela'), { directo: false, destinatario: 'p-oscar' });
+  // Y quitárselo a la abuela para cogerlo yo, o dejarlo en nadie, no pregunta a nadie.
+  assert.deepEqual(comoCambiar('p-ana', 'otro:la abuela', 'p-ana'), { directo: true });
+  assert.deepEqual(comoCambiar('p-ana', 'otro:la abuela', null), { directo: true });
+});

@@ -31,7 +31,7 @@ const CAMPOS = {
   // Lo que le pasa a una aparición concreta de un evento que se repite: que ese
   // día no hay, o que ese martes lleva y recoge otro. El identificador se
   // compone —`dia:<evento>:<fecha>`— como el de un paseo de Lío.
-  evento_dia: ['evento_id', 'fecha', 'cancelado', 'lleva_id', 'recoge_id', 'autor_id', 'activo'],
+  evento_dia: ['evento_id', 'fecha', 'cancelado', 'lleva_id', 'recoge_id', 'lleva_otro', 'recoge_otro', 'autor_id', 'activo'],
   // Que alguien no está unos días. Se escribe en su ficha y la lee Lío.
   ausencia: ['persona_id', 'desde', 'hasta', 'cubre_id', 'motivo', 'autor_id', 'activo'],
   idea: [
@@ -51,7 +51,7 @@ const CAMPOS = {
   ],
   trato_dia: [
     'evento_id', 'fecha', 'campo', 'proponente_id', 'destinatario_id',
-    'previo_id', 'nuevo_id', 'estado', 'resuelto_en', 'activo',
+    'previo_id', 'nuevo_id', 'nuevo_otro', 'estado', 'resuelto_en', 'activo',
   ],
   lugar: ['nombre', 'emoji', 'evento_id', 'autor_id', 'activo'],
   apunte: ['lugar_id', 'clase', 'titulo', 'detalle', 'hecho', 'autor_id', 'activo'],
@@ -339,7 +339,7 @@ export async function darDeBajaCuenta(db, personaId) {
  * —los dos caminos acaban en el mismo estado—; sin esto, el segundo dejaba el
  * canal de push vivo a nombre de alguien que ya no puede entrar.
  */
-function restosDeCuenta(db, personaId) {
+export function restosDeCuenta(db, personaId) {
   return [
     db.prepare('DELETE FROM dispositivo WHERE persona_id = ?').bind(personaId),
     db.prepare('DELETE FROM preferencia_notificacion WHERE persona_id = ?').bind(personaId),

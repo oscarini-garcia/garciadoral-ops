@@ -26,7 +26,7 @@ tener que recorrer la aplicación entera cada vez.
   circulo_admite · circulo_de · plugin_de_evento · se_recibe · santos_activos
 - **semana.py** — Selección de los eventos de la semana entrante.
   Semana · semana_entrante · Instancia · Aparicion · eventos_derivados · dias_semanales_de
-  ocurrencias · instancias_de_la_semana · repartir_por_dia
+  ocurrencias · horario_del_dia · instancias_de_la_semana · repartir_por_dia
 - **visibilidad.py** — Función de visibilidad de la Agenda Familiar.
   destinatarios_de_idea · destinatarios_de_regalo · destinatarios_de_evento · visible
   visible_publicamente · comentarios_visibles · es_de_la_casa
@@ -76,7 +76,7 @@ tener que recorrer la aplicación entera cada vez.
   …y 22 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
-  administradoresRestantes · aplicarCambio
+  restosDeCuenta · administradoresRestantes · aplicarCambio
 - **viajes.js** — El calendario de viajes: descarga del feed, reconciliación y sello.
   CALENDARIO_VIAJES · idDeViaje · reconciliarViajes · sincronizarViajes
 - **visibilidad.js** — Función de visibilidad, aplicada en el servidor antes de transmitir.
@@ -133,10 +133,10 @@ tener que recorrer la aplicación entera cada vez.
   NOVEDADES
 - **plugins.js** — Los plugins de la agenda: qué hay, en qué familia está cada uno y qué mandos comparten…
   PLUGINS · IDS_PLUGIN · pluginPorId · CON_CIRCULO · CON_NOMBRE · CIRCULO_POR_DEFECTO
-  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 17 más
+  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 24 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
-  soloFecha · iso · isoConHora · sumarDias · …y 18 más
+  soloFecha · iso · isoConHora · sumarDias · …y 20 más
 - **sesion.js** — Acceso mediante Sign in with Apple.
   cargarConfiguracion · entrarConApple · pedirEntrar · consultarSolicitud · retirarSolicitud
   codigoDeAutorizacion · eliminarLaCuenta
@@ -148,7 +148,7 @@ tener que recorrer la aplicación entera cada vez.
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · enlazar · colorDePersona · iniciales · avatar · icono · botonIcono
-  abrirHoja · cerrarHoja · …y 13 más
+  abrirHoja · cerrarHoja · …y 14 más
 - **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
   VERSION_APP
 - **viajes.js** — Los viajes de cada uno, emparejados a partir de sus vuelos.
@@ -263,15 +263,15 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `tests/test_mensaje.py` §6, §7 · `tests/test_plan_semanal.py` · `tests/test_semana.py` §3
   `tests/test_visibilidad.py` §5
 - **`specs/ux.md`**
-  `api/src/avisos.js` §12.4 · `pwa/publico/js/almacen.js` §1 · `pwa/publico/js/app.js` §7.1
-  `pwa/publico/js/avisos.js` §12.2 · `pwa/publico/js/bandeja.js` §7.1
+  `api/src/avisos.js` §12.4 · `api/src/cuentas.js` §7.1 · `pwa/publico/js/almacen.js` §1
+  `pwa/publico/js/app.js` §7.1 · `pwa/publico/js/avisos.js` §12.2
   `pwa/publico/js/lio.js` §10.3 · `pwa/publico/js/modelo.js` §6.2, §7.1
   `pwa/publico/js/native.js` §12.4 · `pwa/publico/js/semana.js` §8, §10.2
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §12.1
   `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
-  `pwa/publico/js/vistas/semana.js` §6.2, §10, §10.1, §10.2, §10.3
+  `pwa/publico/js/vistas/semana.js` §6.2, §10, §10.1, §10.3
   `pwa/publico/js/vistas/sitios.js` §12.1 · `scripts/agenda/lio.py` §10.3
   `scripts/agenda/modelo.py` §7.1 · `scripts/agenda/semana.py` §10.2
 
@@ -296,7 +296,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**380** en total.
+**386** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -305,19 +305,19 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_mensaje.py` — 12
 - `tests/test_modelo.py` — 25
 - `tests/test_plan_semanal.py` — 11
-- `tests/test_plugins.py` — 9
+- `tests/test_plugins.py` — 11
 - `tests/test_semana.py` — 13
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 13
 - `api/test/apns.test.js` — 11
-- `api/test/avisos.test.js` — 29
+- `api/test/avisos.test.js` — 30
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
-- `api/test/recordatorios.test.js` — 7
+- `api/test/recordatorios.test.js` — 8
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10
 - `api/test/redaccion-dia.test.js` — 17
@@ -328,7 +328,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/rutas.test.js` — 6
 - `api/test/sitios.test.js` — 5
 - `api/test/solicitud-aviso.test.js` — 4
-- `api/test/solicitudes.test.js` — 15
+- `api/test/solicitudes.test.js` — 17
 - `api/test/viajes.test.js` — 12
 - `api/test/visibilidad.test.js` — 12
 

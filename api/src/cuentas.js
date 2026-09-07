@@ -11,9 +11,13 @@
  */
 
 import { Rechazo } from './portero/errores.js';
+import { restosDeCuenta } from './repositorio.js';
 
 const ROLES = ['administrador', 'miembro'];
 const CIRCULOS = ['familia', 'extendida', 'amigos'];
+/** Familia es el hogar y son cuatro (specs/ux.md §7.1); y solo los de casa
+ *  tienen cuenta (H1 en specs/propuesta-ocho-cosas.html). */
+const TAMANO_FAMILIA = 4;
 
 export const cuentas = {
   /** El primer «no» barato, antes de tocar la base. */
@@ -32,9 +36,17 @@ export const cuentas = {
   },
 
   /**
-   * El camino de la abuela: la persona ya figuraba sin cuenta y conserva su
-   * ficha, su fecha de nacimiento, su círculo y todo lo que otros escribieron
-   * con ella. Solo se le pone lo que constituye la cuenta.
+   * Vincular a una ficha que ya está: conserva su fecha de nacimiento, su
+   * círculo y todo lo que otros escribieron con ella. Solo se le pone lo que
+   * constituye la cuenta.
+   *
+   * **Y vale también para quien ya tiene cuenta** (H1 en
+   * specs/propuesta-ocho-cosas.html): cambiar de teléfono, restaurar una copia
+   * o volver después de darse de baja llegan con otro Apple ID, y antes no
+   * había manera de volver a engancharlo. Aprobar sobre esa persona sustituye
+   * su Apple ID —las sesiones del anterior dejan de encontrarla, que es como
+   * caducan— y barre lo que su cuenta dejó sembrado: aparatos con su token,
+   * preferencias y accesos, como en la baja. Solo los de casa tienen cuenta.
    */
   async prepararVinculo(db, { personaId, apple, rol }) {
     const existente = await db
@@ -42,11 +54,14 @@ export const cuentas = {
       .bind(personaId)
       .first();
     if (!existente) throw new Rechazo('esa persona no figura en el registro');
-    if (existente.tiene_cuenta) throw new Rechazo(`${existente.nombre} ya tiene cuenta`);
+    if (existente.circulo !== 'familia') {
+      throw new Rechazo(`${existente.nombre} no es de casa, y solo los de casa tienen cuenta`);
+    }
 
     return {
       id: personaId,
       sentencias: [
+        ...(existente.tiene_cuenta ? restosDeCuenta(db, personaId) : []),
         db
           .prepare(
             `UPDATE persona
@@ -56,6 +71,7 @@ export const cuentas = {
           )
           .bind(rol, apple, personaId),
       ],
+      revinculada: Boolean(existente.tiene_cuenta),
     };
   },
 
@@ -68,6 +84,17 @@ export const cuentas = {
   async prepararAlta(db, { apple, rol, circulo, persona, solicitud }) {
     const nombre = String(persona?.nombre || solicitud.nombre_declarado || '').trim();
     if (!nombre) throw new Rechazo('hace falta un nombre para crear la ficha');
+    // Una ficha nueva con cuenta nace en casa, y solo si queda sitio: con los
+    // cuatro puestos, lo que queda es vincular a uno de ellos.
+    if (circulo && circulo !== 'familia') {
+      throw new Rechazo('solo los de casa tienen cuenta: la ficha nueva va en Familia');
+    }
+    const { cuantos } = await db
+      .prepare(`SELECT COUNT(*) AS cuantos FROM persona WHERE circulo = 'familia' AND activa = 1`)
+      .first();
+    if (Number(cuantos) >= TAMANO_FAMILIA) {
+      throw new Rechazo('no queda sitio en casa: vincula la solicitud a alguien de los cuatro');
+    }
 
     const id = crypto.randomUUID();
     return {
@@ -86,7 +113,7 @@ export const cuentas = {
             String(persona?.apellidos || '').trim(),
             persona?.fecha_nacimiento || null,
             String(persona?.parentesco || '').trim(),
-            circulo || 'familia',
+            'familia',
             apple,
             rol,
           ),

@@ -410,3 +410,12 @@ test('quitarle el turno a quien está fuera no le avisa: ya era de quien cubre',
   // A la abuela no le llega Lío —no es de casa—, y a Marta ya no era su turno.
   assert.deepEqual(avisos.map((a) => a.para), []);
 });
+
+test('proponer que lleve alguien que no es de casa se le dice a quien lo tenía, con el nombre', () => {
+  const trato = tratoDeDia({ nuevo_id: null, nuevo_otro: 'la abuela', destinatario_id: 'p-oscar', previo_id: 'p-oscar' });
+  const [aviso] = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [trato] }), MARTA, [cambioDeDia()]);
+  assert.equal(aviso.titulo, '🐴 Hípica: Marta propone que lleva la abuela');
+  const aceptado = tratoDeDia({ nuevo_id: null, nuevo_otro: 'la abuela', estado: 'aceptado' });
+  const [si] = avisosDe(registro({ eventos: [HIPICA], tratos_dia: [aceptado] }), OSCAR, [cambioDeDia()]);
+  assert.equal(si.cuerpo, 'El martes 22 de septiembre lleva la abuela.');
+});

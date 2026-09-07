@@ -281,8 +281,10 @@ export function comoCambiar(yo, actual, nuevo) {
   if (nuevo === actual) return null;
   // Quedarse uno con el recado, o soltar el propio sin cargárselo a nadie.
   if (nuevo === yo) return { directo: true };
-  if (nuevo === null && actual === yo) return { directo: true };
-  return { directo: false, destinatario: nuevo || actual };
+  if ((nuevo === null || esOtro(nuevo)) && (actual === yo || !actual || esOtro(actual))) return { directo: true };
+  // «Otro» no es nadie de casa a quien preguntar: pasárselo a la abuela se le
+  // pide a quien lo tenía, como pasárselo a nadie.
+  return { directo: false, destinatario: esOtro(nuevo) ? actual : (nuevo || actual) };
 }
 
 export function proponerCambioDeDia(instantanea, { eventoId, fechaIso, campo, actual, nuevo }) {
@@ -295,8 +297,9 @@ export function proponerCambioDeDia(instantanea, { eventoId, fechaIso, campo, ac
     campo,
     proponente_id: yo,
     destinatario_id: como.destinatario,
-    previo_id: actual,
-    nuevo_id: nuevo,
+    previo_id: esOtro(actual) ? null : actual,
+    nuevo_id: esOtro(nuevo) ? null : nuevo,
+    nuevo_otro: esOtro(nuevo) ? nombreDeOtro(nuevo) : null,
     estado: 'pendiente',
     activo: 1,
   });
@@ -316,4 +319,51 @@ export async function resolverTratoDeDia(trato, acepta, escribirDia) {
     resuelto_en: new Date().toISOString(),
   });
   if (acepta && escribirDia) await escribirDia(trato);
+}
+
+// ---------------------------------------------------------- «Otro» (C4) --
+
+/**
+ * Quien lleva o recoge y no es de casa: la abuela, el autobús, el padre de
+ * una amiga. Se escribe como texto y viaja como `otro:<nombre>` allí donde
+ * cabe un identificador de persona —el reparto de la actividad, el día
+ * suelto, el trato—, para que la pantalla no tenga dos caminos. No es una
+ * ficha: no entra en tratos como destinatario ni en avisos.
+ */
+const PREFIJO_OTRO = 'otro:';
+const CLAVE_OTROS = 'agenda.otros';
+const TOPE_OTROS = 6;
+
+export const esOtro = (valor) => typeof valor === 'string' && valor.startsWith(PREFIJO_OTRO);
+export const nombreDeOtro = (valor) => (esOtro(valor) ? valor.slice(PREFIJO_OTRO.length) : '');
+export const comoOtro = (nombre) => `${PREFIJO_OTRO}${String(nombre || '').trim()}`;
+
+/** Las tres letras de «otro» para la pastilla de la semana: «Abu», «Aut». */
+export const inicialesDeOtro = (valor) => {
+  const nombre = nombreDeOtro(valor).replace(/^(la|el|los|las)\s+/i, '').trim();
+  return nombre ? nombre.slice(0, 1).toUpperCase() + nombre.slice(1, 3) : '··';
+};
+
+/** Los últimos nombres escritos, para repetirlos de un toque. */
+export function otrosRecientes() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(CLAVE_OTROS) || '[]');
+    return Array.isArray(lista) ? lista.filter((n) => typeof n === 'string' && n.trim()) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordarOtro(nombre) {
+  const limpio = String(nombre || '').trim();
+  if (!limpio) return;
+  const lista = [limpio, ...otrosRecientes().filter((n) => n.toLowerCase() !== limpio.toLowerCase())].slice(0, TOPE_OTROS);
+  try { localStorage.setItem(CLAVE_OTROS, JSON.stringify(lista)); } catch { /* sin sitio */ }
+}
+
+/** Las columnas de una fila de `evento_dia` para un valor: la persona en
+ *  `<campo>_id` y el texto en `<campo>_otro`, nunca los dos. */
+export function columnasDeQuien(campo, valor) {
+  if (esOtro(valor)) return { [`${campo}_id`]: null, [`${campo}_otro`]: nombreDeOtro(valor) };
+  return { [`${campo}_id`]: valor || null, [`${campo}_otro`]: null };
 }

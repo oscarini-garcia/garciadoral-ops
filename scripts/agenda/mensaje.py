@@ -159,11 +159,17 @@ def _reparto(agenda: Agenda, aparicion: Aparicion) -> str:
     reparto = evento.extra.get("reparto") if isinstance(evento.extra, dict) else None
     del_dia = reparto.get(str(aparicion.dia.weekday()), {}) if isinstance(reparto, dict) else {}
     suelto = agenda.dia_de_evento(evento.id, aparicion.dia)
-    lleva = (suelto.lleva_id if suelto and suelto.lleva_id else None) or del_dia.get("lleva")
-    recoge = (suelto.recoge_id if suelto and suelto.recoge_id else None) or del_dia.get("recoge")
+    lleva = (suelto.quien("lleva") if suelto else None) or del_dia.get("lleva")
+    recoge = (suelto.quien("recoge") if suelto else None) or del_dia.get("recoge")
     partes = []
-    for verbo, persona_id in (("lleva", lleva), ("recoge", recoge)):
-        persona = agenda.persona(persona_id)
+    for verbo, quien in (("lleva", lleva), ("recoge", recoge)):
+        # «otro» es alguien que no es de casa, escrito como texto (C4).
+        if isinstance(quien, str) and quien.startswith("otro:"):
+            nombre = quien[5:].strip()
+            if nombre:
+                partes.append(f"{verbo} {nombre}")
+            continue
+        persona = agenda.persona(quien)
         if persona is not None:
             partes.append(f"{verbo} {persona.nombre}")
     return f" ({', '.join(partes)})" if partes else ""

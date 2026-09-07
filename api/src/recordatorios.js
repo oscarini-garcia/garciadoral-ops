@@ -47,7 +47,14 @@ const aFecha = (iso) => {
 const aIso = (fecha) => fecha.toISOString().slice(0, 10);
 const sumarDias = (iso, dias) => aIso(new Date(aFecha(iso).getTime() + dias * 86400000));
 const diaDeSemana = (iso) => (aFecha(iso).getUTCDay() + 6) % 7; // lunes en 0
-const horaDe = (evento) => (evento.jornada_completa ? null : String(evento.inicio || '').slice(11, 16) || null);
+/** La hora de un día concreto: la de ese día de la semana si la actividad la
+ *  lleva (`extra.horario`, B1), y si no la del evento. */
+const horaDe = (evento, fecha = null) => {
+  if (evento.jornada_completa) return null;
+  const propia = fecha ? evento.extra?.horario?.[diaDeSemana(fecha)]?.desde : null;
+  if (typeof propia === 'string' && /^\d{2}:\d{2}$/.test(propia)) return propia;
+  return String(evento.inicio || '').slice(11, 16) || null;
+};
 const ultimoDia = (anno, mes) => new Date(Date.UTC(anno, mes, 0)).getUTCDate();
 
 /**
@@ -133,7 +140,7 @@ export function antelacionDe(instantanea, avisosDelAparato, evento) {
 }
 
 function cuandoEs(evento, fecha, antelacion) {
-  const hora = horaDe(evento);
+  const hora = horaDe(evento, fecha);
   if (antelacion === 0) return hora ? `Hoy a las ${hora}` : 'Hoy';
   const dia = aFecha(fecha);
   if (antelacion === 1) return hora ? `Mañana a las ${hora}` : 'Mañana';

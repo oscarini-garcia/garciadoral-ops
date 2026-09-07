@@ -552,13 +552,10 @@ textarea:-webkit-autofill:focus {
    pastillas y el evento hay dos cosas del mismo tamaño y del mismo peso, y ahí
    hace falta el hueco de verdad. El sitio sale de la columna de la fecha, que
    llevaba 52 puntos para escribir dos cifras (specs/propuesta-lio-en-la-fila.html). */
-.semana[data-lio="si"] .dia, .semana-cabecera {
-  grid-template-columns: 38px auto 1fr;
-  column-gap: 0;
-}
-.semana[data-lio="si"] .lio-col, .semana-cabecera span:nth-child(2) {
-  margin-left: 4px; margin-right: 20px;
-}
+/* El carril de Lío se fue (E1 en specs/propuesta-ocho-cosas.html): los
+   turnos son ahora la primera y la última línea del día, en orden con lo
+   demás, y la semana vuelve a ser dos columnas siempre. */
+.semana-cabecera { grid-template-columns: 52px 1fr; column-gap: 0; }
 
 .semana-cabecera {
   display: grid;
@@ -1988,3 +1985,42 @@ table.presupuesto td:not(:first-child) { text-align: right; }
   text-transform: uppercase;
   color: var(--ink-soft, var(--ink-faint));
 }
+
+/* --- El reloj propio (D1) ---------------------------------------------- */
+/* Dos columnas que se desplazan, la hora y el cuarto, en la misma caja que el
+   calendario propio; la de las horas mide cinco filas y se abre con la elegida
+   en el centro. Cada paso mide 44 puntos de alto: es un blanco de dedo. */
+.reloj {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
+  padding: 8px; display: flex; flex-direction: column; gap: 4px;
+}
+.reloj-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.reloj-columna {
+  max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y proximity; border-radius: 8px; background: var(--hueco);
+  display: flex; flex-direction: column;
+}
+.reloj-paso {
+  flex: none; height: 44px; display: grid; place-items: center; scroll-snap-align: center;
+  font-family: var(--mono); font-size: 17px; color: var(--ink-soft); border-radius: 8px;
+}
+.reloj-paso[aria-selected="true"] { background: var(--tinta); color: var(--paper); font-weight: 600; }
+.hora-boton { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* --- Cada día a su hora, y «otro» en el reparto (B1, C4) --------------- */
+.horario-dias { display: flex; flex-direction: column; gap: 6px; }
+.horario-dia { display: grid; grid-template-columns: 32px 1fr auto 1fr; gap: 6px; align-items: center; }
+.horario-guion { color: var(--ink-faint); text-align: center; }
+.reparto-eligiendo { padding: 4px 0 10px; }
+.reparto-opciones { margin: 0 0 8px; }
+.fila-otro { display: flex; gap: 8px; align-items: center; }
+.fila-otro > .campo-entrada, .fila-otro > input { flex: 1; min-width: 0; }
+
+/* --- Lío en orden (E1): los turnos como primera y última línea del día -- */
+.linea[data-lio="si"] .linea-titulo { color: var(--ink-soft); }
+.linea[data-lio="si"] .linea-emoji { opacity: .85; }
+.linea-lio-quien { color: var(--ink-faint); font-family: var(--mono); font-size: 11px; margin-left: 4px; }
+.linea[data-lio="si"][data-estado="hecho"] .linea-lio-quien { color: var(--tinta); }
+.linea[data-lio="si"][data-estado="sin-marcar"] .linea-lio-quien,
+.linea[data-lio="si"][data-estado="no-hecho"] .linea-lio-quien { color: var(--regalo); }
+.linea[data-lio="si"][data-pedido="si"] .linea-lio-quien { text-decoration: underline dashed; }

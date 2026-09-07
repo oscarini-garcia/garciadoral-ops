@@ -320,7 +320,18 @@ class DiaEvento:
     cancelado: bool = False
     lleva_id: str | None = None
     recoge_id: str | None = None
+    #: Quien lleva o recoge y no es de casa, como texto (C4).
+    lleva_otro: str | None = None
+    recoge_otro: str | None = None
     activo: bool = True
+
+    def quien(self, campo: str) -> str | None:
+        """La persona por su identificador, o «otro» como `otro:<nombre>`."""
+        persona = getattr(self, f"{campo}_id")
+        if persona:
+            return persona
+        otro = getattr(self, f"{campo}_otro")
+        return f"otro:{otro}" if otro else None
 
 
 @dataclass(frozen=True)
@@ -694,6 +705,8 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             cancelado=bool(bruto.get("cancelado", False)),
             lleva_id=bruto.get("lleva_id") or None,
             recoge_id=bruto.get("recoge_id") or None,
+            lleva_otro=bruto.get("lleva_otro") or None,
+            recoge_otro=bruto.get("recoge_otro") or None,
             activo=True,
         )
 
