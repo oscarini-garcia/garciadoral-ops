@@ -1916,8 +1916,10 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 /* Lo que acompaña al título en gris: «· de Óscar», «· todos», «· 12». */
 .linea-de { color: var(--ink-soft); font-size: 13.5px; }
 .tarjeta h3 .linea-de { font-weight: 400; font-size: 14.5px; }
-/* Quién lleva y quién recoge, en dos pastillas a la derecha de la actividad,
-   con la figura de las de Lío (specs/propuesta-plugins-hojas.html, J3). */
+/* Quién lleva y quién recoge iba en dos pastillas a la derecha de la
+   actividad (J3); ahora va entre paréntesis tras el título —«(↑An ↓Abu)»—
+   para que la hora se quede a la derecha en todas las líneas. Las clases se
+   conservan para la hoja del día. */
 .linea-pastilla {
   flex: none; display: inline-flex; align-items: center; gap: 2px;
   font-family: var(--mono); font-size: 10.5px; line-height: 1;
