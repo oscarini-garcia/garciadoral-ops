@@ -18,6 +18,15 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.75.0',
+    fecha: '2026-09-07',
+    titulo: 'La hora en todas las líneas, y lo demás entre paréntesis',
+    lineas: [
+      'Las actividades llevan su hora a la derecha como cualquier línea; quién lleva y quién recoge va entre paréntesis tras el nombre: «Hípica Falu (↑An ↓Abu)».',
+      'Un vuelo dice de quién es entre paréntesis: «Madrid (Óscar)». En la semana y en Hoy.',
+    ],
+  },
+  {
     version: '1.74.0',
     fecha: '2026-09-07',
     titulo: 'Cada día en su tarjeta, y la IA cuenta el día entero',

@@ -887,6 +887,10 @@ export function textoDeLinea(aparicion, ctx) {
     emoji: cara.emoji,
     titulo: cara.titulo,
     de: null,
+    // Lo que va entre paréntesis detrás del título: quién lleva y recoge una
+    // actividad, o de quién es un vuelo. Entre paréntesis y no como pastillas
+    // a la derecha, para que la hora se quede donde está en todas las líneas.
+    parentesis: null,
     banda: plugin === 'viajes' || plugin === 'finde' || id.startsWith('derivado:ausencia:'),
     suave: false,
     pastillas: [],
@@ -904,7 +908,7 @@ export function textoDeLinea(aparicion, ctx) {
     linea.suave = true;
   } else if (plugin === 'viajes') {
     const dueno = ctx.vista.duenyoDelCalendario?.(evento) || null;
-    if (dueno) linea.de = `de ${dueno.nombre}`;
+    if (dueno) linea.parentesis = dueno.apodo || dueno.nombre;
   } else if (plugin === 'finde') {
     const primerDia = evento.extra?.primer_dia || null;
     linea.de = primerDia && iso(dia) < primerDia
@@ -921,10 +925,14 @@ export function textoDeLinea(aparicion, ctx) {
     };
     const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : (ctx.vista.persona(quien)?.apodo || ctx.vista.nombre(quien)));
     if (reparto.lleva || reparto.recoge) {
-      linea.pastillas = [
-        { clase: 'lleva', texto: reparto.lleva ? letras(reparto.lleva) : '·', titulo: reparto.lleva ? `Lleva ${nombre(reparto.lleva)}` : 'Nadie lleva' },
-        { clase: 'recoge', texto: reparto.recoge ? letras(reparto.recoge) : '·', titulo: reparto.recoge ? `Recoge ${nombre(reparto.recoge)}` : 'Nadie recoge' },
-      ];
+      linea.parentesis = [
+        reparto.lleva ? `↑${letras(reparto.lleva)}` : null,
+        reparto.recoge ? `↓${letras(reparto.recoge)}` : null,
+      ].filter(Boolean).join(' ');
+      linea.parentesisLargo = [
+        reparto.lleva ? `lleva ${nombre(reparto.lleva)}` : null,
+        reparto.recoge ? `recoge ${nombre(reparto.recoge)}` : null,
+      ].filter(Boolean).join(', ');
     }
   }
   return linea;
@@ -971,16 +979,13 @@ function lineaDeEvento(aparicion, ctx) {
     // vistazo es solo que eso de hoy viene de antes.
     el('span', { class: 'linea-titulo' }, [
       texto.titulo + (aparicion.continuacion && !texto.banda ? ' (cont.)' : ''),
+      texto.parentesis ? el('span', { class: 'linea-de', texto: ` (${texto.parentesis})`, title: texto.parentesisLargo || texto.parentesis }) : null,
       texto.de ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
       aparicion.continuacion && texto.banda ? el('span', { class: 'linea-de', texto: ' · cont.' }) : null,
     ]),
-    ...texto.pastillas.map((pastilla) => el('span', {
-      class: `linea-pastilla linea-pastilla-${pastilla.clase}`, title: pastilla.titulo, 'aria-label': pastilla.titulo,
-    }, [
-      el('span', { 'aria-hidden': 'true', texto: pastilla.clase === 'lleva' ? '↑' : '↓' }),
-      pastilla.texto,
-    ])),
-    hora && !texto.pastillas.length ? el('span', { class: 'linea-hora', texto: hora }) : null,
+    // La hora siempre a la derecha, también en una actividad: lo que antes
+    // la desplazaba —las pastillas— va ahora entre paréntesis.
+    hora ? el('span', { class: 'linea-hora', texto: hora }) : null,
   ]);
 }
 

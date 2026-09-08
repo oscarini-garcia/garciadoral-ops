@@ -507,7 +507,7 @@ function tarjetaDelDia(aparicion, ctx) {
     texto.de && !esEdad ? texto.de : null,
     aparicion.evento.ubicacion,
     participantes.length ? participantes.join(', ') : null,
-    ...texto.pastillas.map((p) => p.titulo.toLowerCase()),
+    texto.parentesisLargo || texto.parentesis || null,
   ].filter(Boolean).join(' · ');
 
   return el('button', {
@@ -519,6 +519,7 @@ function tarjetaDelDia(aparicion, ctx) {
       el('span', { class: 'linea-emoji', texto: texto.emoji }),
       el('h3', {}, [
         texto.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+        texto.parentesis ? el('span', { class: 'linea-de', texto: ` (${texto.parentesis})` }) : null,
         esEdad ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
       ]),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
