@@ -27,6 +27,22 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Cenas: propuesta sobre la mesa, sin decidir ni construir.** Se pidió
+  gestionar los menús de las cenas —seguir qué se cena y recibir sugerencias
+  de recetas que permitan hacer algo de dieta, a partir de con qué se cocina y
+  qué dieta se sigue, por día o por semana—. La primera aproximación está en
+  `specs/propuesta-cenas.html`, en seis preguntas: dónde vive (plugin de la
+  agenda con bloque en Hoy, módulo aparte, dentro de Sitios o sexta pestaña),
+  qué se guarda (recetario más una cena por noche con veredicto, solo texto,
+  recetario completo con compra, o un plato por persona), de dónde salen las
+  sugerencias (séptimo encargo de IA con el material de la casa, rotación por
+  reglas, o la semana escrita sola el domingo), dónde se escribe con qué se
+  cocina y qué dieta (dos campos de la casa en la hoja, dentro de la
+  instrucción, casillas, o además una línea por persona en la ficha), por día
+  o por semana, y qué cuenta como cenado. Lo que queda: **elegir**, y con
+  ello lo que sigue —qué hace el plan de los domingos con siete líneas más,
+  si el «cómo se hace» lo escribe la IA al elegir, y con qué se juzga que una
+  semana está equilibrada—.
 - **Cada día en su tarjeta, la IA cuenta el día entero y el apodo (1.74.0).**
   La separación entre días se decidió como A4 en
   `specs/propuesta-separacion-dias.html`: `.dia` es una tarjeta con borde y
