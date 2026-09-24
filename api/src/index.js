@@ -922,12 +922,17 @@ async function proponerCenas(peticion, env) {
 
   const propuestas = interpretarCenas(resultado.texto, material.cuantas);
 
-  if (!propuestas.length) {
+  // Rellenar la semana es una por noche y en orden: si falta alguna, el orden
+  // ya no dice a qué noche va cada una, y es mejor no apuntar nada.
+  const incompleta = material.noches > 1 && propuestas.length < material.cuantas;
+  if (!propuestas.length || incompleta) {
     console.warn('cenas fallidas', JSON.stringify(resultado.intentos));
     return json(
       {
         propuestas: [],
-        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        motivo: incompleta
+          ? 'la IA no ha contestado con una cena para cada noche; prueba otra vez'
+          : resultado.motivo || 'la IA no ha contestado con platos; prueba otra vez',
         intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
       },
       503,
