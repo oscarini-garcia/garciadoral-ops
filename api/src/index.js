@@ -32,6 +32,7 @@
  *   POST   /api/cumple/felicitar · cinco felicitaciones para quien cumple
  *   POST   /api/sitio/apuntar · cinco apuntes para un sitio y una clase
  *   POST   /api/sitio/emoji · cinco emojis para el nombre de un sitio
+ *   POST   /api/cena/proponer · cenas para una noche, o una por noche de la semana
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
@@ -79,6 +80,7 @@ import {
   componerMaterial,
   componerMaterialDePeriodo,
   componerMaterialDeApunte,
+  componerMaterialDeCena,
   componerMaterialDeChispa,
   componerMaterialDeEmoji,
   componerMaterialDeFelicitacion,
@@ -89,6 +91,7 @@ import {
   guardarConfiguracion,
   INSTRUCCION_EMOJI_POR_DEFECTO,
   INSTRUCCION_SANTO_POR_DEFECTO,
+  interpretarCenas,
   interpretarChispas,
   interpretarSanto,
   interpretarEmojis,
@@ -889,6 +892,52 @@ async function apuntarEnUnSitio(peticion, env) {
 }
 
 /**
+ * Cenas para una noche —cinco propuestas— o una para cada noche vacía de una
+ * semana, que es el séptimo encargo (`specs/propuesta-cenas.html`, C1 y E1).
+ *
+ * Viajan las noches, lo que hay en casa si se ha escrito y lo ya propuesto; lo
+ * demás —lo cenado, el recetario, la dieta, quién no está— lo reúne el Worker
+ * de la instantánea filtrada de quien pide, que fuera de casa no trae nada.
+ */
+async function proponerCenas(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
+  }
+
+  const { fechas = [], hay = '', descartadas = [] } = await peticion.json().catch(() => ({}));
+  if (!Array.isArray(fechas) || !fechas.length) return json({ error: 'faltan las noches' }, 400);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeCena(componerInstantanea(registro, lector), {
+    fechas, hay, descartadas: Array.isArray(descartadas) ? descartadas : [], hoy: hoyEnCasa(),
+  });
+
+  if (!material.lineas.length) return json({ error: 'las cenas son de quien vive en casa' }, 403);
+
+  const resultado = await redactar({
+    configuracion, material, instruccion: configuracion.cena, tope: 900,
+  });
+
+  const propuestas = interpretarCenas(resultado.texto, material.cuantas);
+
+  if (!propuestas.length) {
+    console.warn('cenas fallidas', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        propuestas: [],
+        motivo: resultado.motivo || 'ningún modelo ha contestado',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+
+  return json({ propuestas, modelo: resultado.modelo });
+}
+
+/**
  * Cinco emojis para un sitio, a partir de lo que se lleva escrito en su
  * nombre.
  *
@@ -1031,10 +1080,10 @@ async function leerAjustesDeIa(peticion, env) {
 async function guardarAjustesDeIa(peticion, env) {
   const administrador = await administradorAutenticado(peticion, env);
   const {
-    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa, lio,
+    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa, lio, cena,
   } = await peticion.json().catch(() => ({}));
   const configuracion = await guardarConfiguracion(env.DB, administrador, {
-    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa, lio,
+    clave, modelo, instruccion, regalo, felicitacion, apunte, chispa, lio, cena,
   });
   return json(configuracionPublica(configuracion));
 }
@@ -1100,6 +1149,7 @@ const RUTAS = [
   ['POST', '/api/regalo/sugerir', sugerirUnRegalo],
   ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],
   ['POST', '/api/sitio/emoji', sugerirEmojiDeSitio],
+  ['POST', '/api/cena/proponer', proponerCenas],
   ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],

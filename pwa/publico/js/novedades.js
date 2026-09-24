@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.76.0',
+    fecha: '2026-09-25',
+    titulo: 'Cenas, la sexta pestaña',
+    lineas: [
+      'Una pestaña nueva, Cenas: la semana de cenas, con lo de las niñas aparte cuando cenan otra cosa.',
+      'La IA propone cinco cenas para una noche, o rellena la semana entera, con la dieta de casa y lo que hay en la nevera si se lo dices.',
+      'En Hoy, «Esta noche» con lo que toca y un botón para cambiarlo; y al día siguiente, si repetiríais lo de ayer.',
+      'El recetario se llena solo con lo que se elige, y recuerda lo que gustó y lo que no.',
+    ],
+  },
+  {
     version: '1.75.0',
     fecha: '2026-09-07',
     titulo: 'La hora en todas las líneas, y lo demás entre paréntesis',

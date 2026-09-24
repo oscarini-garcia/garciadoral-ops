@@ -33,6 +33,8 @@ import { aplicarLioDeEscapada, escapadasDe } from './plugins.js';
 import { irALugar } from './sitios.js';
 import { porClase, estaHecho } from '../sitios.js';
 import { pluginOculto, tratosDeDiaParaMi, resolverTratoDeDia } from '../plugins.js';
+import { cenaDe, escribirNoche, hayCenas, platoDe, platoDeLasNinas } from '../cenas.js';
+import { abrirNoche } from './cenas.js';
 
 /** El bundle OTA que está aplicado, si se ha llegado a preguntar. Se guarda
  *  aquí para que volver a la pestaña no vuelva a enseñar la de origen mientras
@@ -128,6 +130,7 @@ export function pintarHoy(pantalla, subcabecera, ctx) {
     laChispa(dia, ctx),
     ...bloqueDeLio(dia, ctx),
     bloqueDelDia(dia, ctx),
+    ...bloqueDeCenas(dia, ctx),
     pieDeVersion(),
   );
 }
@@ -526,6 +529,67 @@ function tarjetaDelDia(aparicion, ctx) {
     ]),
     pie ? el('p', { texto: pie }) : null,
   ]);
+}
+
+// ------------------------------------------------------------ La cena --
+
+/**
+ * «Esta noche»: lo que hay planeado y el verbo para cambiarlo, que es donde se
+ * corrige la noche (`specs/propuesta-cenas.html`, E1). Y la pregunta de ayer,
+ * una vez (F1): lo planeado cuenta como cenado sin tocar nada, y lo único que
+ * se pide es si se repetiría. Contestada, o pasado el día, se calla.
+ */
+function bloqueDeCenas(dia, ctx) {
+  const datos = ctx.vista.datos;
+  if (!hayCenas(datos)) return [];
+
+  const esta = iso(dia);
+  const cena = cenaDe(datos, esta);
+  const plato = platoDe(datos, cena);
+  const ninas = platoDeLasNinas(datos, cena);
+
+  const grupo = el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: '🍽️ Esta noche' }),
+    el('div', { class: 'cena-hoy' }, [
+      el('button', {
+        class: 'cena-hoy-texto', type: 'button',
+        onclick: () => { toque(); abrirNoche(esta, ctx); },
+      }, [
+        el('span', { class: 'cena-plato', texto: plato || 'Sin decidir' }),
+        ninas ? el('span', { class: 'cena-ninas', texto: `Las niñas: ${ninas}` }) : null,
+      ]),
+      el('button', {
+        class: 'boton-mini empujar', type: 'button',
+        onclick: () => { toque(); abrirNoche(esta, ctx); },
+      }, [plato ? 'Cambiar' : 'Proponer']),
+    ]),
+  ]);
+
+  const ayer = iso(sumarDias(dia, -1));
+  const deAyer = cenaDe(datos, ayer);
+  const platoDeAyer = platoDe(datos, deAyer);
+  if (platoDeAyer && !deAyer.veredicto) {
+    const contestar = async (veredicto) => {
+      toque();
+      await escribirNoche(datos, ayer, { veredicto }, ctx.vista.yo.id);
+      avisar(veredicto === 'repetir' ? 'Anotado: se repite' : 'Anotado: no más');
+      ctx.refrescar();
+    };
+    grupo.append(el('div', { class: 'cena-hoy', 'data-ayer': 'si' }, [
+      el('button', {
+        class: 'cena-hoy-texto', type: 'button',
+        'aria-label': `Ayer: ${platoDeAyer}. Cambiar lo que se cenó`,
+        onclick: () => { toque(); abrirNoche(ayer, ctx); },
+      }, [
+        el('span', { class: 'cena-plato', texto: `Ayer: ${platoDeAyer}` }),
+        el('span', { class: 'cena-ninas', texto: '¿Repetir? Si fue otra cosa, tócalo.' }),
+      ]),
+      el('button', { class: 'boton-mini empujar', type: 'button', onclick: () => contestar('repetir') }, ['Sí']),
+      el('button', { class: 'boton-mini', type: 'button', onclick: () => contestar('no_mas') }, ['No']),
+    ]));
+  }
+
+  return [grupo];
 }
 
 // ------------------------------------------------------------- La versión --

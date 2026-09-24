@@ -388,7 +388,9 @@ textarea:-webkit-autofill:focus {
    desplazamiento del documento. */
 .tabbar {
   flex: none; z-index: 30;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  /* Tantas columnas como pestañas se vean: seis para quien vive en casa, que
+     tiene Cenas, y cinco para quien no (`specs/propuesta-cenas.html`, A4). */
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   border-top: 1px solid var(--line);
@@ -397,9 +399,12 @@ textarea:-webkit-autofill:focus {
 .tab {
   min-height: var(--toque);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  font-size: 11.5px; letter-spacing: .02em; color: var(--ink-faint);
-  padding: 7px 4px;
+  /* A seis, «Regalos» y «Agenda» tienen 65 puntos en un iPhone de 390: cabe
+     con un punto menos de letra y sin el aire de las letras. */
+  font-size: 10.5px; letter-spacing: 0; color: var(--ink-faint);
+  padding: 7px 2px; min-width: 0;
 }
+.tab[hidden] { display: none; }
 /* Dibujados sobre la rejilla de 24, igual que los de dentro de la
    aplicación: heredan el color de la pestaña y con él su estado. */
 .tab-icono { width: 22px; height: 22px; display: block; }
@@ -2036,3 +2041,45 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .linea[data-lio="si"][data-estado="sin-marcar"] .linea-lio-quien,
 .linea[data-lio="si"][data-estado="no-hecho"] .linea-lio-quien { color: var(--regalo); }
 .linea[data-lio="si"][data-pedido="si"] .linea-lio-quien { text-decoration: underline dashed; }
+
+/* ----------------------------------------------------------------- Cenas -- */
+
+/* La semana como plan: una fila por noche, con el día a la izquierda como en la
+   agenda y lo de las niñas debajo en voz baja. Hoy lleva el tinte de hoy. */
+.cenas-periodo { display: flex; align-items: center; gap: 8px; }
+.cenas-rango { font-size: 15px; color: var(--ink-soft); }
+.cenas-flecha {
+  width: 36px; height: 36px; border-radius: 9px; font-size: 20px; line-height: 1;
+  color: var(--ink-soft); display: grid; place-items: center;
+}
+.cena-fila, .receta-fila {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  min-height: var(--toque); padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--paper-2);
+}
+.cena-fila[data-hoy="si"] { background: var(--tinta-suave); border-color: transparent; }
+.cena-fila[data-vacia="si"] { background: transparent; border-style: dashed; }
+.cena-fila[data-vacia="si"] .cena-plato { color: var(--ink-faint); }
+.cena-dia { display: flex; flex-direction: column; align-items: center; width: 26px; flex: none; }
+.cena-dia-letra { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+.cena-dia-num { font-size: 17px; font-weight: 600; line-height: 1.1; }
+.cena-texto { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.cena-plato { font-size: 15.5px; }
+.cena-ninas { font-size: 12.5px; color: var(--ink-soft); }
+.cena-veredicto { flex: none; font-size: 16px; }
+.cenas-rellenar { margin-top: 4px; }
+.cenas-proponer { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.cenas-propuestas { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.cenas-propuesta {
+  display: flex; align-items: flex-start; gap: 12px;
+  border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px;
+}
+
+/* «Esta noche» en Hoy: la figura de las filas de Lío. */
+.cena-hoy {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--paper-2); padding: 9px 12px;
+}
+.cena-hoy[data-ayer="si"] { background: transparent; }
+.cena-hoy-texto { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; text-align: left; }

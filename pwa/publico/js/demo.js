@@ -106,5 +106,33 @@ export function componerDemo(registro, observadorId) {
     // Y nadie ha mirado nada: la demostración empieza siempre de cero, así que
     // lo que haya de comentarios sale como nuevo, que es lo que hay que enseñar.
     vistos: [],
+    // Cenas es de la casa, y fuera de ella la instantánea no las trae.
+    recetas: deLaCasa ? registro.recetas || [] : undefined,
+    cenas: deLaCasa ? [...(registro.cenas || []), ...cenasDeLaSemana(registro.recetas || [])] : undefined,
+    cenas_casa: deLaCasa ? registro.cenas_casa || {} : undefined,
   };
+}
+
+/**
+ * Las noches de la demostración, de lunes a hoy, rotando el recetario: con
+ * fechas fijas en el registro, la semana que se abre saldría siempre vacía.
+ * Lo de antes de hoy lleva un «repetir», que es lo que enseña el veredicto.
+ */
+function cenasDeLaSemana(recetas) {
+  if (!recetas.length) return [];
+  const hoy = new Date();
+  const lunes = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - ((hoy.getDay() + 6) % 7));
+  const dos = (n) => String(n).padStart(2, '0');
+  const cenas = [];
+  for (let i = 0; i <= (hoy.getDay() + 6) % 7; i += 1) {
+    const dia = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i);
+    const fecha = `${dia.getFullYear()}-${dos(dia.getMonth() + 1)}-${dos(dia.getDate())}`;
+    const receta = recetas[i % recetas.length];
+    cenas.push({
+      id: `cena:${fecha}`, fecha, receta_id: receta.id, activo: true,
+      veredicto: i < (hoy.getDay() + 6) % 7 - 1 ? 'repetir' : null,
+      ninas_texto: i === 1 ? 'Macarrones con tomate' : null,
+    });
+  }
+  return cenas;
 }

@@ -36,6 +36,8 @@ const PLURAL = {
   evento_dia: 'dias_evento',
   ausencia: 'ausencias',
   trato_dia: 'tratos_dia',
+  receta: 'recetas',
+  cena: 'cenas',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -222,6 +224,13 @@ function aplicarEnLocal(cambio) {
   // puesto de ese plugin, entero, y se sustituye entero.
   if (cambio.tipo === 'plugin') {
     instantaneaActual.plugins = { ...(instantaneaActual.plugins || {}), [cambio.id]: cambio.campos };
+    return;
+  }
+
+  // Cómo se cocina en casa: tres casillas que se escriben juntas, y solo las
+  // que vengan.
+  if (cambio.tipo === 'cenas_casa') {
+    instantaneaActual.cenas_casa = { ...(instantaneaActual.cenas_casa || {}), ...cambio.campos };
     return;
   }
 
@@ -431,6 +440,21 @@ export async function apuntarEnSitio(lugarId, { clase = 'saber', descartadas = [
   const { propuestas } = await peticion('/api/sitio/apuntar', {
     method: 'POST',
     body: JSON.stringify({ lugar_id: lugarId, clase, descartadas }),
+  });
+  return propuestas || [];
+}
+
+/**
+ * Cenas propuestas por el séptimo encargo: cinco para una noche, o una por
+ * noche cuando se piden varias —las vacías de la semana—, en el mismo orden.
+ *
+ * Viajan las noches, lo que hay en casa si se ha escrito —que no se guarda— y
+ * lo ya propuesto. Lo cenado, el recetario y la dieta los reúne el Worker.
+ */
+export async function proponerCenas(fechas, { hay = '', descartadas = [] } = {}) {
+  const { propuestas } = await peticion('/api/cena/proponer', {
+    method: 'POST',
+    body: JSON.stringify({ fechas, hay, descartadas }),
   });
   return propuestas || [];
 }

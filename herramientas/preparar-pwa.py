@@ -84,6 +84,18 @@ EVENTOS_EXTRA = [
 ]
 
 
+RECETAS_DEMO = [
+    {"id": "receta-demo-1", "nombre": "Lubina a la plancha con calabacín", "como": "Plancha",
+     "tiempo": 15, "etiquetas": "ligera, proteína, verdura", "activo": True},
+    {"id": "receta-demo-2", "nombre": "Tortilla de espinacas", "como": "Sartén",
+     "tiempo": 15, "etiquetas": "ligera, huevo, verdura", "activo": True},
+    {"id": "receta-demo-3", "nombre": "Salmón al horno con espárragos", "como": "Horno",
+     "tiempo": 25, "etiquetas": "proteína, verdura", "activo": True},
+    {"id": "receta-demo-4", "nombre": "Crema de calabaza y pavo a la plancha", "como": "Olla y plancha",
+     "tiempo": 30, "etiquetas": "ligera, verdura", "activo": True},
+]
+
+
 def registro_de_demostracion() -> dict:
     catalogos = json.loads((RAIZ / "datos" / "catalogos.json").read_text(encoding="utf-8"))
     agenda = json.loads((RAIZ / "datos" / "agenda.ejemplo.json").read_text(encoding="utf-8"))
@@ -127,6 +139,16 @@ def registro_de_demostracion() -> dict:
         "ausencias": agenda.get("ausencias", []),
         "plugins": agenda.get("plugins", {}),
         "calendarios_externos": agenda.get("calendarios_externos", []),
+        # Cenas: un recetario corto y cómo se cocina en casa. Las noches no van
+        # aquí: las compone `demo.js` sobre la semana en curso, porque con
+        # fechas fijas la semana que se abre saldría siempre vacía.
+        "recetas": RECETAS_DEMO,
+        "cenas": [],
+        "cenas_casa": {
+            "cocina": "Plancha, horno y olla exprés; nada de freír.",
+            "dieta": "Cenas ligeras: proteína y verdura, poco hidrato. Los viernes vale todo.",
+            "dieta_ninas": "Pueden tomar hidrato; nada picante.",
+        },
     }
 
     # La API sirve siempre las filas completas, porque los valores por defecto
