@@ -59,6 +59,8 @@ import { abrirBandeja as abrirBandejaDeSolicitudes } from './bandeja.js';
 import {
   abrirApunte, hayFabEnSitios, nuevoDesdeSitios, pintarSitios, reiniciarSitios, tituloDeSitios,
 } from './vistas/sitios.js';
+import { pintarCenas, reiniciarCenas } from './vistas/cenas.js';
+import { hayCenas } from './cenas.js';
 import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
 import { antelacionDe, avisosDePlugins, resolverTratoDeDia } from './plugins.js';
 import { abrirMenuDeNuevo } from './vistas/plugins.js';
@@ -98,6 +100,11 @@ const PESTANAS = {
     titulo: tituloDeSitios, pintar: pintarSitios, fab: (ctx) => nuevoDesdeSitios(ctx),
     hayFab: hayFabEnSitios,
   },
+  // Cenas es la sexta, a sabiendas de que los rótulos se estrechan
+  // (`specs/propuesta-cenas.html`, A4). Sin botón flotante: las noches se
+  // escriben tocándolas, y una receta nueva tiene su fila dentro del
+  // recetario.
+  cenas: { titulo: 'Cenas', pintar: pintarCenas, fab: null },
 };
 
 let pestana = 'hoy';
@@ -364,6 +371,14 @@ function refrescar() {
   if (!datos) return;
 
   ctx.vista = crearVista(datos);
+
+  // Cenas es de casa: a quien no vive en ella la instantánea no le trae nada, y
+  // la barra se queda en cinco en vez de enseñarle una pestaña vacía.
+  const conCenas = hayCenas(datos);
+  const botonCenas = document.querySelector('.tab[data-pestana="cenas"]');
+  if (botonCenas) botonCenas.hidden = !conCenas;
+  if (!conCenas && pestana === 'cenas') pestana = 'hoy';
+
   const definicion = PESTANAS[pestana];
 
   const titulo = document.getElementById('tituloPantalla');
@@ -1141,6 +1156,9 @@ function formularioDeRedaccion(ajustes) {
   const lio = el('textarea', { rows: '5', spellcheck: 'false' });
   lio.value = ajustes.lio || '';
 
+  const cena = el('textarea', { rows: '5', spellcheck: 'false' });
+  cena.value = ajustes.cena || '';
+
   const traza = el('pre', { class: 'traza', hidden: true });
   const contar = (texto, clase = 'traza') => {
     traza.className = clase;
@@ -1178,6 +1196,7 @@ function formularioDeRedaccion(ajustes) {
         apunte: apunte.value.trim(),
         chispa: chispa.value.trim(),
         lio: lio.value.trim(),
+        cena: cena.value.trim(),
       });
       clave.value = '';
       clave.placeholder = guardado.hay_clave ? `Guardada, termina en ${guardado.cola}` : 'sk-ant-…';
@@ -1200,7 +1219,7 @@ function formularioDeRedaccion(ajustes) {
   return [
     el('p', {
       class: 'pista',
-      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son seis, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio, la frase con la que abre Hoy y lo que dice Lío en su bloque.',
+      texto: 'La clave y el modelo valen para todo lo que la agenda haga con un modelo. Debajo va el encargo de cada cosa, que se puede reescribir: hoy son siete, contar los días antes de compartirlos, proponer un regalo, felicitar un cumpleaños, apuntar cosas de un sitio, la frase con la que abre Hoy, lo que dice Lío en su bloque y proponer cenas.',
     }),
     campo('Clave de Anthropic', clave, ajustes.guardada_en ? `Guardada ${formatearHace(ajustes.guardada_en)}. Deja el campo vacío para no cambiarla.` : null),
     campo('Modelo', modelo, ajustes.modelos_de === 'reserva'
@@ -1225,10 +1244,13 @@ function formularioDeRedaccion(ajustes) {
     el('h4', { class: 'subtitulo-ajuste', texto: 'La voz de Lío' }),
     campo('Instrucción', lio, 'El único encargo que habla en primera persona: el que se queja es el perro. También en tandas de cinco, una por línea. Se le dan los dos turnos de hoy, de quién son, cuáles quedaron sin marcar y los días seguidos que lleva saliendo. Conviene dejarle claro que se queja pero no riñe de verdad —quien lo lee es quien no marcó, y lo lee desayunando— y que no invente quién lo sacó, que eso es un dato. Vacío, vuelve el encargo de origen.'),
 
+    el('h4', { class: 'subtitulo-ajuste', texto: 'Proponer cenas' }),
+    campo('Instrucción', cena, 'Cinco propuestas para una noche, o una por noche al rellenar la semana: cuántas líneas se piden lo dice el material, así que conviene conservar «tantas líneas como te pidan» y la raya entre el plato y el porqué. Lo de las niñas va detrás de «| niñas:». Se le dan con qué se cocina, la dieta y la línea de las niñas, lo cenado estas dos semanas, el recetario con lo que gustó y lo que no, quién no está y, si se ha escrito, lo que hay en casa. Vacío, vuelve el encargo de origen.'),
+
     el('div', { class: 'acciones' }, [guardar, probar]),
     el('p', {
       class: 'pista',
-      texto: 'Guardar los guarda los seis. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
+      texto: 'Guardar los guarda los siete. Probar usa el de contar el día, que es lo que comprueba que la clave y el modelo responden.',
     }),
     traza,
   ];
@@ -1366,7 +1388,7 @@ async function salir() {
   borrarSesion();
   sesionActual = null;
   pestana = 'hoy';
-  reiniciarHoy(); reiniciarAgenda(); reiniciarRegalos(); reiniciarSitios(); reiniciarFamilia();
+  reiniciarHoy(); reiniciarAgenda(); reiniciarRegalos(); reiniciarSitios(); reiniciarFamilia(); reiniciarCenas();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
 }

@@ -11,6 +11,7 @@ import { contarPendientes } from './portero/solicitudes.js';
 import { Rechazo } from './portero/errores.js';
 import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
 import { guardarPlugin, leerPlugins } from './plugins.js';
+import { VEREDICTOS, guardarCocina, leerCocina } from './cenas.js';
 
 const CAMPOS = {
   persona: [
@@ -58,6 +59,12 @@ const CAMPOS = {
   voto: ['apunte_id', 'persona_id', 'activo'],
   visto: ['persona_id', 'objeto_tipo', 'objeto_id', 'hasta'],
   mejora: ['texto', 'hecho', 'autor_id', 'activo'],
+  // Cenas (`api/migraciones/0025_cenas.sql`): el recetario de la casa y lo que
+  // se cena cada noche, con lo de las niñas aparte cuando no es lo mismo.
+  receta: ['nombre', 'como', 'tiempo', 'etiquetas', 'nota', 'autor_id', 'activo'],
+  cena: [
+    'fecha', 'receta_id', 'texto', 'ninas_receta_id', 'ninas_texto', 'veredicto', 'autor_id', 'activo',
+  ],
 };
 
 /** Campos cuyo conflicto se conserva para revisión en lugar de descartarse en
@@ -123,6 +130,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     paseos, tratos, tratosDia, cuadroLio,
     lugares, apuntes, votos, vistos, calendarios, mejoras,
     diasDeEvento, ausencias, plugins,
+    recetas, cenas, cocina,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -170,6 +178,10 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filasSiLaTablaEsta(db, `SELECT * FROM evento_dia ${activo('activo')} ORDER BY fecha`),
     filasSiLaTablaEsta(db, `SELECT * FROM ausencia ${activo('activo')} ORDER BY desde`),
     leerPlugins(db),
+    // Cenas llega con la 0025, y por el mismo resguardo que Lío y Sitios.
+    filasSiLaTablaEsta(db, `SELECT * FROM receta ${activo('activo')} ORDER BY nombre`),
+    filasSiLaTablaEsta(db, `SELECT * FROM cena ${activo('activo')} ORDER BY fecha`),
+    leerCocina(db),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -264,6 +276,10 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     dias_evento: diasDeEvento.map((d) => ({ ...d, cancelado: bool(d.cancelado), activo: bool(d.activo) })),
     ausencias: ausencias.map((a) => ({ ...a, activo: bool(a.activo) })),
     plugins,
+    // Cenas: el recetario, lo cenado cada noche y cómo se cocina en casa.
+    recetas: recetas.map((r) => ({ ...r, activo: bool(r.activo) })),
+    cenas: cenas.map((c) => ({ ...c, activo: bool(c.activo) })),
+    cenas_casa: cocina,
     // Lo visto no se recorta por visibilidad sino por dueño, y eso lo hace
     // `filtrado.js`: las filas de una persona no le sirven de nada a otra.
     vistos,
@@ -366,7 +382,9 @@ export async function administradoresRestantes(db, exceptoId) {
 /** Quién puede tocar qué. La configuración del hogar es de los administradores;
  *  los contenidos, de cualquier miembro (spec funcional §2). */
 function comprobarPermiso(tipo, actor, anterior, campos) {
-  const soloAdministradores = ['persona', 'categoria', 'etiqueta', 'presupuesto', 'lio_cuadro', 'plugin'];
+  const soloAdministradores = [
+    'persona', 'categoria', 'etiqueta', 'presupuesto', 'lio_cuadro', 'plugin', 'cenas_casa',
+  ];
   if (soloAdministradores.includes(tipo) && actor.rol !== 'administrador') {
     throw new Rechazo(`solo un administrador puede modificar ${tipo}`);
   }
@@ -430,6 +448,18 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
     if (anterior.autor_id !== actor.id && actor.rol !== 'administrador') {
       throw new Rechazo('un apunte lo borra quien lo escribió');
     }
+  }
+
+  // Cenas es de la casa, como Sitios: quien no está en el círculo cerrado no lo
+  // recibe y tampoco lo escribe.
+  if (['receta', 'cena', 'cenas_casa'].includes(tipo) && !esDeLaCasa(actor)) {
+    throw new Rechazo('las cenas son de quien vive en casa');
+  }
+
+  // Un veredicto es uno de los dos, o ninguno.
+  if (tipo === 'cena' && 'veredicto' in campos && campos.veredicto !== null
+    && campos.veredicto !== '' && !VEREDICTOS.includes(campos.veredicto)) {
+    throw new Rechazo(`un veredicto es ${VEREDICTOS.join(' o ')}`);
   }
 
   // El voto es de quien vota y de nadie más.
@@ -570,6 +600,19 @@ export async function aplicarCambio(db, actor, cambio) {
       if (error instanceof Rechazo) return { aplicado: false, motivo: error.message };
       return { aplicado: false, motivo: String(error.message || error) };
     }
+    return { aplicado: true };
+  }
+
+  // Cómo se cocina en casa y qué dieta: tres casillas de `configuracion`, que
+  // viajan juntas como un tipo propio, igual que lo ajustado de un plugin.
+  if (tipo === 'cenas_casa') {
+    try {
+      comprobarPermiso(tipo, actor, null, campos);
+    } catch (error) {
+      if (error instanceof Rechazo) return { aplicado: false, motivo: error.message };
+      throw error;
+    }
+    await guardarCocina(db, actor, campos);
     return { aplicado: true };
   }
 

@@ -113,6 +113,12 @@ export function componerInstantanea(registro, observador) {
     lugares,
     apuntes,
     votos,
+    // Cenas es de la casa, como Sitios: se transmite entero o no se transmite.
+    // Fuera de casa ni siquiera llegan las listas vacías, y así la pestaña
+    // sabe que no le toca pintarse.
+    recetas: deLaCasa ? registro.recetas || [] : undefined,
+    cenas: deLaCasa ? registro.cenas || [] : undefined,
+    cenas_casa: deLaCasa ? registro.cenas_casa || {} : undefined,
     // Sin filtrar por destinatario, porque una mejora no lo tiene: es sobre la
     // aplicación y no hay de quién ocultarla. Lo único que se le pide a quien la
     // recibe es tener cuenta, que es lo mismo que decir «usa esto»: a quien no

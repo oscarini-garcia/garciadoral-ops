@@ -771,7 +771,7 @@ Si se prefiere reducir el riesgo, la opción A es una primera versión legítima
 
 ---
 
-## 12. Sitios, y los avisos
+## 12. Sitios, los avisos y Cenas
 
 Dos módulos que nacieron a la vez porque el segundo salió del primero. El análisis completo, con las opciones que se descartaron en cada decisión, está en `specs/propuesta-sitios.html`; aquí queda lo que se construyó.
 
@@ -868,6 +868,20 @@ Lo que eso no alcanza es la mitad que importa. **Que a otro le suene el teléfon
 **El interruptor está en Ajustes, en apartado propio, y no salta solo.** Preguntar por los avisos nada más abrir es lo que más permisos consigue y lo que peor sienta, y un «no» de esos no se recupera desde la aplicación: hay que ir a los Ajustes de iOS. En ese apartado se dice además qué se avisa, porque no es evidente y porque acota.
 
 **El aviso no sustituye al sobre ni a la banda de Hoy.** Un aviso remoto se puede no ver: llega una vez, se descarta con el pulgar y no vuelve. Lo que espera respuesta tiene que seguir estando donde estaba cuando se abre la aplicación, y eso es el sobre. Uno alcanza, el otro recuerda.
+
+### 12.5 Cenas
+
+La sexta pestaña, decidida en `propuesta-cenas.html` (A4 · B1 · C1 · D1 · E1 · F1). La barra pasa de cinco a seis a sabiendas de que los rótulos se estrechan; para quien no vive en casa sigue en cinco, porque Cenas no le llega.
+
+**La semana como plan.** La pestaña enseña las siete noches de lunes a domingo, con flechas para pasar de semana: lo escrito y, en cada noche vacía que no ha pasado, «Proponer». Lo de las niñas va debajo del plato, en voz baja, cuando cenan otra cosa. «Rellenar la semana» pide una cena por cada noche vacía, equilibradas entre sí, y no escribe nada hasta que se dice «Apuntarlas».
+
+**Una noche** se abre en una hoja: qué se cena —una receta del recetario, que se ofrece al escribir, o lo que sea—, las niñas, el veredicto si la noche ya ha pasado y, debajo, «Proponer», con un campo para decir qué hay más o menos en casa. Ese campo va con la petición y no se guarda. Elegir una propuesta la escribe en el recetario y en la noche.
+
+**Debajo, dos apartados plegables**: cómo se cocina en casa —con qué, qué dieta y la línea de las niñas, que solo cambia quien administra— y el recetario, con lo último que se dijo de cada receta y cuántas veces se ha cenado.
+
+**Hoy corrige la noche.** Un bloque «🍽️ Esta noche», detrás de lo del día, con lo planeado y «Cambiar», o «Proponer» si no hay nada. Y al día siguiente pregunta una vez si se repetiría lo de ayer; si fue otra cosa, se toca y se corrige. Contestado, o pasado el día, se calla.
+
+**Las propuestas son el séptimo encargo de IA** (`ia.cena`), con la instrucción editable en Ajustes como las otras seis. El material lo compone el Worker: con qué se cocina, la dieta y la de las niñas, lo cenado las dos últimas semanas, el recetario con lo que gustó y lo que no, quién no está esas noches y lo que hay en casa si se ha escrito.
 
 ---
 

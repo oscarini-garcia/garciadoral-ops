@@ -206,6 +206,36 @@ export const INSTRUCCION_LIO_POR_DEFECTO = [
 ].join(' ');
 
 /**
+ * El encargo de las cenas, que es el séptimo (`specs/propuesta-cenas.html`, C1).
+ *
+ * Se le da con qué se cocina en casa, qué dieta se sigue y la línea de las
+ * niñas, lo cenado las dos últimas semanas —para no repetir—, el recetario con
+ * lo que se dijo de cada receta, quién no está esa noche y, si se ha escrito,
+ * lo que hay más o menos en casa (la nota de E). Cuántas líneas pide lo dice
+ * el material, no el encargo: una noche son cinco propuestas y rellenar la
+ * semana es una por noche vacía, y la instrucción es la misma para las dos.
+ *
+ * Lo de las niñas va en la misma línea detrás de una barra, y solo cuando su
+ * dieta pide otra cosa: la mayoría de las noches cenan lo mismo, y obligarle a
+ * escribirlo siempre llenaría la pantalla de «las niñas: lo mismo».
+ */
+export const INSTRUCCION_CENA_POR_DEFECTO = [
+  'Propones cenas para una familia que quiere comer bien y hacer algo de dieta.',
+  'Te doy con qué cocinan, qué dieta siguen, lo que pueden cenar distinto las',
+  'niñas, lo que han cenado las últimas semanas, su recetario con lo que les',
+  'gustó y lo que no, quién no está esa noche y, a veces, lo que hay en casa.',
+  'Propón cenas concretas, que se hagan con lo que tienen para cocinar, que',
+  'respeten la dieta, que no repitan lo de los últimos días y que, si te dicen',
+  'lo que hay en casa, lo aprovechen. Si te piden varias noches, que la semana',
+  'quede equilibrada: no todo pescado ni todo huevo.',
+  'Responde con tantas líneas como te pidan y nada más, numeradas, cada una con',
+  'esta forma: «el plato en menos de ocho palabras — una frase corta con cómo se',
+  'hace y por qué encaja». Si las niñas necesitan otra cosa, añade al final de la',
+  'línea « | niñas: su plato».',
+  'En español de España, sin emojis, sin viñetas y sin comillas.',
+].join(' ');
+
+/**
  * El encargo del emoji de un sitio, que no es de los seis: no tiene instrucción
  * editable porque no hay casi nada que decidir en una frase que pide un emoji.
  *
@@ -284,6 +314,7 @@ const CLAVES = {
   apunte: 'ia.apunte',
   chispa: 'ia.chispa',
   lio: 'ia.lio',
+  cena: 'ia.cena',
 };
 
 export async function leerConfiguracion(db) {
@@ -303,6 +334,7 @@ export async function leerConfiguracion(db) {
     apunte: filas.get(CLAVES.apunte)?.valor || INSTRUCCION_APUNTE_POR_DEFECTO,
     chispa: filas.get(CLAVES.chispa)?.valor || INSTRUCCION_CHISPA_POR_DEFECTO,
     lio: filas.get(CLAVES.lio)?.valor || INSTRUCCION_LIO_POR_DEFECTO,
+    cena: filas.get(CLAVES.cena)?.valor || INSTRUCCION_CENA_POR_DEFECTO,
   };
 }
 
@@ -325,6 +357,7 @@ export function configuracionPublica(configuracion) {
     apunte: configuracion.apunte,
     chispa: configuracion.chispa,
     lio: configuracion.lio,
+    cena: configuracion.cena,
   };
 }
 
@@ -830,6 +863,127 @@ export function componerMaterialDeApunte(
   }
 
   return { titulo: `Apuntes para ${lugar.nombre}`, lineas };
+}
+
+/** Hasta siete noches de golpe: rellenar una semana. */
+const MAXIMO_NOCHES = 7;
+/** Lo cenado que se le cuenta, hacia atrás, para que no repita. */
+const DIAS_DE_MEMORIA = 14;
+/** Lo que cabe en «qué hay en casa». */
+const TOPE_DE_DESPENSA = 300;
+
+/** El nombre de lo cenado una noche: la receta enlazada, o el texto suelto. */
+function platoDe(instantanea, recetaId, texto) {
+  if (recetaId) {
+    const receta = (instantanea.recetas || []).find((r) => r.id === recetaId);
+    if (receta?.nombre) return receta.nombre;
+  }
+  return String(texto || '').trim() || null;
+}
+
+/**
+ * Lo que se le cuenta al modelo para proponer cenas.
+ *
+ * `fechas` son las noches que se piden: una, y entonces son cinco propuestas
+ * para ella; o varias —las vacías de una semana—, y entonces es una por noche
+ * y en ese orden. `hay` es lo que hay en casa, escrito en el momento y que no
+ * se guarda (`specs/propuesta-cenas.html`, nota de E). Sale entero de la
+ * instantánea filtrada de quien pide, así que fuera de casa no hay nada.
+ */
+export function componerMaterialDeCena(
+  instantanea,
+  { fechas = [], hay = '', descartadas = [], hoy = null } = {},
+) {
+  const noches = [...new Set(fechas.map((f) => String(f || '').slice(0, 10)).filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)))]
+    .sort()
+    .slice(0, MAXIMO_NOCHES);
+  if (!noches.length || !instantanea.cenas) return { titulo: '', lineas: [], cuantas: 0 };
+
+  const cuantas = noches.length === 1 ? PROPUESTAS_POR_TANDA : noches.length;
+  const lineas = noches.length === 1
+    ? [`Te pido: cinco cenas distintas para el ${formatearFecha(noches[0])}.`]
+    : [
+      `Te pido: una cena para cada una de estas ${noches.length} noches, en este orden:`,
+      ...noches.map((f) => `  ${formatearFecha(f)}`),
+    ];
+
+  const casa = instantanea.cenas_casa || {};
+  if (casa.cocina) lineas.push(`Con qué cocinan: ${casa.cocina}`);
+  if (casa.dieta) lineas.push(`Qué dieta siguen: ${casa.dieta}`);
+  if (casa.dieta_ninas) lineas.push(`Las niñas: ${casa.dieta_ninas}`);
+
+  const despensa = String(hay || '').trim().slice(0, TOPE_DE_DESPENSA);
+  if (despensa) lineas.push(`Lo que hay en casa, más o menos: ${despensa}`);
+
+  const bloque = (titulo, valores) => {
+    const utiles = valores.filter(Boolean).slice(0, MAXIMO_POR_LISTA);
+    if (utiles.length) lineas.push(`${titulo}:`, ...utiles.map((valor) => `  ${valor}`));
+  };
+
+  // Lo cenado hacia atrás desde la primera noche que se pide, y lo ya escrito
+  // de las demás noches de esa semana, que también cuenta para no repetir.
+  const desde = Date.parse(noches[0]) - DIAS_DE_MEMORIA * 86400000;
+  const cenadas = (instantanea.cenas || [])
+    .filter((c) => c.activo !== false && !noches.includes(c.fecha) && Date.parse(c.fecha) >= desde)
+    .sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  bloque('Lo cenado o ya previsto estos días', cenadas.map((c) => {
+    const plato = platoDe(instantanea, c.receta_id, c.texto);
+    if (!plato) return null;
+    const ninas = platoDe(instantanea, c.ninas_receta_id, c.ninas_texto);
+    return `${formatearFecha(c.fecha)}: ${plato}${ninas ? ` (las niñas: ${ninas})` : ''}`;
+  }));
+
+  // El recetario con lo último que se dijo de cada receta, que es lo que hace
+  // que la sugerencia aprenda: lo de «repetir» vuelve y lo de «no más» no.
+  const veredictos = new Map();
+  for (const c of [...(instantanea.cenas || [])].sort((a, b) => (a.fecha < b.fecha ? -1 : 1))) {
+    if (c.receta_id && c.veredicto) veredictos.set(c.receta_id, c.veredicto);
+  }
+  const recetas = (instantanea.recetas || []).filter((r) => r.activo !== false);
+  bloque('Del recetario les gustó y lo repetirían', recetas
+    .filter((r) => veredictos.get(r.id) === 'repetir').map((r) => r.nombre));
+  bloque('Del recetario no quieren volver a cenar', recetas
+    .filter((r) => veredictos.get(r.id) === 'no_mas').map((r) => r.nombre));
+
+  // Quién no está: las ausencias de quienes viven en casa que tocan esas noches.
+  const deCasa = (instantanea.personas || []).filter((p) => (p.circulo || 'extendida') === 'familia');
+  bloque('En casa son', deCasa.map((p) => [p.apodo || p.nombre, edadDe(p, hoy)].filter(Boolean).join(', ')));
+  bloque('Esas noches no están', (instantanea.ausencias || [])
+    .filter((a) => a.activo !== false && noches.some((f) => a.desde <= f && f <= (a.hasta || a.desde)))
+    .map((a) => {
+      const quien = nombreCorto(instantanea, a.persona_id);
+      return quien ? `${quien}, del ${formatearFecha(a.desde)} al ${formatearFecha(a.hasta || a.desde)}` : null;
+    }));
+
+  const yaDichas = descartadas
+    .map((titulo) => String(titulo || '').trim())
+    .filter(Boolean)
+    .slice(0, MAXIMO_DESCARTADAS);
+  if (yaDichas.length) {
+    lineas.push('Ya has propuesto esto, no lo repitas:');
+    lineas.push(...yaDichas.map((titulo) => `  ${titulo}`));
+  }
+
+  lineas.push(`Responde con ${cuantas} líneas.`);
+  return { titulo: 'Cenas', lineas, cuantas };
+}
+
+/**
+ * Las propuestas de cena: las de siempre, con lo de las niñas separado.
+ *
+ * Es `interpretarPropuestas` y un corte más: lo que venga detrás de «| niñas:»
+ * es su plato, y el porqué se queda sin él.
+ */
+export function interpretarCenas(texto, cuantas = PROPUESTAS_POR_TANDA) {
+  return interpretarPropuestas(texto, cuantas).map(({ que, porque }) => {
+    const corte = porque.match(/\s*\|\s*(?:las\s+)?niñas\s*:\s*/i);
+    if (!corte) return { que, porque, ninas: '' };
+    return {
+      que,
+      porque: porque.slice(0, corte.index).trim(),
+      ninas: porque.slice(corte.index + corte[0].length).replace(/[.»"']+$/, '').trim(),
+    };
+  });
 }
 
 /**

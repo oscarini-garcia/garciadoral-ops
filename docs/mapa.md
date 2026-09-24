@@ -49,6 +49,9 @@ tener que recorrer la aplicación entera cada vez.
 - **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
   CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · aparatosDe · olvidarToken
   empujarSolicitud · empujar
+- **cenas.js** — Cenas en el servidor: con qué se cocina en casa y qué dieta se sigue.
+  PREFIJO · CAMPOS_DE_LA_CASA · TOPE_DE_CASILLA · VEREDICTOS · idCena · leerCocina
+  guardarCocina
 - **comentables.js** — Qué cosas admiten comentario, en un solo sitio.
   COMENTABLES · esComentable · comentariosVisibles
 - **cuentas.js** — Las cuentas del hogar: la mitad de la aprobación que conoce el esquema local.
@@ -72,8 +75,8 @@ tener que recorrer la aplicación entera cada vez.
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
   INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
-  INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_SANTO_POR_DEFECTO · INSTRUCCION_EMOJI_POR_DEFECTO
-  …y 22 más
+  INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_CENA_POR_DEFECTO · INSTRUCCION_SANTO_POR_DEFECTO
+  …y 25 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
   restosDeCuenta · administradoresRestantes · aplicarCambio
@@ -113,6 +116,9 @@ tener que recorrer la aplicación entera cada vez.
   idVisto · marcarVisto · avisosDe · porContestar · novedades · hayAvisos
 - **bandeja.js** — La bandeja: quién está esperando a que le abran la puerta, y la aprobación.
   bloqueDeSolicitudes · abrirBandeja
+- **cenas.js** — Cenas: el recetario de la casa, lo que se cena cada noche y su veredicto.
+  VEREDICTOS · idCena · hayCenas · recetas · recetaPorId · cenaDe · platoDe · platoDeLasNinas
+  nochesDeLaSemana · veredictoDeReceta · …y 5 más
 - **comentarios.js** — El hilo de comentarios de cualquier cosa.
   bloqueDeComentarios
 - **demo.js** — Modo demostración.
@@ -142,7 +148,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 17 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 18 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -156,6 +162,8 @@ tener que recorrer la aplicación entera cada vez.
 
 ### `pwa/publico/js/vistas/` · Las cinco secciones de la aplicación
 
+- **cenas.js** — Cenas: la semana como plan, el recetario y cómo se cocina en casa.
+  reiniciarCenas · pintarCenas · abrirNoche
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
@@ -211,6 +219,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/regalo/sugerir` — cinco propuestas de regalo para una persona
 - `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
 - `POST /api/sitio/emoji` — cinco emojis para el nombre de un sitio
+- `POST /api/cena/proponer` — cenas para una noche, o una por noche de la semana
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
@@ -296,7 +305,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**390** en total.
+**399** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -312,6 +321,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_visibilidad.py` — 13
 - `api/test/apns.test.js` — 11
 - `api/test/avisos.test.js` — 30
+- `api/test/cenas.test.js` — 9
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23

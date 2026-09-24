@@ -172,6 +172,18 @@ Viaja, y no se queda en el dispositivo. Mientras la marca era pasiva —leer— 
 
 ---
 
+### 2.10 Cenas
+
+El recetario de la casa y lo que se cena cada noche. La forma de la pantalla está en `ux.md` §12.5 y lo decidido, al pie de `propuesta-cenas.html` (A4 · B1 · C1 · D1 · E1 · F1).
+
+**Receta.** Nombre, cómo se hace —plancha, horno, olla—, minutos, unas etiquetas de dieta en texto y una nota. La escribe la IA al elegir una propuesta, o uno mismo. Quitarla del recetario es `activo = 0` y no toca lo cenado: la noche sigue diciendo lo que fue.
+
+**Cena.** Una por noche, con identificador compuesto y determinista —`cena:<fecha>`—, como el del paseo, porque el dispositivo escribe la noche antes de haber visto ninguna fila. Enlaza una receta (`receta_id`) o lleva texto suelto (`texto`), para que apuntar «pizza, pedida» no obligue a crear nada. **Lo de las niñas va aparte** —`ninas_receta_id` o `ninas_texto`—, con la misma forma, porque a veces no cenan lo mismo; vacío es que cenan lo mismo. Y un **veredicto**, `repetir` o `no_mas`, o ninguno: es lo que hace que la sugerencia aprenda. Lo planeado cuenta como cenado salvo que se corrija; no hay marca de «cenado».
+
+**Cómo se cocina en casa.** Tres casillas de `configuracion` —`cenas.cocina`, `cenas.dieta`, `cenas.dieta_ninas`—, texto libre, que viajan en la instantánea como `cenas_casa` y solo escribe quien administra. Son datos de la casa y no de la instrucción del encargo: cambiar de dieta no obliga a reescribir cómo se le pide al modelo.
+
+**Alcance.** Todo es del círculo `familia`, como Lío y Sitios: quien no vive en casa no lo recibe, y su barra se queda en cinco pestañas.
+
 ## 3. Diagrama entidad-relación
 
 ```mermaid
