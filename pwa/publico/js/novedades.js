@@ -18,6 +18,18 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.77.0',
+    fecha: '2026-09-25',
+    titulo: 'Cenas: la semana arriba y una fila por noche',
+    lineas: [
+      'La semana va arriba en una tira de siete días, con un punto en las noches que tienen cena; debajo, solo de hoy en adelante.',
+      'Rellenar la semana es una fila por noche: flechas para ver otras, un destello para pedir más para esa noche y solo se apunta lo marcado.',
+      'Lo que ya hay apuntado una noche es la primera alternativa, para quedarse con ello.',
+      '«De las de siempre» propone sin IA lo que gustó y hace tiempo que no se cena.',
+      'Si la IA contesta con una frase en vez de platos, ya no se apunta como cena.',
+    ],
+  },
+  {
     version: '1.76.0',
     fecha: '2026-09-25',
     titulo: 'Cenas, la sexta pestaña',

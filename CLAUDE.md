@@ -27,6 +27,19 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Cenas, segunda vuelta (1.77.0): la tira arriba y una fila por noche.**
+  Decidido como A1 · B2 · C1 · D4 en
+  `specs/propuesta-cenas-segunda-vuelta.html`, tras probarlo en el teléfono.
+  La subcabecera es la tira de meeting-ops-air (`tiraDeLaSemana`), con lo
+  pasado atenuado y tocable, y la lista solo lleva de hoy en adelante.
+  Rellenar la semana es una fila por noche con casilla, flechas y destello
+  (`abrirRellenar`); lo ya apuntado es la primera alternativa (`laQueHay`), y
+  «De las de siempre» propone del recetario sin IA (`deLasDeSiempre`, en
+  `pwa/publico/js/cenas.js`). **Y una frase del modelo ya no se apunta como
+  cena**: `interpretarCenas` solo acepta líneas con la raya y longitud de
+  plato, y al rellenar varias noches, si falta alguna, `/api/cena/proponer`
+  contesta 503 en vez de apuntar a medias. Pasó de verdad: una negativa del
+  modelo quedó como la cena del jueves.
 - **Cenas está construido (1.76.0), y es la sexta pestaña.** Lo decidido
   está al pie de `specs/propuesta-cenas.html` (A4 · B1 · C1 · D1 · E1 · F1) y
   la pantalla, en `specs/ux.md` §12.5; las tablas en `specs/modelo-datos.md`

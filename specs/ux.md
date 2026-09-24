@@ -873,9 +873,13 @@ Lo que eso no alcanza es la mitad que importa. **Que a otro le suene el teléfon
 
 La sexta pestaña, decidida en `propuesta-cenas.html` (A4 · B1 · C1 · D1 · E1 · F1). La barra pasa de cinco a seis a sabiendas de que los rótulos se estrechan; para quien no vive en casa sigue en cinco, porque Cenas no le llega.
 
-**La semana como plan.** La pestaña enseña las siete noches de lunes a domingo, con flechas para pasar de semana: lo escrito y, en cada noche vacía que no ha pasado, «Proponer». Lo de las niñas va debajo del plato, en voz baja, cuando cenan otra cosa. «Rellenar la semana» pide una cena por cada noche vacía, equilibradas entre sí, y no escribe nada hasta que se dice «Apuntarlas».
+**La semana como plan.** Arriba, la tira de meeting-ops-air (`propuesta-cenas-segunda-vuelta.html`, A1): siete columnas fijas de lunes a domingo, la flecha salta de semana, un punto en las noches con cena, hoy relleno y lo pasado atenuado pero tocable. Debajo, solo las noches de hoy en adelante: lo escrito y, en cada noche vacía, «Proponer». Lo de las niñas va debajo del plato, en voz baja, cuando cenan otra cosa.
 
-**Una noche** se abre en una hoja: qué se cena —una receta del recetario, que se ofrece al escribir, o lo que sea—, las niñas, el veredicto si la noche ya ha pasado y, debajo, «Proponer», con un campo para decir qué hay más o menos en casa. Ese campo va con la petición y no se guarda. Elegir una propuesta la escribe en el recetario y en la noche.
+**Rellenar la semana** (B2) es una fila por noche que queda, con el día fijo delante, su casilla, flechas para pasar de alternativa y un destello que pide cinco más para esa noche. «Proponer para todas» trae una por noche, equilibradas entre sí. Una noche que ya tiene cena empieza con la suya y sin marcar (C1). Solo se apunta lo marcado.
+
+**Una noche** se abre en una hoja: qué se cena —una receta del recetario, que se ofrece al escribir, o lo que sea—, las niñas, el veredicto si la noche ya ha pasado y, debajo, las propuestas con dos fuentes (D4): «Algo nuevo», de la IA, con un campo para decir qué hay más o menos en casa que va con la petición y no se guarda; y «De las de siempre», del recetario y sin IA, empezando por lo que gustó y lleva más tiempo sin cenarse. En las dos, lo ya apuntado es la primera alternativa. Elegir una propuesta la escribe en el recetario y en la noche.
+
+**El recetario** son los platos que la casa ya ha cenado o apuntado, no un libro de recetas con pasos; la pantalla lo dice en su primera línea.
 
 **Debajo, dos apartados plegables**: cómo se cocina en casa —con qué, qué dieta y la línea de las niñas, que solo cambia quien administra— y el recetario, con lo último que se dijo de cada receta y cuántas veces se ha cenado.
 

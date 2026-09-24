@@ -22,8 +22,8 @@ import {
   INICIALES_DIA, MESES_LARGOS, formatearFechaLarga, hoy, indiceDia, iso, lunesDe, sumarDias,
 } from '../semana.js';
 import {
-  VEREDICTOS, cenaDe, elegirPropuesta, escribirNoche, hayCenas, nochesDeLaSemana, platoDe, platoDeLasNinas,
-  recetaPorId, recetas, usoDeReceta, vaciarNoche, veredictoDeReceta,
+  VEREDICTOS, cenaDe, deLasDeSiempre, elegirPropuesta, escribirNoche, hayCenas, laQueHay, nochesDeLaSemana,
+  platoDe, platoDeLasNinas, recetaPorId, recetas, usoDeReceta, vaciarNoche, veredictoDeReceta,
 } from '../cenas.js';
 
 /** El lunes de la semana que se está mirando. Se pierde al cerrar sesión. */
@@ -44,7 +44,7 @@ export function pintarCenas(pantalla, subcabecera, ctx) {
   }
 
   const lunes = lunesVisto || lunesDe(hoy());
-  subcabecera.append(periodo(lunes, ctx));
+  subcabecera.append(tiraDeLaSemana(lunes, ctx));
 
   pantalla.append(
     semana(lunes, ctx),
@@ -61,46 +61,72 @@ export function pintarCenas(pantalla, subcabecera, ctx) {
 
 // ------------------------------------------------------------ La semana --
 
-/** «21 – 27 de Septiembre», con las flechas a los lados y «Hoy» si no es esta. */
-function periodo(lunes, ctx) {
-  const domingo = sumarDias(lunes, 6);
-  const rango = lunes.getMonth() === domingo.getMonth()
-    ? `${lunes.getDate()} – ${domingo.getDate()} de ${MESES_LARGOS[domingo.getMonth()]}`
-    : `${lunes.getDate()} de ${MESES_LARGOS[lunes.getMonth()]} – ${domingo.getDate()} de ${MESES_LARGOS[domingo.getMonth()]}`;
-  const esEsta = iso(lunes) === iso(lunesDe(hoy()));
+/**
+ * La tira de la semana, la de meeting-ops-air (`specs/propuesta-cenas-segunda-vuelta.html`,
+ * A1): siete columnas fijas de lunes a domingo, la flecha es una semana y el
+ * punto dice qué noche tiene cena. Lo pasado va atenuado y se sigue pudiendo
+ * tocar, para corregir lo que se cenó o dar el veredicto.
+ */
+function tiraDeLaSemana(lunes, ctx) {
+  const datos = ctx.vista.datos;
+  const hoyIso = iso(hoy());
   const mover = (dias) => { toque(); lunesVisto = sumarDias(lunes, dias); ctx.refrescar(); };
 
-  return el('div', { class: 'cenas-periodo' }, [
-    el('button', { class: 'cenas-flecha', type: 'button', 'aria-label': 'Semana anterior', onclick: () => mover(-7) }, ['‹']),
-    el('span', { class: 'cenas-rango', texto: rango }),
-    el('button', { class: 'cenas-flecha', type: 'button', 'aria-label': 'Semana siguiente', onclick: () => mover(7) }, ['›']),
-    esEsta ? null : el('button', {
-      class: 'boton-mini', type: 'button',
-      onclick: () => { toque(); lunesVisto = null; ctx.refrescar(); },
-    }, ['Hoy']),
+  return el('div', { class: 'tira' }, [
+    el('button', { class: 'tira-flecha', type: 'button', 'aria-label': 'La semana anterior', onclick: () => mover(-7) }, ['‹']),
+    el('div', { class: 'tira-dias' }, nochesDeLaSemana(lunes).map((noche) => {
+      const fecha = iso(noche);
+      const plato = platoDe(datos, cenaDe(datos, fecha));
+      return el('button', {
+        class: 'tira-dia', type: 'button',
+        'data-hoy': fecha === hoyIso ? 'si' : null,
+        'data-pasado': fecha < hoyIso ? 'si' : null,
+        'aria-label': `${formatearFechaLarga(noche)}: ${plato || 'sin cena'}`,
+        onclick: () => { toque(); abrirNoche(fecha, ctx); },
+      }, [
+        el('span', { class: 'tira-letra', texto: INICIALES_DIA[indiceDia(noche)] }),
+        el('span', { class: 'tira-num', texto: String(noche.getDate()) }),
+        el('span', { class: 'tira-punto', 'data-hay': plato ? 'si' : null, 'aria-hidden': 'true' }),
+      ]);
+    })),
+    el('button', { class: 'tira-flecha', type: 'button', 'aria-label': 'La semana siguiente', onclick: () => mover(7) }, ['›']),
   ]);
 }
 
 function semana(lunes, ctx) {
   const datos = ctx.vista.datos;
   const hoyIso = iso(hoy());
-  const noches = nochesDeLaSemana(lunes);
   const esEsta = iso(lunes) === iso(lunesDe(hoy()));
+  const domingo = sumarDias(lunes, 6);
+  const mes = MESES_LARGOS[domingo.getMonth()];
+  // Debajo de la tira, solo lo que queda por delante: lo pasado está en la
+  // tira, atenuado, y se abre desde allí.
+  const noches = nochesDeLaSemana(lunes).filter((n) => iso(n) >= hoyIso);
   const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: esEsta ? 'Esta semana' : 'Esa semana' }),
+    el('p', { class: 'grupo-titulo', texto: `${esEsta ? 'Esta semana' : 'Esa semana'} · ${mes}` }),
   ]);
+
+  if (!noches.length) {
+    grupo.append(el('p', { class: 'pista', texto: 'Esta semana ya ha pasado. Toca un día arriba para ver o corregir lo que se cenó.' }));
+    if (!esEsta) {
+      grupo.append(el('button', {
+        class: 'boton-mini', type: 'button',
+        onclick: () => { toque(); lunesVisto = null; ctx.refrescar(); },
+      }, ['Volver a esta semana']));
+    }
+    return grupo;
+  }
 
   for (const noche of noches) grupo.append(filaDeNoche(noche, ctx, hoyIso));
 
-  // Rellenar solo pide lo que falta y lo que todavía no ha pasado: una noche de
-  // ayer sin escribir no se planifica, se apunta.
-  const vacias = noches.filter((n) => iso(n) >= hoyIso && !platoDe(datos, cenaDe(datos, iso(n))));
-  if (vacias.length) {
-    grupo.append(el('button', {
-      class: 'boton cenas-rellenar', type: 'button', 'data-con-icono': 'si',
-      onclick: () => { toque(); abrirRellenar(vacias.map(iso), ctx); },
-    }, [icono('destello'), vacias.length === 1 ? 'Proponer la que falta' : `Rellenar la semana (${vacias.length})`]));
-  }
+  // Rellenar recorre las noches que quedan, una fila por noche (B2); las que
+  // ya tienen cena salen con la suya como primera alternativa (C1).
+  const vacias = noches.filter((n) => !platoDe(datos, cenaDe(datos, iso(n)))).length;
+  grupo.append(el('button', {
+    class: 'boton cenas-rellenar', type: 'button', 'data-con-icono': 'si',
+    'data-tono': vacias ? null : 'discreto',
+    onclick: () => { toque(); abrirRellenar(noches.map(iso), ctx); },
+  }, [icono('destello'), vacias ? `Rellenar la semana (${vacias})` : 'Otras ideas para la semana']));
   return grupo;
 }
 
@@ -216,35 +242,69 @@ export function abrirNoche(fecha, ctx) {
     ]));
 
     // Proponer va debajo: es lo que se hace cuando no se sabe qué poner arriba.
+    // Dos fuentes (D4): «Algo nuevo» lo pide a la IA, con lo que hay en casa;
+    // «De las de siempre» sale del recetario, sin IA. En las dos, lo ya
+    // apuntado esa noche es la primera alternativa (C1).
     const hay = campoDespensa();
-    const carrusel = carruselDePropuestas({
-      pedir: ({ mas, yaDichas }) => {
+    let fuente = 'nueva';
+    const conLaQueHay = (lista, mas) => {
+      const actual = laQueHay(datos, fecha);
+      return !mas && actual ? [actual, ...lista.filter((p) => p.que !== actual.que)] : lista;
+    };
+    const hacerCarrusel = () => carruselDePropuestas({
+      pedir: async ({ mas, yaDichas }) => {
         if (mas) toque();
-        return proponerCenas([fecha], { hay: hay.control.value, descartadas: yaDichas });
+        const lista = fuente === 'siempre'
+          ? deLasDeSiempre(datos, fecha, { descartadas: yaDichas })
+          : await proponerCenas([fecha], { hay: hay.control.value, descartadas: yaDichas });
+        return conLaQueHay(lista, mas);
       },
       pintar: pintarPropuesta,
       clave: (propuesta) => propuesta.que,
       holgado: true,
+      etiquetaMas: 'Otras',
       verbo: {
         texto: 'Elegir',
         hacer: async (propuesta) => {
           toque('media');
-          await elegirPropuesta(datos, fecha, propuesta, ctx.vista.yo.id);
+          if (!propuesta.actual) await elegirPropuesta(datos, fecha, propuesta, ctx.vista.yo.id);
           cerrarHoja();
-          avisar(`Apuntado: ${propuesta.que}`);
+          avisar(propuesta.actual ? 'Se queda la que había' : `Apuntado: ${propuesta.que}`);
           ctx.refrescar();
         },
       },
     });
+    let carrusel = hacerCarrusel();
+    const hueco = el('div', {}, [carrusel.nodo]);
+
+    const fuentes = el('div', { class: 'opciones' }, [
+      { id: 'nueva', nombre: 'Algo nuevo' },
+      { id: 'siempre', nombre: 'De las de siempre' },
+    ].map((opcion) => el('button', {
+      class: 'opcion', type: 'button', 'aria-pressed': opcion.id === fuente ? 'true' : 'false',
+      onclick: (evento) => {
+        if (fuente === opcion.id) return;
+        fuente = opcion.id;
+        for (const otro of evento.currentTarget.parentElement.children) otro.setAttribute('aria-pressed', 'false');
+        evento.currentTarget.setAttribute('aria-pressed', 'true');
+        hay.nodo.hidden = fuente !== 'nueva';
+        boton.lastChild.textContent = fuente === 'nueva' ? 'Proponer con IA' : 'Ver las de siempre';
+        carrusel = hacerCarrusel();
+        vaciar(hueco).append(carrusel.nodo);
+      },
+    }, [opcion.nombre])));
+
+    const boton = el('button', {
+      class: 'boton', type: 'button', 'data-tono': 'discreto', 'data-con-icono': 'si',
+      onclick: () => { toque(); carrusel.abrir(); },
+    }, [icono('destello'), 'Proponer con IA']);
 
     cuerpo.append(el('div', { class: 'cenas-proponer' }, [
-      el('p', { class: 'grupo-titulo', texto: 'Proponer' }),
+      el('p', { class: 'grupo-titulo', texto: cena ? 'Otra cosa' : 'Proponer' }),
+      fuentes,
       hay.nodo,
-      el('button', {
-        class: 'boton', type: 'button', 'data-tono': 'discreto', 'data-con-icono': 'si',
-        onclick: () => { toque(); carrusel.abrir(); },
-      }, [icono('destello'), cena ? 'Proponer otra cosa' : 'Proponer cinco']),
-      carrusel.nodo,
+      boton,
+      hueco,
     ]));
   }, [
     cena ? botonIcono('borrar', {
@@ -262,63 +322,138 @@ export function abrirNoche(fecha, ctx) {
 
 // ------------------------------------------------------ Rellenar la semana --
 
+/**
+ * Rellenar la semana: una fila por noche, con el día fijo delante
+ * (`specs/propuesta-cenas-segunda-vuelta.html`, B2). Cada fila tiene su casilla,
+ * sus flechas para pasar de alternativa y su destello para pedir cinco más
+ * para esa noche. Una noche que ya tiene cena empieza con la suya y sin marcar
+ * (C1); solo se apunta lo marcado.
+ */
 function abrirRellenar(fechas, ctx) {
   const datos = ctx.vista.datos;
 
-  abrirHoja(fechas.length === 1 ? 'Proponer la que falta' : 'Rellenar la semana', (cuerpo) => {
+  abrirHoja('Rellenar la semana', (cuerpo) => {
     const hay = campoDespensa();
-    const resultado = el('div', { class: 'cenas-propuestas' });
-    let propuestas = [];
-    let yaDichas = [];
+    const filas = fechas.map((fecha) => {
+      const actual = laQueHay(datos, fecha);
+      return { fecha, alternativas: actual ? [actual] : [], indice: 0, marcada: false, nodo: null };
+    });
+    const lista = el('div', { class: 'cenas-propuestas' });
+    const apuntar = el('button', { class: 'boton crecer', type: 'button' }, ['Apuntar']);
+    const todas = el('button', {
+      class: 'boton', type: 'button', 'data-tono': 'discreto', 'data-con-icono': 'si',
+    }, [icono('destello'), 'Proponer para todas']);
 
-    const pedir = el('button', { class: 'boton crecer', type: 'button', 'data-tono': 'discreto', 'data-con-icono': 'si' }, [icono('destello'), 'Proponer']);
-    const escribir = el('button', { class: 'boton crecer', type: 'button', hidden: true }, ['Apuntarlas']);
+    const yaDichas = () => filas.flatMap((f) => f.alternativas.map((p) => p.que));
+    const elegida = (fila) => fila.alternativas[fila.indice] || null;
 
-    pedir.onclick = async () => {
+    function pintarFila(fila) {
+      const [a, m, d] = fila.fecha.split('-').map(Number);
+      const noche = new Date(a, m - 1, d);
+      const propuesta = elegida(fila);
+      const nodo = el('div', { class: 'relleno', 'data-marcada': fila.marcada ? 'si' : null }, [
+        el('span', { class: 'cena-dia' }, [
+          el('span', { class: 'cena-dia-letra', texto: INICIALES_DIA[indiceDia(noche)] }),
+          el('span', { class: 'cena-dia-num', texto: String(noche.getDate()) }),
+        ]),
+        el('button', {
+          class: 'relleno-casilla', type: 'button', 'aria-pressed': fila.marcada ? 'true' : 'false',
+          'aria-label': `Apuntar esta para el ${formatearFechaLarga(noche)}`,
+          disabled: !propuesta || propuesta.actual,
+          onclick: () => { toque(); fila.marcada = !fila.marcada; repintar(); },
+        }, [fila.marcada ? icono('visto') : null]),
+        el('div', { class: 'cena-texto' }, propuesta ? pintarPropuesta(propuesta)
+          : [el('p', { class: 'propuesta-porque', texto: 'Sin propuesta todavía' })]),
+        el('span', { class: 'relleno-mandos' }, [
+          el('button', {
+            class: 'propuesta-flecha', type: 'button', 'aria-label': 'Alternativa anterior',
+            disabled: fila.indice === 0, onclick: () => mover(fila, -1),
+          }, ['‹']),
+          el('button', {
+            class: 'propuesta-flecha', type: 'button', 'aria-label': 'Alternativa siguiente',
+            disabled: fila.indice >= fila.alternativas.length - 1, onclick: () => mover(fila, 1),
+          }, ['›']),
+          el('button', {
+            class: 'relleno-destello', type: 'button', 'aria-label': `Cinco más para el ${formatearFechaLarga(noche)}`,
+            onclick: () => masParaLaNoche(fila),
+          }, [icono('destello')]),
+        ]),
+      ]);
+      fila.nodo = nodo;
+      return nodo;
+    }
+
+    function repintar() {
+      vaciar(lista).append(...filas.map(pintarFila));
+      const cuantas = filas.filter((f) => f.marcada && elegida(f) && !elegida(f).actual).length;
+      apuntar.textContent = cuantas ? `Apuntar las marcadas (${cuantas})` : 'Apuntar';
+      apuntar.disabled = !cuantas;
+    }
+
+    // Pasar a otra alternativa la marca; volver a la que había la desmarca.
+    function mover(fila, pasos) {
       toque();
-      pedir.disabled = true;
-      vaciar(resultado).append(el('p', { class: 'pista', texto: 'Pensando…' }));
+      fila.indice = Math.min(fila.alternativas.length - 1, Math.max(0, fila.indice + pasos));
+      fila.marcada = !elegida(fila)?.actual;
+      repintar();
+    }
+
+    async function masParaLaNoche(fila) {
+      toque();
+      fila.nodo?.setAttribute('data-pensando', 'si');
       try {
-        propuestas = await proponerCenas(fechas, { hay: hay.control.value, descartadas: yaDichas });
-        yaDichas = [...yaDichas, ...propuestas.map((p) => p.que)];
-        vaciar(resultado);
-        propuestas.slice(0, fechas.length).forEach((propuesta, i) => {
-          const [a, m, d] = fechas[i].split('-').map(Number);
-          const noche = new Date(a, m - 1, d);
-          resultado.append(el('div', { class: 'cenas-propuesta' }, [
-            el('span', { class: 'cena-dia' }, [
-              el('span', { class: 'cena-dia-letra', texto: INICIALES_DIA[indiceDia(noche)] }),
-              el('span', { class: 'cena-dia-num', texto: String(noche.getDate()) }),
-            ]),
-            el('div', { class: 'cena-texto' }, pintarPropuesta(propuesta)),
-          ]));
-        });
-        escribir.hidden = !propuestas.length;
-        pedir.lastChild.textContent = 'Otras';
-        if (!propuestas.length) resultado.append(el('p', { class: 'pista', texto: 'No ha propuesto nada.' }));
+        const nuevas = await proponerCenas([fila.fecha], { hay: hay.control.value, descartadas: yaDichas() });
+        if (!nuevas.length) { avisar('No ha propuesto nada'); return; }
+        fila.indice = fila.alternativas.length;
+        fila.alternativas.push(...nuevas);
+        fila.marcada = true;
       } catch (error) {
-        vaciar(resultado).append(el('p', { class: 'pista', texto: error.message || 'No he podido pedírselo' }));
+        avisar(error.message || 'No he podido pedírselo');
       } finally {
-        pedir.disabled = false;
+        repintar();
+      }
+    }
+
+    todas.onclick = async () => {
+      toque();
+      todas.disabled = true;
+      todas.lastChild.textContent = 'Pensando…';
+      try {
+        const nuevas = await proponerCenas(fechas, { hay: hay.control.value, descartadas: yaDichas() });
+        nuevas.slice(0, filas.length).forEach((propuesta, i) => {
+          const fila = filas[i];
+          const tenia = elegida(fila)?.actual;
+          fila.alternativas.push(propuesta);
+          // Una noche con cena se queda con la suya; las vacías saltan a la nueva.
+          if (!tenia) { fila.indice = fila.alternativas.length - 1; fila.marcada = true; }
+        });
+      } catch (error) {
+        avisar(error.message || 'No he podido pedírselo');
+      } finally {
+        todas.disabled = false;
+        todas.lastChild.textContent = 'Otras para todas';
+        repintar();
       }
     };
 
-    escribir.onclick = async () => {
+    apuntar.onclick = async () => {
+      const elegidas = filas.filter((f) => f.marcada && elegida(f) && !elegida(f).actual);
+      if (!elegidas.length) return;
       toque('media');
-      for (const [i, propuesta] of propuestas.slice(0, fechas.length).entries()) {
-        await elegirPropuesta(datos, fechas[i], propuesta, ctx.vista.yo.id);
-      }
+      for (const fila of elegidas) await elegirPropuesta(datos, fila.fecha, elegida(fila), ctx.vista.yo.id);
       cerrarHoja();
-      avisar(propuestas.length === 1 ? 'Apuntada' : `Apuntadas ${Math.min(propuestas.length, fechas.length)}`);
+      avisar(elegidas.length === 1 ? 'Apuntada' : `Apuntadas ${elegidas.length}`);
       ctx.refrescar();
     };
 
+    repintar();
     cuerpo.append(
-      el('p', { class: 'pista', texto: 'Una cena por noche vacía, equilibradas entre sí. Nada se apunta hasta que lo digas.' }),
+      el('p', { class: 'pista', texto: 'Una fila por noche. Las flechas pasan de una alternativa a otra, el destello pide cinco más para esa noche y solo se apunta lo marcado.' }),
       hay.nodo,
-      resultado,
+      todas,
+      lista,
       el('div', { class: 'acciones' }, [
-        pedir, escribir,
+        apuntar,
         el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
       ]),
     );
@@ -377,8 +512,13 @@ function recetario(cuerpo, ctx) {
   const datos = ctx.vista.datos;
   const lista = recetas(datos);
 
+  // Lo que es, dicho donde se mira: no es un libro de recetas con pasos.
+  cuerpo.append(el('p', {
+    class: 'pista',
+    texto: 'Los platos que ya habéis cenado o apuntado. La IA repite lo que gustó y no vuelve a lo que no, y «De las de siempre» propone desde aquí sin IA.',
+  }));
   if (!lista.length) {
-    cuerpo.append(el('p', { class: 'pista', texto: 'Se llena solo al elegir lo que propone la IA, o a mano.' }));
+    cuerpo.append(el('p', { class: 'pista', texto: 'Se llena solo al elegir lo que se propone, o a mano.' }));
   }
 
   for (const receta of lista) {

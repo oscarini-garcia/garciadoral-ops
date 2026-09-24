@@ -2046,12 +2046,26 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 
 /* La semana como plan: una fila por noche, con el día a la izquierda como en la
    agenda y lo de las niñas debajo en voz baja. Hoy lleva el tinte de hoy. */
-.cenas-periodo { display: flex; align-items: center; gap: 8px; }
-.cenas-rango { font-size: 15px; color: var(--ink-soft); }
-.cenas-flecha {
-  width: 36px; height: 36px; border-radius: 9px; font-size: 20px; line-height: 1;
+/* La tira de la semana, la de meeting-ops-air: siete columnas fijas, la flecha
+   es una semana, el punto dice qué noche tiene cena y lo pasado se atenúa. */
+.tira { display: flex; align-items: center; gap: 2px; width: 100%; flex: 1 1 auto; }
+.tira-flecha {
+  flex: none; width: 28px; height: var(--toque); font-size: 20px; line-height: 1;
   color: var(--ink-soft); display: grid; place-items: center;
 }
+.tira-dias { display: flex; flex: 1; min-width: 0; gap: 2px; }
+.tira-dia {
+  flex: 1 1 0; min-width: 0; padding: 5px 0 6px; border-radius: 9px;
+  display: flex; flex-direction: column; align-items: center; color: var(--ink);
+}
+.tira-letra { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--ink-faint); }
+.tira-num { font-size: 16px; font-weight: 600; line-height: 1.2; }
+.tira-punto { width: 4px; height: 4px; margin-top: 3px; border-radius: 99px; background: transparent; }
+.tira-punto[data-hay="si"] { background: var(--ink-faint); }
+.tira-dia[data-pasado="si"] { opacity: .4; }
+.tira-dia[data-hoy="si"] { background: var(--tinta); }
+.tira-dia[data-hoy="si"] .tira-letra, .tira-dia[data-hoy="si"] .tira-num { color: var(--paper); }
+.tira-dia[data-hoy="si"] .tira-punto[data-hay="si"] { background: var(--paper); }
 .cena-fila, .receta-fila {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   min-height: var(--toque); padding: 9px 12px;
@@ -2070,10 +2084,29 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .cenas-rellenar { margin-top: 4px; }
 .cenas-proponer { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
 .cenas-propuestas { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
-.cenas-propuesta {
-  display: flex; align-items: flex-start; gap: 12px;
-  border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px;
+/* Rellenar la semana: una fila por noche, con el día fijo delante, la casilla,
+   el plato y a la derecha sus flechas y su destello. */
+.relleno {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px;
 }
+.relleno[data-marcada="si"] { background: var(--tinta-suave); border-color: transparent; }
+.relleno[data-pensando="si"] { opacity: .55; }
+.relleno .cena-texto .propuesta-que { font-size: 15px; }
+.relleno .cena-texto .propuesta-porque { font-size: 12.5px; }
+.relleno-casilla {
+  flex: none; width: 24px; height: 24px; border-radius: 7px;
+  border: 1.5px solid var(--line); background: var(--paper);
+  display: grid; place-items: center; color: var(--paper); position: relative;
+}
+.relleno-casilla::before { content: ""; position: absolute; inset: -10px; }
+.relleno-casilla[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); }
+.relleno-casilla:disabled { opacity: .35; }
+.relleno-casilla .icono-svg svg { width: 16px; height: 16px; display: block; }
+.relleno-mandos { flex: none; display: flex; align-items: center; gap: 2px; }
+.relleno-mandos .propuesta-flecha { width: 30px; height: 30px; }
+.relleno-destello { width: 30px; height: 30px; display: grid; place-items: center; color: var(--tinta); }
+.relleno-destello .icono-svg svg { width: 16px; height: 16px; display: block; }
 
 /* «Esta noche» en Hoy: la figura de las filas de Lío. */
 .cena-hoy {

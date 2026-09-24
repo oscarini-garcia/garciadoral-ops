@@ -118,7 +118,7 @@ tener que recorrer la aplicación entera cada vez.
   bloqueDeSolicitudes · abrirBandeja
 - **cenas.js** — Cenas: el recetario de la casa, lo que se cena cada noche y su veredicto.
   VEREDICTOS · idCena · hayCenas · recetas · recetaPorId · cenaDe · platoDe · platoDeLasNinas
-  nochesDeLaSemana · veredictoDeReceta · …y 5 más
+  nochesDeLaSemana · veredictoDeReceta · …y 7 más
 - **comentarios.js** — El hilo de comentarios de cualquier cosa.
   bloqueDeComentarios
 - **demo.js** — Modo demostración.
