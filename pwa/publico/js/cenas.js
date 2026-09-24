@@ -134,3 +134,46 @@ export async function elegirPropuesta(datos, fecha, propuesta, autorId) {
   }
   return guardar('cena', idCena(fecha), campos);
 }
+
+/**
+ * Lo ya apuntado una noche, con la forma de una propuesta: es la primera
+ * alternativa de sus flechas, para poder quedarse con ello sin reescribirlo
+ * (`specs/propuesta-cenas-segunda-vuelta.html`, C1). `null` si no hay nada.
+ */
+export function laQueHay(datos, fecha) {
+  const cena = cenaDe(datos, fecha);
+  const que = platoDe(datos, cena);
+  if (!que) return null;
+  return { que, porque: 'La que hay apuntada', ninas: platoDeLasNinas(datos, cena), actual: true };
+}
+
+const DIAS_SIN_REPETIR = 7;
+
+/**
+ * «De las de siempre», sin IA (D4): del recetario, lo que no se ha dicho que
+ * no, empezando por lo que gustó y dentro de eso por lo que lleva más tiempo
+ * sin cenarse. Lo cenado la última semana no se ofrece.
+ */
+export function deLasDeSiempre(datos, fecha, { descartadas = [], cuantas = 5 } = {}) {
+  const fuera = new Set(descartadas.map((d) => String(d).toLocaleLowerCase('es')));
+  const limite = iso(sumarDias(new Date(`${fecha}T12:00:00`), -DIAS_SIN_REPETIR));
+  const dias = (desde) => Math.round((Date.parse(fecha) - Date.parse(desde)) / 86400000);
+
+  return recetas(datos)
+    .map((receta) => ({ receta, veredicto: veredictoDeReceta(datos, receta.id), uso: usoDeReceta(datos, receta.id) }))
+    .filter(({ receta, veredicto, uso }) => veredicto !== 'no_mas'
+      && !fuera.has(receta.nombre.toLocaleLowerCase('es'))
+      && !(uso.ultima && uso.ultima > limite && uso.ultima <= fecha))
+    .sort((a, b) => (a.veredicto === 'repetir' ? 0 : 1) - (b.veredicto === 'repetir' ? 0 : 1)
+      || (a.uso.ultima || '').localeCompare(b.uso.ultima || ''))
+    .slice(0, cuantas)
+    .map(({ receta, veredicto, uso }) => ({
+      que: receta.nombre,
+      porque: [
+        veredicto === 'repetir' ? 'Gustó' : null,
+        uso.ultima ? `la última, hace ${dias(uso.ultima)} días` : 'sin cenar todavía',
+        receta.como,
+      ].filter(Boolean).join(' · '),
+      ninas: '',
+    }));
+}

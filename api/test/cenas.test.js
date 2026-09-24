@@ -160,3 +160,17 @@ test('lo de las niñas se separa del porqué', () => {
     { que: 'Tortilla de calabacín', porque: 'aprovecha lo que hay', ninas: '' },
   ]);
 });
+
+test('una frase del modelo no es una cena', () => {
+  // Lo que pasó de verdad: el modelo contestó con una negativa, y se apuntó
+  // como la cena del jueves.
+  const texto = 'No puedo ayudarte porque no me has indicado qué platos ya has propuesto para esas cuatro noches.';
+  assert.deepEqual(interpretarCenas(texto, 4), []);
+
+  const mezcla = [
+    'Aquí van tus cenas:',
+    '1. Lubina a la plancha — quince minutos',
+    'Espero que te sirvan.',
+  ].join('\n');
+  assert.deepEqual(interpretarCenas(mezcla, 4).map((p) => p.que), ['Lubina a la plancha']);
+});

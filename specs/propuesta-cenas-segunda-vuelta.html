@@ -1,0 +1,587 @@
+<meta charset="utf-8">
+<title>Cenas, segunda vuelta</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d;
+      --card: #1e242b;
+      --lift: #242b33;
+      --ink: #dce5ee;
+      --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12);
+      --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8;
+      --ac-ink: #10181d;
+      --rec: #7f92a5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d;
+    --card: #1e242b;
+    --lift: #242b33;
+    --ink: #dce5ee;
+    --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12);
+    --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8;
+    --ac-ink: #10181d;
+    --rec: #7f92a5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin: 0 0 4px;
+  }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ac);
+    flex: none;
+  }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec {
+    margin-left: auto;
+    flex: none;
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    color: var(--rec);
+    border: 1px solid var(--line-hard);
+    border-radius: 99px;
+    padding: 2px 8px;
+  }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .obody code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .mock {
+    display: block;
+    margin: 12px 0 2px;
+    background: var(--lift);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+  .mock .sample { display: block; color: var(--ink); font-size: 14px; line-height: 1.55; margin: 0; }
+  .mock .sample + .sample { margin-top: 8px; }
+  .mock .caption {
+    display: block;
+    margin-top: 8px;
+    color: var(--sub);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  /* Las maquetas: una pantalla en pequeño, a la misma escala en todas las
+     opciones de una pregunta. Todo son spans: la tarjeta es el botón. */
+  .mk { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+  .mk + .mk { margin-top: 8px; }
+  .mk-h { display: block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin-bottom: 4px; }
+  .mk-t { display: block; font-weight: 640; font-size: 14px; }
+  .mk-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
+  .mk-row:first-of-type, .mk-h + .mk-row, .mk-t + .mk-row { border-top: 0; }
+  .mk-row .d { flex: none; width: 3.2em; color: var(--sub); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .mk-row .x { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mk-row .m { flex: none; color: var(--sub); font-size: 12px; }
+  .mk-row .faint { color: var(--sub); }
+  .mk-pill { display: inline-block; border: 1px solid var(--line-hard); border-radius: 99px; padding: 0 8px; font-size: 12px; color: var(--ink); line-height: 1.6; margin-right: 4px; }
+  .mk-pill.ac { border-color: var(--ac); color: var(--ac); }
+  .mk-pill.dash { border-style: dashed; color: var(--sub); }
+  .mk-tag { display: inline-block; background: var(--lift); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 11.5px; color: var(--sub); margin-right: 3px; }
+  .mk-field { display: block; padding: 4px 0; }
+  .mk-field .l { display: block; font-size: 11px; color: var(--sub); letter-spacing: 0.03em; }
+  .mk-field .v { display: block; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; margin-top: 2px; background: var(--lift); }
+  .mk-bar { display: flex; justify-content: space-between; border-top: 1px solid var(--line-hard); padding-top: 6px; margin-top: 6px; font-size: 10.5px; color: var(--sub); }
+  .mk-bar .on { color: var(--ac); font-weight: 600; }
+  .mk-list { display: block; }
+  .mk-list .n { display: block; padding: 2px 0; }
+  .mk-list .n b { font-weight: 600; }
+  .mk-list .n .w { color: var(--sub); }
+  .mk-check { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--line-hard); border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+  .mk-check.on { background: var(--ac); border-color: var(--ac); }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary {
+    cursor: pointer;
+    color: var(--sub);
+    font-size: 13.5px;
+    list-style: none;
+    display: inline-block;
+    border-bottom: 1px dashed var(--line-hard);
+  }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 60px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .foot code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--lift);
+    border-top: 1px solid var(--line);
+    padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy {
+    flex: none;
+    background: var(--ac);
+    color: var(--ac-ink);
+    border: 0;
+    border-radius: 99px;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: 620;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+  /* La tira de la semana, dibujada como en meeting-ops-air: siete columnas,
+     la flecha es una semana y el día elegido va relleno. */
+  .mk-strip { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+  .mk-strip .ar { flex: none; width: 14px; color: var(--sub); text-align: center; }
+  .mk-strip .ds { display: flex; flex: 1; gap: 1px; }
+  .mk-strip .dd { flex: 1; text-align: center; border-radius: 6px; padding: 2px 0 3px; }
+  .mk-strip .dd .n { display: block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 9px; color: var(--sub); }
+  .mk-strip .dd .v { display: block; font-size: 12.5px; font-weight: 600; }
+  .mk-strip .dd .p { display: block; width: 4px; height: 4px; margin: 2px auto 0; border-radius: 99px; background: var(--sub); }
+  .mk-strip .dd .p.no { background: transparent; }
+  .mk-strip .dd.pasado { opacity: .35; }
+  .mk-strip .dd.hoy .v { color: var(--ac); }
+  .mk-strip .dd.sel { background: var(--ac); }
+  .mk-strip .dd.sel .n, .mk-strip .dd.sel .v { color: var(--ac-ink); }
+  .mk-strip .dd.sel .p { background: var(--ac-ink); }
+  .mk-sel { display: inline-block; border: 1px solid var(--line-hard); border-radius: 6px; padding: 0 6px; font-size: 11.5px; color: var(--ink); white-space: nowrap; }
+  .mk-sel::after { content: " ▾"; color: var(--sub); }
+  .mk-ai { display: inline-block; color: var(--ac); font-size: 12px; margin: 0 2px; }
+  .mk-arr { display: inline-block; color: var(--sub); font-size: 13px; padding: 0 3px; }
+  .mk-big { display: block; font-size: 15px; font-weight: 640; margin: 2px 0; }
+</style>
+
+<div class="wrap">
+  <h1>Cenas, segunda vuelta</h1>
+  <p class="stand">Lo pedido, tras probarlo en el teléfono: <em>que los días pasados no salgan, la semana arriba como en meeting-ops-air, y al rellenar la semana un desplegable de día junto a cada receta, con su destello y sus flechas para ver otras; «el que hay», otra de las opciones; y qué es el recetario</em>. Cuatro preguntas. En cada una, la primera es la recomendada. Los platos de las maquetas son de muestra; hoy es el jueves 24.</p>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · La semana</p>
+    <p class="qtitle">¿Cómo se ve la semana, sin los días que ya han pasado?</p>
+    <p class="qwhy">La tira de meeting-ops-air son siete columnas fijas con un punto donde hay algo, la flecha salta de semana y el día elegido va relleno. Lo que se decide es qué hay debajo de ella y qué pasa con los días de atrás.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Tira arriba y, debajo, de hoy en adelante</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-strip"><span class="ar">‹</span><span class="ds">
+            <span class="dd pasado"><span class="n">L</span><span class="v">21</span><span class="p"></span></span>
+            <span class="dd pasado"><span class="n">M</span><span class="v">22</span><span class="p"></span></span>
+            <span class="dd pasado"><span class="n">X</span><span class="v">23</span><span class="p"></span></span>
+            <span class="dd sel hoy"><span class="n">J</span><span class="v">24</span><span class="p"></span></span>
+            <span class="dd"><span class="n">V</span><span class="v">25</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">S</span><span class="v">26</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">D</span><span class="v">27</span><span class="p no"></span></span>
+          </span><span class="ar">›</span></span>
+          <span class="mk-row"><span class="d">J 24</span><span class="x">Crema de calabaza</span><span class="m">hoy</span></span>
+          <span class="mk-row"><span class="d">V 25</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">S 26</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">D 27</span><span class="x faint">Proponer</span></span>
+        </span><span class="caption">Lo pasado, atenuado en la tira y fuera de la lista.</span></span>
+        <p class="obody">La tira dice de un vistazo qué noches tienen cena (el punto) y la lista enseña solo lo que queda por delante. Tocar un día de la tira abre esa noche; tocar un día pasado también, para corregir lo que se cenó o dar el veredicto. <b>Lo que cuesta:</b> dos maneras de llegar a la misma noche, la tira y la lista.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Tira arriba y, debajo, solo el día elegido</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-strip"><span class="ar">‹</span><span class="ds">
+            <span class="dd pasado"><span class="n">L</span><span class="v">21</span><span class="p"></span></span>
+            <span class="dd pasado"><span class="n">M</span><span class="v">22</span><span class="p"></span></span>
+            <span class="dd pasado"><span class="n">X</span><span class="v">23</span><span class="p"></span></span>
+            <span class="dd sel hoy"><span class="n">J</span><span class="v">24</span><span class="p"></span></span>
+            <span class="dd"><span class="n">V</span><span class="v">25</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">S</span><span class="v">26</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">D</span><span class="v">27</span><span class="p no"></span></span>
+          </span><span class="ar">›</span></span>
+          <span class="mk-h">Jueves 24</span>
+          <span class="mk-big">Crema de calabaza y pavo</span>
+          <span class="mk-row"><span class="x faint">Las niñas: lo mismo</span><span class="m"><span class="mk-pill">Cambiar</span></span></span>
+        </span><span class="caption">Una noche a la vez, como un día en meeting-ops-air.</span></span>
+        <p class="obody">Es la figura exacta de meeting-ops-air: la tira manda y debajo va un día. La noche se edita ahí mismo, sin abrir hoja. <b>Lo que cuesta:</b> no se ve la semana de un golpe; saber qué falta pide mirar los puntos, y rellenar la semana no tiene una lista a la que volver.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Sin tira: siete noches seguidas desde hoy</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Próximas noches</span>
+          <span class="mk-row"><span class="d">J 24</span><span class="x">Crema de calabaza</span><span class="m">hoy</span></span>
+          <span class="mk-row"><span class="d">V 25</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">S 26</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">D 27</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">L 28</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">M 29</span><span class="x faint">Proponer</span></span>
+        </span><span class="caption">Hoy y seis más, sin cortes de semana.</span></span>
+        <p class="obody">Lo más simple: siempre hay siete noches por delante, y el domingo no se queda en blanco. <b>Lo que cuesta:</b> no es lo pedido —no hay semana arriba— y lo pasado solo se corrige desde Hoy.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Tira que empieza hoy, sin días pasados ni en ella</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-strip"><span class="ar">‹</span><span class="ds">
+            <span class="dd sel hoy"><span class="n">J</span><span class="v">24</span><span class="p"></span></span>
+            <span class="dd"><span class="n">V</span><span class="v">25</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">S</span><span class="v">26</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">D</span><span class="v">27</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">L</span><span class="v">28</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">M</span><span class="v">29</span><span class="p no"></span></span>
+            <span class="dd"><span class="n">X</span><span class="v">30</span><span class="p no"></span></span>
+          </span><span class="ar">›</span></span>
+          <span class="mk-row"><span class="d">J 24</span><span class="x">Crema de calabaza</span><span class="m">hoy</span></span>
+          <span class="mk-row"><span class="d">V 25</span><span class="x faint">Proponer</span></span>
+          <span class="mk-row"><span class="d">S 26</span><span class="x faint">Proponer</span></span>
+        </span><span class="caption">Siete días rodantes: hoy siempre a la izquierda.</span></span>
+        <p class="obody">Nada de lo pasado a la vista. <b>Lo que cuesta:</b> las columnas cambian de sitio cada día, que es justo lo que la tira de meeting-ops-air evita a propósito para que el jueves esté siempre donde estaba. <b>Se dibuja para descartarla.</b></p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va cómo debería verse.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Tras «Rellenar la semana»</p>
+    <p class="qtitle">¿Cómo se eligen las propuestas y a qué día va cada una?</p>
+    <p class="qwhy">Lo pedido: junto a cada receta, un desplegable con el día, puesto de origen en días consecutivos; marcarlas; y en cada una un destello para pedir más para ese día, con flechas para pasar de una a otra.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Tal cual lo pedido: casilla, día, flechas y destello por fila</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Rellenar la semana</span>
+          <span class="mk-row"><span class="x"><span class="mk-check on"></span>Lubina a la plancha</span><span class="m"><span class="mk-arr">‹</span><span class="mk-arr">›</span><span class="mk-ai">✦</span><span class="mk-sel">V 25</span></span></span>
+          <span class="mk-row"><span class="x"><span class="mk-check on"></span>Tortilla de calabacín</span><span class="m"><span class="mk-arr">‹</span><span class="mk-arr">›</span><span class="mk-ai">✦</span><span class="mk-sel">S 26</span></span></span>
+          <span class="mk-row"><span class="x"><span class="mk-check"></span>Pollo al horno</span><span class="m"><span class="mk-arr">‹</span><span class="mk-arr">›</span><span class="mk-ai">✦</span><span class="mk-sel">D 27</span></span></span>
+          <span class="mk-row"><span class="x faint">Apuntar las marcadas (2)</span></span>
+        </span><span class="caption">Cada fila recorre sus propias alternativas.</span></span>
+        <p class="obody">Los días salen consecutivos desde la primera noche libre y se cambian con el desplegable. Las flechas pasan por las alternativas de esa fila; el destello pide cinco más para ese día, con lo que hay en las otras filas como material para no repetir. Solo se apunta lo marcado. <b>Lo que cuesta:</b> cuatro controles por fila en 350 puntos: se aprieta, y el nombre del plato se corta antes.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Una fila por noche, con el día fijo delante</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Rellenar la semana</span>
+          <span class="mk-row"><span class="d">V 25</span><span class="x"><span class="mk-check on"></span>Lubina a la plancha</span><span class="m"><span class="mk-arr">‹</span><span class="mk-arr">›</span><span class="mk-ai">✦</span></span></span>
+          <span class="mk-row"><span class="d">S 26</span><span class="x"><span class="mk-check on"></span>Tortilla de calabacín</span><span class="m"><span class="mk-arr">‹</span><span class="mk-arr">›</span><span class="mk-ai">✦</span></span></span>
+          <span class="mk-row"><span class="d">D 27</span><span class="x"><span class="mk-check"></span>Pollo al horno</span><span class="m"><span class="mk-arr">‹</span><span class="mk-arr">›</span><span class="mk-ai">✦</span></span></span>
+          <span class="mk-row"><span class="x faint">Apuntar las marcadas (2)</span></span>
+        </span><span class="caption">El día no se elige: cada fila es una noche.</span></span>
+        <p class="obody">Igual que B1 sin el desplegable: para mover un plato a otro día se pasa con las flechas en la fila de ese día. Una columna menos y se lee como la semana. <b>Lo que cuesta:</b> no se puede decir «esto mejor el sábado» sin buscarlo en las flechas del sábado.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Una noche a la vez, con sus cinco alternativas</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Viernes 25 · 1 de 3 noches</span>
+          <span class="mk-big"><span class="mk-arr">‹</span> Lubina a la plancha <span class="mk-arr">›</span></span>
+          <span class="mk-row"><span class="x faint">Quince minutos y una sartén · 2 / 5</span></span>
+          <span class="mk-row"><span class="x"><span class="mk-pill ac">Esta</span><span class="mk-pill">Saltar noche</span></span><span class="m"><span class="mk-ai">✦</span></span></span>
+        </span><span class="caption">Se va noche por noche, eligiendo o saltando.</span></span>
+        <p class="obody">Es el carrusel que ya hay para una noche, encadenado: se elige y pasa a la siguiente. <b>Lo que cuesta:</b> no se ve la semana entera antes de apuntar, y el equilibrio entre noches es lo que se pierde.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Lista de platos y se sueltan en la tira</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-strip"><span class="ar"></span><span class="ds">
+            <span class="dd"><span class="n">V</span><span class="v">25</span><span class="p no"></span></span>
+            <span class="dd sel"><span class="n">S</span><span class="v">26</span><span class="p"></span></span>
+            <span class="dd"><span class="n">D</span><span class="v">27</span><span class="p no"></span></span>
+          </span><span class="ar"></span></span>
+          <span class="mk-row"><span class="x">Lubina a la plancha</span><span class="m faint">toca y luego un día</span></span>
+          <span class="mk-row"><span class="x">Tortilla de calabacín</span><span class="m faint">→ S 26</span></span>
+          <span class="mk-row"><span class="x">Pollo al horno</span></span>
+        </span><span class="caption">Se toca un plato y después el día.</span></span>
+        <p class="obody">Separa qué se cena de cuándo. <b>Lo que cuesta:</b> dos toques por plato y un gesto que no existe en ninguna otra pantalla de la aplicación. <b>Se dibuja para descartarla.</b></p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va cómo debería elegirse.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="C" data-multi="true">
+    <p class="qhead">Pregunta C · «El que hay»</p>
+    <p class="qtitle">¿Qué significa que «el que hay» sea otra de las opciones?</p>
+    <p class="qwhy">Lo leo de dos maneras y no sé cuál es. Se pueden marcar varias.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Lo ya apuntado esa noche, como una alternativa más en las flechas</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Jueves 24 · Proponer otra cosa</span>
+          <span class="mk-big"><span class="mk-arr">‹</span> Crema de calabaza <span class="mk-arr">›</span></span>
+          <span class="mk-row"><span class="x faint">La que hay apuntada · 1 / 6</span></span>
+          <span class="mk-row"><span class="x faint">› Lubina a la plancha · 2 / 6</span></span>
+        </span><span class="caption">La primera de la tanda es la que ya estaba.</span></span>
+        <p class="obody">Al pedir otras para una noche con cena, la que hay entra la primera, para poder volver a ella sin reescribirla. <b>Lo que cuesta:</b> una tarjeta más en cada tanda.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">«Con lo que hay en casa» como una opción que se marca</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Proponer</span>
+          <span class="mk-row"><span class="x"><span class="mk-pill">Algo nuevo</span><span class="mk-pill ac">Con lo que hay en casa</span><span class="mk-pill">De las de siempre</span></span></span>
+          <span class="mk-field"><span class="l">Qué hay</span><span class="v">Calabacín, pollo, medio brócoli</span></span>
+        </span><span class="caption">El campo solo aparece al elegir esa opción.</span></span>
+        <p class="obody">Lo que hay en casa deja de ser un campo suelto y pasa a ser un modo de pedir, junto a «algo nuevo» y «de las de siempre» (el recetario). <b>Lo que cuesta:</b> un toque más cuando se quiere escribir lo que hay.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Lo que hay en casa como pastillas de ingredientes</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Qué hay en casa</span>
+          <span class="mk-row"><span class="x"><span class="mk-pill ac">Pollo</span><span class="mk-pill ac">Calabacín</span><span class="mk-pill">Huevos</span><span class="mk-pill">Salmón</span><span class="mk-pill dash">+</span></span></span>
+        </span><span class="caption">Las que se usaron la última vez, para marcar.</span></span>
+        <p class="obody">En vez de escribir, se marcan ingredientes que se recuerdan de la última vez. <b>Lo que cuesta:</b> hay que guardar lo que hay, que se decidió no guardar, y la lista envejece.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">No era ninguna de las dos lecturas; en la nota va qué se quería decir.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="D">
+    <p class="qhead">Pregunta D · El recetario</p>
+    <p class="qtitle">¿Qué hacemos con el recetario?</p>
+    <p class="qwhy">Hoy es la lista de platos que la casa ya ha cenado o apuntado: cada vez que se elige una propuesta de la IA, el plato entra ahí. Guarda cómo se hace, los minutos, cuántas veces se ha cenado y si gustó, y la IA lo lee para repetir lo que gustó y no volver a lo que no. No es un libro de recetas con pasos.</p>
+    <div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Se llama «Platos de casa» y dice para qué sirve</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-t">Platos de casa · 12</span>
+          <span class="mk-row"><span class="x faint">Lo que ya habéis cenado. La IA repite lo que gustó.</span></span>
+          <span class="mk-row"><span class="x">Lubina a la plancha</span><span class="m">👍 · 3 veces</span></span>
+          <span class="mk-row"><span class="x">Tortilla de espinacas</span><span class="m">👎 · 1 vez</span></span>
+        </span><span class="caption">El mismo apartado, con un nombre que se entiende.</span></span>
+        <p class="obody">Nada cambia por dentro; cambia el rótulo y lleva una línea que explica. <b>Lo que cuesta:</b> nada.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Se queda «Recetario», con la línea de explicación</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-t">Recetario · 12</span>
+          <span class="mk-row"><span class="x faint">Lo que ya habéis cenado. La IA repite lo que gustó.</span></span>
+          <span class="mk-row"><span class="x">Lubina a la plancha</span><span class="m">👍 · 3 veces</span></span>
+          <span class="mk-row"><span class="x">Tortilla de espinacas</span><span class="m">👎 · 1 vez</span></span>
+        </span><span class="caption">El nombre de ahora, explicado.</span></span>
+        <p class="obody">Igual que D1 sin renombrar. <b>Lo que cuesta:</b> «recetario» promete pasos e ingredientes que no hay.</p>
+      </button>
+      <button class="opt" data-t="D3" aria-pressed="false">
+        <span class="optrow"><span class="tok">D3</span><span class="oname">Fuera de la pantalla: solo memoria para la IA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Cenas</span>
+          <span class="mk-row"><span class="x">Cómo se cocina en casa</span><span class="m">▾</span></span>
+          <span class="mk-row"><span class="x faint">(sin apartado de recetario)</span></span>
+        </span><span class="caption">La lista existe, pero no se enseña.</span></span>
+        <p class="obody">La pestaña queda más limpia. <b>Lo que cuesta:</b> no se puede corregir un nombre ni quitar un plato que se coló, como la frase del jueves.</p>
+      </button>
+      <button class="opt" data-t="D4" aria-pressed="false">
+        <span class="optrow"><span class="tok">D4</span><span class="oname">Además, fuente de propuestas: «De las de siempre»</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Proponer · jueves 24</span>
+          <span class="mk-row"><span class="x"><span class="mk-pill ac">De las de siempre</span><span class="mk-pill">Algo nuevo</span></span></span>
+          <span class="mk-row"><span class="x">Lubina a la plancha</span><span class="m faint">hace 12 días</span></span>
+          <span class="mk-row"><span class="x">Salmón al horno</span><span class="m faint">hace 9 días</span></span>
+        </span><span class="caption">Sin IA: lo que gustó y hace más que no se cena.</span></span>
+        <p class="obody">El recetario sirve para algo más que mirarlo: propone sin IA lo que gustó y lleva tiempo sin cenarse. Encaja con C2. <b>Lo que cuesta:</b> una fuente más que explicar.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va qué debería ser.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p><b>Ya arreglado, sin preguntar.</b> La frase del jueves era una negativa del modelo que se apuntó como cena. Desde el PR #156 solo se acepta una línea con plato y porqué, y si al rellenar falta alguna noche no se apunta nada y se dice.</p>
+    <p><b>Decidido:</b> A1 · B2 · C1 · D4. La semana va arriba en una tira de siete días, como en meeting-ops-air, y debajo solo las noches de hoy en adelante; lo pasado se atenúa en la tira y se sigue pudiendo abrir. Rellenar la semana es una fila por noche, con el día fijo delante, su casilla, flechas para pasar de alternativa y un destello para pedir más para esa noche. Lo ya apuntado en una noche es la primera alternativa de sus flechas. Y el recetario se queda, explicado, y además propone sin IA «De las de siempre»: lo que gustó y lleva más tiempo sin cenarse. Construido como 1.77.0.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  const KEY = "options.cenas-segunda-vuelta";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  // A question opts into combining by carrying data-multi="true".
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  // Picks are held per letter as a list of tokens, so a single-pick question and
+  // a combining one share one shape. An empty list means undecided; the list
+  // ["A0"] means the options were seen and none served.
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t]; // "none of these" stands alone
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: está abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>

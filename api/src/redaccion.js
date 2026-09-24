@@ -232,6 +232,8 @@ export const INSTRUCCION_CENA_POR_DEFECTO = [
   'esta forma: «el plato en menos de ocho palabras — una frase corta con cómo se',
   'hace y por qué encaja». Si las niñas necesitan otra cosa, añade al final de la',
   'línea « | niñas: su plato».',
+  'No preguntes ni expliques nada: si te falta algún dato, propón igualmente con',
+  'lo que tienes.',
   'En español de España, sin emojis, sin viñetas y sin comillas.',
 ].join(' ');
 
@@ -965,17 +967,27 @@ export function componerMaterialDeCena(
   }
 
   lineas.push(`Responde con ${cuantas} líneas.`);
-  return { titulo: 'Cenas', lineas, cuantas };
+  return { titulo: 'Cenas', lineas, cuantas, noches: noches.length };
 }
+
+/** Un plato no pasa de esto; lo que lo pase es una frase del modelo. */
+const TOPE_DE_PLATO = 80;
 
 /**
  * Las propuestas de cena: las de siempre, con lo de las niñas separado.
  *
- * Es `interpretarPropuestas` y un corte más: lo que venga detrás de «| niñas:»
- * es su plato, y el porqué se queda sin él.
+ * Es `interpretarPropuestas` con dos cortes más. **Solo vale una línea con la
+ * raya** entre el plato y el porqué, y con un plato de longitud de plato: el
+ * modelo a veces contesta con una frase —«no puedo ayudarte porque…»— y sin
+ * esto esa frase se apuntaba como la cena del jueves. Y lo que venga detrás
+ * de «| niñas:» es su plato, y el porqué se queda sin él.
  */
 export function interpretarCenas(texto, cuantas = PROPUESTAS_POR_TANDA) {
-  return interpretarPropuestas(texto, cuantas).map(({ que, porque }) => {
+  const conRaya = String(texto || '')
+    .split('\n')
+    .filter((linea) => /\s[—–-]\s/.test(linea))
+    .join('\n');
+  return interpretarPropuestas(conRaya, cuantas).filter(({ que }) => que.length <= TOPE_DE_PLATO).map(({ que, porque }) => {
     const corte = porque.match(/\s*\|\s*(?:las\s+)?niñas\s*:\s*/i);
     if (!corte) return { que, porque, ninas: '' };
     return {
