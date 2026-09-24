@@ -1,0 +1,762 @@
+<meta charset="utf-8">
+<title>Cenas de la casa</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d;
+      --card: #1e242b;
+      --lift: #242b33;
+      --ink: #dce5ee;
+      --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12);
+      --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8;
+      --ac-ink: #10181d;
+      --rec: #7f92a5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d;
+    --card: #1e242b;
+    --lift: #242b33;
+    --ink: #dce5ee;
+    --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12);
+    --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8;
+    --ac-ink: #10181d;
+    --rec: #7f92a5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin: 0 0 4px;
+  }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ac);
+    flex: none;
+  }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec {
+    margin-left: auto;
+    flex: none;
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    color: var(--rec);
+    border: 1px solid var(--line-hard);
+    border-radius: 99px;
+    padding: 2px 8px;
+  }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .obody code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .mock {
+    display: block;
+    margin: 12px 0 2px;
+    background: var(--lift);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+  .mock .sample { display: block; color: var(--ink); font-size: 14px; line-height: 1.55; margin: 0; }
+  .mock .sample + .sample { margin-top: 8px; }
+  .mock .caption {
+    display: block;
+    margin-top: 8px;
+    color: var(--sub);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  /* Las maquetas: una pantalla en pequeño, a la misma escala en todas las
+     opciones de una pregunta. Todo son spans: la tarjeta es el botón. */
+  .mk { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+  .mk + .mk { margin-top: 8px; }
+  .mk-h { display: block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin-bottom: 4px; }
+  .mk-t { display: block; font-weight: 640; font-size: 14px; }
+  .mk-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
+  .mk-row:first-of-type, .mk-h + .mk-row, .mk-t + .mk-row { border-top: 0; }
+  .mk-row .d { flex: none; width: 3.2em; color: var(--sub); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .mk-row .x { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mk-row .m { flex: none; color: var(--sub); font-size: 12px; }
+  .mk-row .faint { color: var(--sub); }
+  .mk-pill { display: inline-block; border: 1px solid var(--line-hard); border-radius: 99px; padding: 0 8px; font-size: 12px; color: var(--ink); line-height: 1.6; margin-right: 4px; }
+  .mk-pill.ac { border-color: var(--ac); color: var(--ac); }
+  .mk-pill.dash { border-style: dashed; color: var(--sub); }
+  .mk-tag { display: inline-block; background: var(--lift); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 11.5px; color: var(--sub); margin-right: 3px; }
+  .mk-field { display: block; padding: 4px 0; }
+  .mk-field .l { display: block; font-size: 11px; color: var(--sub); letter-spacing: 0.03em; }
+  .mk-field .v { display: block; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; margin-top: 2px; background: var(--lift); }
+  .mk-bar { display: flex; justify-content: space-between; border-top: 1px solid var(--line-hard); padding-top: 6px; margin-top: 6px; font-size: 10.5px; color: var(--sub); }
+  .mk-bar .on { color: var(--ac); font-weight: 600; }
+  .mk-list { display: block; }
+  .mk-list .n { display: block; padding: 2px 0; }
+  .mk-list .n b { font-weight: 600; }
+  .mk-list .n .w { color: var(--sub); }
+  .mk-check { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--line-hard); border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+  .mk-check.on { background: var(--ac); border-color: var(--ac); }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary {
+    cursor: pointer;
+    color: var(--sub);
+    font-size: 13.5px;
+    list-style: none;
+    display: inline-block;
+    border-bottom: 1px dashed var(--line-hard);
+  }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 60px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .foot code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--lift);
+    border-top: 1px solid var(--line);
+    padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy {
+    flex: none;
+    background: var(--ac);
+    color: var(--ac-ink);
+    border: 0;
+    border-radius: 99px;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: 620;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+</style>
+
+<div class="wrap">
+  <h1>Cenas de la casa</h1>
+  <p class="stand">Lo pedido: <em>algo para gestionar los menús de las cenas: seguir lo que cenamos y recibir sugerencias de recetas que permitan hacer algo de dieta, a partir de con qué se puede cocinar —plancha y compañía— y de qué dieta se sigue, planificando por día o por semana</em>. Es una primera aproximación para iterar: seis preguntas que fijan la forma, no el detalle. En cada una, la primera opción es la que se recomienda. Toca para elegir y copia el bloque al final. Los platos y los nombres de las maquetas son de muestra.</p>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Dónde vive</p>
+    <p class="qtitle">¿Dónde vive Cenas dentro de la aplicación?</p>
+    <p class="qwhy">La barra está en cinco y no admite una sexta. Lo que se decide es si una cena es una cosa más de la agenda o un módulo aparte como Sitios, y eso fija cuánto hereda gratis —la semana, el plan de los domingos, la redacción del día— y cuánto hay que construir.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Un plugin más de la agenda, con bloque en Hoy</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Agenda · semana</span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x">🐴 Hípica</span><span class="m">18:00</span></span>
+            <span class="mk-row"><span class="d"></span><span class="x">🍽️ Tortilla de espinacas</span><span class="m">21:00</span></span>
+            <span class="mk-row"><span class="d">J 17</span><span class="x">🍽️ Lubina a la plancha</span><span class="m">21:00</span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy</span>
+            <span class="mk-t">🍽️ Esta noche</span>
+            <span class="mk-row"><span class="x">Tortilla de espinacas <span class="faint">· plancha · 15 min</span></span><span class="m"><span class="mk-pill">Cambiar</span></span></span>
+          </span>
+          <span class="caption">La cena como una línea más del día, y en Hoy su bloque.</span>
+        </span>
+        <p class="obody">Cada cena es una fila de <code>evento</code> con <code>plugin_id = 'cena'</code>, de casa y a la hora de cenar. Con eso entra sola en la semana, en la hoja del día, en la redacción con IA y en el plan de WhatsApp de los domingos, sin escribir nada dos veces; y su hoja detrás del botón de capas guarda el recetario, la semana y cómo cocináis. Hoy gana un bloque «Esta noche», que es donde se corrige y se da el veredicto. <b>Lo que cuesta:</b> siete líneas más a la semana en la agenda; lo tapa el interruptor «enseñar en mi agenda» que ya tiene cada plugin, por aparato.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Módulo propio, como Sitios, sin pasar por la agenda</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Agenda · semana</span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x">🐴 Hípica</span><span class="m">18:00</span></span>
+            <span class="mk-row"><span class="d">J 17</span><span class="x faint">—</span><span class="m"></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy</span>
+            <span class="mk-t">🍽️ Cenas</span>
+            <span class="mk-row"><span class="x">Esta noche: tortilla de espinacas</span><span class="m"><span class="mk-pill">Cambiar</span></span></span>
+            <span class="mk-row"><span class="x faint">Recetario y semana ›</span><span class="m"></span></span>
+          </span>
+          <span class="caption">La agenda no se entera; todo pasa por el bloque de Hoy y su hoja.</span>
+        </span>
+        <p class="obody">Tablas propias —<code>cena</code>, <code>receta</code>— y su hoja, a la que se entra desde el bloque de Hoy. La agenda no se entera: ni línea en la semana ni en el plan de los domingos. Más limpio para quien lee la agenda como lo que sale de casa; <b>lo que cuesta:</b> es el tercer módulo que no cuelga de la agenda, y todo lo que ya sabe leer un evento —la redacción, las ausencias, los comentarios, el plan— habría que enseñárselo aparte o renunciar a ello.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Un sitio más en Sitios: «Cocina»</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Sitios › Cocina</span>
+            <span class="mk-row"><span class="x"><b>Llevar · 4</b></span><span class="m"></span></span>
+            <span class="mk-row"><span class="x"><span class="mk-check"></span>Espinacas</span><span class="m"></span></span>
+            <span class="mk-row"><span class="x"><b>Saber · 6</b></span><span class="m"></span></span>
+            <span class="mk-row"><span class="x">Tortilla de espinacas — 15 min, sartén</span><span class="m"></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy</span>
+            <span class="mk-row"><span class="x faint">Nada de cenas: un apunte no cae en un día.</span><span class="m"></span></span>
+          </span>
+          <span class="caption">El recetario como apuntes y la compra en Llevar; ninguna noche apuntada.</span>
+        </span>
+        <p class="obody">Sin construir casi nada: el recetario son apuntes de «Saber» y la compra va en «Llevar». <b>Se dibuja para descartarla:</b> un apunte no cae en un día, así que no hay seguimiento de qué se cenó ni material para la sugerencia, que era justo lo que se pedía.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Una sexta pestaña en la barra</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas</span>
+            <span class="mk-row"><span class="d">L 14</span><span class="x">Salmón al horno</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">M 15</span><span class="x">Crema de calabaza</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x">Tortilla de espinacas</span><span class="m"></span></span>
+            <span class="mk-bar"><span>Hoy</span><span>Agenda</span><span>Regalos</span><span>Gente</span><span>Sitios</span><span class="on">Cenas</span></span>
+          </span>
+          <span class="caption">Seis entradas en la barra: los rótulos se estrechan.</span>
+        </span>
+        <p class="obody">Lo más visible y lo más caro: la barra se decidió en cinco y Buscar se retiró para no pasar de ahí; a seis, los rótulos se cortan en un iPhone. <b>Se dibuja para descartarla.</b></p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va dónde debería vivir.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Qué se guarda</p>
+    <p class="qtitle">¿Qué es una cena en la base, y qué se guarda de cada una?</p>
+    <p class="qwhy">Es lo que decide qué material tendrá la sugerencia y cuánto cuesta apuntar una noche. Cuanto más se guarda, mejor propone y más pereza da escribirlo.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Un recetario de la casa y una cena por noche que lo enlaza</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cena · jueves 17</span>
+            <span class="mk-t">Lubina a la plancha con calabacín</span>
+            <span class="mk-row"><span class="x"><span class="mk-tag">plancha</span><span class="mk-tag">15 min</span><span class="mk-tag">ligera</span><span class="mk-tag">proteína</span><span class="mk-tag">verdura</span></span></span>
+            <span class="mk-row"><span class="x faint">Veredicto</span><span class="m"><span class="mk-pill ac">Repetir</span><span class="mk-pill">No más</span></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Cena · viernes 18</span>
+            <span class="mk-t">Pizza, pedida</span>
+            <span class="mk-row"><span class="x faint">Sin receta: texto suelto.</span></span>
+          </span>
+          <span class="caption">Una noche con receta y otra sin ella; el veredicto solo donde hay receta.</span>
+        </span>
+        <p class="obody">Dos cosas. <code>receta</code>: nombre, cómo se hace —plancha, horno, olla…—, tiempo, etiquetas de dieta y una nota; la escribe la IA al elegir una propuesta, o uno mismo. <code>cena</code>: fecha, receta enlazada o texto suelto, y un veredicto al terminar, repetir o no más. <b>El veredicto es lo que hace que la sugerencia aprenda:</b> lo de «repetir» vuelve y lo de «no más» no. Lo que cuesta: dos tablas y una migración. El texto suelto se admite para que apuntar una pizza no obligue a crear nada.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Solo texto por noche, sin recetario</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cena · jueves 17</span>
+            <span class="mk-t">Lubina a la plancha con calabacín</span>
+            <span class="mk-row"><span class="x faint">Y nada más.</span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Cena · viernes 18</span>
+            <span class="mk-t">Pizza, pedida</span>
+            <span class="mk-row"><span class="x faint">Y nada más.</span></span>
+          </span>
+          <span class="caption">Una línea por noche; la IA lo lee como texto.</span>
+        </span>
+        <p class="obody">Una línea por día. Lo más barato y basta para el seguimiento; la IA lee lo cenado como texto y propone a partir de ahí. <b>Lo que cuesta:</b> nada se reutiliza —el «cómo se hace» de la semana pasada hay que pedirlo otra vez— y las etiquetas no existen: no se puede preguntar cuántas noches de verdura hubo.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Recetario completo, con ingredientes y lista de la compra</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cena · jueves 17</span>
+            <span class="mk-t">Lubina a la plancha con calabacín</span>
+            <span class="mk-row"><span class="x">2 lubinas · 1 calabacín · aceite · limón</span></span>
+            <span class="mk-row"><span class="x faint">1. Sal a la lubina… 2. Plancha fuerte…</span></span>
+            <span class="mk-row"><span class="x faint">Compra de la semana → Llevar del «Súper»</span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Cena · viernes 18</span>
+            <span class="mk-t">Pizza, pedida</span>
+            <span class="mk-row"><span class="x faint">Sin receta.</span></span>
+          </span>
+          <span class="caption">Cantidades, pasos y la compra derivada.</span>
+        </span>
+        <p class="obody">Cada receta con ingredientes y cantidades, los pasos, y la compra de la semana derivada al «Llevar» de un sitio. Es la versión que uno querría en dos meses; <b>lo que cuesta es escribirla ahora:</b> ingredientes que hay que mantener, cantidades que nunca cuadran para cuatro, y la compra ya tiene su lista en Sitios. Mejor una segunda vuelta si B1 se queda corta.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Un plato por persona</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cena · jueves 17</span>
+            <span class="mk-row"><span class="d">OS</span><span class="x">Lubina a la plancha con calabacín</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">AN</span><span class="x">Lubina, sin el calabacín</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">MA</span><span class="x">Tortilla</span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">FA</span><span class="x faint">sin apuntar</span><span class="m"></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Cena · viernes 18</span>
+            <span class="mk-row"><span class="d">todos</span><span class="x">Pizza, pedida</span><span class="m"></span></span>
+          </span>
+          <span class="caption">Quién cenó qué; cuatro apuntes por noche.</span>
+        </span>
+        <p class="obody">Quién cenó qué, para dietas distintas en la misma mesa. Cuadra con «hacer algo de dieta» si la dieta es de uno y no de la casa; <b>lo que cuesta es cuatro apuntes por noche en vez de uno</b>, que es justo el roce que hace que un diario se abandone a la semana. Si la dieta es de uno, cabe como excepción escrita en B1: «Óscar: sin el arroz».</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va qué debería guardarse.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · De dónde salen las sugerencias</p>
+    <p class="qtitle">¿De dónde salen las sugerencias de cena?</p>
+    <p class="qwhy">Es el séptimo encargo de IA o no lo es. Lo que cambia es qué material se le da y si hace falta clave de Anthropic para que Cenas sirva de algo.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Séptimo encargo de IA, con el material de la casa</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Propuestas para el jueves</span>
+            <span class="mk-list">
+              <span class="n"><b>Lubina a la plancha con calabacín</b> <span class="w">— proteína y verdura; quince minutos y una sartén.</span></span>
+              <span class="n"><b>Tortilla de espinacas</b> <span class="w">— huevo y hoja, sin hidrato; no se ha cenado en dos semanas.</span></span>
+              <span class="n"><b>Salmón al horno con espárragos</b> <span class="w">— el horno hace el trabajo; grasa buena.</span></span>
+              <span class="n"><b>Ensalada templada de pollo</b> <span class="w">— lo que sobró del mediodía, pasado por la plancha.</span></span>
+              <span class="n"><b>Crema de calabaza y pavo a la plancha</b> <span class="w">— caliente y ligera; la crema aguanta dos noches.</span></span>
+            </span>
+          </span>
+          <span class="caption">Cinco, una por línea, con el porqué detrás de la raya; elegir una la escribe.</span>
+        </span>
+        <p class="obody">Como en Sitios y Regalos: cinco propuestas, una por línea con el porqué detrás de la raya, y elegir una la escribe. El material lo compone el Worker con lo que ya sabe: las cenas de las dos últimas semanas —para no repetir—, el recetario con sus veredictos, cómo cocináis y qué dieta (pregunta D), y quién está en casa esa noche, que sale de las ausencias y los viajes que la agenda ya deriva. La instrucción va en Ajustes › Inteligencia artificial como las otras seis. <b>Lo que cuesta:</b> sin clave no propone nada; el seguimiento funciona igual.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Sin IA: el recetario rota por reglas</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Propuestas para el jueves</span>
+            <span class="mk-list">
+              <span class="n"><b>Salmón al horno con espárragos</b> <span class="w">— hace 12 días · verdura ✓</span></span>
+              <span class="n"><b>Tortilla de espinacas</b> <span class="w">— hace 9 días · sin hidrato ✓</span></span>
+              <span class="n"><b>Crema de calabaza</b> <span class="w">— hace 8 días</span></span>
+              <span class="n"><span class="w">Nada más en el recetario.</span></span>
+            </span>
+          </span>
+          <span class="caption">Lo que más tiempo lleva sin cenarse, equilibrando etiquetas.</span>
+        </span>
+        <p class="obody">Propone lo del recetario que más tiempo lleva sin cenarse, equilibrando etiquetas. Funciona sin red y sin clave. <b>Lo que cuesta:</b> las primeras semanas el recetario está vacío y no hay nada que rotar, y nunca sale nada nuevo, cuando lo que se quería era precisamente que propusiera.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">La IA escribe la semana entera el domingo, sola</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">WhatsApp · domingo 21:11</span>
+            <span class="mk-list">
+              <span class="n"><b>Cenas de la semana</b></span>
+              <span class="n">L 21  Lubina a la plancha con calabacín</span>
+              <span class="n">M 22  Tortilla de espinacas</span>
+              <span class="n">X 23  Salmón al horno con espárragos</span>
+              <span class="n"><span class="w">J 24  … y así hasta el domingo.</span></span>
+            </span>
+          </span>
+          <span class="caption">Escritas y enviadas sin que nadie las pida.</span>
+        </span>
+        <p class="obody">Un tercer cron que compone las siete cenas, las deja escritas y las manda con el plan de WhatsApp. <b>Se dibuja para dejarla como segunda vuelta de C1:</b> un plan que nadie pidió es un plan que nadie sigue, y el domingo todavía no se sabe quién estará el jueves.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va de dónde deberían salir.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="D">
+    <p class="qhead">Pregunta D · Con qué se cocina y qué dieta</p>
+    <p class="qtitle">¿Dónde se escribe con qué se cocina y qué dieta se sigue?</p>
+    <p class="qwhy">Es el dato que vas a pasar y que cambia de vez en cuando —una airfryer nueva, un mes sin hidratos—. Hay que decidir si es de la casa o de la instrucción del encargo.</p>
+    <div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Dos campos de texto en la hoja de Cenas, de la casa</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas · cómo se cocina en casa</span>
+            <span class="mk-field"><span class="l">Con qué cocináis</span><span class="v">Plancha, horno y olla exprés; nada de freír. Airfryer desde septiembre.</span></span>
+            <span class="mk-field"><span class="l">Qué dieta</span><span class="v">Cenas ligeras: proteína y verdura, poco hidrato, sin ultraprocesados. Los viernes vale todo.</span></span>
+          </span>
+          <span class="caption">Texto libre, de la casa, en la propia hoja de Cenas.</span>
+        </span>
+        <p class="obody">En <code>configuracion</code>, bajo <code>cenas.cocina</code> y <code>cenas.dieta</code>, editables por quien administra desde la propia hoja de Cenas, y entran en el material de cada petición. Separados de la instrucción: <b>la dieta es un dato de la casa y la instrucción es cómo se pide</b>, así que cambiar de dieta no obliga a reescribir el encargo ni se pierde al dejarlo vacío. Texto libre a propósito: el modelo lo lee igual que una lista de casillas, y no hay casilla que no falte.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Dentro de la instrucción del encargo, en Ajustes</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Ajustes › Inteligencia artificial › Proponer una cena</span>
+            <span class="mk-field"><span class="l">Instrucción</span><span class="v">Propones cenas para una familia que cocina a la plancha, al horno y en olla exprés, sin freír, y sigue una dieta ligera: proteína y verdura, poco hidrato… Responde con cinco líneas…</span></span>
+          </span>
+          <span class="caption">La dieta dentro del mismo texto que dice cómo contestar.</span>
+        </span>
+        <p class="obody">Como el resto de encargos: un solo texto, y nada nuevo que construir. <b>Lo que cuesta:</b> mezcla qué se come con cómo se pide, vive detrás de Ajustes —a donde no se va a cambiar una dieta— y «vacío, vuelve el encargo de origen» se llevaría la dieta con él.</p>
+      </button>
+      <button class="opt" data-t="D3" aria-pressed="false">
+        <span class="optrow"><span class="tok">D3</span><span class="oname">Casillas y desplegable</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas · cómo se cocina en casa</span>
+            <span class="mk-row"><span class="x"><span class="mk-check on"></span>Plancha &nbsp; <span class="mk-check on"></span>Horno &nbsp; <span class="mk-check"></span>Airfryer &nbsp; <span class="mk-check on"></span>Olla &nbsp; <span class="mk-check"></span>Wok</span></span>
+            <span class="mk-field"><span class="l">Dieta</span><span class="v">Baja en hidratos ▾</span></span>
+          </span>
+          <span class="caption">Marca lo que tienes y elige la dieta de una lista.</span>
+        </span>
+        <p class="obody">Estructurado: se lee de un vistazo y no admite faltas de ortografía. <b>Lo que cuesta:</b> la lista nunca tiene la opción que hace falta —«poco hidrato entre semana y los viernes libre» no es una casilla— y el modelo no propone mejor por recibirlo en casillas.</p>
+      </button>
+      <button class="opt" data-t="D4" aria-pressed="false">
+        <span class="optrow"><span class="tok">D4</span><span class="oname">Lo de la casa en la hoja, y lo de cada uno en su ficha</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas · cómo se cocina en casa</span>
+            <span class="mk-field"><span class="l">Con qué cocináis</span><span class="v">Plancha, horno y olla exprés; nada de freír.</span></span>
+            <span class="mk-field"><span class="l">Qué dieta</span><span class="v">Cenas ligeras: proteína y verdura, poco hidrato.</span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Gente › ficha de Mariona</span>
+            <span class="mk-field"><span class="l">No come</span><span class="v">Pescado con espinas; nada picante.</span></span>
+          </span>
+          <span class="caption">D1 más una línea por persona, que entra solo si esa persona cena esa noche.</span>
+        </span>
+        <p class="obody">D1 más una línea en la ficha de Gente —«no come», una alergia— que entra en el material solo si esa persona cena esa noche. Es lo correcto para una mesa con excepciones; <b>lo que cuesta</b> es una columna en <code>persona</code> y tocar la ficha para algo que hoy no se sabe si hace falta. Cabe como segunda vuelta de D1 si aparece.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va dónde debería escribirse.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="E">
+    <p class="qhead">Pregunta E · Por día o por semana</p>
+    <p class="qtitle">¿Se planifica por día, por semana, o las dos cosas?</p>
+    <p class="qwhy">Lo dejas abierto. Lo que decide es cuál es la pantalla principal —Hoy o la hoja de la semana— y cuándo se pide la propuesta.</p>
+    <div class="opts">
+      <button class="opt" data-t="E1" aria-pressed="false">
+        <span class="optrow"><span class="tok">E1</span><span class="oname">La semana como plan y el día como corrección</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas · esta semana</span>
+            <span class="mk-row"><span class="d">L 14</span><span class="x">Salmón al horno</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">M 15</span><span class="x">Crema de calabaza</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x">Tortilla de espinacas</span><span class="m">hoy</span></span>
+            <span class="mk-row"><span class="d">J 17</span><span class="x"><span class="mk-pill dash">Proponer</span></span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">V 18</span><span class="x"><span class="mk-pill dash">Proponer</span></span><span class="m"><span class="mk-pill ac">Rellenar la semana</span></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy</span>
+            <span class="mk-row"><span class="x">🍽️ Esta noche: tortilla de espinacas</span><span class="m"><span class="mk-pill">Cambiar</span></span></span>
+          </span>
+          <span class="caption">La hoja rellena la semana; Hoy corrige la noche.</span>
+        </span>
+        <p class="obody">La hoja de Cenas enseña la semana en curso: lo escrito y, en cada noche vacía, «Proponer»; «Rellenar la semana» pide las siete de golpe y equilibradas entre sí. Hoy enseña «Esta noche» con lo planeado, y «Cambiar» pide otras cinco para esa noche con lo de la semana como material. <b>Lo que cuesta:</b> dos sitios donde escribir la misma cosa; se resuelve porque los dos escriben la misma fila.</p>
+      </button>
+      <button class="opt" data-t="E2" aria-pressed="false">
+        <span class="optrow"><span class="tok">E2</span><span class="oname">Solo por día, desde Hoy</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas · esta semana</span>
+            <span class="mk-row"><span class="d">L 14</span><span class="x">Salmón al horno</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">M 15</span><span class="x">Crema de calabaza</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x faint">se decide a las siete</span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">J 17</span><span class="x faint">—</span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">V 18</span><span class="x faint">—</span><span class="m"></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy</span>
+            <span class="mk-row"><span class="x">🍽️ ¿Qué cenamos?</span><span class="m"><span class="mk-pill ac">Proponer</span></span></span>
+          </span>
+          <span class="caption">Solo el diario hacia atrás; hacia delante, nada.</span>
+        </span>
+        <p class="obody">Cada tarde Hoy pregunta «¿Qué cenamos?» y propone cinco. Lo más ligero, y lo que más se parece a cómo se decide de verdad a las siete. <b>Lo que cuesta:</b> sin plan no hay compra pensada ni equilibrio entre noches: cinco propuestas seguidas de pescado son cinco buenas cenas y una mala semana.</p>
+      </button>
+      <button class="opt" data-t="E3" aria-pressed="false">
+        <span class="optrow"><span class="tok">E3</span><span class="oname">Solo por semana, desde la hoja</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Cenas · esta semana</span>
+            <span class="mk-row"><span class="d">L 14</span><span class="x">Salmón al horno</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">M 15</span><span class="x">Crema de calabaza</span><span class="m">👍</span></span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x">Tortilla de espinacas</span><span class="m">hoy</span></span>
+            <span class="mk-row"><span class="d">J 17</span><span class="x">Lubina a la plancha</span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">V 18</span><span class="x">Ensalada templada de pollo</span><span class="m"></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy</span>
+            <span class="mk-row"><span class="x">🍽️ Esta noche: tortilla de espinacas</span><span class="m"><span class="mk-pill">Cenado</span></span></span>
+          </span>
+          <span class="caption">Todo decidido el domingo; Hoy solo marca.</span>
+        </span>
+        <p class="obody">Se planifica el domingo y Hoy solo enseña lo que toca y lo marca. Lo más ordenado; <b>lo que cuesta:</b> la semana cambia —un viaje, una cena fuera— y corregir obliga a ir a la hoja; a la tercera vez se deja de corregir y el diario miente.</p>
+      </button>
+      <button class="opt none" data-t="E0" aria-pressed="false">
+        <span class="optrow"><span class="tok">E0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va cómo debería planificarse.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre E</summary><textarea data-n="E" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="F">
+    <p class="qhead">Pregunta F · Qué cuenta como cenado</p>
+    <p class="qtitle">¿Qué cuenta como cenado, para el seguimiento?</p>
+    <p class="qwhy">El seguimiento vale lo que valen sus huecos. Hay que decidir si una noche sin tocar nada es la cena planeada o un dato que falta.</p>
+    <div class="opts">
+      <button class="opt" data-t="F1" aria-pressed="false">
+        <span class="optrow"><span class="tok">F1</span><span class="oname">Lo planeado cuenta, salvo que se corrija</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Hoy · miércoles, por la noche</span>
+            <span class="mk-row"><span class="x">🍽️ Tortilla de espinacas</span><span class="m"><span class="mk-pill">Repetir</span><span class="mk-pill">No más</span><span class="mk-pill">Otra cosa</span></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Hoy · jueves, sin haber tocado nada</span>
+            <span class="mk-row"><span class="x faint">Ayer: tortilla de espinacas. ¿Repetir?</span><span class="m"><span class="mk-pill">Sí</span><span class="mk-pill">No</span></span></span>
+          </span>
+          <span class="caption">La noche sin tocar es la cena planeada; el veredicto se pide una vez y luego calla.</span>
+        </span>
+        <p class="obody">Una noche con plan y sin tocar es esa cena. Lo que se pide al terminar es el veredicto, y solo si se quiere: repetir, no más, u «otra cosa» para escribir lo que fue de verdad, la pizza. Al día siguiente Hoy lo pregunta una sola vez y después calla. <b>Lo que cuesta:</b> el diario puede dar por cenado lo que no se cenó si nadie corrige; se acepta porque la alternativa es un diario con más huecos que noches.</p>
+      </button>
+      <button class="opt" data-t="F2" aria-pressed="false">
+        <span class="optrow"><span class="tok">F2</span><span class="oname">Solo cuenta lo marcado</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Hoy · miércoles, por la noche</span>
+            <span class="mk-row"><span class="x">🍽️ Tortilla de espinacas</span><span class="m"><span class="mk-pill ac">Cenado</span></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Cenas · esta semana</span>
+            <span class="mk-row"><span class="d">L 14</span><span class="x">Salmón al horno</span><span class="m">✓</span></span>
+            <span class="mk-row"><span class="d">M 15</span><span class="x faint">Crema de calabaza · sin marcar</span><span class="m">?</span></span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x faint">Tortilla de espinacas · sin marcar</span><span class="m">?</span></span>
+          </span>
+          <span class="caption">Cada noche pide su toque; lo demás es hueco.</span>
+        </span>
+        <p class="obody">Cada noche hay que decir «cenado»; lo demás es hueco. Es la verdad estricta, y es la disciplina que ningún diario aguanta un mes: <b>los huecos crecen</b> y la sugerencia deja de saber qué se ha comido.</p>
+      </button>
+      <button class="opt" data-t="F3" aria-pressed="false">
+        <span class="optrow"><span class="tok">F3</span><span class="oname">Sin veredicto: el plan es el diario</span></span>
+        <span class="mock">
+          <span class="mk">
+            <span class="mk-h">Hoy · miércoles, por la noche</span>
+            <span class="mk-row"><span class="x">🍽️ Tortilla de espinacas</span><span class="m"></span></span>
+          </span>
+          <span class="mk">
+            <span class="mk-h">Cenas · esta semana</span>
+            <span class="mk-row"><span class="d">L 14</span><span class="x">Salmón al horno</span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">M 15</span><span class="x">Crema de calabaza</span><span class="m"></span></span>
+            <span class="mk-row"><span class="d">X 16</span><span class="x">Tortilla de espinacas</span><span class="m"></span></span>
+          </span>
+          <span class="caption">Nada que marcar ni valorar; lo escrito es lo cenado.</span>
+        </span>
+        <p class="obody">Ni marcar ni valorar: lo escrito es lo cenado y se acabó. Lo más barato. <b>Lo que cuesta:</b> la sugerencia no aprende qué gustó, que es la mitad de lo que hace útil un recetario, y la pizza de un viernes queda como merluza.</p>
+      </button>
+      <button class="opt none" data-t="F0" aria-pressed="false">
+        <span class="optrow"><span class="tok">F0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va qué debería contar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre F</summary><textarea data-n="F" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p><b>Lo que no se pregunta.</b> Que Cenas es de casa y no sale del círculo <code>familia</code>, como Lío y Sitios. Que se llama Cenas y no Menús: el mediodía no se apunta. Que la hora de origen es las 21:00, y que una cena fuera se escribe igual, como texto —«fuera, en casa de la abuela»— y cuenta para el seguimiento. Y que se empieza sin lista de la compra, que ya tiene su sitio en el Llevar de Sitios.</p>
+    <p><b>Lo que viene después, según lo decidido.</b> Si es un plugin (A1), qué hace el plan de WhatsApp de los domingos con siete líneas más: una por día, o una sola al pie con la semana entera. Si hay recetario (B1), si el «cómo se hace» lo escribe la IA al elegir la propuesta o se pide aparte con un toque. Y con qué material se juzga que una semana está equilibrada, que es lo que hace que «hacer algo de dieta» se pueda comprobar y no solo desear.</p>
+    <p><b>Decidido:</b> A4 · B1 · C1 · D1 · E1 · F1. Cenas es <b>una sexta pestaña</b> en la barra, a sabiendas de que los rótulos se estrechan; un recetario de la casa y una cena por noche con veredicto; las propuestas, del séptimo encargo de IA; con qué se cocina y qué dieta, en dos campos de la casa en la propia pestaña; la semana como plan y el día como corrección; y lo planeado cuenta salvo que se corrija.</p>
+    <p><b>Con tres matices escritos en las notas.</b> <b>B:</b> las niñas pueden cenar distinto que los mayores, así que una cena admite, además del plato de la casa, uno aparte para ellas —enlazado a receta o como texto—, sin llegar al plato por persona de B4. <b>D:</b> por lo mismo, la dieta tiene una línea propia para las niñas junto a la de la casa, y las dos entran en el material. <b>E:</b> al pedir una propuesta —para una noche o para la semana— se puede decir antes, en texto libre, qué hay más o menos en casa («queda calabacín, pollo y medio brócoli»), y eso va en el material de esa petición y no se guarda. Sin construir todavía.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  const KEY = "options.cenas-de-la-casa";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  // A question opts into combining by carrying data-multi="true".
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  // Picks are held per letter as a list of tokens, so a single-pick question and
+  // a combining one share one shape. An empty list means undecided; the list
+  // ["A0"] means the options were seen and none served.
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t]; // "none of these" stands alone
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: está abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>

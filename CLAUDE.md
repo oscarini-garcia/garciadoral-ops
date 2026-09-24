@@ -27,6 +27,26 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Cenas: decidida (A4 · B1 · C1 · D1 · E1 · F1) y sin construir.** Se pidió
+  gestionar los menús de las cenas —seguir qué se cena y recibir sugerencias
+  de recetas que permitan hacer algo de dieta, a partir de con qué se cocina y
+  qué dieta se sigue—. Lo decidido está sellado al pie de
+  `specs/propuesta-cenas.html`: **una sexta pestaña** en la barra —se asume
+  que los rótulos se estrechan, y la barra deja de estar en cinco—; un
+  recetario de la casa (`receta`) y una `cena` por noche que lo enlaza o
+  lleva texto suelto, con veredicto «repetir / no más»; las propuestas, de un
+  séptimo encargo de IA con el material de la casa (lo cenado, el recetario,
+  quién está en casa); con qué se cocina y qué dieta, en `configuracion`
+  (`cenas.cocina`, `cenas.dieta`), editables desde la pestaña; la semana como
+  plan y Hoy como corrección de la noche; y lo planeado cuenta salvo que se
+  corrija. **Tres matices de las notas**: una cena admite un plato aparte
+  para las niñas, que pueden cenar distinto (sin llegar al plato por
+  persona); la dieta lleva una línea propia para ellas; y al pedir una
+  propuesta se puede escribir antes qué hay más o menos en casa, que va al
+  material de esa petición y no se guarda. Lo que queda: **construirlo**, y
+  con ello qué hace el plan de los domingos con las cenas, si el «cómo se
+  hace» lo escribe la IA al elegir, con qué se juzga que una semana está
+  equilibrada y cómo caben seis rótulos en la barra de un iPhone.
 - **Cada día en su tarjeta, la IA cuenta el día entero y el apodo (1.74.0).**
   La separación entre días se decidió como A4 en
   `specs/propuesta-separacion-dias.html`: `.dia` es una tarjeta con borde y
