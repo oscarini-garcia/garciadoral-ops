@@ -1131,6 +1131,22 @@ textarea:-webkit-autofill:focus {
 /* Y cuando Cancelar va solo, porque no hay ningún verbo que ofrecer: al final de
    la hoja y a la derecha, que ahí no es la alternativa a nada sino la salida. */
 .acciones-cierre { justify-content: flex-end; margin-top: 14px; }
+/* Dentro de una hoja, los botones de un formulario se quedan a la vista al
+   pie aunque el formulario sea largo o el teclado esté abierto
+   (`specs/propuesta-formularios-fechas-regalos.html`, A1). Pegajosos y no
+   fijos: si caben, están donde siempre; solo cuando se saldrían por abajo se
+   quedan pegados al borde, con el fondo de la hoja detrás. */
+.hoja .acciones {
+  position: sticky; bottom: 0; z-index: 2;
+  margin-inline: -20px; padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+  background: var(--paper);
+}
+
+/* «Más: …», la misma línea en todos los formularios: dice qué hay dentro. */
+.mas-opciones {
+  align-self: flex-start; min-height: var(--toque);
+  color: var(--tinta); font-size: 15px; text-align: left;
+}
 .boton {
   min-height: var(--toque); padding: 10px 18px; border-radius: 10px;
   font-size: 16px; font-weight: 500;

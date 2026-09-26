@@ -13,7 +13,7 @@
  */
 
 import {
-  abrirHoja, acordeon, avisar, botonIcono, campo, carruselDePropuestas, cerrarDeslizada, cerrarHoja, conVerbosAlDeslizar, dobleToque, el, enfocarAlAbrir, entrada, icono, seleccion, selectorDeFecha, vaciar,
+  abrirHoja, acordeon, avisar, botonIcono, campo, masOpciones, carruselDePropuestas, cerrarDeslizada, cerrarHoja, conVerbosAlDeslizar, dobleToque, el, enfocarAlAbrir, entrada, icono, seleccion, selectorDeFecha, vaciar,
 } from '../ui.js';
 import { felicitarCumple, guardar, retirar, sugerirRegalos } from '../sincronizacion.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
@@ -1315,6 +1315,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
     estado: estadoDeRegalo(regalo),
     responsable_id: regalo.responsable_id || null,
     coste_real: typeof regalo.coste_real === 'number' ? regalo.coste_real : null,
+    para_todos: Boolean(regalo.para_todos),
   };
 
   // Adónde va, arriba y en un verbo: lleva al cumpleaños cuando la ocasión es
@@ -1382,6 +1383,8 @@ export function abrirDetalleRegalo(regaloId, ctx) {
       borrador.coste_real = coste.value.trim() === '' ? null : Number(coste.value);
     });
     cuerpo.append(campo('Lo que costó', coste, 'Opcional. Es lo que permite saber después en qué se fue una ocasión.'));
+    const quienLoVe = campoParaTodos(ctx, borrador.para_todos, (valor) => { borrador.para_todos = valor; });
+    if (quienLoVe) cuerpo.append(quienLoVe);
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
@@ -1391,6 +1394,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
             estado: borrador.estado,
             responsable_id: borrador.responsable_id,
             coste_real: Number.isFinite(borrador.coste_real) ? borrador.coste_real : null,
+            ...(ctx.vista.esAdministrador() ? { para_todos: borrador.para_todos ? 1 : 0 } : {}),
           });
           if (borrador.responsable_id) recordarElegidos('responsable', [borrador.responsable_id]);
           toque('media');
@@ -1692,9 +1696,40 @@ async function asegurarOcasionDe(evento, ctx) {
   return ctx.vista.ocasion(id) || { id, participantes };
 }
 
+/**
+ * Quién ve lo que apunta un administrador
+ * (`specs/propuesta-formularios-fechas-regalos.html`, C1).
+ *
+ * Sin marcar, solo los administradores: el mismo regalo para las dos niñas le
+ * enseñaba a una el suyo. Se abre para lo que se regala entre todos. Solo se
+ * ofrece a quien administra, que es a quien afecta; el destinatario no lo ve
+ * nunca, se marque o no.
+ */
+function campoParaTodos(ctx, valor, alCambiar) {
+  if (!ctx.vista.esAdministrador()) return null;
+  let actual = Boolean(valor);
+  const fila = el('div', { class: 'opciones' });
+  const pintar = () => {
+    vaciar(fila);
+    for (const opcion of [
+      { valor: false, texto: 'Solo los mayores' },
+      { valor: true, texto: 'También las niñas' },
+    ]) {
+      fila.append(el('button', {
+        class: 'opcion', type: 'button', 'aria-pressed': opcion.valor === actual ? 'true' : 'false',
+        onclick: () => { actual = opcion.valor; alCambiar(actual); pintar(); },
+      }, [opcion.texto]));
+    }
+  };
+  pintar();
+  return campo('Quién lo ve', fila, 'Para lo que se regala entre todos, que lo vean también las niñas. Quien lo recibe no lo ve nunca.');
+}
+
 async function crearRegalo(ctx, { ocasionId, destinatario, idea }) {
   recordarElegidos('regalo', [destinatario]);
   await guardar('regalo', nuevoId(), {
+    // Un regalo que sale de una idea abierta a todos sigue abierto.
+    para_todos: idea?.para_todos ? 1 : 0,
     ocasion_id: ocasionId,
     idea_id: idea?.id || null,
     destinatario_principal_id: destinatario,
@@ -2056,7 +2091,14 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       pistaDeseo.textContent = 'Solo estás tú: esto se guarda como algo que pides. Va a Deseos y a tu ficha, no al banco de ideas para regalar.';
       cuerpo.append(pistaDeseo);
     }
-    function avisoDeDeseo() { pistaDeseo.hidden = !soloParaMi(); }
+    function avisoDeDeseo() {
+      pistaDeseo.hidden = !soloParaMi();
+      // Lo que uno pide para sí lo ve toda la casa: no hay nada que elegir.
+      if (quienLoVe) quienLoVe.hidden = soloParaMi();
+    }
+    let paraTodos = Boolean(existente?.para_todos);
+    const quienLoVe = esUnDeseo ? null : campoParaTodos(ctx, paraTodos, (valor) => { paraTodos = valor; });
+    if (quienLoVe) { cuerpo.append(quienLoVe); quienLoVe.hidden = soloParaMi(); }
     cuerpo.append(campo('Descripción', descripcion));
 
     // Al editar se abre desplegado y sin enlace: quien corrige viene a por un
@@ -2065,13 +2107,9 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     // El enlace solo despliega, y al hacerlo se va. Volver a plegar no ahorraba
     // nada —lo de debajo son campos vacíos— y dejaba un botón que decía «dejarlo
     // así» encima de lo que se acababa de abrir para tocar.
-    const extra = el('div', { class: 'hoja-seccion', hidden: !existente });
-    const desplegar = el('button', {
-      class: 'enlace-discreto', type: 'button',
-      onclick: () => { extra.hidden = false; desplegar.remove(); },
-    }, ['Clasificarla']);
-    if (!existente) cuerpo.append(desplegar);
-    cuerpo.append(extra);
+    const mas = masOpciones('categoría, precio, dónde se compra, enlace', { abierto: Boolean(existente) });
+    const extra = mas.cuerpo;
+    cuerpo.append(mas.boton, extra);
 
     const categoria = seleccion(
       [{ valor: '', texto: 'Sin categoría' }, ...ctx.vista.categorias().map((c) => ({ valor: c.id, texto: c.nombre }))],
@@ -2150,6 +2188,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
         precio_max: precio.value ? Number(precio.value) : null,
         establecimiento: establecimiento.value.trim(),
         enlace: enlace.value.trim(),
+        ...(ctx.vista.esAdministrador() ? { para_todos: paraTodos && !soloParaMi() ? 1 : 0 } : {}),
         orientaciones: [
           ...destinatarios.map((persona_id) => ({ persona_id })),
           ...etiquetas.map((etiqueta_id) => ({ etiqueta_id })),

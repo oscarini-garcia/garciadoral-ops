@@ -18,6 +18,18 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.78.0',
+    fecha: '2026-09-26',
+    titulo: 'Los regalos de los mayores, solo para los mayores',
+    lineas: [
+      'Las ideas y regalos que apuntan Ana u Óscar ya no los ven las niñas, salvo que se marque «También las niñas».',
+      'Los deseos siguen a la vista de todos.',
+      'En la hoja de un día, «+ Añadir a este día» nace en ese día; el «+» de la barra también usa el último día abierto.',
+      'Un evento de hoy propone la siguiente hora en punto, y la hora va arriba, junto al día.',
+      'Evento, idea y persona enseñan lo esencial y dejan el resto en «Más»; Crear y Guardar se quedan al pie.',
+    ],
+  },
+  {
     version: '1.77.0',
     fecha: '2026-09-25',
     titulo: 'Cenas: la semana arriba y una fila por noche',

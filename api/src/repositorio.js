@@ -37,12 +37,12 @@ const CAMPOS = {
   ausencia: ['persona_id', 'desde', 'hasta', 'cubre_id', 'motivo', 'autor_id', 'activo'],
   idea: [
     'tipo', 'titulo', 'descripcion', 'categoria_id', 'precio_min', 'precio_max',
-    'enlace', 'establecimiento', 'estado', 'autor_id', 'activa',
+    'enlace', 'establecimiento', 'estado', 'autor_id', 'activa', 'para_todos',
   ],
   ocasion: ['nombre', 'fecha', 'estado', 'evento_id', 'autor_id', 'activa'],
   regalo: [
     'ocasion_id', 'idea_id', 'destinatario_principal_id', 'compartido',
-    'responsable_id', 'coste_real', 'estado', 'categoria_id', 'autor_id', 'activo',
+    'responsable_id', 'coste_real', 'estado', 'categoria_id', 'autor_id', 'activo', 'para_todos',
   ],
   comentario: ['objeto_tipo', 'objeto_id', 'autor_id', 'texto', 'activo'],
   paseo: ['fecha', 'turno', 'asignado_id', 'hecho_por_id', 'hecho_en', 'activo'],
@@ -236,6 +236,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     ideas: ideas.map((i) => ({
       ...i,
       activa: bool(i.activa),
+      para_todos: bool(i.para_todos),
       orientaciones: (porIdea.get(i.id) || []).map((o) =>
         o.persona_id ? { persona_id: o.persona_id } : { etiqueta_id: o.etiqueta_id },
       ),
@@ -252,6 +253,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     regalos: regalos.map((r) => ({
       ...r,
       compartido: bool(r.compartido),
+      para_todos: bool(r.para_todos),
       activo: bool(r.activo),
       codestinatarios: (porRegalo.get(r.id) || []).map((c) => c.persona_id),
     })),

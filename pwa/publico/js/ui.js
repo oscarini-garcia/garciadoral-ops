@@ -757,6 +757,27 @@ export function selectorDeFecha({ valor = '', min = null, vacio = null, alCambia
  */
 let numeroDeCampo = 0;
 
+/**
+ * «Más: …», la misma línea en todos los formularios
+ * (`specs/propuesta-formularios-fechas-regalos.html`, A1).
+ *
+ * Lo esencial va arriba y lo demás detrás de esta línea, que dice qué hay
+ * dentro para que nadie tenga que abrirla a ciegas. Despliega y se va: volver
+ * a plegar no ahorra nada, porque lo de debajo son campos. Al editar se abre
+ * ya desplegado, porque quien corrige viene a por un campo concreto.
+ *
+ * Devuelve `{ boton, cuerpo }`: el botón va donde se quiera la línea y los
+ * campos se meten en `cuerpo`.
+ */
+export function masOpciones(resumen, { abierto = false } = {}) {
+  const cuerpo = el('div', { class: 'hoja-seccion', hidden: !abierto });
+  const boton = el('button', {
+    class: 'mas-opciones', type: 'button', hidden: abierto,
+    onclick: () => { cuerpo.hidden = false; boton.remove(); },
+  }, [`Más: ${resumen}`, el('span', { 'aria-hidden': 'true', texto: ' ›' })]);
+  return { boton, cuerpo };
+}
+
 export function campo(etiqueta, control, pista) {
   const esControl = /^(INPUT|SELECT|TEXTAREA)$/.test(control?.tagName || '');
   if (esControl && !control.id) {

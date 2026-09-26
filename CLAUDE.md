@@ -27,6 +27,25 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Formularios, fechas y regalos (1.78.0).** Decidido como A1 · B1 · C1 en
+  `specs/propuesta-formularios-fechas-regalos.html`. **Lo que apunta un
+  administrador —idea o regalo, no un deseo propio— no lo ve quien no lo es**,
+  salvo `para_todos` («También las niñas», `campoParaTodos` en
+  `vistas/regalos.js`), en los tres sitios de la regla y en
+  `specs/modelo-datos.md` §6; migración `0026` (`.unavez`), cero de origen, así
+  que lo ya apuntado por los mayores dejó de verse para las niñas hasta que se
+  marque. Las pruebas viejas de visibilidad que usaban ideas de Ana para probar
+  otras reglas llevan ahora `para_todos`. **La fecha al añadir es la del día
+  que se tiene delante**: `diaMirado` en `vistas/semana.js` (el último día
+  abierto, si cae en el periodo), «+ Añadir a este día» en la hoja de un día
+  abre el menú de nuevo con esa fecha, y un evento de hoy propone la siguiente
+  hora en punto (`siguienteEnPunto`), que se cae si se cambia de día. **Los
+  formularios comparten forma**: la hora sube junto al Cuándo, `masOpciones`
+  en `ui.js` es la línea «Más: …» común (evento, idea, persona) y los botones
+  de una hoja se quedan pegados al pie (`.hoja .acciones`, `sticky`). Queda:
+  pasar a `masOpciones` los formularios que aún no la usan (actividad,
+  escapada, sitio, apunte, receta); y en la noche de Cenas los botones pegados
+  al pie pueden tapar un momento las propuestas de debajo al bajar.
 - **Cenas, segunda vuelta (1.77.0): la tira arriba y una fila por noche.**
   Decidido como A1 · B2 · C1 · D4 en
   `specs/propuesta-cenas-segunda-vuelta.html`, tras probarlo en el teléfono.

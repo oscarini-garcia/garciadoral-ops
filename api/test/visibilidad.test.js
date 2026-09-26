@@ -47,7 +47,7 @@ test('quien no tiene cuenta no ve nada', () => {
 
 test('la idea orientada a una persona queda oculta para ella', () => {
   const r = registro({
-    ideas: [{ id: 'i1', titulo: 'Botas', autor_id: 'p-ana', orientaciones: [{ persona_id: 'p-marta' }] }],
+    ideas: [{ id: 'i1', titulo: 'Botas', autor_id: 'p-ana', para_todos: true, orientaciones: [{ persona_id: 'p-marta' }] }],
   });
   assert.equal(visible(r, r.ideas[0], 'idea', MARTA), false);
   assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), true);
@@ -75,7 +75,7 @@ test('la ocultación alcanza a los co-destinatarios', () => {
 
 test('un destinatario sin cuenta no activa ocultación alguna', () => {
   const r = registro({
-    ideas: [{ id: 'i1', titulo: 'Manta', autor_id: 'p-ana', orientaciones: [{ persona_id: 'p-abuela' }] }],
+    ideas: [{ id: 'i1', titulo: 'Manta', autor_id: 'p-ana', para_todos: true, orientaciones: [{ persona_id: 'p-abuela' }] }],
   });
   for (const observador of [ANA, OSCAR, MARTA, LUCIA]) {
     assert.equal(visible(r, r.ideas[0], 'idea', observador), true);
@@ -84,7 +84,7 @@ test('un destinatario sin cuenta no activa ocultación alguna', () => {
 
 test('las etiquetas clasifican pero no protegen', () => {
   const r = registro({
-    ideas: [{ id: 'i1', titulo: 'Altavoz', autor_id: 'p-ana', orientaciones: [{ etiqueta_id: 'e-adolescente' }] }],
+    ideas: [{ id: 'i1', titulo: 'Altavoz', autor_id: 'p-ana', para_todos: true, orientaciones: [{ etiqueta_id: 'e-adolescente' }] }],
   });
   assert.equal(visible(r, r.ideas[0], 'idea', MARTA), true);
 });
@@ -98,7 +98,7 @@ test('la categoría privada es solo para administradores', () => {
 });
 
 test('la categoría restringida exige figurar en la lista de acceso', () => {
-  const r = registro({ ideas: [{ id: 'i1', titulo: 'Sorpresa', autor_id: 'p-ana', categoria_id: 'reservada' }] });
+  const r = registro({ ideas: [{ id: 'i1', titulo: 'Sorpresa', autor_id: 'p-ana', para_todos: true, categoria_id: 'reservada' }] });
   assert.equal(visible(r, r.ideas[0], 'idea', MARTA), true);
   assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), false);
   assert.equal(visible(r, r.ideas[0], 'idea', ANA), false, 'ni siquiera un administrador entra sin acceso');
@@ -175,4 +175,47 @@ test('el calendario de viajes y un viaje importado llegan a la instantánea', ()
   assert.equal(deLucia.calendarios_externos[0].ultima_sincronizacion, '2026-07-29T10:00:00Z');
   // Un viaje es público en casa: sin destinatarios, no hay a quién ocultárselo.
   assert.ok(deLucia.eventos.some((e) => e.id === 'v1'));
+});
+
+/**
+ * Lo que apunta un administrador, solo para los administradores
+ * (`specs/propuesta-formularios-fechas-regalos.html`, C1). Las pruebas de arriba
+ * que usan ideas escritas por Ana las marcan `para_todos` porque prueban otras
+ * reglas; estas son las de esta.
+ */
+test('lo que apunta un administrador no lo ven las niñas', () => {
+  const r = registro({
+    ideas: [{ id: 'i1', titulo: 'Patines', autor_id: 'p-ana', orientaciones: [{ persona_id: 'p-marta' }] }],
+    regalos: [{ id: 'rg', ocasion_id: 'oc', destinatario_principal_id: 'p-marta', autor_id: 'p-oscar' }],
+  });
+  // El mismo regalo para las dos: Lucía no ve el de Marta.
+  assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), false);
+  assert.equal(visible(r, r.regalos[0], 'regalo', LUCIA), false);
+  assert.equal(visible(r, r.ideas[0], 'idea', OSCAR), true);
+  assert.equal(visible(r, r.regalos[0], 'regalo', ANA), true);
+});
+
+test('«que lo vean las niñas» lo abre, salvo a su destinatario', () => {
+  const r = registro({
+    ideas: [{ id: 'i1', titulo: 'Perfume', autor_id: 'p-ana', para_todos: true, orientaciones: [{ persona_id: 'p-marta' }] }],
+  });
+  assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), true);
+  assert.equal(visible(r, r.ideas[0], 'idea', MARTA), false, 'el destinatario sigue sin verlo');
+});
+
+test('el deseo de un administrador sí lo ven las niñas', () => {
+  const r = registro({
+    ideas: [{ id: 'i1', tipo: 'deseo', titulo: 'Una cafetera', autor_id: 'p-oscar', orientaciones: [{ persona_id: 'p-oscar' }] }],
+  });
+  assert.equal(visible(r, r.ideas[0], 'idea', MARTA), true);
+  assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), true);
+});
+
+test('lo que apuntan las niñas sigue como antes', () => {
+  const r = registro({
+    ideas: [{ id: 'i1', titulo: 'Taza', autor_id: 'p-marta', orientaciones: [{ persona_id: 'p-ana' }] }],
+  });
+  assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), true);
+  assert.equal(visible(r, r.ideas[0], 'idea', OSCAR), true);
+  assert.equal(visible(r, r.ideas[0], 'idea', ANA), false);
 });

@@ -154,7 +154,7 @@ tener que recorrer la aplicación entera cada vez.
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · enlazar · colorDePersona · iniciales · avatar · icono · botonIcono
-  abrirHoja · cerrarHoja · …y 14 más
+  abrirHoja · cerrarHoja · …y 15 más
 - **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
   VERSION_APP
 - **viajes.js** — Los viajes de cada uno, emparejados a partir de sus vuelos.
@@ -305,7 +305,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**400** en total.
+**405** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -318,7 +318,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
-- `tests/test_visibilidad.py` — 13
+- `tests/test_visibilidad.py` — 14
 - `api/test/apns.test.js` — 11
 - `api/test/avisos.test.js` — 30
 - `api/test/cenas.test.js` — 10
@@ -340,7 +340,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/solicitud-aviso.test.js` — 4
 - `api/test/solicitudes.test.js` — 17
 - `api/test/viajes.test.js` — 12
-- `api/test/visibilidad.test.js` — 12
+- `api/test/visibilidad.test.js` — 16
 
 Lo que ejecuta la integración continua:
 

@@ -9,7 +9,7 @@
 
 import {
   el, vaciar, abrirHoja, cerrarHoja, campo, entrada, seleccion, avatar, avisar, botonIcono, icono,
-  selectorDeFecha,
+  selectorDeFecha, masOpciones,
 } from '../ui.js';
 import { compartir, toque } from '../native.js';
 import { buscarSanto, guardar, retirar } from '../sincronizacion.js';
@@ -1049,13 +1049,18 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
       poblar(parentesco.value === PARENTESCO_OTRO ? PARENTESCO_OTRO : parentesco.value);
     });
 
-    cuerpo.append(
-      campo('Nombre', nombre),
-      campo('Apellidos', apellidos),
+    // Lo esencial arriba —quién es y de qué círculo— y lo demás detrás de «Más»
+    // (`specs/propuesta-formularios-fechas-regalos.html`, A1).
+    const mas = masOpciones('cómo la llamáis, nacimiento, santo, género, acceso', { abierto: Boolean(persona) });
+    mas.cuerpo.append(
       campo('Cómo la llamáis', apodo, 'El apodo, si en casa no se usa el nombre. Sale en las dos letras de la semana, en Lío y en lo que redacta la IA; la ficha sigue con el nombre.'),
       campoNacimiento,
       campoSanto,
       campo('Género', genero, 'Solo sirve para nombrar bien: elegir entre «mamá» y «papá», o entre «hermana» y «hermano», cuando el parentesco no lo dice.'),
+    );
+    cuerpo.append(
+      campo('Nombre', nombre),
+      campo('Apellidos', apellidos),
       campo('Círculo', grupo, hayHueco
         ? `${CIRCULOS.familia} es el hogar y son ${TAMANO_FAMILIA}: no es un grupo que crezca.`
         : `${CIRCULOS.familia} ya está completa con ${TAMANO_FAMILIA}. Para cambiar a alguien de sitio, hazlo primero en su ficha.`),
@@ -1063,11 +1068,13 @@ export function abrirFormularioPersona(ctx, { id = null, circulo = 'extendida', 
         el('label', { texto: 'Parentesco' }), parentesco, pista,
       ]),
       campoOtro,
-      campo('Acceso', rol,
-        persona?.tiene_cuenta
-          ? 'Quitarle la cuenta deshace su vínculo con Apple: para volver a entrar tendría que solicitarlo otra vez.'
-          : 'El vínculo con Apple no se escribe aquí: se establece al aprobar una solicitud.'),
+      mas.boton,
+      mas.cuerpo,
     );
+    mas.cuerpo.append(campo('Acceso', rol,
+      persona?.tiene_cuenta
+        ? 'Quitarle la cuenta deshace su vínculo con Apple: para volver a entrar tendría que solicitarlo otra vez.'
+        : 'El vínculo con Apple no se escribe aquí: se establece al aprobar una solicitud.'));
 
     // Quitarle la cuenta a alguien no puede ser un desliz del desplegable: es
     // la misma operación que la baja voluntaria —que confirma con una hoja de

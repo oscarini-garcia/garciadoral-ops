@@ -69,6 +69,24 @@ def _destinatarios(agenda: Agenda, elemento: object) -> set[str]:
     raise TypeError(f"elemento no soportado por la función de visibilidad: {type(elemento)!r}")
 
 
+def _es_de_los_mayores(agenda: Agenda, elemento: object, observador: Persona) -> bool:
+    """¿Lo apuntó un administrador y quien mira no lo es?
+
+    Lo que escribe un administrador —una idea o un regalo— no lo ve quien no lo
+    es, salvo que se haya marcado `para_todos`
+    (specs/propuesta-formularios-fechas-regalos.html, C1). El deseo propio no
+    entra: es justo lo que los demás necesitan ver para regalarlo.
+    """
+    if not isinstance(elemento, (Idea, Regalo)):
+        return False
+    if isinstance(elemento, Idea) and elemento.tipo == "deseo":
+        return False
+    if elemento.para_todos or observador.es_administrador:
+        return False
+    autor = agenda.persona(elemento.autor_id) if elemento.autor_id else None
+    return autor is not None and autor.es_administrador
+
+
 def visible(agenda: Agenda, elemento: object, observador: Persona | str | None) -> bool:
     """¿Es `elemento` visible para `observador`?
 
@@ -92,6 +110,9 @@ def visible(agenda: Agenda, elemento: object, observador: Persona | str | None) 
             categoria.id, observador.id
         ):
             return False
+
+    if _es_de_los_mayores(agenda, elemento, observador):
+        return False
 
     if observador.id in _destinatarios(agenda, elemento):
         return False
