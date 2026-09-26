@@ -166,6 +166,9 @@ class Idea:
     fecha_creacion: datetime | None = None
     fecha_modificacion: datetime | None = None
     activa: bool = True
+    # Lo que apunta un administrador lo ven los demás solo si esto está puesto
+    # (specs/propuesta-formularios-fechas-regalos.html, C1).
+    para_todos: bool = False
 
 
 @dataclass(frozen=True)
@@ -278,6 +281,8 @@ class Regalo:
     estado: str = "pendiente"
     categoria_id: str | None = None
     activo: bool = True
+    autor_id: str | None = None
+    para_todos: bool = False
 
 
 @dataclass(frozen=True)
@@ -619,6 +624,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             fecha_creacion=_momento(bruto.get("fecha_creacion")),
             fecha_modificacion=_momento(bruto.get("fecha_modificacion")),
             activa=bool(bruto.get("activa", True)),
+            para_todos=bool(bruto.get("para_todos", False)),
         )
         for orientacion in bruto.get("orientaciones", []):
             agenda.orientaciones.append(
@@ -670,6 +676,8 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             estado=bruto.get("estado", "pendiente"),
             categoria_id=bruto.get("categoria_id"),
             activo=bool(bruto.get("activo", True)),
+            autor_id=bruto.get("autor_id"),
+            para_todos=bool(bruto.get("para_todos", False)),
         )
 
     for bruto in datos.get("comentarios", []):

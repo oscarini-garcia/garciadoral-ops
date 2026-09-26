@@ -1,0 +1,525 @@
+<meta charset="utf-8">
+<title>Formularios, fechas y regalos</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d;
+      --card: #1e242b;
+      --lift: #242b33;
+      --ink: #dce5ee;
+      --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12);
+      --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8;
+      --ac-ink: #10181d;
+      --rec: #7f92a5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d;
+    --card: #1e242b;
+    --lift: #242b33;
+    --ink: #dce5ee;
+    --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12);
+    --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8;
+    --ac-ink: #10181d;
+    --rec: #7f92a5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin: 0 0 4px;
+  }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    color: var(--ink);
+    font: inherit;
+    transition: border-color 0.12s ease;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ac);
+    flex: none;
+  }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec {
+    margin-left: auto;
+    flex: none;
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    color: var(--rec);
+    border: 1px solid var(--line-hard);
+    border-radius: 99px;
+    padding: 2px 8px;
+  }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .obody code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .mock {
+    display: block;
+    margin: 12px 0 2px;
+    background: var(--lift);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 12px 14px;
+    overflow: hidden;
+  }
+  .mock .sample { display: block; color: var(--ink); font-size: 14px; line-height: 1.55; margin: 0; }
+  .mock .sample + .sample { margin-top: 8px; }
+  .mock .caption {
+    display: block;
+    margin-top: 8px;
+    color: var(--sub);
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+  /* Las maquetas: una pantalla en pequeño, a la misma escala en todas las
+     opciones de una pregunta. Todo son spans: la tarjeta es el botón. */
+  .mk { display: block; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+  .mk + .mk { margin-top: 8px; }
+  .mk-h { display: block; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin-bottom: 4px; }
+  .mk-t { display: block; font-weight: 640; font-size: 14px; }
+  .mk-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
+  .mk-row:first-of-type, .mk-h + .mk-row, .mk-t + .mk-row { border-top: 0; }
+  .mk-row .d { flex: none; width: 3.2em; color: var(--sub); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .mk-row .x { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mk-row .m { flex: none; color: var(--sub); font-size: 12px; }
+  .mk-row .faint { color: var(--sub); }
+  .mk-pill { display: inline-block; border: 1px solid var(--line-hard); border-radius: 99px; padding: 0 8px; font-size: 12px; color: var(--ink); line-height: 1.6; margin-right: 4px; }
+  .mk-pill.ac { border-color: var(--ac); color: var(--ac); }
+  .mk-pill.dash { border-style: dashed; color: var(--sub); }
+  .mk-tag { display: inline-block; background: var(--lift); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 11.5px; color: var(--sub); margin-right: 3px; }
+  .mk-field { display: block; padding: 4px 0; }
+  .mk-field .l { display: block; font-size: 11px; color: var(--sub); letter-spacing: 0.03em; }
+  .mk-field .v { display: block; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; margin-top: 2px; background: var(--lift); }
+  .mk-bar { display: flex; justify-content: space-between; border-top: 1px solid var(--line-hard); padding-top: 6px; margin-top: 6px; font-size: 10.5px; color: var(--sub); }
+  .mk-bar .on { color: var(--ac); font-weight: 600; }
+  .mk-list { display: block; }
+  .mk-list .n { display: block; padding: 2px 0; }
+  .mk-list .n b { font-weight: 600; }
+  .mk-list .n .w { color: var(--sub); }
+  .mk-check { display: inline-block; width: 12px; height: 12px; border: 1.5px solid var(--line-hard); border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+  .mk-check.on { background: var(--ac); border-color: var(--ac); }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary {
+    cursor: pointer;
+    color: var(--sub);
+    font-size: 13.5px;
+    list-style: none;
+    display: inline-block;
+    border-bottom: 1px dashed var(--line-hard);
+  }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 60px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    resize: vertical;
+  }
+  details.note textarea:focus-visible { outline: 2px solid var(--ac); outline-offset: 1px; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .foot code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--ink); }
+  .bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--lift);
+    border-top: 1px solid var(--line);
+    padding: 12px max(20px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy {
+    flex: none;
+    background: var(--ac);
+    color: var(--ac-ink);
+    border: 0;
+    border-radius: 99px;
+    padding: 9px 18px;
+    font: inherit;
+    font-weight: 620;
+    font-size: 14.5px;
+    cursor: pointer;
+  }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  .copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+  /* La tira de la semana, dibujada como en meeting-ops-air: siete columnas,
+     la flecha es una semana y el día elegido va relleno. */
+  .mk-strip { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+  .mk-strip .ar { flex: none; width: 14px; color: var(--sub); text-align: center; }
+  .mk-strip .ds { display: flex; flex: 1; gap: 1px; }
+  .mk-strip .dd { flex: 1; text-align: center; border-radius: 6px; padding: 2px 0 3px; }
+  .mk-strip .dd .n { display: block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 9px; color: var(--sub); }
+  .mk-strip .dd .v { display: block; font-size: 12.5px; font-weight: 600; }
+  .mk-strip .dd .p { display: block; width: 4px; height: 4px; margin: 2px auto 0; border-radius: 99px; background: var(--sub); }
+  .mk-strip .dd .p.no { background: transparent; }
+  .mk-strip .dd.pasado { opacity: .35; }
+  .mk-strip .dd.hoy .v { color: var(--ac); }
+  .mk-strip .dd.sel { background: var(--ac); }
+  .mk-strip .dd.sel .n, .mk-strip .dd.sel .v { color: var(--ac-ink); }
+  .mk-strip .dd.sel .p { background: var(--ac-ink); }
+  .mk-sel { display: inline-block; border: 1px solid var(--line-hard); border-radius: 6px; padding: 0 6px; font-size: 11.5px; color: var(--ink); white-space: nowrap; }
+  .mk-sel::after { content: " ▾"; color: var(--sub); }
+  .mk-ai { display: inline-block; color: var(--ac); font-size: 12px; margin: 0 2px; }
+  .mk-arr { display: inline-block; color: var(--sub); font-size: 13px; padding: 0 3px; }
+  .mk-big { display: block; font-size: 15px; font-weight: 640; margin: 2px 0; }
+  .mk-form { display: block; }
+  .mk-form .fl { display: block; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--sub); margin-top: 5px; }
+  .mk-form .fv { display: block; border: 1px solid var(--line); border-radius: 6px; padding: 3px 7px; background: var(--lift); font-size: 12.5px; }
+  .mk-form .fv.ph { color: var(--sub); }
+  .mk-foot { display: flex; gap: 6px; margin-top: 8px; }
+  .mk-btn { flex: 1; text-align: center; border-radius: 7px; padding: 4px 0; font-size: 12px; background: var(--ac); color: var(--ac-ink); }
+  .mk-btn.sec { flex: 0 0 34%; background: var(--line); color: var(--ink); }
+  .mk-nav { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 4px; }
+  .mk-nav .ac { color: var(--ac); font-weight: 600; }
+  .mk-more { display: block; font-size: 12px; color: var(--ac); margin-top: 6px; }
+  .mk-who { display: inline-block; font-size: 11px; border-radius: 99px; padding: 0 7px; border: 1px solid var(--line-hard); margin-right: 3px; }
+  .mk-who.no { text-decoration: line-through; color: var(--sub); }
+</style>
+
+<div class="wrap">
+  <h1>Formularios, fechas y regalos</h1>
+  <p class="stand">Lo pedido: <em>opciones para los formularios de añadir y editar; que al añadir algo la fecha salga de dónde estás; y revisar que las niñas vean lo que apuntáis Ana o tú, porque muchas veces el regalo es el mismo</em>. Tres preguntas. En cada una, la primera opción es la recomendada. Los nombres y los datos de las maquetas son de muestra.</p>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Los formularios</p>
+    <p class="qtitle">¿Qué forma tienen los formularios de añadir y editar?</p>
+    <p class="qwhy">Hoy hay unos veinte (evento, actividad, escapada, idea, deseo, regalo, persona, sitio, apunte, receta, noche…) y cada uno ha crecido por su lado: unos llevan «Más opciones», otros no, y el botón de guardar queda al final de la hoja, a veces debajo del teclado. Lo que se decide es una forma común para todos.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Una hoja común: lo esencial arriba, «Más» plegado y los botones siempre a la vista</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="mk-t">Nuevo evento</span>
+          <span class="fl">Qué</span><span class="fv">Cena con los Pérez</span>
+          <span class="fl">Cuándo</span><span class="fv">viernes 26 · 21:00</span>
+          <span class="mk-more">Más: quién va, dónde, avisos ›</span>
+          <span class="mk-foot"><span class="mk-btn">Crear</span><span class="mk-btn sec">Cancelar</span></span>
+        </span><span class="caption">Dos o tres campos y los botones fijos al pie, por encima del teclado.</span></span>
+        <p class="obody">Cada formulario enseña primero lo que casi siempre se rellena (qué y cuándo, o nombre) y deja lo demás detrás de una línea «Más». Crear o Guardar y Cancelar se quedan pegados al pie de la hoja, también con el teclado abierto. Es un cambio de piezas comunes (<code>abrirHoja</code> y <code>campo</code>), así que alcanza a los veinte a la vez. <b>Lo que cuesta:</b> repasar formulario por formulario qué va arriba y qué va en «Más».</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Editar en el sitio: la ficha es el formulario</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="mk-t">Cena con los Pérez</span>
+          <span class="mk-row"><span class="x faint">Cuándo</span><span class="m">viernes 26 · 21:00 ›</span></span>
+          <span class="mk-row"><span class="x faint">Dónde</span><span class="m">Casa de los Pérez ›</span></span>
+          <span class="mk-row"><span class="x faint">Quién va</span><span class="m">Todos ›</span></span>
+          <span class="mk-row"><span class="x faint">Avisar</span><span class="m">1 día antes ›</span></span>
+        </span><span class="caption">Se toca una línea y se cambia ahí; se guarda solo.</span></span>
+        <p class="obody">Desaparece el botón de editar y el formulario aparte: el detalle de algo es una lista de líneas, y tocar una la cambia en su sitio, con el calendario o el reloj propios. Se guarda al soltarla. Crear es la misma ficha, vacía. <b>Lo que cuesta:</b> es la opción más cara de construir, y al no haber «Guardar» se pierde el momento de arrepentirse antes de guardar.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Pantalla completa, con Cancelar y Guardar arriba</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="mk-nav"><span>Cancelar</span><span><b>Nuevo evento</b></span><span class="ac">Crear</span></span>
+          <span class="fl">Qué</span><span class="fv">Cena con los Pérez</span>
+          <span class="fl">Cuándo</span><span class="fv">viernes 26 · 21:00</span>
+          <span class="fl">Dónde</span><span class="fv ph">Casa de los Pérez</span>
+          <span class="fl">Quién va</span><span class="fv ph">Todos</span>
+        </span><span class="caption">La figura de Calendario o Contactos de iOS.</span></span>
+        <p class="obody">El formulario ocupa la pantalla entera y los verbos van en la barra de arriba, como en las aplicaciones de Apple. Todo se ve sin plegar nada. <b>Lo que cuesta:</b> arriba a la derecha es lo que peor alcanza el pulgar, y el resto de la aplicación trabaja con hojas que suben desde abajo.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Una línea primero: se escribe y la aplicación rellena</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="mk-t">Añadir</span>
+          <span class="fv">cena con los Pérez el viernes a las 9</span>
+          <span class="mk-row"><span class="x faint">🍽️ Cena con los Pérez · viernes 26 · 21:00</span></span>
+          <span class="mk-more">Completar el formulario ›</span>
+          <span class="mk-foot"><span class="mk-btn">Crear</span><span class="mk-btn sec">Cancelar</span></span>
+        </span><span class="caption">Debajo, lo que ha entendido; el formulario entero, a un toque.</span></span>
+        <p class="obody">Para lo rápido basta una frase: la aplicación saca la fecha, la hora y el tipo, y enseña lo que ha entendido antes de crear. El formulario completo sigue detrás. Encaja con B3. <b>Lo que cuesta:</b> solo sirve para eventos (un regalo o una persona no se escriben en una frase) y lo que no entienda hay que corregirlo a mano.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va qué molesta de los formularios de ahora.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · La fecha al añadir</p>
+    <p class="qtitle">¿De dónde sale la fecha de lo que se añade?</p>
+    <p class="qwhy">Hoy solo la agenda propone fecha: el primer día de la semana o el mes que se mira, u hoy si está dentro. Tocar un día y después «+» no sirve de nada, y la hora siempre sale vacía.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">El día que se está mirando, y la hora según el momento</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-strip"><span class="ar">‹</span><span class="ds">
+            <span class="dd"><span class="n">J</span><span class="v">24</span><span class="p no"></span></span>
+            <span class="dd sel"><span class="n">V</span><span class="v">25</span><span class="p"></span></span>
+            <span class="dd"><span class="n">S</span><span class="v">26</span><span class="p no"></span></span>
+          </span><span class="ar">›</span></span>
+          <span class="mk-row"><span class="x faint">Viernes 25 · 2 cosas</span><span class="m"><span class="mk-pill">+ Añadir a este día</span></span></span>
+          <span class="mk-form"><span class="fl">Cuándo</span><span class="fv">viernes 25 · sin hora</span></span>
+        </span><span class="caption">Desde la hoja de un día, «+» nace en ese día.</span></span>
+        <p class="obody">La regla es una sola: el día que tienes delante. Si has abierto un día (en la semana, en el mes o en Cenas), eso; si miras una semana o un mes, hoy si está dentro y si no su primer día; en Hoy, hoy. La hora solo se propone para hoy: la siguiente en punto. La hoja de un día gana su «+ Añadir a este día». <b>Lo que cuesta:</b> poco; es extender lo que ya hace la agenda.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Lo mismo, sin proponer hora nunca</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-row"><span class="x faint">Viernes 25 · 2 cosas</span><span class="m"><span class="mk-pill">+ Añadir a este día</span></span></span>
+          <span class="mk-form"><span class="fl">Cuándo</span><span class="fv">viernes 25</span><span class="fl">Hora</span><span class="fv ph">Sin hora</span></span>
+        </span><span class="caption">El día sí; la hora la pone quien escribe.</span></span>
+        <p class="obody">Una hora propuesta que no se corrige queda mal apuntada, y casi nadie cena a la siguiente hora en punto. <b>Lo que cuesta:</b> un toque más cada vez que algo lleva hora.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">B1, y además la fecha se lee del título</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="fl">Qué</span><span class="fv">Dentista de Amaya el martes a las 17:30</span>
+          <span class="fl">Cuándo</span><span class="fv">martes 29 · 17:30 <span class="faint">(del título)</span></span>
+        </span><span class="caption">«mañana», «el martes», «a las 9» cambian el Cuándo solos.</span></span>
+        <p class="obody">Al escribir el título, las expresiones de fecha y hora corrientes («mañana», «el viernes», «a las 21:00», «el 3 de octubre») ajustan el Cuándo, y el título se queda limpio. Se hace en el teléfono, sin IA y sin red. <b>Lo que cuesta:</b> un lector de fechas en español que mantener, y cuando se equivoque hay que verlo antes de crear.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Que la IA lo deduzca todo del título</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="fl">Qué</span><span class="fv">cumple de la abuela en su casa el domingo</span>
+          <span class="mk-row"><span class="x faint">✦ 🎂 Cumpleaños · domingo 28 · Casa de la abuela · lleva regalos</span></span>
+        </span><span class="caption">Fecha, tipo, emoji y dónde, propuestos por la IA.</span></span>
+        <p class="obody">La IA propone fecha, tipo, emoji y lugar a partir de la frase. <b>Lo que cuesta:</b> cada alta espera a la red y consume la clave de Anthropic, y sin conexión no hay nada. Se dibuja para descartarla.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta se queda abierta; en la nota va de dónde debería salir.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · Quién ve los regalos</p>
+    <p class="qtitle">¿Qué ven las niñas de lo que apuntáis Ana y tú?</p>
+    <p class="qwhy">La regla de hoy es una: una idea o un regalo se oculta solo a su destinatario. Así, lo que apuntáis para Amaya no lo ve Amaya, pero sí Falu, y si el regalo es el mismo para las dos, Falu está viendo el suyo. Lo único que lo evita hoy es ponerle a mano la categoría «Coordinación», que solo ven los administradores.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Lo que apuntan los mayores, solo para los mayores, salvo que se comparta</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Un regalo nuevo · lo apunta Óscar</span>
+          <span class="mk-row"><span class="x">Patines · para Amaya</span></span>
+          <span class="mk-row"><span class="x faint">Lo ven</span><span class="m"><span class="mk-who">Ana</span><span class="mk-who">Óscar</span><span class="mk-who no">Falu</span><span class="mk-who no">Amaya</span></span></span>
+          <span class="mk-row"><span class="x faint"><span class="mk-check"></span>Que lo vean las niñas (un regalo de todos)</span></span>
+        </span><span class="caption">Oculto a las niñas de origen; una casilla lo abre.</span></span>
+        <p class="obody">Una idea o un regalo que apunta un administrador no lo ve quien no lo es, salvo que se marque «que lo vean las niñas», para lo que se regala entre todos (el cumpleaños de la abuela). Lo que apuntan las niñas sigue como hoy. La regla cambia en los tres sitios donde vive (Worker, aplicación y plan de los domingos) y su prueba. <b>Lo que cuesta:</b> para coordinar un regalo con ellas hay que acordarse de la casilla.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Lo que es para una niña no lo ve ninguna de las dos</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Patines · para Amaya</span>
+          <span class="mk-row"><span class="x faint">Lo ven</span><span class="m"><span class="mk-who">Ana</span><span class="mk-who">Óscar</span><span class="mk-who no">Falu</span><span class="mk-who no">Amaya</span></span></span>
+          <span class="mk-h">Perfume · para la abuela</span>
+          <span class="mk-row"><span class="x faint">Lo ven</span><span class="m"><span class="mk-who">Ana</span><span class="mk-who">Óscar</span><span class="mk-who">Falu</span><span class="mk-who">Amaya</span></span></span>
+        </span><span class="caption">El destinatario se amplía a sus hermanas.</span></span>
+        <p class="obody">Ataja exactamente el caso de los regalos iguales y deja todo lo demás compartido. <b>Lo que cuesta:</b> las niñas tampoco ven lo que una prepara para la otra, y un regalo de los mayores para la abuela sigue a la vista de ellas.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">«Coordinación» puesta sola cuando un mayor apunta para una niña</span></span>
+        <span class="mock"><span class="mk mk-form">
+          <span class="mk-t">Un regalo nuevo</span>
+          <span class="fl">Para</span><span class="fv">Amaya</span>
+          <span class="fl">Categoría</span><span class="fv">Coordinación <span class="faint">(solo administradores)</span></span>
+        </span><span class="caption">La categoría que ya existe, propuesta de origen.</span></span>
+        <p class="obody">Sin regla nueva: el formulario propone la categoría reservada cuando quien apunta es administrador y el destinatario es una de las niñas, y se puede quitar. <b>Lo que cuesta:</b> se pierde la categoría de verdad (ropa, deporte…) de esos regalos, y lo ya apuntado hay que cambiarlo a mano.</p>
+      </button>
+      <button class="opt" data-t="C4" aria-pressed="false">
+        <span class="optrow"><span class="tok">C4</span><span class="oname">Un solo regalo para las dos, en vez de dos iguales</span></span>
+        <span class="mock"><span class="mk">
+          <span class="mk-h">Patines · para Amaya y Falu</span>
+          <span class="mk-row"><span class="x faint">Lo ven</span><span class="m"><span class="mk-who">Ana</span><span class="mk-who">Óscar</span><span class="mk-who no">Falu</span><span class="mk-who no">Amaya</span></span></span>
+          <span class="mk-row"><span class="x faint">«Para» admite varias personas</span></span>
+        </span><span class="caption">Ya existe: un regalo puede tener varios destinatarios.</span></span>
+        <p class="obody">El modelo ya lo permite: un regalo con dos destinatarios se oculta a los dos. Solo haría falta que el formulario lo ofreciera a la vista («para las dos»). <b>Lo que cuesta:</b> depende de acordarse de apuntarlo así, y no cubre ideas ni regalos distintos para cada una. Se dibuja para dejarla como complemento.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La regla se queda como está; en la nota va qué debería cambiar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p><b>Lo que no se pregunta.</b> Que un regalo nunca lo ve su destinatario, y que un deseo lo ve siempre quien lo pidió: eso sigue igual en todas las opciones de C.</p>
+    <p><b>Decidido:</b> A1 · B1 · C1. Los formularios comparten forma: lo esencial arriba, lo demás detrás de «Más» y los botones de Crear o Guardar y Cancelar fijos al pie de la hoja. La fecha de lo que se añade es la del día que se tiene delante, con «+ Añadir a este día» en la hoja de un día, y la hora solo se propone para hoy: la siguiente en punto. Y lo que apunta un administrador —una idea o un regalo, no un deseo propio— no lo ve quien no lo es, salvo que se marque «Que lo vean las niñas». Construido como 1.78.0.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  const KEY = "options.formularios-fechas-regalos";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  // A question opts into combining by carrying data-multi="true".
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+
+  // Picks are held per letter as a list of tokens, so a single-pick question and
+  // a combining one share one shape. An empty list means undecided; the list
+  // ["A0"] means the options were seen and none served.
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+
+  function toggle(t) {
+    const l = t[0];
+    const none = l + "0";
+    const list = picked(l);
+    const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) {
+      next = on ? [] : [t];
+    } else if (on) {
+      next = list.filter((x) => x !== t);
+    } else if (t === none) {
+      next = [t]; // "none of these" stands alone
+    } else {
+      next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    }
+    if (next.length) state.picks[l] = next;
+    else delete state.picks[l];
+  }
+
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) {
+      const note = (state.notes[l] || "").trim();
+      if (note) lines.push(l + ": " + note);
+    }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) {
+      const t = btn.dataset.t;
+      btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t)));
+    }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" +
+        (missing.length ? " — faltan: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+
+  document.querySelectorAll(".opt").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      toggle(btn.dataset.t);
+      keep();
+      paint();
+    });
+  });
+
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => {
+      state.notes[area.dataset.n] = area.value;
+      keep();
+    });
+  });
+
+  copy.addEventListener("click", async () => {
+    const text = block();
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      const t = document.createElement("textarea");
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try { ok = document.execCommand("copy"); } catch {}
+      t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar: está abajo";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+
+  paint();
+</script>

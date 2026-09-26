@@ -35,6 +35,7 @@ class Visibilidad(unittest.TestCase):
                     "id": "i1",
                     "titulo": "Botas de montar",
                     "autor_id": "p-ana",
+                    "para_todos": True,
                     "orientaciones": [{"persona_id": "p-marta"}],
                 }
             ]
@@ -96,6 +97,7 @@ class Visibilidad(unittest.TestCase):
                     "id": "i1",
                     "titulo": "Manta",
                     "autor_id": "p-ana",
+                    "para_todos": True,
                     "orientaciones": [{"persona_id": "p-abuela"}],
                 }
             ]
@@ -112,6 +114,7 @@ class Visibilidad(unittest.TestCase):
                     "id": "i1",
                     "titulo": "Altavoz",
                     "autor_id": "p-ana",
+                    "para_todos": True,
                     "orientaciones": [{"etiqueta_id": "e-adolescente"}],
                 }
             ]
@@ -142,6 +145,7 @@ class Visibilidad(unittest.TestCase):
                     "id": "i1",
                     "titulo": "Sorpresa",
                     "autor_id": "p-ana",
+                    "para_todos": True,
                     "categoria_id": "c-res",
                 }
             ],
@@ -150,6 +154,38 @@ class Visibilidad(unittest.TestCase):
         self.assertFalse(visible(agenda, agenda.ideas["i1"], "p-lucia"))
         # Ni siquiera un administrador entra sin figurar en la lista de acceso.
         self.assertFalse(visible(agenda, agenda.ideas["i1"], "p-ana"))
+
+    def test_lo_de_los_mayores_no_lo_ven_las_ninas(self):
+        """Lo que apunta un administrador no lo ve quien no lo es, salvo
+        `para_todos` (specs/propuesta-formularios-fechas-regalos.html, C1)."""
+        agenda = agenda_minima(
+            ideas=[
+                {
+                    "id": "i1",
+                    "titulo": "Patines",
+                    "autor_id": "p-ana",
+                    "orientaciones": [{"persona_id": "p-marta"}],
+                },
+                {
+                    "id": "i2",
+                    "titulo": "Perfume",
+                    "autor_id": "p-ana",
+                    "para_todos": True,
+                    "orientaciones": [{"persona_id": "p-marta"}],
+                },
+                {
+                    "id": "i3",
+                    "tipo": "deseo",
+                    "titulo": "Una cafetera",
+                    "autor_id": "p-oscar",
+                },
+            ]
+        )
+        self.assertFalse(visible(agenda, agenda.ideas["i1"], "p-lucia"))
+        self.assertTrue(visible(agenda, agenda.ideas["i1"], "p-oscar"))
+        self.assertTrue(visible(agenda, agenda.ideas["i2"], "p-lucia"))
+        self.assertFalse(visible(agenda, agenda.ideas["i2"], "p-marta"))
+        self.assertTrue(visible(agenda, agenda.ideas["i3"], "p-lucia"))
 
     def test_el_deseo_es_visible_para_su_autor(self):
         """La cláusula del deseo precede a la del destinatario: de lo contrario

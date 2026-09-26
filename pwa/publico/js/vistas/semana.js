@@ -14,7 +14,7 @@
  */
 
 import {
-  abrirHoja, avisar, botonIcono, campo, cerrarHoja, deslizarHorizontal, dobleToque, el, enfocarAlAbrir, enlazar, entrada, icono, seleccion, selectorDeFecha, selectorDeHora, vaciar,
+  abrirHoja, avisar, botonIcono, campo, cerrarHoja, deslizarHorizontal, masOpciones, dobleToque, el, enfocarAlAbrir, enlazar, entrada, icono, seleccion, selectorDeFecha, selectorDeHora, vaciar,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, estaActivo, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
@@ -26,7 +26,7 @@ import {
 } from '../plugins.js';
 import { viajeDelVuelo } from '../viajes.js';
 import {
-  abrirFormularioActividad, abrirFormularioEscapada, abrirPlugins, quienesVan, tiposVisibles,
+  abrirFormularioActividad, abrirFormularioEscapada, abrirMenuDeNuevo, abrirPlugins, quienesVan, tiposVisibles,
 } from './plugins.js';
 import { abrirFicha } from './familia.js';
 import { irALugar } from './sitios.js';
@@ -41,6 +41,10 @@ import {
 } from '../lio.js';
 
 let modo = 'semana';
+/** El último día que se abrió en su hoja: si cae en el periodo que se mira, es
+ *  el día que se tiene delante y el «+» nace en él
+ *  (`specs/propuesta-formularios-fechas-regalos.html`, B1). */
+let diaMirado = null;
 let ancla = hoy();
 // Dirección del último cambio de periodo, para que lo que entra lo haga por el
 // lado del que se viene. Se consume al pintar.
@@ -190,6 +194,7 @@ function diasDelPeriodo() {
  * justamente ahí.
  */
 export function fechaQuePropone() {
+  if (diaMirado && (modo === 'lista' || diasDelPeriodo().some((dia) => iso(dia) === iso(diaMirado)))) return diaMirado;
   if (modo === 'lista') return hoy();
   const dias = diasDelPeriodo();
   const ahora = hoy();
@@ -1291,6 +1296,7 @@ function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
 // ------------------------------------------------------------ Vista de día --
 
 export function abrirDia(fecha, ctx) {
+  diaMirado = fecha;
   const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, fecha, fecha), [fecha]);
   const apariciones = reparto.get(iso(fecha)) || [];
 
@@ -1321,10 +1327,12 @@ export function abrirDia(fecha, ctx) {
         el('p', { texto: 'Tocar para deshacerlo.' }),
       ]));
     }
+    // Evento, actividad o fin de semana, como el «+» de la barra, y nacido en
+    // este día.
     cuerpo.append(el('button', {
       class: 'boton', type: 'button',
-      onclick: () => abrirFormularioEvento(ctx, { fecha }),
-    }, ['Añadir un evento este día']));
+      onclick: () => abrirMenuDeNuevo(ctx, { fecha }),
+    }, ['+ Añadir a este día']));
   }, accionesDelDia(fecha, apariciones, ctx));
 
   // El mismo gesto que en la semana y en el mes, un piso más abajo: aquí lo que
@@ -2012,27 +2020,32 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
       valor: borrador.dia,
       alCambiar: (valor) => {
         hasta.min = valor;
+        // La hora propuesta era para hoy: en otro día no se sostiene.
+        if (horaPropuesta && hora.valor === horaPropuesta && valor !== iso(hoy())) hora.valor = '';
         // Un «hasta» que se queda por detrás del día ya no dice nada: se cae
         // solo en vez de esperar a que el guardado lo reproche.
         if (hasta.valor && hasta.valor < valor) hasta.valor = '';
       },
     });
 
+    // La hora va con el cuándo, arriba: es lo esencial de un evento y no una
+    // opción más (A1). Y para hoy se propone la siguiente en punto, que es lo
+    // que casi siempre se está apuntando (B1); otro día, ninguna.
+    const horaPropuesta = !existente && !borrador.hora && borrador.dia === iso(hoy())
+      ? siguienteEnPunto() : '';
+    const hora = selectorDeHora({ valor: borrador.hora || horaPropuesta, vacio: 'Todo el día' });
+
     cuerpo.append(
       campo('Qué', titulo),
       campo('Cuándo', dia.nodo),
+      campo('A qué hora', hora.nodo, 'Sin hora, dura todo el día.'),
       campo('Hasta', hasta.nodo, 'Con fecha, el evento sale en la agenda todos los días que dura.'),
     );
 
-    const avanzado = el('div', { class: 'hoja-seccion', hidden: !existente });
-    const conmutador = el('button', {
-      class: 'enlace-discreto', type: 'button',
-      onclick: () => { avanzado.hidden = !avanzado.hidden; conmutador.textContent = avanzado.hidden ? 'Más opciones' : 'Menos opciones'; },
-    }, [existente ? 'Menos opciones' : 'Más opciones']);
-    if (!existente) cuerpo.append(conmutador);
-    cuerpo.append(avanzado);
+    const mas = masOpciones('qué es, de quién, quién va, dónde, si se repite', { abierto: Boolean(existente) });
+    const avanzado = mas.cuerpo;
+    cuerpo.append(mas.boton, avanzado);
 
-    const hora = selectorDeHora({ valor: borrador.hora, vacio: 'Todo el día' });
     // El tipo va después de la fecha: quien crea un evento tiene en la cabeza el
     // qué y el cuándo, no la taxonomía (specs/ux.md §10.1). Y son pastillas y
     // no un desplegable: solo los tipos que la casa tiene marcados en la hoja
@@ -2057,7 +2070,6 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
     const repite = seleccion(REPETICIONES.map((r) => ({ valor: r.valor, texto: r.texto })), borrador.repeticion);
 
     avanzado.append(
-      campo('A qué hora', hora.nodo, 'Sin hora, dura todo el día.'),
       campo('Qué es', tipo, 'El tipo elige el emoji y propone si el evento lleva regalos. Para otro emoji, empieza el título con él.'),
       campoDeGente(ctx, {
         etiqueta: 'De quién es',
@@ -2130,6 +2142,12 @@ export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
       el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: cerrarHoja }, ['Cancelar']),
     ]));
   }, [borrarEvento]);
+}
+
+/** La siguiente hora en punto, o ninguna pasadas las once de la noche. */
+function siguienteEnPunto() {
+  const siguiente = new Date().getHours() + 1;
+  return siguiente > 23 ? '' : `${String(siguiente).padStart(2, '0')}:00`;
 }
 
 export const anclaActual = () => ancla;

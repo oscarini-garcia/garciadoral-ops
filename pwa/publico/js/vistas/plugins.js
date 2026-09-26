@@ -678,9 +678,8 @@ export function quienesVan(evento, ctx) {
  * formulario. Se paga un toque en la cena del sábado; lo que se gana es que
  * los dos plugins escritos se creen desde donde se piensa, que es la agenda.
  */
-export function abrirMenuDeNuevo(ctx) {
+export function abrirMenuDeNuevo(ctx, { fecha = fechaQuePropone() } = {}) {
   const datos = ctx.vista.datos;
-  const fecha = fechaQuePropone();
   const filas = [
     { id: 'puntuales', texto: 'Evento', pista: 'una cena, una cita, lo que sea de un día', abrir: () => abrirFormularioEvento(ctx, { fecha }) },
     { id: 'extraescolares', texto: 'Actividad', pista: 'con su curso, sus días y su hora', abrir: () => abrirFormularioActividad(ctx, { fecha }) },

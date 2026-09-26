@@ -26,6 +26,24 @@ function destinatarios(registro, elemento, clase) {
   return new Set();
 }
 
+/**
+ * ¿Es algo que apuntó un administrador y que quien mira no debe ver?
+ *
+ * Lo que escribe un administrador —una idea o un regalo— no lo ve quien no lo
+ * es, salvo que se haya marcado `para_todos`: lo que se regala entre todos
+ * (`specs/propuesta-formularios-fechas-regalos.html`, C1). El deseo propio no
+ * entra: lo que pide un administrador para sí es justo lo que las niñas
+ * necesitan ver para regalárselo.
+ */
+function esDeLosMayores(registro, elemento, clase, observador) {
+  if (clase !== 'idea' && clase !== 'regalo') return false;
+  if (clase === 'idea' && elemento.tipo === 'deseo') return false;
+  if (elemento.para_todos === true || elemento.para_todos === 1) return false;
+  if (observador.rol === 'administrador') return false;
+  const autor = registro.personas.find((p) => p.id === elemento.autor_id);
+  return autor?.rol === 'administrador';
+}
+
 function visible(registro, elemento, clase, observador) {
   if (!observador?.tiene_cuenta) return false;
   if (clase === 'idea' && elemento.tipo === 'deseo' && elemento.autor_id === observador.id) return true;
@@ -40,6 +58,8 @@ function visible(registro, elemento, clase, observador) {
       return false;
     }
   }
+
+  if (esDeLosMayores(registro, elemento, clase, observador)) return false;
 
   return !destinatarios(registro, elemento, clase).has(observador.id);
 }
