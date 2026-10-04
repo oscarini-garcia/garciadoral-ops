@@ -26,7 +26,7 @@ import { escribirLaChispa, escribirLoDeLio, estado, guardar } from '../sincroniz
 import { frasesGuardadas, guardarFrases } from '../almacen.js';
 import { VERSION_APP } from '../version.js';
 import {
-  abrirDetalleEvento, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, monedaDeLio, textoDeLinea, textoDePropuesta, textoDeTratoDia,
+  abrirDetalleEvento, abrirFormularioEvento, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, monedaDeLio, textoDeLinea, textoDePropuesta, textoDeTratoDia,
 } from './semana.js';
 import { hayLio, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
 import { aplicarLioDeEscapada, escapadasDe } from './plugins.js';
@@ -150,9 +150,10 @@ export function tituloDelDia(dia) {
   const texto = formatearFechaLarga(dia);
   const largo = texto.charAt(0).toUpperCase() + texto.slice(1);
   // Con las dos flechas al lado, «Miércoles 30 de Septiembre» no cabe: el
-  // mes se abrevia antes que recortar la fecha.
-  if (largo.length <= 20) return largo;
-  return largo.replace(/ de (\p{L})(\p{L}{2})\p{L}*$/u, (_, a, b) => ` de ${a}${b}`);
+  // mes se abrevia y pierde el «de» antes que recortar la fecha
+  // («Domingo 4 Oct»).
+  if (largo.length <= 18) return largo;
+  return largo.replace(/ de (\p{L})(\p{L}{2})\p{L}*$/u, (_, a, b) => ` ${a}${b}`);
 }
 
 // ------------------------------------------------------- Las escapadas --
@@ -451,9 +452,9 @@ function bloqueDeLio(dia, ctx) {
   const esHoy = iso(dia) === iso(hoy());
   const rezagados = esHoy ? turnosDe(ctx.vista.datos, ayer).filter((turno) => turno.estado === 'sin-marcar' && !turno.trato) : [];
   const monedas = el('div', { class: 'hoy-lio' }, [
-    ...turnosDe(ctx.vista.datos, dia).map((turno) => monedaDeLio(turno, ctx)),
+    ...turnosDe(ctx.vista.datos, dia).map((turno) => monedaDeLio(turno, ctx, { nombre: true })),
     rezagados.length ? el('span', { class: 'hoy-lio-ayer', texto: 'Ayer' }) : null,
-    ...rezagados.map((turno) => monedaDeLio(turno, ctx)),
+    ...rezagados.map((turno) => monedaDeLio(turno, ctx, { nombre: true })),
   ]);
 
   // Una fila con su nombre a la izquierda, como la de la cena: así se sabe
@@ -519,6 +520,7 @@ function bloqueDelDia(dia, ctx) {
   // media pantalla para decir que no había nada.
   if (!conHora.length) {
     if (!apariciones.length) grupo.append(el('p', { class: 'hoy-nada', texto: esHoy ? 'Hoy no hay nada apuntado.' : 'Nada apuntado.' }));
+    dobleToqueEnHueco(grupo, () => abrirFormularioEvento(ctx, { fecha: dia }));
     return grupo;
   }
 
@@ -535,6 +537,13 @@ function bloqueDelDia(dia, ctx) {
       el('span', { class: 'riel-hora', texto: String(hora).padStart(2, '0') }),
       el('div', { class: 'riel-cosas' }, deEsta.map((a) => lineaDelRiel(a, ctx))),
     ]);
+    // Doble toque en el hueco de una hora: un evento nuevo ese día, a esa hora
+    // —o a la media, si se ha tocado en la mitad de abajo de la fila—.
+    dobleToqueEnHueco(fila, (evento) => {
+      const caja = fila.getBoundingClientRect();
+      const media = evento && evento.clientY > caja.top + caja.height / 2;
+      abrirFormularioEvento(ctx, { fecha: dia, hora: `${String(hora).padStart(2, '0')}:${media ? '30' : '00'}` });
+    });
     if (esHoy && hora === ahora.getHours()) {
       fila.append(el('span', {
         class: 'riel-ahora', 'aria-hidden': 'true',
@@ -545,6 +554,18 @@ function bloqueDelDia(dia, ctx) {
   }
   grupo.append(riel);
   return grupo;
+}
+
+/** Un doble toque sobre lo que está en blanco: lo que cae en un botón —una
+ *  línea, una moneda— es de ese botón, y no cuenta. */
+function dobleToqueEnHueco(nodo, accion) {
+  let anterior = 0;
+  nodo.addEventListener('click', (evento) => {
+    if (evento.target.closest('button')) { anterior = 0; return; }
+    const ahora = performance.now();
+    if (ahora - anterior < 400) { anterior = 0; toque(); accion(evento); return; }
+    anterior = ahora;
+  });
 }
 
 /** Una cosa del día en el riel: la misma línea que en la semana —emoji,

@@ -1103,7 +1103,7 @@ function vistaMes(ctx) {
 /** Un turno de Lío en el detalle del mes: el sol o la luna y las iniciales de
  *  quien lo tiene, con el borde en tinta si salió y en el color de aviso si no
  *  salió. */
-export function monedaDeLio(turno, ctx) {
+export function monedaDeLio(turno, ctx, { nombre = false } = {}) {
   const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
   return el('button', {
     class: 'mes-lio-moneda', type: 'button',
@@ -1113,7 +1113,8 @@ export function monedaDeLio(turno, ctx) {
     onclick: () => { toque(); abrirTurnoDeLio(turno.fecha, turno.turno.id, ctx); },
   }, [
     el('span', { 'aria-hidden': 'true', texto: turno.turno.emoji }),
-    el('span', { class: 'mes-lio-quien', texto: quien ? inicialesDe(quien) : '·' }),
+    // Donde hay sitio, el nombre —o el apodo— entero; donde no, las letras.
+    el('span', { class: 'mes-lio-quien', texto: quien ? (nombre ? (quien.apodo || quien.nombre) : inicialesDe(quien)) : '·' }),
   ]);
 }
 
@@ -1870,14 +1871,15 @@ function tarjetaDeRegalo(regalo, ctx) {
  * título por él. Una rejilla de emojis dentro del formulario era un paso más
  * para decir lo mismo que ya se puede escribir en el título.
  */
-export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
+export function abrirFormularioEvento(ctx, { id = null, fecha = null, hora: horaPedida = null } = {}) {
   const existente = id ? ctx.vista.evento(id) : null;
   const inicio = existente ? parsearMomento(existente.inicio) : (fecha || hoy());
 
   const borrador = {
     titulo: existente?.titulo || '',
     dia: iso(inicio),
-    hora: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : '',
+    // Al crear desde un hueco del día, la hora del hueco tocado.
+    hora: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : (horaPedida || ''),
     // El último día, inclusive, que es lo que significa «hasta» cuando lo dice
     // una persona. Vacío es un evento de un día, que es el caso normal.
     hasta: existente?.fin ? iso(parsearMomento(existente.fin)) : '',

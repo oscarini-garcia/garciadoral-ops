@@ -37,6 +37,20 @@ pendiente. El hook lo inyecta al final del mapa.
   (`pieDeVersion` queda sin uso; la versión está en Ajustes), lo que deja sin
   efecto el «la aplicación escribe la suya abajo a la derecha en Hoy» de la
   forma de contar cada vuelta.
+- **El día, más fácil de leer y de rellenar (1.94.0).** El título de «Día»
+  —la fecha con sus dos flechas, `tituloDeAgenda` en `vistas/semana.js`— ya no
+  depende de `:has()`: el ancho lo da `.titulo-pantalla[data-pestana="semana"]`
+  y el texto no se estira (`flex: 0 1 auto`), así que fecha y flechas salen
+  siempre, también hoy; por encima de 18 letras el mes se abrevia sin «de»
+  («Domingo 4 Oct», `tituloDelDia`). Las monedas de Lío del día llevan el apodo o el nombre
+  entero (`monedaDeLio(turno, ctx, { nombre: true })`); la semana y el mes
+  siguen con iniciales. **Dos toques en una fila del riel abren el formulario**
+  con ese día y esa hora —y media si se toca en la mitad de abajo—
+  (`dobleToqueEnHueco` en `vistas/hoy.js`, `abrirFormularioEvento(ctx, { fecha,
+  hora })`); en un día sin nada con hora, dos toques en la línea abren el
+  formulario de ese día. Los botones de dentro de la fila no cuentan como hueco.
+  Queda por confirmar en el teléfono que el doble toque no choca con el zoom de
+  Safari (la aplicación ya lleva `touch-action: manipulation`).
 - **El día, en orden (1.92.0).** Lo que se pidió para Hoy se aplicó sobre la
   vista «Día» con las recomendadas de `specs/propuesta-hoy-orden.html` (A1 ·
   B1 · C1 · D1; la ronda quedó sin contestar en el PR #171): Lío es una fila

@@ -784,10 +784,10 @@ textarea:-webkit-autofill:focus {
 .semana, .cuerpo-agenda, .cuerpo-dia { touch-action: pan-y; }
 .semana.arrastre-vertical, .cuerpo-dia.arrastre-vertical { touch-action: none; }
 /* El día arriba, con sus flechas (vista «Día»). */
-.titulo-pantalla:has(.titulo-dia) { flex: 1 1 auto; }
+.titulo-pantalla[data-pestana="semana"] { flex: 1 1 auto; }
 .titulo-dia { display: flex; align-items: center; gap: 2px; }
-.titulo-dia-texto { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(21px, 6.2vw, 29px); }
-.titulo-flecha { flex: none; width: 40px; height: 40px; border-radius: 50%; font-size: 26px; line-height: 1; color: var(--ink-soft); font-family: var(--sans, inherit); }
+.titulo-dia-texto { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(21px, 6.2vw, 29px); }
+.titulo-flecha { flex: none; width: 34px; height: 40px; border-radius: 50%; font-size: 26px; line-height: 1; color: var(--ink-soft); font-family: var(--sans, inherit); }
 .titulo-flecha:active { background: var(--paper-3); }
 /* La banda de un viaje se sale lo que mide su relleno, para que su emoji y su
    hora caigan en la misma columna que los de las demás líneas. */

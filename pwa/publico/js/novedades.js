@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.94.0',
+    fecha: '2026-10-04',
+    titulo: 'El día, más fácil de leer y de rellenar',
+    lineas: [
+      'La fecha del día y sus flechas se ven siempre arriba, también hoy.',
+      'Las monedas de Lío en «Día» llevan el nombre entero, no solo las iniciales.',
+      'Dos toques en una hora del día abren el formulario con ese día y esa hora.',
+    ],
+  },
+  {
     version: '1.93.0',
     fecha: '2026-10-04',
     titulo: 'El día arriba, con sus flechas',
