@@ -384,9 +384,9 @@ function vistaSemana(ctx) {
     const apariciones = reparto.get(iso(dia)) || [];
     const vacio = !apariciones.length;
     const contenido = el('div', { class: 'dia-contenido' });
-    // Lío no ocupa renglones: dos monedas a la derecha, como en el detalle
-    // del mes (specs/propuesta-semana-como-mes.html, A1). Tocarlas abre la
-    // hoja del turno.
+    // Lío no ocupa renglones: dos monedas, como en el detalle del mes
+    // (specs/propuesta-semana-como-mes.html, A1). Tocarlas abre la hoja del
+    // turno.
     const turnos = conLio ? turnosDe(ctx.vista.datos, dia) : [];
 
     if (vacio) {
@@ -431,8 +431,17 @@ function vistaSemana(ctx) {
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
       ]),
       contenido,
-      turnos.length ? el('div', { class: 'dia-lio' }, turnos.map((turno) => monedaDeLio(turno, ctx))) : null,
     ]);
+    // Lío va apilado bajo el número, en la columna de la fecha, para que los
+    // eventos tengan el ancho entero (specs/propuesta-semana-legible.html,
+    // A3). Las monedas son botones y no caben dentro del de la fecha, así que
+    // la columna es un envoltorio con los dos.
+    if (turnos.length) {
+      const fecha = fila.firstChild;
+      const columna = el('div', { class: 'dia-columna' });
+      fila.replaceChild(columna, fecha);
+      columna.append(fecha, el('div', { class: 'dia-lio' }, turnos.map((turno) => monedaDeLio(turno, ctx))));
+    }
 
     // El hueco de un día vacío es el sitio natural para llenarlo: un doble
     // toque en cualquier punto de la fila abre el formulario con ese día ya

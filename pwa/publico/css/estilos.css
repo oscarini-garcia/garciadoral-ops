@@ -732,7 +732,7 @@ textarea:-webkit-autofill:focus {
 
 .dia {
   display: grid;
-  grid-template-columns: 52px 1fr auto;
+  grid-template-columns: 54px 1fr;
   gap: 10px;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -742,16 +742,21 @@ textarea:-webkit-autofill:focus {
 }
 .dia[data-algo="si"] { background: var(--tinta-suave); border-color: transparent; }
 .dia[data-hoy="si"] { border-color: var(--tinta); box-shadow: inset 0 0 0 .5px var(--tinta); }
-/* Lío en la semana: las monedas del detalle del mes, arriba a la derecha
-   (specs/propuesta-semana-como-mes.html, A1). */
-.dia-lio { display: inline-flex; gap: 5px; align-self: start; padding-top: 2px; }
-.dia-lio .mes-lio-moneda { height: 24px; padding: 0 7px 0 5px; font-size: 11px; }
+/* Lío en la semana: las monedas del detalle del mes, apiladas bajo el número
+   en la columna de la fecha, para que los eventos lleguen al borde
+   (specs/propuesta-semana-legible.html, A3). */
+.dia-columna { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.dia-lio { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.dia-lio .mes-lio-moneda { height: 22px; padding: 0 6px 0 4px; font-size: 10.5px; gap: 2px; }
+.dia-lio .mes-lio-moneda::after { inset: -2px -4px; }
+/* Y lo que no cabe en una línea pasa a la segunda, con tope de dos (B1). */
+.semana .linea-titulo { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .semana.arrastre-vertical { touch-action: none; }
 .dia-fecha { text-align: left; }
 .dia-inicial { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-faint); }
 .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .dia[data-hoy="si"] .dia-numero { color: var(--tinta); }
-.dia-contenido { display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: center; }
+.dia-contenido { display: flex; flex-direction: column; gap: 3px; min-width: 0; justify-content: flex-start; }
 /* El hueco de un día vacío ocupa todo su lado de la fila, que entera es la
    superficie del doble toque con el que se crea el evento de ese día. */
 .dia-vacio {

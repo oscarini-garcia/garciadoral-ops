@@ -253,6 +253,13 @@ function prepararInterfaz() {
         toque();
         volverAHoyEnAgenda();
         refrescar();
+        // Y se lleva la vista al día: `refrescar` conserva el desplazamiento,
+        // y en una semana larga hoy podía quedar fuera de la pantalla. Si la
+        // vista tiene un día de hoy dibujado, se acerca a él; si no, arriba.
+        const pantalla = document.getElementById('pantalla');
+        const deHoy = pantalla.querySelector('.dia[data-hoy="si"]');
+        if (deHoy) deHoy.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        else pantalla.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       pestana = boton.dataset.pestana;

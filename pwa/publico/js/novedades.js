@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.82.0',
+    fecha: '2026-10-04',
+    titulo: 'La semana se lee mejor',
+    lineas: [
+      'Los turnos de Lío van bajo el número del día, y los eventos llegan hasta el borde de la tarjeta.',
+      'Un título que no cabe en una línea pasa a la segunda, en vez de cortarse.',
+      'Tocar «Agenda» estando en ella vuelve a hoy y lleva la vista hasta el día de hoy.',
+    ],
+  },
+  {
     version: '1.81.0',
     fecha: '2026-10-04',
     titulo: 'La semana, como el mes',
