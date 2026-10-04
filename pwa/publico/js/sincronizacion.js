@@ -47,6 +47,9 @@ let estadoActual = {
 };
 const suscriptores = new Set();
 let sincronizando = false;
+// Un cambio que llega mientras otra sincronización está en vuelo pide otra
+// vuelta al terminar: si no, se quedaba en la cola hasta el siguiente aviso.
+let otraVuelta = false;
 
 export const instantanea = () => instantaneaActual;
 export const estado = () => estadoActual;
@@ -460,6 +463,27 @@ export async function proponerCenas(fechas, { hay = '', descartadas = [] } = {})
 }
 
 /**
+ * Los ingredientes y los pasos de una receta del recetario, escritos por la IA
+ * (specs/propuesta-recurrentes-y-recetas.html, C1). No se guardan aquí: los
+ * guarda quien los pide, en la receta, por la cola de siempre. En la
+ * demostración no hay Worker, y se devuelve una receta de muestra.
+ */
+export async function pedirReceta(recetaId) {
+  if (configuracion.demostracion) {
+    return {
+      ingredientes: ['1 calabaza mediana', '1 cebolla', '600 g de pechuga de pavo', 'Aceite de oliva, sal y pimienta'],
+      pasos: ['Pochar la cebolla y añadir la calabaza en dados.', 'Cubrir de agua, cocer 20 minutos y triturar.', 'Hacer el pavo a la plancha, cuatro minutos por lado.'],
+      tiempo: 35,
+    };
+  }
+  const { ingredientes = [], pasos = [], tiempo = null } = await peticion('/api/cena/receta', {
+    method: 'POST',
+    body: JSON.stringify({ receta_id: recetaId }),
+  });
+  return { ingredientes, pasos, tiempo };
+}
+
+/**
  * Una tanda de cinco emojis para un sitio, a partir de su nombre.
  *
  * A menudo no hay sitio todavía —se pide desde «Un sitio nuevo»—, así que aquí
@@ -564,7 +588,8 @@ export const probarRedaccion = (fecha, eventos = []) =>
   peticion('/api/ia/probar', { method: 'POST', body: JSON.stringify({ fecha, eventos }) });
 
 export async function sincronizar() {
-  if (configuracion.demostracion || sincronizando) return instantaneaActual;
+  if (configuracion.demostracion) return instantaneaActual;
+  if (sincronizando) { otraVuelta = true; return instantaneaActual; }
   if (!navigator.onLine) { fijarEstado('sin-conexion'); return instantaneaActual; }
 
   sincronizando = true;
@@ -591,8 +616,15 @@ export async function sincronizar() {
       nueva = await peticion('/api/sync');
     }
 
+    // Lo guardado mientras la petición viajaba no está en la respuesta: se
+    // vuelve a aplicar encima, o desaparecería de la pantalla hasta la
+    // siguiente sincronización. Pasaba al elegir una cena —la receta y la
+    // noche son dos guardados seguidos— y en cualquier par de toques rápidos.
     instantaneaActual = nueva;
-    await guardarInstantanea(nueva);
+    const resto = await leerCola();
+    for (const { orden, ...cambio } of resto) aplicarEnLocal(cambio);
+    if (resto.length) { derivarEnLocal(); otraVuelta = true; }
+    await guardarInstantanea(instantaneaActual);
     fijarEstado('al-dia', new Date().toISOString(), noAplicados);
   } catch (error) {
     if (error.sesionCaducada) {
@@ -606,5 +638,9 @@ export async function sincronizar() {
     sincronizando = false;
   }
 
+  if (otraVuelta) {
+    otraVuelta = false;
+    if (estadoActual.estado === 'al-dia') queueMicrotask(() => { sincronizar(); });
+  }
   return instantaneaActual;
 }

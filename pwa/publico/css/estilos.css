@@ -2180,3 +2180,18 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .fila-otro-escribir { border-bottom: 1px solid var(--line); margin: 2px 0 10px; min-height: 42px; }
 .fila-otro-escribir input:focus, .fila-otro-escribir input:focus-visible { outline: none; }
 .fila-otro-escribir:focus-within { border-bottom-color: var(--tinta); }
+
+/* Un día de una recurrente que no hay: tachado y atenuado, y tocable para
+   devolverlo (specs/propuesta-recurrentes-y-recetas.html, A1). */
+.linea[data-cancelada="si"] { opacity: .6; }
+.linea[data-cancelada="si"] .linea-titulo { text-decoration: line-through; }
+.linea[data-cancelada="si"] .linea-de { display: inline-block; text-decoration: none; }
+
+/* La receta en el detalle de una cena: ingredientes y pasos
+   (specs/propuesta-recurrentes-y-recetas.html, C1). */
+.receta-escrita { gap: 6px; }
+.receta-ingredientes, .receta-pasos { margin: 0 0 8px; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: var(--ink); }
+.receta-pasos li::marker { color: var(--tinta); font-family: var(--mono); font-size: 13px; }
+.receta-escrita .enlace-discreto { align-self: flex-start; }
+.receta-pedir { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; }
+.receta-pedir .icono-svg svg { width: 15px; height: 15px; color: var(--tinta); }

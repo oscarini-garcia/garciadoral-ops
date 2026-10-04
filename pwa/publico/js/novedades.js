@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.96.0',
+    fecha: '2026-10-05',
+    titulo: 'Días que no hay, «por su cuenta» y la receta',
+    lineas: [
+      '«No hay … este día» pregunta antes, y el día queda tachado en la agenda: tocándolo, «Sí hay» lo devuelve.',
+      'Si lleva y recoge la misma persona se dice una vez, y se puede apuntar que va o vuelve por su cuenta.',
+      'En la cena, «Cómo se hace» escribe los ingredientes y los pasos, y se quedan guardados en la receta.',
+      'Lo que se guarda mientras se sincroniza ya no desaparece de la pantalla hasta refrescar.',
+    ],
+  },
+  {
     version: '1.95.0',
     fecha: '2026-10-05',
     titulo: 'El día de una recurrente, más sencillo',

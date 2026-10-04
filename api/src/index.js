@@ -33,6 +33,7 @@
  *   POST   /api/sitio/apuntar · cinco apuntes para un sitio y una clase
  *   POST   /api/sitio/emoji · cinco emojis para el nombre de un sitio
  *   POST   /api/cena/proponer · cenas para una noche, o una por noche de la semana
+ *   POST   /api/cena/receta · ingredientes y pasos de una receta del recetario
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
@@ -81,6 +82,7 @@ import {
   componerMaterialDePeriodo,
   componerMaterialDeApunte,
   componerMaterialDeCena,
+  componerMaterialDeReceta,
   componerMaterialDeChispa,
   componerMaterialDeEmoji,
   componerMaterialDeFelicitacion,
@@ -90,8 +92,10 @@ import {
   configuracionPublica,
   guardarConfiguracion,
   INSTRUCCION_EMOJI_POR_DEFECTO,
+  INSTRUCCION_RECETA_POR_DEFECTO,
   INSTRUCCION_SANTO_POR_DEFECTO,
   interpretarCenas,
+  interpretarReceta,
   interpretarChispas,
   interpretarSanto,
   interpretarEmojis,
@@ -943,6 +947,46 @@ async function proponerCenas(peticion, env) {
 }
 
 /**
+ * Los ingredientes y los pasos de una receta del recetario
+ * (specs/propuesta-recurrentes-y-recetas.html, C1).
+ *
+ * Solo para quien vive en casa, y solo de una receta que su instantánea ya
+ * trae. Devuelve lo escrito y no lo guarda: lo guarda el teléfono por la cola
+ * de siempre, como guarda una cena elegida, para que una receta pedida dos
+ * veces a la vez no pise nada.
+ */
+async function escribirReceta(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  if (!(await cabeUnaMas(env.DB, lector.id))) {
+    throw new Rechazo('demasiadas propuestas seguidas; prueba dentro de un minuto');
+  }
+  const { receta_id: recetaId = '' } = await peticion.json().catch(() => ({}));
+  if (!recetaId) return json({ error: 'falta la receta' }, 400);
+
+  const registro = await leerRegistro(env.DB);
+  const material = componerMaterialDeReceta(componerInstantanea(registro, lector), String(recetaId));
+  if (!material.lineas.length) return json({ error: 'esa receta no está en tu recetario' }, 403);
+
+  const configuracion = await leerConfiguracion(env.DB);
+  const resultado = await redactar({
+    configuracion, material, instruccion: INSTRUCCION_RECETA_POR_DEFECTO, tope: 900,
+  });
+  const receta = interpretarReceta(resultado.texto);
+  if (!receta.ingredientes.length) {
+    console.warn('receta fallida', JSON.stringify(resultado.intentos));
+    return json(
+      {
+        ...receta,
+        motivo: resultado.motivo || 'la IA no ha contestado con una receta; prueba otra vez',
+        intentos: lector.rol === 'administrador' ? resultado.intentos : undefined,
+      },
+      503,
+    );
+  }
+  return json({ ...receta, modelo: resultado.modelo });
+}
+
+/**
  * Cinco emojis para un sitio, a partir de lo que se lleva escrito en su
  * nombre.
  *
@@ -1155,6 +1199,7 @@ const RUTAS = [
   ['POST', '/api/sitio/apuntar', apuntarEnUnSitio],
   ['POST', '/api/sitio/emoji', sugerirEmojiDeSitio],
   ['POST', '/api/cena/proponer', proponerCenas],
+  ['POST', '/api/cena/receta', escribirReceta],
   ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],

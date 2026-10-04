@@ -22,7 +22,7 @@ import {
   INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA, diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia, instanciasEn, iso, isoConHora, lunesDe, parsearMomento, quienDelDia, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import {
-  ajustesDe, columnasDeQuien, comoCambiar, comoOtro, esOtro, inicialesDeOtro, nombreDeOtro, otrosRecientes, pluginDeEvento, proponerCambioDeDia, recordarOtro, resolverTratoDeDia, retirarTratoDeDia, tratoDeDia,
+  POR_SU_CUENTA, ajustesDe, columnasDeQuien, comoCambiar, comoOtro, esOtro, esPorSuCuenta, inicialesDeOtro, nombreDeOtro, otrosRecientes, partesDelReparto, pluginDeEvento, proponerCambioDeDia, recordarOtro, resolverTratoDeDia, retirarTratoDeDia, tratoDeDia,
 } from '../plugins.js';
 import { viajeDelVuelo } from '../viajes.js';
 import {
@@ -392,7 +392,7 @@ function mover(pasos) {
 
 function vistaSemana(ctx) {
   const dias = diasDeLaSemana(lunesDe(ancla));
-  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, dias[0], dias[6]), dias);
+  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, dias[0], dias[6], { conCanceladas: true }), dias);
   const conLio = hayLio(ctx.vista.datos);
   const marco = el('div', { class: 'semana' });
   const clavehoy = iso(hoy());
@@ -936,7 +936,14 @@ export function textoDeLinea(aparicion, ctx) {
     linea.de = primerDia && iso(dia) < primerDia
       ? `salida${horaDe(aparicion) ? ` ${horaDe(aparicion)}` : ''}`
       : quienesVan(evento, ctx);
-  } else if (plugin === 'extraescolares') {
+  }
+  // Un día que no hay: tachado, con «no hay» detrás y sin quién lleva.
+  if (aparicion.instancia?.cancelada) {
+    linea.cancelada = true;
+    linea.de = 'no hay';
+    return linea;
+  }
+  if (plugin === 'extraescolares') {
     const reparto = repartoDelDia(ctx.vista.datos, evento, dia);
     // Las dos letras de alguien de casa, o las tres de «otro» —«Abu»— (C4).
     const letras = (quien) => {
@@ -958,10 +965,8 @@ export function textoDeLinea(aparicion, ctx) {
         reparto.lleva ? `↑${letras(reparto.lleva)}` : null,
         reparto.recoge ? `↓${letras(reparto.recoge)}` : null,
       ].filter(Boolean).join(' ');
-      linea.parentesisLargo = [
-        reparto.lleva ? `lleva ${nombre(reparto.lleva)}` : null,
-        reparto.recoge ? `recoge ${nombre(reparto.recoge)}` : null,
-      ].filter(Boolean).join(', ');
+      linea.parentesisLargo = partesDelReparto(reparto.lleva, reparto.recoge, nombre)
+        .map((p) => (p.quien ? `${p.verbo} ${p.quien}` : p.verbo)).join(', ');
     }
   }
   return linea;
@@ -994,6 +999,7 @@ function lineaDeEvento(aparicion, ctx) {
     'data-continuacion': aparicion.continuacion ? 'si' : 'no',
     'data-banda': texto.banda ? 'si' : 'no',
     'data-suave': texto.suave ? 'si' : 'no',
+    'data-cancelada': texto.cancelada ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     // Un evento de varios días se marca con una banda continua en el margen,
@@ -1210,7 +1216,7 @@ function tarjetaDeEvento(aparicion, ctx, { conFecha = true } = {}) {
 
 export function abrirDia(fecha, ctx) {
   diaMirado = fecha;
-  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, fecha, fecha), [fecha]);
+  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, fecha, fecha, { conCanceladas: true }), [fecha]);
   const apariciones = reparto.get(iso(fecha)) || [];
 
   // Lo que ese día se dijo que no hay —«no hay hípica este día»— se enseña
@@ -1466,6 +1472,31 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
   const volver = () => { ctx.refrescar(); abrirDetalleEvento(evento.id, ctx, aparicion); };
   const titulo = ctx.vista.caraDe(evento).titulo.toLowerCase();
 
+  const escribirCancelado = (cancelado) => guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
+    evento_id: evento.id, fecha: fechaIso, cancelado, autor_id: ctx.vista.yo.id, activo: 1,
+    ...columnasDeQuien('lleva', reparto.lleva), ...columnasDeQuien('recoge', reparto.recoge),
+  });
+
+  // Un día que no hay se enseña tachado en la agenda, y desde aquí se devuelve
+  // (specs/propuesta-recurrentes-y-recetas.html, A1).
+  if (aparicion.instancia?.cancelada) {
+    return el('div', { class: 'grupo dia-recurrente' }, [
+      el('div', { class: 'hoy-fila' }, [
+        el('span', { class: 'dia-recurrente-texto' }, ['Este día ', el('b', { texto: 'no hay' })]),
+        el('button', {
+          class: 'boton-mini empujar', type: 'button',
+          onclick: async () => {
+            await escribirCancelado(0);
+            toque('media');
+            cerrarHoja();
+            avisar(`De nuevo hay ${titulo} ese día`);
+            ctx.refrescar();
+          },
+        }, ['Sí hay']),
+      ]),
+    ]);
+  }
+
   // Lo que espera respuesta se ve aquí mismo, y se contesta sin ir más lejos.
   const pendientes = ['lleva', 'recoge']
     .map((campo) => tratoDeDia(datos, evento.id, fechaIso, campo))
@@ -1474,10 +1505,7 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
 
   return el('div', { class: 'grupo dia-recurrente' }, [
     el('div', { class: 'hoy-fila' }, [
-      el('span', { class: 'dia-recurrente-texto' }, [
-        'Lleva ', el('b', { texto: nombre(reparto.lleva) }),
-        ' · recoge ', el('b', { texto: nombre(reparto.recoge) }),
-      ]),
+      el('span', { class: 'dia-recurrente-texto' }, frasesDelReparto(reparto, nombre)),
       el('button', {
         class: 'boton-mini empujar', type: 'button',
         onclick: () => { toque(); abrirLlevaYRecoge(evento, aparicion, ctx); },
@@ -1486,18 +1514,47 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
     ...pendientes,
     el('button', {
       class: 'enlace-discreto', type: 'button',
-      onclick: async () => {
-        await guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
-          evento_id: evento.id, fecha: fechaIso, cancelado: 1, autor_id: ctx.vista.yo.id, activo: 1,
-          ...columnasDeQuien('lleva', reparto.lleva), ...columnasDeQuien('recoge', reparto.recoge),
+      onclick: () => {
+        // Se pregunta antes: un toque suelto quitaba el día sin decir nada.
+        const cuando = `${NOMBRES_DIA[indiceDia(aparicion.dia)]} ${aparicion.dia.getDate()}`;
+        abrirHoja(`¿No hay ${titulo} el ${cuando}?`, (cuerpo) => {
+          cuerpo.append(
+            el('p', { class: 'pista', texto: 'Solo ese día; los demás siguen igual. Sale tachado en la agenda y se puede devolver.' }),
+            el('div', { class: 'acciones' }, [
+              el('button', {
+                class: 'boton crecer', 'data-tono': 'peligro', type: 'button',
+                onclick: async () => {
+                  await escribirCancelado(1);
+                  toque('media');
+                  cerrarHoja();
+                  avisar(`Anotado: ese día no hay ${titulo}`);
+                  ctx.refrescar();
+                },
+              }, ['No hay']),
+              el('button', { class: 'boton', 'data-tono': 'discreto', type: 'button', onclick: volver }, ['Cancelar']),
+            ]),
+          );
         });
-        toque('media');
-        cerrarHoja();
-        avisar(`Anotado: este día no hay ${titulo}`);
-        ctx.refrescar();
       },
     }, [`No hay ${titulo} este día`]),
   ]);
+}
+
+/** «Lleva y recoge Ana», «Va por su cuenta · recoge Óscar», «Lleva nadie ·
+ *  recoge nadie»: la línea de la hoja del día, con los nombres en negrita
+ *  (specs/propuesta-recurrentes-y-recetas.html, B1). */
+function frasesDelReparto(reparto, nombre) {
+  const partes = partesDelReparto(reparto.lleva, reparto.recoge, nombre);
+  if (!reparto.lleva) partes.unshift({ verbo: 'lleva', quien: 'nadie' });
+  if (!reparto.recoge) partes.push({ verbo: 'recoge', quien: 'nadie' });
+  return partes.flatMap((parte, i) => {
+    const verbo = i === 0 ? parte.verbo.charAt(0).toUpperCase() + parte.verbo.slice(1) : parte.verbo;
+    return [
+      i ? ' · ' : null,
+      parte.quien ? `${verbo} ` : el('b', { texto: verbo }),
+      parte.quien ? el('b', { texto: parte.quien }) : null,
+    ].filter(Boolean);
+  });
 }
 
 /**
@@ -1552,9 +1609,12 @@ function abrirLlevaYRecoge(evento, aparicion, ctx) {
       onclick: () => elegir(quien),
     }, [rotulo]);
     const chips = el('div', { class: 'opciones' }, [
-      ...casa.map((id) => chip(id, nombre(id))),
+      chip(null, 'Nadie'),
+      // «Por su cuenta»: va o vuelve sola, que no es lo mismo que no saberlo.
+      chip(POR_SU_CUENTA, 'Por su cuenta'),
+      ...casa.filter(Boolean).map((id) => chip(id, nombre(id))),
       ...otrosRecientes().map((otro) => chip(comoOtro(otro), otro)),
-      esOtro(actual) && !otrosRecientes().some((o) => comoOtro(o) === actual)
+      esOtro(actual) && !esPorSuCuenta(actual) && !otrosRecientes().some((o) => comoOtro(o) === actual)
         ? chip(actual, nombreDeOtro(actual)) : null,
     ].filter(Boolean));
 

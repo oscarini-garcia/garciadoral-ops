@@ -272,6 +272,65 @@ export const INSTRUCCION_EMOJI_POR_DEFECTO = [
   'comillas y sin explicar nada.',
 ].join(' ');
 
+/**
+ * La receta de un plato: ingredientes y pasos, para el detalle de una cena
+ * (specs/propuesta-recurrentes-y-recetas.html, C1). Como el emoji y el santo,
+ * no lleva hueco en Ajustes: la forma de la respuesta es lo único que importa,
+ * y la lee `interpretarReceta`.
+ */
+export const INSTRUCCION_RECETA_POR_DEFECTO = [
+  'Escribes la receta de un plato para una familia que cocina en casa. Te doy el',
+  'nombre del plato, a veces una frase de cómo se pensó, con qué cocinan, qué',
+  'dieta siguen y cuántos son.',
+  'Responde con dos bloques y nada más. Primero una línea «INGREDIENTES» y debajo',
+  'un ingrediente por línea, empezando por «- », con la cantidad para los que son.',
+  'Después una línea «PASOS» y debajo los pasos numerados, uno por línea, cortos',
+  'y en orden, sin más de ocho. Si sabes cuánto tarda, añade al final una línea',
+  '«TIEMPO: N minutos».',
+  'Sencillo y realista para un día de diario, que respete la dieta y se haga con',
+  'lo que tienen para cocinar. No preguntes ni expliques nada más.',
+  'En español de España, sin emojis y sin comillas.',
+].join(' ');
+
+/** El material de una receta: el plato, cómo se pensó y la casa. */
+export function componerMaterialDeReceta(instantanea, recetaId) {
+  const receta = (instantanea.recetas || []).find((r) => r.id === recetaId && r.activo !== false);
+  if (!receta || !instantanea.cenas) return { lineas: [] };
+  const lineas = [`El plato: ${String(receta.nombre).slice(0, TOPE_DE_PLATO)}`];
+  if (receta.nota) lineas.push(`Cómo se pensó: ${String(receta.nota).slice(0, 200)}`);
+  const casa = instantanea.cenas_casa || {};
+  if (casa.cocina) lineas.push(`Con qué cocinan: ${casa.cocina}`);
+  if (casa.dieta) lineas.push(`Qué dieta siguen: ${casa.dieta}`);
+  const deCasa = (instantanea.personas || []).filter((p) => (p.circulo || 'extendida') === 'familia');
+  if (deCasa.length) lineas.push(`Son ${deCasa.length} en casa.`);
+  return { titulo: 'Receta', lineas };
+}
+
+/**
+ * Lee la respuesta de la receta: los ingredientes, los pasos y el tiempo. Una
+ * respuesta sin los dos bloques no es una receta y vuelve vacía.
+ */
+export function interpretarReceta(texto) {
+  const ingredientes = [];
+  const pasos = [];
+  let tiempo = null;
+  let bloque = null;
+  for (const bruta of String(texto || '').split('\n')) {
+    const linea = bruta.trim();
+    if (!linea) continue;
+    if (/^ingredientes\b/i.test(linea)) { bloque = 'ingredientes'; continue; }
+    if (/^(pasos|preparaci[oó]n|elaboraci[oó]n)\b/i.test(linea)) { bloque = 'pasos'; continue; }
+    const minutos = linea.match(/^tiempo\s*:?\s*(\d{1,3})/i);
+    if (minutos) { tiempo = Number(minutos[1]); continue; }
+    const limpia = linea.replace(/^([-•*·]|\d{1,2}[.)])\s*/, '').replace(/^\*\*|\*\*$/g, '').trim();
+    if (!limpia || limpia.length > 240) continue;
+    if (bloque === 'ingredientes') ingredientes.push(limpia);
+    else if (bloque === 'pasos') pasos.push(limpia);
+  }
+  if (!ingredientes.length || !pasos.length) return { ingredientes: [], pasos: [], tiempo: null };
+  return { ingredientes: ingredientes.slice(0, 25), pasos: pasos.slice(0, 12), tiempo };
+}
+
 const MAXIMO_EVENTOS = 20;
 // Un periodo da para más, pero no para todo: un mes cargado son cuarenta o
 // cincuenta líneas, y por encima de ahí el modelo ya no cuenta nada, resume.
@@ -613,10 +672,18 @@ function lineaDe(evento, instantanea = {}, fecha = null) {
       if (typeof valor === 'string' && valor.startsWith('otro:')) return valor.slice(5);
       return valor ? nombreCorto(instantanea, valor) : null;
     };
+    // «Por su cuenta» es un «otro» con texto fijo: la niña va o vuelve sola, y
+    // se dice así (specs/propuesta-recurrentes-y-recetas.html, B1). Y si lleva
+    // y recoge la misma persona, se dice una vez.
     const lleva = quien('lleva');
     const recoge = quien('recoge');
-    if (lleva) extras.push(`lleva ${lleva}`);
-    if (recoge) extras.push(`recoge ${recoge}`);
+    const sola = (texto) => String(texto || '').trim().toLowerCase() === 'por su cuenta';
+    if (lleva && recoge && sola(lleva) && sola(recoge)) extras.push('va y vuelve por su cuenta');
+    else if (lleva && recoge && lleva === recoge) extras.push(`lleva y recoge ${lleva}`);
+    else {
+      if (lleva) extras.push(sola(lleva) ? 'va por su cuenta' : `lleva ${lleva}`);
+      if (recoge) extras.push(sola(recoge) ? 'vuelve por su cuenta' : `recoge ${recoge}`);
+    }
   }
   if (evento.plugin_id === 'finde') {
     const van = (evento.participantes || []).map((p) => nombreCorto(instantanea, p.persona_id)).filter(Boolean);
