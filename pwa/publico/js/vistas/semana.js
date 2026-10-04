@@ -85,19 +85,9 @@ export function volverAHoyEnAgenda() {
  * teléfono es un día más de semana a la vista.
  */
 export function tituloDeAgenda(ctx) {
-  if (modo === 'dia') {
-    // El día arriba, con sus flechas a los lados: atrás y adelante de día en
-    // día, sin depender de que quepan en la fila de mandos.
-    const flecha = (rotulo, pasos, etiqueta) => el('button', {
-      class: 'titulo-flecha', type: 'button', 'aria-label': etiqueta,
-      onclick: () => { toque(); mover(pasos); ctx.refrescar(); },
-    }, [rotulo]);
-    return el('span', { class: 'titulo-dia' }, [
-      el('span', { class: 'titulo-dia-texto', texto: tituloDelDia(ancla, ctx) }),
-      flecha('‹', -1, 'Día anterior'),
-      flecha('›', 1, 'Día siguiente'),
-    ]);
-  }
+  // El día es solo la fecha: sus flechas van junto al conmutador, como en la
+  // semana y el mes.
+  if (modo === 'dia') return el('span', { class: 'titulo-dia-texto', texto: tituloDelDia(ancla, ctx) });
   if (modo === 'semana') {
     const lunes = lunesDe(ancla);
     return mesesDe(lunes, sumarDias(lunes, 6));
@@ -127,12 +117,7 @@ function mesesDe(desde, hasta) {
   if (desde.getMonth() !== hasta.getMonth()) return `${corto(desde)} – ${corto(hasta)} ${hasta.getFullYear()}`;
   return `${mes(hasta)} de ${hasta.getFullYear()}`;
 }
-
 export function pintarAgenda(pantalla, subcabecera, ctx) {
-  const paso = (rotulo, pasos, etiqueta) => el('button', {
-    type: 'button', 'aria-label': etiqueta,
-    onclick: () => { mover(pasos); ctx.refrescar(); },
-  }, [rotulo]);
 
   // Una sola fila de mandos: con qué vista se mira y por dónde se anda. El
   // rótulo del periodo no está aquí, sino arriba, ocupando la línea del título
@@ -148,9 +133,14 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
           }, [rotulo]),
         ),
       ]),
-      modo === 'dia' ? el('span', { class: 'empujar' }) : el('div', { class: 'paso empujar' }, [
-        paso('‹', -1, 'Anterior'),
-        paso('›', 1, 'Siguiente'),
+      // Ir a un día con el calendario propio, en vez de flechas: pasar de uno
+      // en uno ya lo hace el deslizamiento.
+      el('div', { class: 'empujar' }, [
+        el('button', {
+          class: 'icono-accion', type: 'button', 'data-tono': 'discreto',
+          'aria-label': 'Ir a un día', title: 'Ir a un día',
+          onclick: () => { toque(); abrirIrADia(ctx); },
+        }, [icono('calendario')]),
       ]),
       el('div', { class: 'compartir-periodo' }, [
         // «Qué hay en la agenda»: los plugins con su interruptor, a un toque de
@@ -367,6 +357,26 @@ function eleccionDeCompartir(nombre, pista, insignia, accion) {
 async function compartirTexto(titulo, texto) {
   const enviado = await compartir({ titulo, texto });
   if (!enviado) avisar('No he podido compartirlo');
+}
+
+/** La hoja de «Ir a un día»: el calendario propio, ya abierto, sobre el día
+ *  que se está mirando. Elegir lleva la vista que sea a ese día. */
+function abrirIrADia(ctx) {
+  abrirHoja('Ir a un día', (cuerpo) => {
+    const fecha = selectorDeFecha({
+      valor: iso(ancla),
+      alCambiar: (elegido) => {
+        if (!elegido) return;
+        const destino = parsearMomento(elegido);
+        ultimoPaso = destino > ancla ? 1 : destino < ancla ? -1 : 0;
+        ancla = destino;
+        cerrarHoja();
+        ctx.refrescar();
+      },
+    });
+    cuerpo.append(fecha.nodo);
+    fecha.nodo.querySelector('.fecha-boton')?.click();
+  });
 }
 
 function mover(pasos) {
@@ -1103,7 +1113,7 @@ function vistaMes(ctx) {
 /** Un turno de Lío en el detalle del mes: el sol o la luna y las iniciales de
  *  quien lo tiene, con el borde en tinta si salió y en el color de aviso si no
  *  salió. */
-export function monedaDeLio(turno, ctx) {
+export function monedaDeLio(turno, ctx, { nombre = false } = {}) {
   const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
   return el('button', {
     class: 'mes-lio-moneda', type: 'button',
@@ -1113,7 +1123,8 @@ export function monedaDeLio(turno, ctx) {
     onclick: () => { toque(); abrirTurnoDeLio(turno.fecha, turno.turno.id, ctx); },
   }, [
     el('span', { 'aria-hidden': 'true', texto: turno.turno.emoji }),
-    el('span', { class: 'mes-lio-quien', texto: quien ? inicialesDe(quien) : '·' }),
+    // Donde hay sitio, el nombre —o el apodo— entero; donde no, las letras.
+    el('span', { class: 'mes-lio-quien', texto: quien ? (nombre ? (quien.apodo || quien.nombre) : inicialesDe(quien)) : '·' }),
   ]);
 }
 
@@ -1870,14 +1881,15 @@ function tarjetaDeRegalo(regalo, ctx) {
  * título por él. Una rejilla de emojis dentro del formulario era un paso más
  * para decir lo mismo que ya se puede escribir en el título.
  */
-export function abrirFormularioEvento(ctx, { id = null, fecha = null } = {}) {
+export function abrirFormularioEvento(ctx, { id = null, fecha = null, hora: horaPedida = null } = {}) {
   const existente = id ? ctx.vista.evento(id) : null;
   const inicio = existente ? parsearMomento(existente.inicio) : (fecha || hoy());
 
   const borrador = {
     titulo: existente?.titulo || '',
     dia: iso(inicio),
-    hora: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : '',
+    // Al crear desde un hueco del día, la hora del hueco tocado.
+    hora: existente && !existente.jornada_completa ? `${String(inicio.getHours()).padStart(2, '0')}:${String(inicio.getMinutes()).padStart(2, '0')}` : (horaPedida || ''),
     // El último día, inclusive, que es lo que significa «hasta» cuando lo dice
     // una persona. Vacío es un evento de un día, que es el caso normal.
     hasta: existente?.fin ? iso(parsearMomento(existente.fin)) : '',

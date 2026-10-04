@@ -466,14 +466,14 @@ textarea:-webkit-autofill:focus {
   .icono-accion-texto { display: none; }
 }
 
-/* Los tres grupos —vistas, flechas y compartir— no caben en la anchura de un
-   teléfono, y las flechas son lo único que sobra: el deslizamiento lateral hace
-   ya eso mismo, y volver a hoy es tocar «Agenda» en la barra. Vuelven en
-   cuanto hay sitio, que es también donde el ratón se queda sin deslizamiento
-   con el que pasar de semana. El corte está medido: a 410 px entran justas. */
-@media (max-width: 459px) {
-  .vistas .paso { display: none; }
-  .compartir-periodo { margin-left: auto; }
+/* Vistas, calendario y compartir caben en una fila; por debajo de 400 puntos
+   «Capas» se queda en su icono para que quepan. */
+@media (max-width: 399px) {
+  .vistas .icono-accion.con-texto { width: 34px; padding: 0; justify-content: center; }
+  .vistas .icono-accion-texto { display: none; }
+}
+@media (max-width: 400px) {
+  .vistas .seg button { padding-left: 9px; padding-right: 9px; }
 }
 /* En los teléfonos estrechos de verdad, el conmutador aprieta un poco más. */
 @media (max-width: 360px) {
@@ -784,11 +784,7 @@ textarea:-webkit-autofill:focus {
 .semana, .cuerpo-agenda, .cuerpo-dia { touch-action: pan-y; }
 .semana.arrastre-vertical, .cuerpo-dia.arrastre-vertical { touch-action: none; }
 /* El día arriba, con sus flechas (vista «Día»). */
-.titulo-pantalla:has(.titulo-dia) { flex: 1 1 auto; }
-.titulo-dia { display: flex; align-items: center; gap: 2px; }
-.titulo-dia-texto { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: clamp(21px, 6.2vw, 29px); }
-.titulo-flecha { flex: none; width: 40px; height: 40px; border-radius: 50%; font-size: 26px; line-height: 1; color: var(--ink-soft); font-family: var(--sans, inherit); }
-.titulo-flecha:active { background: var(--paper-3); }
+.titulo-dia-texto { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* La banda de un viaje se sale lo que mide su relleno, para que su emoji y su
    hora caigan en la misma columna que los de las demás líneas. */
 .semana .linea[data-banda="si"] { margin: 0 -8px; width: calc(100% + 16px); }

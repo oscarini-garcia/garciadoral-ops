@@ -143,6 +143,8 @@ const ICONOS = {
     + '<path d="M3.4 16.6 12 21.3l8.6-4.7"/>',
   // El «‹» y el «›» del calendario propio, dibujados para que no dependan de
   // la fuente como los del paso de periodo.
+  // Una hoja de calendario: «Ir a un día» en la agenda.
+  calendario: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/>',
   izquierda: '<path d="m14.5 6-6 6 6 6"/>',
   derecha: '<path d="m9.5 6 6 6-6 6"/>',
 };
