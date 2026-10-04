@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.83.0',
+    fecha: '2026-10-04',
+    titulo: 'La semana, sin verde y deslizando otra vez',
+    lineas: [
+      'Deslizar a los lados vuelve a cambiar de semana.',
+      'Los días con algo ya no llevan fondo verde en la semana.',
+      'La hora de un vuelo cae en la misma columna que las demás.',
+    ],
+  },
+  {
     version: '1.82.0',
     fecha: '2026-10-04',
     titulo: 'La semana se lee mejor',

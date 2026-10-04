@@ -404,8 +404,8 @@ function vistaSemana(ctx) {
     // hay algo que elegir, y entonces se abre el día entero.
     const unico = apariciones.length === 1 ? apariciones[0] : null;
 
-    // El día con algo lleva el fondo tintado, como en el mes; hoy, el borde en
-    // tinta (B2 · C1). Lío no cuenta como «algo».
+    // Hoy lleva el borde en tinta (C1). El fondo tintado de los días con algo
+    // se probó y se retiró: en la semana no hacía falta resaltarlos.
     const fila = el('div', {
       class: 'dia',
       'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
