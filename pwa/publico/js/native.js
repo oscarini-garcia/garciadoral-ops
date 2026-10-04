@@ -315,7 +315,10 @@ function momentoDelAviso(instancia, ahora) {
   if (antelacion === null) return null;
 
   let cuando;
-  if (antelacion === 0) {
+  // A la hora exacta: el despegue y el aterrizaje de un vuelo.
+  if (antelacion === 'momento') {
+    cuando = new Date(inicio.getTime());
+  } else if (antelacion === 0) {
     cuando = instancia.evento.jornada_completa
       ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate(), HORA_DE_AVISO, 0)
       : new Date(inicio.getTime() - ANTELACION_MINUTOS * 60 * 1000);
@@ -342,6 +345,7 @@ function cuandoEs(instancia) {
 }
 
 function textoDelAviso(instancia) {
+  if (instancia.aviso) return instancia.aviso;
   const { evento } = instancia;
   const cuerpo = cuandoEs(instancia);
   return {
@@ -405,7 +409,7 @@ export async function programarRecordatorios(instancias, turnosDeLio = []) {
       .sort((a, b) => a.cuando - b.cuando)
       .slice(0, TECHO_PENDIENTES)
       .map(({ instancia, cuando }) => ({
-        id: idDeAviso(`${instancia.evento.id}@${cuando.toISOString()}`),
+        id: idDeAviso(`${instancia.evento.id}@${instancia.tramo || ''}@${cuando.toISOString()}`),
         ...textoDelAviso(instancia),
         schedule: { at: cuando, allowWhileIdle: true },
       }));

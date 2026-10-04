@@ -62,7 +62,7 @@ import {
 import { pintarCenas, reiniciarCenas } from './vistas/cenas.js';
 import { hayCenas } from './cenas.js';
 import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
-import { antelacionDe, avisosDePlugins, resolverTratoDeDia } from './plugins.js';
+import { antelacionDe, avisoDePlugin, avisosDePlugins, resolverTratoDeDia } from './plugins.js';
 import { abrirMenuDeNuevo } from './vistas/plugins.js';
 
 const PESTANAS = {
@@ -344,11 +344,39 @@ function refrescarRecordatorios(datos) {
   // mañana con estas mismas antelaciones (`api/src/recordatorios.js`), y aquí
   // no se programa: sonarían dos por lo mismo. El turno de Lío sigue siendo
   // local en los dos casos, que dice otra cosa y funciona sin red.
-  const instancias = losQuiere() && hayAvisosRemotos()
+  const todas = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS));
+  const previos = losQuiere() && hayAvisosRemotos()
     ? []
-    : instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS)).filter((instancia) => instancia.tramo !== 'llegada')
+    : todas.filter((instancia) => instancia.tramo !== 'llegada')
       .map((instancia) => ({ ...instancia, antelacion: antelacionDe(datos, instancia) }));
-  programarRecordatorios(instancias, turnosPropios(datos, desde));
+  programarRecordatorios([...previos, ...avisosDeVuelo(datos, todas)], turnosPropios(datos, desde));
+}
+
+/**
+ * Un vuelo suena al despegar y al aterrizar, a su hora y en hora de Madrid.
+ *
+ * Va aparte del aviso previo y también con los avisos remotos puestos: el
+ * servidor solo avisa por la mañana de lo de mañana, y esto es otra cosa, el
+ * momento mismo. Solo se calla si el plugin de Viajes está en «Nunca» en este
+ * aparato.
+ */
+function avisosDeVuelo(datos, instancias) {
+  if (avisoDePlugin('viajes') === 'nunca') return [];
+  const vista = crearVista(datos);
+  return instancias
+    .filter((instancia) => instancia.tramo)
+    .map((instancia) => {
+      const despega = instancia.tramo === 'salida';
+      const hora = `${String(instancia.inicio.getHours()).padStart(2, '0')}:${String(instancia.inicio.getMinutes()).padStart(2, '0')}`;
+      return {
+        ...instancia,
+        antelacion: 'momento',
+        aviso: {
+          title: `${despega ? '🛫 Despega' : '🛬 Aterriza'}: ${vista.caraDe(instancia.evento).titulo}`,
+          body: `A las ${hora}`,
+        },
+      };
+    });
 }
 
 /**

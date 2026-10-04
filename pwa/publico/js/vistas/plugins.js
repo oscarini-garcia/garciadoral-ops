@@ -405,6 +405,7 @@ function bloqueDeViajes(cuerpo, ctx) {
         : null,
     ]));
   }
+  cuerpo.append(el('p', { class: 'pista', texto: 'Además del aviso de arriba, cada vuelo suena en este teléfono al despegar y al aterrizar, a su hora. Con «Nunca», tampoco.' }));
   cuerpo.append(el('p', { class: 'pista', texto: 'El enlace de Flighty de cada uno. Se pega una vez y los vuelos llegan solos; cada uno pega el suyo, y quien administra puede pegar el de los demás.' }));
   cuerpo.append(lista);
 

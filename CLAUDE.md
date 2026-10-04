@@ -63,8 +63,14 @@ pendiente. El hook lo inyecta al final del mapa.
   (`pwa/publico/js/semana.js`, dentro de `instanciasEn`) lo parte en el
   despegue a su hora de salida y el aterrizaje a la de llegada, cada uno en
   su día, con `tramo` en la instancia; la línea pone 🛫 o 🛬 por él. El 🛫/🛬
-  por ida y vuelta de la 1.84.0 se retiró, y los recordatorios locales no
-  programan el aterrizaje. Queda: **los datos siguen duplicados** —sobra uno de los dos
+  por ida y vuelta de la 1.84.0 se retiró. **Y desde la 1.88.0 cada vuelo
+  suena al despegar y al aterrizar**, a la hora exacta (`avisosDeVuelo` en
+  `app.js`, antelación `'momento'` en `native.js`), aparte del aviso previo y
+  también con los avisos remotos puestos; los calla «Nunca» en el aviso de
+  Viajes. El aviso previo (la víspera) sigue sin programar el aterrizaje.
+  **Y sobre el calendario que sobraba**: en la hoja de Viajes ya solo queda
+  uno, «Viajes (Óscar)», con 41 vuelos en el feed y 41 cargados; no hay nada
+  que quitar, y si un vuelo llega repetido es dentro del propio feed. Queda: **los datos siguen duplicados** —sobra uno de los dos
   calendarios, y quitarlo es lo que lo arregla de raíz—, y **el Worker y el
   plan de los domingos no deduplican**, así que la redacción con IA y el
   mensaje de WhatsApp pueden seguir contando el vuelo dos veces.
