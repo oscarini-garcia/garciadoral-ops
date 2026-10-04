@@ -27,6 +27,16 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **La semana legible (1.82.0).** Probada la 1.81.0 en el teléfono, los
+  títulos se cortaban: fecha y monedas dejaban unos 120 de 320 puntos.
+  Decidido como A3 · B1 en `specs/propuesta-semana-legible.html`: las monedas
+  de Lío se apilan bajo el número, en `.dia-columna` (envoltorio del botón de
+  la fecha y de `.dia-lio`, porque un botón no cabe dentro de otro), y `.dia`
+  vuelve a dos columnas; el título de una línea de la semana pasa a dos como
+  máximo (`-webkit-line-clamp`). **Volver a tocar «Agenda» lleva además la
+  vista a hoy** (`scrollIntoView` del `.dia[data-hoy]`, o arriba si la vista
+  no lo dibuja). Queda: un día vacío o con un solo evento mide ahora lo que
+  la pila de monedas, unas tres líneas.
 - **La semana, como el mes (1.81.0).** Decidido como A1 · B2 · C1 en
   `specs/propuesta-semana-como-mes.html`. Lío deja de ser dos líneas por día
   (`lineaDeLio` y su CSS se retiraron): las mismas monedas del mes
