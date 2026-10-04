@@ -245,6 +245,12 @@
       "nombre": "Otro",
       "emoji": "📌",
       "lleva_regalos": false
+    },
+    {
+      "id": "recurrente",
+      "nombre": "Recurrente",
+      "emoji": "🔁",
+      "lleva_regalos": false
     }
   ],
   "emojis_permitidos": [

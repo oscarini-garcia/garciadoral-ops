@@ -11,7 +11,8 @@ INSERT OR REPLACE INTO tipo_evento (id, nombre, emoji, lleva_regalos, orden) VAL
   ('celebracion',   'Celebración',   '🎉', 1,  7),
   ('fecha_escolar', 'Fecha escolar', '🎒', 0,  8),
   ('cita_medica',   'Cita médica',   '🩺', 0,  9),
-  ('otro',          'Otro',          '📌', 0, 10);
+  ('otro',          'Otro',          '📌', 0, 10),
+  ('recurrente',    'Recurrente',    '🔁', 0, 11);
 
 INSERT OR REPLACE INTO categoria (id, nombre, regla, orden) VALUES
   ('general',       'General',             'publica',  1),

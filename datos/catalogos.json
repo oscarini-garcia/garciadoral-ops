@@ -10,7 +10,8 @@
     { "id": "celebracion", "nombre": "Celebración", "emoji": "🎉", "lleva_regalos": true },
     { "id": "fecha_escolar", "nombre": "Fecha escolar", "emoji": "🎒", "lleva_regalos": false },
     { "id": "cita_medica", "nombre": "Cita médica", "emoji": "🩺", "lleva_regalos": false },
-    { "id": "otro", "nombre": "Otro", "emoji": "📌", "lleva_regalos": false }
+    { "id": "otro", "nombre": "Otro", "emoji": "📌", "lleva_regalos": false },
+    { "id": "recurrente", "nombre": "Recurrente", "emoji": "🔁", "lleva_regalos": false }
   ],
   "categorias": [
     { "id": "general", "nombre": "General", "regla": "publica", "orden": 1 },

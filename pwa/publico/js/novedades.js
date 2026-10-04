@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.86.0',
+    fecha: '2026-10-04',
+    titulo: 'Recurrente también en el WhatsApp',
+    lineas: [
+      'Las actividades recurrentes tienen tipo propio, «Recurrente» 🔁, en vez de «Entreno».',
+      'El WhatsApp de los domingos y la redacción con IA ya no las cuentan como entrenos.',
+      'Donde aún decía «Extraescolares» o «actividad», ahora dice «Recurrente», con su icono 🔁.',
+    ],
+  },
+  {
     version: '1.85.0',
     fecha: '2026-10-04',
     titulo: 'Recurrentes',
