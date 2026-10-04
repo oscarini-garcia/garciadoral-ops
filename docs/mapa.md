@@ -280,7 +280,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
   `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
-  `pwa/publico/js/vistas/semana.js` §6.2, §10, §10.1, §10.3
+  `pwa/publico/js/vistas/semana.js` §6.2, §10, §10.1
   `pwa/publico/js/vistas/sitios.js` §12.1 · `scripts/agenda/lio.py` §10.3
   `scripts/agenda/modelo.py` §7.1 · `scripts/agenda/semana.py` §10.2
 

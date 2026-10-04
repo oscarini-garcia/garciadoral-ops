@@ -27,6 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **La semana, como el mes (1.81.0).** Decidido como A1 · B2 · C1 en
+  `specs/propuesta-semana-como-mes.html`. Lío deja de ser dos líneas por día
+  (`lineaDeLio` y su CSS se retiraron): las mismas monedas del mes
+  (`monedaDeLio`) en una tercera columna de `.dia`, arriba a la derecha, que
+  abren la hoja del turno. El día con algo lleva fondo tintado (`data-algo`) y
+  hoy pasa de tinte a borde en tinta, lo que deja sin efecto el «hoy conserva
+  su tinte» de la A4 de `propuesta-separacion-dias.html`. **La semana también
+  se arrastra en vertical** (`deslizarVertical`), pero solo se queda el dedo
+  (`.arrastre-vertical`, `touch-action: none`) cuando cabe entera en la
+  pantalla; si no cabe, arrastrar desplaza y el gesto no salta. Queda: el
+  orden «la mañana abre el día y la noche lo cierra» (E1) ya no se ve en la
+  semana, solo en las monedas (☀️ primero).
 - **El mes marca los días con algo y Lío va en monedas (1.80.0).** Decidido
   como A2 · B3 · C2 en `specs/propuesta-mes-marcas-y-lio.html`. La celda con
   algo lleva fondo tintado suave (`data-algo`); Lío no cuenta porque no entra

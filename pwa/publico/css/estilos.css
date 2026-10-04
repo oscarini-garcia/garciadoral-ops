@@ -732,7 +732,7 @@ textarea:-webkit-autofill:focus {
 
 .dia {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 52px 1fr auto;
   gap: 10px;
   background: var(--paper);
   border: 1px solid var(--line);
@@ -740,7 +740,13 @@ textarea:-webkit-autofill:focus {
   padding: 10px 12px;
   min-height: 58px;
 }
-.dia[data-hoy="si"] { background: var(--tinta-suave); border-color: var(--tinta-suave); }
+.dia[data-algo="si"] { background: var(--tinta-suave); border-color: transparent; }
+.dia[data-hoy="si"] { border-color: var(--tinta); box-shadow: inset 0 0 0 .5px var(--tinta); }
+/* Lío en la semana: las monedas del detalle del mes, arriba a la derecha
+   (specs/propuesta-semana-como-mes.html, A1). */
+.dia-lio { display: inline-flex; gap: 5px; align-self: start; padding-top: 2px; }
+.dia-lio .mes-lio-moneda { height: 24px; padding: 0 7px 0 5px; font-size: 11px; }
+.semana.arrastre-vertical { touch-action: none; }
 .dia-fecha { text-align: left; }
 .dia-inicial { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-faint); }
 .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
@@ -2054,15 +2060,6 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .reparto-opciones { margin: 0 0 8px; }
 .fila-otro { display: flex; gap: 8px; align-items: center; }
 .fila-otro > .campo-entrada, .fila-otro > input { flex: 1; min-width: 0; }
-
-/* --- Lío en orden (E1): los turnos como primera y última línea del día -- */
-.linea[data-lio="si"] .linea-titulo { color: var(--ink-soft); }
-.linea[data-lio="si"] .linea-emoji { opacity: .85; }
-.linea-lio-quien { color: var(--ink-faint); font-family: var(--mono); font-size: 11px; margin-left: 4px; }
-.linea[data-lio="si"][data-estado="hecho"] .linea-lio-quien { color: var(--tinta); }
-.linea[data-lio="si"][data-estado="sin-marcar"] .linea-lio-quien,
-.linea[data-lio="si"][data-estado="no-hecho"] .linea-lio-quien { color: var(--regalo); }
-.linea[data-lio="si"][data-pedido="si"] .linea-lio-quien { text-decoration: underline dashed; }
 
 /* ----------------------------------------------------------------- Cenas -- */
 

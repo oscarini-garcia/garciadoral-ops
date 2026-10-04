@@ -164,6 +164,18 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   if (modo !== 'lista') {
     deslizarHorizontal(cuerpo, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
   }
+  // La semana también se arrastra en vertical, como la parrilla del mes:
+  // arriba, la siguiente; abajo, la anterior. Pero la semana es una lista que
+  // puede no caber, y entonces arrastrar en vertical es desplazar: el gesto
+  // solo se adueña del dedo (`touch-action: none`) cuando la semana cabe
+  // entera en la pantalla. Si no cabe, el navegador desplaza y el gesto no
+  // salta.
+  if (modo === 'semana') {
+    deslizarVertical(cuerpo, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
+    requestAnimationFrame(() => {
+      cuerpo.classList.toggle('arrastre-vertical', pantalla.scrollHeight <= pantalla.clientHeight + 1);
+    });
+  }
   if (ultimoPaso) {
     cuerpo.classList.add(ultimoPaso > 0 ? 'entra-derecha' : 'entra-izquierda');
     ultimoPaso = 0;
@@ -372,15 +384,12 @@ function vistaSemana(ctx) {
     const apariciones = reparto.get(iso(dia)) || [];
     const vacio = !apariciones.length;
     const contenido = el('div', { class: 'dia-contenido' });
-    // Lío en orden (E1 en specs/propuesta-ocho-cosas.html): la mañana cuenta
-    // como las 8:00 y abre el día; la noche, como las 21:00, lo cierra. El
-    // carril de la izquierda se fue con esto.
+    // Lío no ocupa renglones: dos monedas a la derecha, como en el detalle
+    // del mes (specs/propuesta-semana-como-mes.html, A1). Tocarlas abre la
+    // hoja del turno.
     const turnos = conLio ? turnosDe(ctx.vista.datos, dia) : [];
-    const manana = turnos.find((t) => t.turno.id === 'manana');
-    const noche = turnos.find((t) => t.turno.id === 'noche');
 
-    if (manana) contenido.append(lineaDeLio(manana, ctx));
-    if (vacio && !turnos.length) {
+    if (vacio) {
       // Los días vacíos son información y no espacio desperdiciado: enseñan la
       // forma de la semana, que es justo lo que se quiere ver al planificar.
       contenido.append(el('div', { class: 'dia-vacio', texto: '—' }));
@@ -389,14 +398,19 @@ function vistaSemana(ctx) {
       // día crece lo que haga falta.
       for (const aparicion of apariciones) contenido.append(lineaDeEvento(aparicion, ctx));
     }
-    if (noche) contenido.append(lineaDeLio(noche, ctx));
 
     // Un día con una sola cosa abre esa cosa, no la lista de una cosa: la hoja
     // del día sería un rodeo con un único destino a la vista. Con dos o más sí
     // hay algo que elegir, y entonces se abre el día entero.
     const unico = apariciones.length === 1 ? apariciones[0] : null;
 
-    const fila = el('div', { class: 'dia', 'data-hoy': iso(dia) === clavehoy ? 'si' : 'no' }, [
+    // El día con algo lleva el fondo tintado, como en el mes; hoy, el borde en
+    // tinta (B2 · C1). Lío no cuenta como «algo».
+    const fila = el('div', {
+      class: 'dia',
+      'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
+      'data-algo': vacio ? 'no' : 'si',
+    }, [
       el('button', {
         class: 'dia-fecha', type: 'button',
         // El botón dibuja un día, así que su etiqueta empieza por el día: si
@@ -417,6 +431,7 @@ function vistaSemana(ctx) {
         el('div', { class: 'dia-numero', texto: String(dia.getDate()) }),
       ]),
       contenido,
+      turnos.length ? el('div', { class: 'dia-lio' }, turnos.map((turno) => monedaDeLio(turno, ctx))) : null,
     ]);
 
     // El hueco de un día vacío es el sitio natural para llenarlo: un doble
@@ -430,47 +445,11 @@ function vistaSemana(ctx) {
     marco.append(fila);
   }
 
-  // Lío va dentro de la fila, como una columna más entre el día y los eventos,
-  // y no como una banda aparte encima de la rejilla: así el jueves se lee
-  // entero de un renglón —qué día es, quién saca al perro, qué hay— y la parte
-  // de arriba de la pantalla, que es la única que se ve sin desplazar, se queda
-  // para la semana (specs/ux.md §10.3).
   return marco;
 }
 
 // ----------------------------------------------------------------- Lío --
 
-/**
- * Un turno de Lío como línea del día (E1): el sol o la luna, «Lío» y las dos
- * letras de quien lo tiene, en tinta suave para no pesar como un evento.
- * Abre el día de Lío con los dos turnos y sus verbos, como hacía el carril:
- * marcar de verdad sigue viviendo en Hoy.
- */
-function lineaDeLio(turno, ctx) {
-  const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
-  return el('button', {
-    class: 'linea', type: 'button',
-    'data-lio': 'si',
-    'data-estado': turno.estado,
-    'data-mio': turno.mio ? 'si' : 'no',
-    'data-pedido': turno.trato ? 'si' : 'no',
-    'aria-label': `Lío ${nombreDeTurno(turno.turno).toLowerCase()}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
-    onclick: () => { toque(); abrirLioDelDia(turno.fecha, ctx); },
-  }, [
-    el('span', { class: 'linea-emoji', texto: turno.turno.emoji }),
-    el('span', { class: 'linea-titulo' }, [
-      'Lío ',
-      el('span', { class: 'linea-lio-quien', texto: quien ? inicialesDe(quien) : '·' }),
-    ]),
-    // La hora como en cualquier línea: la mañana cuenta como las 8 y la
-    // noche como las 21, que es lo que las ordena.
-    el('span', { class: 'linea-hora', texto: HORA_DE_LIO[turno.turno.id] || '' }),
-  ]);
-}
-
-/** A qué hora se lee cada turno en la agenda (E1): no la ventana entera, sino
- *  el momento en que se cuenta. */
-const HORA_DE_LIO = { manana: '08:00', noche: '21:00' };
 
 /**
  * El día de Lío: los dos turnos, con lo que se puede hacer con cada uno.
