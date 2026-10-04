@@ -11,6 +11,7 @@
  */
 
 import { ciudadDeAeropuerto } from './aeropuertos.js';
+import { viajesDe } from './viajes.js';
 
 export const EMOJI_POR_DEFECTO = '📌';
 
@@ -250,6 +251,31 @@ export function presentarVuelo(evento) {
   };
 }
 
+/**
+ * Los eventos sin vuelos repetidos.
+ *
+ * Un mismo vuelo puede llegar dos veces: el identificador de un evento
+ * importado sale del calendario y del UID (`api/src/viajes.js`), así que el
+ * mismo feed enganchado en dos calendarios —el de viajes de antes y el que
+ * cada uno pega ahora— trae dos filas del mismo vuelo, y la agenda lo
+ * enseñaba dos veces. Se reconoce por el número de vuelo y la hora de salida
+ * (o el título, si no hay número) y se queda uno: el que lleve la vuelta
+ * escrita a mano, si alguno la lleva, y si no el primero. Lo que no es un
+ * vuelo pasa tal cual.
+ */
+export function sinVuelosRepetidos(eventos) {
+  const elegido = new Map();
+  for (const evento of eventos) {
+    const vuelo = presentarVuelo(evento);
+    if (!vuelo) continue;
+    const clave = `${vuelo.numero || evento.titulo}|${evento.inicio}`;
+    const previo = elegido.get(clave);
+    if (!previo || (!previo.extra?.vuelta && evento.extra?.vuelta)) elegido.set(clave, evento);
+  }
+  const quedan = new Set(elegido.values());
+  return eventos.filter((evento) => !presentarVuelo(evento) || quedan.has(evento));
+}
+
 /** El título de un vuelo en nombres de ciudad —«París → Barcelona · AF 1248»—,
  *  o `null` si el evento no es un vuelo. El código de aeropuerto se lee de un
  *  vistazo pero no dice a dónde vas; la ciudad, sí. */
@@ -297,6 +323,20 @@ export const nuevoId = () =>
 export const ahora = () => new Date().toISOString();
 
 export function crearVista(instantanea) {
+  // Qué tramo de un viaje es cada vuelo, calculado una vez por vista: la cara
+  // de un evento se pide en cada línea de la semana.
+  let papeles = null;
+  const papelDeVuelo = (id) => {
+    if (!papeles) {
+      papeles = new Map();
+      for (const viaje of viajesDe(instantanea)) {
+        if (!viaje.hasta) continue;
+        papeles.set(viaje.ida.id, '🛫');
+        if (viaje.vuelta) papeles.set(viaje.vuelta.id, '🛬');
+      }
+    }
+    return papeles.get(id) || null;
+  };
   const personas = new Map((instantanea.personas || []).map((p) => [p.id, p]));
   const categorias = new Map((instantanea.categorias || []).map((c) => [c.id, c]));
   const tipos = new Map((instantanea.tipos_evento || []).map((t) => [t.id, t]));
@@ -355,6 +395,11 @@ export function crearVista(instantanea) {
       // la otra puerta y se quedaba sin traducir: el detalle enseñaba la ficha
       // bien, con los códigos, y encima el título en códigos también.
       const deVuelo = tituloDeVuelo(evento);
+      // Y el emoji dice qué tramo es: 🛫 el de ida y 🛬 el de vuelta de un
+      // viaje emparejado; una escala, o un vuelo sin pareja, se queda con el
+      // que traiga.
+      const papel = deVuelo ? papelDeVuelo(evento.id) : null;
+      if (papel) return { emoji: papel, titulo: deVuelo };
 
       if (propio) {
         return { emoji: propio[1], titulo: deVuelo || titulo.slice(propio[0].length) || titulo };

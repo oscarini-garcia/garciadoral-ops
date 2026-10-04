@@ -18,6 +18,15 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.84.0',
+    fecha: '2026-10-04',
+    titulo: 'Los vuelos, una vez y con despegue y aterrizaje',
+    lineas: [
+      'Un vuelo ya no sale dos veces en la agenda.',
+      'El vuelo de ida lleva 🛫 y el de vuelta 🛬.',
+    ],
+  },
+  {
     version: '1.83.0',
     fecha: '2026-10-04',
     titulo: 'La semana, sin verde y deslizando otra vez',

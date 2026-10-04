@@ -15,7 +15,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { crearVista, presentarVuelo, tituloDeVuelo } from '../publico/js/modelo.js';
+import { crearVista, presentarVuelo, sinVuelosRepetidos, tituloDeVuelo } from '../publico/js/modelo.js';
 
 /** Las notas tal como las escribe Flighty. */
 const NOTAS = 'Air France 1248 Paris to Barcelona ↗ 19:03 CEST ↘ 20:46 CEST '
@@ -106,4 +106,38 @@ test('un evento de la casa conserva su emoji y su título', () => {
   });
   assert.equal(cara.emoji, '🎂');
   assert.equal(cara.titulo, 'Cumpleaños de la abuela');
+});
+
+// ------------------------------------------------- Repetidos, ida y vuelta --
+
+const ida = (id, calendario) => ({
+  id, origen: 'importado', calendario_id: calendario, activo: 1, tipo_id: 'viaje',
+  titulo: 'BCN→MUC • VY 1812', notas: '', inicio: '2026-10-07T07:35', fin: '2026-10-07T09:40',
+});
+const vuelta = (id, calendario) => ({
+  id, origen: 'importado', calendario_id: calendario, activo: 1, tipo_id: 'viaje',
+  titulo: 'MUC→BCN • LH 1816', notas: '', inicio: '2026-10-08T15:40', fin: '2026-10-08T17:45',
+});
+
+test('el mismo vuelo traído por dos calendarios sale una sola vez', () => {
+  // El caso de la pantalla: el feed de Óscar enganchado en dos calendarios
+  // traía cada vuelo dos veces, con identificadores distintos.
+  const eventos = [ida('a1', 'c1'), ida('a2', 'c2'), vuelta('b1', 'c1'), vuelta('b2', 'c2'),
+    { id: 'x', origen: 'manual', titulo: 'Hípica', inicio: '2026-10-07T17:00' }];
+  const quedan = sinVuelosRepetidos(eventos).map((e) => e.id);
+  assert.deepEqual(quedan, ['a1', 'b1', 'x']);
+});
+
+test('entre dos copias se queda la que lleva la vuelta escrita', () => {
+  const conVuelta = { ...ida('a2', 'c2'), extra: { vuelta: '2026-10-09' } };
+  assert.deepEqual(sinVuelosRepetidos([ida('a1', 'c1'), conVuelta]).map((e) => e.id), ['a2']);
+});
+
+test('la ida lleva el despegue y la vuelta el aterrizaje', () => {
+  const v = crearVista({
+    personas: [], tipos_evento: [], eventos: [ida('a1', 'c1'), ida('a2', 'c2'), vuelta('b1', 'c1'), vuelta('b2', 'c2')],
+  });
+  assert.equal(v.caraDe(v.evento('a1')).emoji, '🛫');
+  assert.equal(v.caraDe(v.evento('b1')).emoji, '🛬');
+  assert.equal(v.caraDe(v.evento('a1')).titulo, 'Barcelona → Múnich · VY 1812');
 });

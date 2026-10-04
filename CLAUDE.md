@@ -27,6 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Los vuelos, una vez y con despegue y aterrizaje (1.84.0).** Cada vuelo
+  salía dos veces porque el identificador de un evento importado sale del
+  calendario y del UID (`idDeViaje` en `api/src/viajes.js`), y el feed de
+  Óscar estaba enganchado en dos calendarios. `sinVuelosRepetidos`
+  (`pwa/publico/js/modelo.js`) se queda con uno por número de vuelo y hora de
+  salida —el que lleve `extra.vuelta`, si alguno— y lo usan `instanciasEn` y
+  `viajesDe`. `caraDe` pone 🛫 a la ida de un viaje con vuelta (trazada o
+  escrita) y 🛬 a la vuelta; las escalas y los vuelos sueltos conservan su
+  emoji. Queda: **los datos siguen duplicados** —sobra uno de los dos
+  calendarios, y quitarlo es lo que lo arregla de raíz—, y **el Worker y el
+  plan de los domingos no deduplican**, así que la redacción con IA y el
+  mensaje de WhatsApp pueden seguir contando el vuelo dos veces.
 - **La semana, sin verde y deslizando otra vez (1.83.0).** Probada la 1.82.0
   en el teléfono: el arrastre lateral había dejado de cambiar de semana. La
   semana y el cuerpo del mes llevan ahora `touch-action: pan-y` —con el
