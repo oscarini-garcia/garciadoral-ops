@@ -27,6 +27,20 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Hoy pasa a la agenda como «Día» (1.91.0).** La pestaña Hoy se retiró de
+  la barra (cinco entradas para quien vive en casa, Agenda la primera) y su
+  contenido es la vista «Día» de la agenda, primera del conmutador y la de
+  por defecto (`modo = 'dia'` en `vistas/semana.js`), así que la aplicación
+  abre en ella. `cuerpoDelDia(dia, ctx)` y `tituloDelDia` (`vistas/hoy.js`)
+  sirven cualquier día: el saludo como título si es hoy, la fecha si no; las
+  peticiones, las escapadas, la frase del día, el aviso de sincronización y
+  la versión solo salen mirando hoy. Las flechas y el deslizamiento pasan de
+  día en día; volver a tocar «Agenda» vuelve a hoy. **Y un día sin nada con
+  hora ya no dibuja el riel**: una línea. `pintarHoy` sigue existiendo pero
+  ya no está en `PESTANAS`. Queda: la ronda de `specs/propuesta-hoy-orden.html`
+  (orden Lío · cena · día · notas, cómo rotular a Lío y la cena) está sin
+  decidir en el PR #171; y `specs/ux.md` §6.5 y §11 todavía describen Hoy como
+  pestaña.
 - **Hoy, como una línea del tiempo (1.90.0).** Decidido como A2 · B3 · C2 ·
   D2 en `specs/propuesta-hoy-como-la-agenda.html`. `bloqueDelDia`
   (`vistas/hoy.js`) es un riel de una fila por hora —de las 8 o antes a las 22

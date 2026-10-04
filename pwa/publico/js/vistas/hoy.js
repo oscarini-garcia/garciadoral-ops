@@ -104,35 +104,48 @@ function saludoDeLaHora(hora) {
 
 export function pintarHoy(pantalla, subcabecera, ctx) {
   const dia = hoy();
-
-  // Qué día es hoy, escrito entero. Arriba está el saludo, que no lo dice.
   vaciar(subcabecera).append(el('p', { class: 'hoy-fecha', texto: formatearFechaLarga(dia) }));
-
-  // Y lo único que había que no perder al retirar el punto de la cabecera: que
-  // algo lleve un rato sin subir. Nada mientras va bien —que es el 99 % de los
-  // días, y era el argumento por el que el punto perdió su palabra—; cuando no,
-  // se lee en vez de leerse en un color. Desaparece sola al arreglarse.
-  const aviso = avisoDeSincronizacion();
-  if (aviso) {
-    subcabecera.append(el('p', {
-      class: 'hoy-sync', texto: aviso, title: motivoDeSincronizacion() || null,
-    }));
-  }
-
   vaciar(pantalla);
   pantalla.classList.add('pantalla-hoy');
-  // Lo que hay que contestar va lo primero, porque es lo único de esta pantalla
-  // que espera a alguien; los turnos de Lío, justo detrás, porque marcar es el
-  // gesto que se hace dos veces al día. Después ya viene lo que se venía a leer.
-  pantalla.append(
-    ...bandaDePeticiones(ctx),
-    ...bandaDeEscapadas(dia, ctx),
-    laChispa(dia, ctx),
+  pantalla.append(cuerpoDelDia(dia, ctx));
+}
+
+/**
+ * El día entero, para la vista «Día» de la agenda: lo que era la pantalla de
+ * Hoy, que dejó la barra y pasó a ser la primera posición del conmutador.
+ *
+ * Lo que espera respuesta va lo primero; después Lío, el riel del día, la
+ * cena y, al pie, la versión. Las bandas que hablan de hoy —peticiones,
+ * escapadas, la frase del día— solo salen si el día mirado es hoy: mirando el
+ * jueves que viene no hay a quién contestarle ni frase que leer.
+ */
+export function cuerpoDelDia(dia, ctx) {
+  const esHoy = iso(dia) === iso(hoy());
+  const cuerpo = el('div', { class: 'cuerpo-dia pantalla-hoy' });
+
+  // Que algo lleve un rato sin subir: antes iba en la subcabecera de Hoy, que
+  // en la agenda ocupa el conmutador.
+  const aviso = avisoDeSincronizacion();
+  if (aviso && esHoy) {
+    cuerpo.append(el('p', { class: 'hoy-sync', texto: aviso, title: motivoDeSincronizacion() || null }));
+  }
+
+  cuerpo.append(
+    ...(esHoy ? bandaDePeticiones(ctx) : []),
+    ...(esHoy ? bandaDeEscapadas(dia, ctx) : []),
+    esHoy ? laChispa(dia, ctx) : null,
     ...bloqueDeLio(dia, ctx),
     bloqueDelDia(dia, ctx),
     ...bloqueDeCenas(dia, ctx),
-    pieDeVersion(),
+    esHoy ? pieDeVersion() : null,
   );
+  return cuerpo;
+}
+
+/** El saludo cuando se mira hoy; el día escrito cuando se mira otro. Es el
+ *  título de la agenda en la vista «Día». */
+export function tituloDelDia(dia, ctx) {
+  return iso(dia) === iso(hoy()) ? tituloDeHoy(ctx) : formatearFechaLarga(dia);
 }
 
 // ------------------------------------------------------- Las escapadas --
@@ -489,15 +502,20 @@ function bloqueDelDia(dia, ctx) {
   const sinHora = apariciones.filter((a) => !horaDe(a));
   const conHora = apariciones.filter((a) => horaDe(a));
 
-  const grupo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: 'Para hoy' })]);
+  const esHoy = iso(new Date()) === iso(dia);
+  const grupo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: esHoy ? 'Para hoy' : 'Este día' })]);
   for (const aparicion of sinHora) grupo.append(lineaDelRiel(aparicion, ctx));
-  if (!apariciones.length) grupo.append(el('p', { class: 'hoy-nada', texto: 'Hoy no hay nada apuntado.' }));
+  // Sin nada con hora, el riel no se dibuja: catorce filas vacías ocupaban
+  // media pantalla para decir que no había nada.
+  if (!conHora.length) {
+    if (!apariciones.length) grupo.append(el('p', { class: 'hoy-nada', texto: esHoy ? 'Hoy no hay nada apuntado.' : 'Nada apuntado.' }));
+    return grupo;
+  }
 
   const horas = conHora.map((a) => a.instancia.inicio.getHours());
   const desde = Math.min(8, ...horas);
   const hasta = Math.max(22, ...horas);
   const ahora = new Date();
-  const esHoy = iso(ahora) === iso(dia);
 
   const riel = el('div', { class: 'riel' });
   for (let hora = desde; hora <= hasta; hora += 1) {

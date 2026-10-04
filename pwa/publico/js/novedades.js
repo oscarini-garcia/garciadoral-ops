@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.91.0',
+    fecha: '2026-10-04',
+    titulo: 'Hoy pasa a la agenda como «Día»',
+    lineas: [
+      'La barra pierde «Hoy»: lo que había ahí es ahora la vista «Día» de la Agenda, la primera, y la aplicación abre en ella.',
+      'En «Día» se puede pasar al día siguiente o al anterior deslizando, como en la semana.',
+      'Un día sin nada con hora ya no dibuja las horas vacías: una línea basta.',
+    ],
+  },
+  {
     version: '1.90.0',
     fecha: '2026-10-04',
     titulo: 'Hoy, como una línea del tiempo',
