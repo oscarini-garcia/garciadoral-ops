@@ -328,6 +328,43 @@ export function deslizarHorizontal(nodo, alDeslizar) {
 }
 
 /**
+ * El mismo gesto que `deslizarHorizontal`, en vertical: hacia arriba avanza y
+ * hacia abajo retrocede. El nodo lleva `touch-action: none` desde el CSS para
+ * que el navegador no se quede el arrastre para desplazar la página, así que
+ * conviene usarlo solo en algo que no necesite desplazarse, como la parrilla
+ * del mes.
+ */
+export function deslizarVertical(nodo, alDeslizar) {
+  const MINIMO = 24;
+  const DOMINANCIA = 1.4;
+  const GRACIA = 400;
+
+  let origen = null;
+  let sordoHasta = 0;
+
+  nodo.addEventListener('pointerdown', (evento) => {
+    origen = evento.isPrimary ? { x: evento.clientX, y: evento.clientY } : null;
+  });
+  nodo.addEventListener('pointercancel', () => { origen = null; });
+  nodo.addEventListener('pointerup', (evento) => {
+    if (!origen) return;
+    const dx = evento.clientX - origen.x;
+    const dy = evento.clientY - origen.y;
+    origen = null;
+    if (Math.abs(dy) < MINIMO || Math.abs(dy) < Math.abs(dx) * DOMINANCIA) return;
+    sordoHasta = performance.now() + GRACIA;
+    alDeslizar(dy < 0 ? 1 : -1);
+  });
+  nodo.addEventListener('click', (evento) => {
+    if (performance.now() >= sordoHasta) return;
+    evento.preventDefault();
+    evento.stopPropagation();
+  }, true);
+
+  return nodo;
+}
+
+/**
  * Los verbos de una tarjeta, escondidos detrás de ella.
  *
  * Se arrastra la tarjeta hacia la izquierda y aparecen debajo; se suelta y la

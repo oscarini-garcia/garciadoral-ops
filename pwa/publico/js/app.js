@@ -49,7 +49,7 @@ import { NOVEDADES } from './novedades.js';
 import { hayLio, inicioDeVentana, resolverPropuesta, rotuloDeTurno, turnosDe } from './lio.js';
 import { nuevoPieDeVersion, pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
 import {
-  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, pintarAgenda, reiniciarAgenda, tituloDeAgenda,
+  abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, pintarAgenda, reiniciarAgenda, tituloDeAgenda, volverAHoyEnAgenda,
 } from './vistas/semana.js';
 import {
   abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
@@ -248,6 +248,13 @@ function prepararInterfaz() {
     else boton.removeAttribute('aria-current');
 
     boton.onclick = () => {
+      // Tocar «Agenda» estando ya en ella vuelve a hoy, en la vista que sea.
+      if (boton.dataset.pestana === 'semana' && pestana === 'semana') {
+        toque();
+        volverAHoyEnAgenda();
+        refrescar();
+        return;
+      }
       pestana = boton.dataset.pestana;
       for (const otro of document.querySelectorAll('.tab')) otro.removeAttribute('aria-current');
       boton.setAttribute('aria-current', 'page');

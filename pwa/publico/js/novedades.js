@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.79.0',
+    fecha: '2026-10-04',
+    titulo: 'El mes, más compacto',
+    lineas: [
+      'El mes ya no lleva el punto bajo los días con algo, y solo enseña las semanas que tocan el mes: cabe más detalle debajo.',
+      'Desaparece el botón «Hoy»: tocar «Agenda» estando ya en ella vuelve a hoy.',
+      'En la parrilla del mes también se cambia de mes deslizando hacia arriba (siguiente) o hacia abajo (anterior).',
+    ],
+  },
+  {
     version: '1.78.0',
     fecha: '2026-09-26',
     titulo: 'Los regalos de los mayores, solo para los mayores',
