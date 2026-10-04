@@ -2169,3 +2169,14 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 }
 .cena-hoy[data-ayer="si"] { background: transparent; }
 .cena-hoy-texto { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0; text-align: left; }
+
+/* El día de una recurrente: una línea con quién lleva y quién recoge, y
+   «Cambiar» (specs/propuesta-dia-de-recurrente.html, A4). */
+.dia-recurrente-texto { flex: 1 1 auto; min-width: 0; color: var(--ink-soft); }
+.dia-recurrente-texto b { color: var(--ink); font-weight: 600; }
+.dia-recurrente .enlace-discreto { align-self: center; margin-top: 6px; }
+/* «Otro» en la hoja de Cambiar: la fila de escribir de Sitios, subrayada
+   para que se lea como campo sin caja (B2). */
+.fila-otro-escribir { border-bottom: 1px solid var(--line); margin: 2px 0 10px; min-height: 42px; }
+.fila-otro-escribir input:focus, .fila-otro-escribir input:focus-visible { outline: none; }
+.fila-otro-escribir:focus-within { border-bottom-color: var(--tinta); }

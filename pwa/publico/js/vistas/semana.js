@@ -1366,9 +1366,9 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
           texto: [
             dias > 1 ? `${dias} días` : null,
             evento.jornada_completa ? 'Todo el día' : horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false }),
-            // Una actividad dice «Recurrente» aunque se escribiera antes de
-            // existir ese tipo (specs/propuesta-recurrentes.html, A2).
-            plugin === 'extraescolares' ? 'Recurrente' : ctx.vista.tipoEvento(evento.tipo_id)?.nombre,
+            // Una recurrente dice quién va en la línea de la fecha, en vez de
+            // un apartado «De quién es» (specs/propuesta-dia-de-recurrente.html, C1).
+            plugin === 'extraescolares' ? quienesDeLaRecurrente(evento, ctx) : ctx.vista.tipoEvento(evento.tipo_id)?.nombre,
             duenyo ? `de ${duenyo.nombre}` : null,
             evento.ubicacion,
           ].filter(Boolean).join(' · '),
@@ -1376,10 +1376,10 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
       ]),
     ]));
 
-    const gente = ctx.vista.participantes(evento);
+    const gente = plugin === 'extraescolares' ? [] : ctx.vista.participantes(evento);
     if (gente.length) {
       cuerpo.append(el('div', { class: 'grupo' }, [
-        el('p', { class: 'grupo-titulo', texto: plugin === 'extraescolares' ? 'De quién es' : 'Quién va' }),
+        el('p', { class: 'grupo-titulo', texto: 'Quién va' }),
         el('div', { class: 'opciones' }, gente.map((id) => {
           const persona = ctx.vista.persona(id);
           return persona ? el('span', { class: 'etiqueta' }, [persona.nombre]) : null;
@@ -1440,12 +1440,72 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
   ]);
 }
 
+/** «Ana y Óscar»: quién va a una recurrente, con el apodo, para la línea de
+ *  la fecha de su hoja. */
+function quienesDeLaRecurrente(evento, ctx) {
+  const nombres = ctx.vista.participantes(evento)
+    .map((id) => ctx.vista.persona(id))
+    .filter(Boolean)
+    .map((persona) => persona.apodo || persona.nombre);
+  if (nombres.length < 2) return nombres[0] || null;
+  return `${nombres.slice(0, -1).join(', ')} y ${nombres[nombres.length - 1]}`;
+}
+
 /**
- * Un día concreto de una actividad: quién lleva y quién recoge ese día —lo
- * dicho aquí manda sobre el cuadro de la actividad—, y «no hay hípica este
- * día» (`specs/propuesta-plugins-hojas.html`, K1 y L3).
+ * Un día concreto de una actividad: una línea con quién lleva y quién recoge
+ * ese día —lo dicho aquí manda sobre el cuadro de la actividad— y «Cambiar»,
+ * que abre la hoja de los dos; y «no hay hípica este día» al pie
+ * (`specs/propuesta-dia-de-recurrente.html`, A4 y C1; K1 y L3 de
+ * `specs/propuesta-plugins-hojas.html`).
  */
 function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
+  const datos = ctx.vista.datos;
+  const fechaIso = iso(aparicion.dia);
+  const reparto = repartoDelDia(datos, evento, aparicion.dia);
+  const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : quien ? ctx.vista.nombre(quien) : 'nadie');
+  const volver = () => { ctx.refrescar(); abrirDetalleEvento(evento.id, ctx, aparicion); };
+  const titulo = ctx.vista.caraDe(evento).titulo.toLowerCase();
+
+  // Lo que espera respuesta se ve aquí mismo, y se contesta sin ir más lejos.
+  const pendientes = ['lleva', 'recoge']
+    .map((campo) => tratoDeDia(datos, evento.id, fechaIso, campo))
+    .filter(Boolean)
+    .map((trato) => bloqueDePropuestaDeDia(trato, ctx, { alTerminar: volver }));
+
+  return el('div', { class: 'grupo dia-recurrente' }, [
+    el('div', { class: 'hoy-fila' }, [
+      el('span', { class: 'dia-recurrente-texto' }, [
+        'Lleva ', el('b', { texto: nombre(reparto.lleva) }),
+        ' · recoge ', el('b', { texto: nombre(reparto.recoge) }),
+      ]),
+      el('button', {
+        class: 'boton-mini empujar', type: 'button',
+        onclick: () => { toque(); abrirLlevaYRecoge(evento, aparicion, ctx); },
+      }, ['Cambiar']),
+    ]),
+    ...pendientes,
+    el('button', {
+      class: 'enlace-discreto', type: 'button',
+      onclick: async () => {
+        await guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
+          evento_id: evento.id, fecha: fechaIso, cancelado: 1, autor_id: ctx.vista.yo.id, activo: 1,
+          ...columnasDeQuien('lleva', reparto.lleva), ...columnasDeQuien('recoge', reparto.recoge),
+        });
+        toque('media');
+        cerrarHoja();
+        avisar(`Anotado: este día no hay ${titulo}`);
+        ctx.refrescar();
+      },
+    }, [`No hay ${titulo} este día`]),
+  ]);
+}
+
+/**
+ * La hoja de «Cambiar»: quién lleva y quién recoge ese día, como chips, y
+ * «otro» en una fila de escribir sin caja debajo de cada uno, como la de
+ * Sitios (`specs/propuesta-dia-de-recurrente.html`, A4 y B2).
+ */
+function abrirLlevaYRecoge(evento, aparicion, ctx) {
   const datos = ctx.vista.datos;
   const yo = ctx.vista.yo.id;
   const fechaIso = iso(aparicion.dia);
@@ -1463,80 +1523,63 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
     });
   };
 
-  // Quién lleva y quién recoge ese día, como chips y no como un botón que va
-  // pasando de persona en persona: cada toque puede ser una propuesta a
-  // alguien, y un botón que rota haría tres propuestas por llegar a la cuarta.
-  // Lo que no hace falta preguntar se escribe en el acto —quedarse uno con el
-  // recado, o soltar el propio sin cargárselo a nadie—; lo demás pasa por
-  // trato, como un turno de Lío (specs/propuesta-plugins-hojas.html, K1).
+  // Chips y no un botón que va pasando de persona en persona: cada toque
+  // puede ser una propuesta a alguien. Lo que no hace falta preguntar se
+  // escribe en el acto —quedarse uno con el recado, o soltar el propio sin
+  // cargárselo a nadie—; lo demás pasa por trato, como un turno de Lío
+  // (specs/propuesta-plugins-hojas.html, K1).
   const filaDe = (campo) => {
     const actual = reparto[campo];
     const pendiente = tratoDeDia(datos, evento.id, fechaIso, campo);
     const cabecera = el('p', { class: 'grupo-subtitulo', texto: campo === 'lleva' ? 'Lleva' : 'Recoge' });
     if (pendiente) return [cabecera, bloqueDePropuestaDeDia(pendiente, ctx, { alTerminar: volver })];
 
-    const chips = el('div', { class: 'opciones' });
     const elegir = async (quien) => {
       const como = comoCambiar(yo, actual, quien);
       if (!como) return;
       toque();
       if (esOtro(quien)) recordarOtro(nombreDeOtro(quien));
-      if (como.directo) {
-        await escribir(columnasDeQuien(campo, quien));
-        volver();
-        return;
+      if (como.directo) await escribir(columnasDeQuien(campo, quien));
+      else {
+        await proponerCambioDeDia(datos, { eventoId: evento.id, fechaIso, campo, actual, nuevo: quien });
+        avisar(`Propuesto a ${nombre(como.destinatario)}`);
       }
-      await proponerCambioDeDia(datos, { eventoId: evento.id, fechaIso, campo, actual, nuevo: quien });
-      avisar(`Propuesto a ${nombre(como.destinatario)}`);
       volver();
     };
-    for (const id of casa) {
-      chips.append(el('button', {
-        class: 'opcion', type: 'button',
-        'aria-pressed': id === actual ? 'true' : 'false',
-        onclick: () => elegir(id),
-      }, [nombre(id)]));
-    }
-    // «Otro» (C4): los últimos escritos de un toque, y un nombre nuevo a mano.
-    for (const otro of otrosRecientes()) {
-      chips.append(el('button', {
-        class: 'opcion', type: 'button',
-        'aria-pressed': comoOtro(otro) === actual ? 'true' : 'false',
-        onclick: () => elegir(comoOtro(otro)),
-      }, [otro]));
-    }
-    if (esOtro(actual) && !otrosRecientes().some((o) => comoOtro(o) === actual)) {
-      chips.append(el('button', { class: 'opcion', type: 'button', 'aria-pressed': 'true' }, [nombreDeOtro(actual)]));
-    }
+    const chip = (quien, rotulo) => el('button', {
+      class: 'opcion', type: 'button',
+      'aria-pressed': quien === actual ? 'true' : 'false',
+      onclick: () => elegir(quien),
+    }, [rotulo]);
+    const chips = el('div', { class: 'opciones' }, [
+      ...casa.map((id) => chip(id, nombre(id))),
+      ...otrosRecientes().map((otro) => chip(comoOtro(otro), otro)),
+      esOtro(actual) && !otrosRecientes().some((o) => comoOtro(o) === actual)
+        ? chip(actual, nombreDeOtro(actual)) : null,
+    ].filter(Boolean));
+
+    // «Otro»: una fila de escribir sin caja, con el «+» solo cuando hay algo.
     const texto = entrada({ placeholder: 'Otro: la abuela, el autobús…', 'aria-label': `Otro que ${campo === 'lleva' ? 'lleva' : 'recoge'}, con su nombre` });
+    const confirmar = el('button', {
+      class: 'fila-confirmar', type: 'button', hidden: true, 'aria-label': 'Añadir',
+      onclick: () => { if (texto.value.trim()) elegir(comoOtro(texto.value)); },
+    }, ['+']);
+    texto.addEventListener('input', () => { confirmar.hidden = !texto.value.trim(); });
     texto.addEventListener('keydown', (evento) => {
       if (evento.key !== 'Enter') return;
       evento.preventDefault();
       if (texto.value.trim()) elegir(comoOtro(texto.value));
     });
-    const filaOtro = el('div', { class: 'fila-otro' }, [
-      texto,
-      el('button', { class: 'boton', type: 'button', onclick: () => { if (texto.value.trim()) elegir(comoOtro(texto.value)); } }, ['Vale']),
-    ]);
-    return [cabecera, chips, filaOtro];
+    return [cabecera, chips, el('div', { class: 'fila-escribir fila-otro-escribir' }, [texto, confirmar])];
   };
 
-  return el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: `Este ${NOMBRES_DIA[indiceDia(aparicion.dia)]} ${aparicion.dia.getDate()}` }),
-    ...filaDe('lleva'),
-    ...filaDe('recoge'),
-    el('p', { class: 'pista', texto: 'Vale para este día. Cogerlo tú se escribe en el acto; pedírselo a otro espera a que conteste. Todos los días se cambian en la recurrente.' }),
-    el('button', {
-      class: 'enlace-discreto', type: 'button',
-      onclick: async () => {
-        await escribir({ cancelado: 1 });
-        toque('media');
-        cerrarHoja();
-        avisar(`Anotado: este día no hay ${ctx.vista.caraDe(evento).titulo.toLowerCase()}`);
-        ctx.refrescar();
-      },
-    }, [`No hay ${ctx.vista.caraDe(evento).titulo.toLowerCase()} este día`]),
-  ]);
+  const dia = `${NOMBRES_DIA[indiceDia(aparicion.dia)]} ${aparicion.dia.getDate()}`;
+  abrirHoja(`${ctx.vista.caraDe(evento).titulo}, ${dia}`, (cuerpo) => {
+    cuerpo.append(el('div', { class: 'grupo' }, [...filaDe('lleva'), ...filaDe('recoge')]));
+    cuerpo.append(el('div', { class: 'acciones' }, [
+      el('button', { class: 'boton', type: 'button', 'data-tono': 'discreto', onclick: volver }, ['Volver']),
+    ]));
+  });
 }
 
 // ------------------------------------------- El trato de un día suelto --

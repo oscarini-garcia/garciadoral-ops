@@ -27,6 +27,17 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El día de una recurrente (1.95.0).** Decidido como A4 · B2 · C1 en
+  `specs/propuesta-dia-de-recurrente.html`. La hoja de un día de una
+  recurrente dice quién va en la línea de la fecha (`quienesDeLaRecurrente`,
+  con el apodo) y ya no lleva «De quién es», el rótulo «Este lunes 5» ni la
+  pista. Quién lleva y quién recoge es una línea, «Lleva Ana · recoge
+  Óscar», con «Cambiar» (`bloqueDelDiaDeActividad`); lo que espera respuesta
+  sale debajo. «Cambiar» abre otra hoja (`abrirLlevaYRecoge`) con los chips
+  de siempre y «otro» como fila de escribir sin caja, la de Sitios
+  (`.fila-otro-escribir`, «+» al escribir); elegir vuelve al detalle. «No hay
+  … este día» sigue al pie. Queda: el formulario de la actividad
+  (`vistas/plugins.js`) conserva su campo de «otro» con «Vale».
 - **El día arriba, con sus flechas (1.93.0).** En «Día» el título de la
   agenda es la fecha (`tituloDelDia`, ya sin saludo) con dos flechas a los
   lados (`.titulo-dia`), y la fila de mandos pierde las suyas en esa vista;
