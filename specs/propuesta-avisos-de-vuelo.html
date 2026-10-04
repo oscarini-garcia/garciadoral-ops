@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avisos de vuelo</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+    /* Los de la aplicación, para que las maquetas se parezcan a la pantalla. */
+    --papel: #FBF9F5;
+    --papel3: #EAE6DC;
+    --tinta: #0E6E62;
+    --tinta-suave: rgba(14, 110, 98, 0.14);
+    --tinta-ink: #FBF9F5;
+    --no: #B5523B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+      --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+      --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+    --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+    --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 16px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin: 0 0 4px; }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    color: var(--ink); font: inherit; transition: border-color 0.12s ease; display: block;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--ac); flex: none; }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-size: 10.5px; letter-spacing: 0.07em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--papel); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--sub); font-size: 12px; letter-spacing: 0.03em; }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 620; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+
+  
+  .rot { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .12em; color: var(--sub); margin: 8px 0 5px; }
+  .rot:first-child { margin-top: 0; }
+  .seg { display: flex; background: var(--papel3); border-radius: 9px; padding: 3px; gap: 2px; max-width: 340px; }
+  .seg span { flex: 1; text-align: center; font-size: 12px; padding: 5px 2px; border-radius: 7px; color: var(--sub); }
+  .seg span.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .pista { display: block; font-size: 11.5px; color: var(--sub); margin-top: 4px; max-width: 340px; }
+  .fila { display: flex; align-items: center; gap: 8px; max-width: 340px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink); }
+  .fila:last-child { border-bottom: 0; }
+  .fila small { display: block; color: var(--sub); font-size: 11.5px; }
+  .int { margin-left: auto; width: 36px; height: 21px; border-radius: 99px; background: var(--line-hard); position: relative; flex: none; }
+  .int::after { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; }
+  .int.on { background: var(--tinta); }
+  .int.on::after { left: 17px; }
+  .noti { display: block; max-width: 340px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 11px; margin-top: 6px; font-size: 12.5px; color: var(--ink); }
+  .noti small { display: block; color: var(--sub); font-size: 11.5px; }
+  .noti b { font-weight: 600; }
+  .camp { margin-left: auto; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Avisos de vuelo</h1>
+  <p class="stand">Lo pedido: <em>para los vuelos, añadir las notificaciones cuando sale y cuando llega, como opción</em>. Cuatro preguntas: dónde está el mando, de quién son los vuelos que suenan, cuándo suenan y cómo empieza. Las maquetas son ilustrativas.</p>
+  <section class="q" data-q="A"><p class="qhead">Pregunta A · Mando</p><p class="qtitle">¿Dónde se enciende o se apaga?</p><p class="qwhy">Hoy la hoja de Viajes tiene «Avisar» con cuatro opciones de antelación, de este teléfono.</p><div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Un mando propio debajo de «Avisar»</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="rot">AVISAR</span><span class="seg"><span class="">Nunca</span><span class="">Ese día</span><span class="on">La víspera</span><span class="">Una semana</span></span><span class="rot">AL SALIR Y AL LLEGAR</span><span class="seg"><span class="">No</span><span class="on">Sí</span></span><span class="pista">Suena a la hora de salida y a la de llegada. En este teléfono.</span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">En la hoja de Viajes, bajo el «Avisar» de siempre, un segmentado de dos: «No» y «Sí». <b>Son dos preguntas distintas y se contestan por separado</b>: con cuánta antelación recordar el viaje y si avisar en el momento. Es de este teléfono, como «Avisar». Coste: una fila más en una hoja que ya tiene varias.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Una quinta opción dentro de «Avisar»</span></span>
+        <span class="mock"><span class="rot">AVISAR</span><span class="seg"><span class="">Nunca</span><span class="">Ese día</span><span class="">Víspera</span><span class="">Semana</span><span class="on">Al salir</span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Se añade «Al salir y llegar» a las cuatro de «Avisar». <b>Ningún mando nuevo</b>. Coste: es una u otra; quien quiera la víspera y además el aviso al despegar no puede tener las dos, y cinco segmentos a 390 puntos se aprietan.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Un interruptor en Ajustes › Avisos</span></span>
+        <span class="mock"><span class="fila"><span>Avisos del teléfono<small>permiso concedido</small></span><span class="int on"></span></span><span class="fila"><span>Vuelos al salir y al llegar<small>a la hora, en este teléfono</small></span><span class="int on"></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Junto al resto de lo que suena en el teléfono, en Ajustes. <b>Todo lo que suena, en un mismo sitio</b>. Coste: queda lejos de Viajes, donde se busca, y Ajustes no tiene hoy otros mandos por plugin.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Por vuelo, en su hoja</span></span>
+        <span class="mock"><span class="fila"><span>🛫 Barcelona → Roma · VY 6100<small>miércoles 30 · 06:27</small></span><span class="camp">🔔</span></span><span class="fila"><span>🛬 Roma → Barcelona · VY 6105<small>jueves 1 · 18:48</small></span><span class="camp">🔕</span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Una campana en la hoja de cada vuelo, que se enciende o apaga solo para ese. <b>Lo más fino</b>. Coste: hay que hacerlo vuelo a vuelo; con cuarenta vuelos al año, nadie lo hará, y el valor de partida decide casi todo.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, dónde lo buscaría.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <section class="q" data-q="B"><p class="qhead">Pregunta B · De quién</p><p class="qtitle">¿De qué vuelos suenan los avisos?</p><p class="qwhy">Cada uno pega su Flighty, y los vuelos llevan dueño.</p><div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Todos los vuelos que veo</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="noti"><b>🛬 Aterriza: Roma → Barcelona · VY 6105</b><small>Óscar · a las 18:48</small></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Suenan los vuelos de cualquiera de casa que aparezcan en mi agenda, con el nombre de quien vuela. <b>Saber que Óscar ha aterrizado es justo para lo que sirve</b>. Coste: quien vuela recibe también el suyo, que ya sabe.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Solo los míos</span></span>
+        <span class="mock"><span class="noti"><b>🛫 Despega: Barcelona → Roma · VY 6100</b><small>a las 06:27</small></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Solo los vuelos del calendario de quien mira. <b>Un recordatorio para uno mismo</b>. Coste: el resto de la casa no se entera de cuándo llega nadie, que era lo útil.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Los de otros, y los míos solo al salir</span></span>
+        <span class="mock"><span class="noti"><b>🛬 Aterriza: Roma → Barcelona · VY 6105</b><small>Óscar · a las 18:48</small></span><span class="noti"><b>🛫 Despega: Barcelona → Roma · VY 6100</b><small>tu vuelo · a las 06:27</small></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">De los vuelos de otros, al salir y al llegar; de los propios, solo la salida. <b>A cada uno lo que no sabe</b>. Coste: una regla más que explicar, y quien vuela no recibe el «ya has llegado», que tampoco necesita.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Elegir personas</span></span>
+        <span class="mock"><span class="fila"><span>Óscar</span><span class="int on"></span></span><span class="fila"><span>Ana</span><span class="int"></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Un interruptor por persona de casa. <b>Control completo</b>. Coste: una lista más en la hoja, para un caso —casi siempre vuela Óscar— que hoy no lo pide.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, de quién deberían sonar.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <section class="q" data-q="C"><p class="qhead">Pregunta C · Cuándo</p><p class="qtitle">¿En qué momento suena cada aviso?</p><p class="qwhy">La hora es la de Madrid, como en la agenda.</p><div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">A la hora exacta de salida y de llegada</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="noti"><b>🛫 Despega: Barcelona → Roma</b><small>a las 06:27</small></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">A las 06:27 suena «Despega» y a las 08:40 «Aterriza», en hora de Madrid como el resto de la agenda. <b>Dice lo que pasa cuando pasa</b>. Coste: es la hora programada; si el vuelo se retrasa, el aviso no lo sabe hasta la siguiente sincronización del feed.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Media hora antes de salir y al llegar</span></span>
+        <span class="mock"><span class="noti"><b>🛫 Sale en 30 min: Barcelona → Roma</b><small>a las 06:27</small></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">La salida avisa con media hora de margen, como cualquier evento con hora; la llegada, a su hora. <b>Sirve también de recordatorio</b>. Coste: a quien no vuela le sirve menos saber que «sale en media hora».</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Solo al llegar</span></span>
+        <span class="mock"><span class="noti"><b>🛬 Aterriza: Roma → Barcelona</b><small>a las 18:48</small></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Un único aviso por vuelo, al aterrizar. <b>La mitad de avisos</b>. Coste: no se sabe cuándo sale nadie.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cuándo deberían sonar.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <section class="q" data-q="D"><p class="qhead">Pregunta D · De origen</p><p class="qtitle">¿Cómo empieza quien no ha tocado nada?</p><p class="qwhy">Los avisos son de cada teléfono.</p><div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Encendido de origen</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="rot">AVISAR</span><span class="seg"><span class="">Nunca</span><span class="">Ese día</span><span class="on">La víspera</span><span class="">Una semana</span></span><span class="rot">AL SALIR Y AL LLEGAR</span><span class="seg"><span class="">No</span><span class="on">Sí</span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Quien no toque nada recibe los avisos. <b>Lo descubre cuando suena el primero</b>, que es como se entiende para qué sirve. Coste: a quien no le interese le llega uno antes de saber que se puede apagar.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Apagado de origen</span></span>
+        <span class="mock"><span class="rot">AVISAR</span><span class="seg"><span class="">Nunca</span><span class="">Ese día</span><span class="on">La víspera</span><span class="">Una semana</span></span><span class="rot">AL SALIR Y AL LLEGAR</span><span class="seg"><span class="on">No</span><span class="">Sí</span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Cada uno lo enciende si lo quiere. <b>Nada suena sin haberlo pedido</b>. Coste: quien no abra la hoja de Viajes no sabrá nunca que existe.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cómo debería empezar.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <div class="foot"><p>Lo que no cambia: el «Avisar» de antelación, el 🛫 y 🛬 de la agenda y la hora de Madrid. El PR #168 —avisos siempre encendidos salvo «Nunca»— queda en espera hasta que se decida esto.</p></div>
+</div>
+<div class="bar"><div class="barin"><span class="count" id="count"></span><button class="copy" id="copy">Copiar</button></div></div>
+<script>
+
+  const KEY = "options.avisos-de-vuelo";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+  function toggle(t) {
+    const l = t[0]; const none = l + "0"; const list = picked(l); const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) next = on ? [] : [t];
+    else if (on) next = list.filter((x) => x !== t);
+    else if (t === none) next = [t];
+    else next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    if (next.length) state.picks[l] = next; else delete state.picks[l];
+  }
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) { const n = (state.notes[l] || "").trim(); if (n) lines.push(l + ": " + n); }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) { const t = btn.dataset.t; btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t))); }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" + (missing.length ? " — falta: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toque una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+  document.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { toggle(btn.dataset.t); keep(); paint(); }));
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => { state.notes[area.dataset.n] = area.value; keep(); });
+  });
+  copy.addEventListener("click", async () => {
+    const text = block(); let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {} t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+  paint();
+</script>
+</body>
+</html>
