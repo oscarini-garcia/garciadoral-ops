@@ -346,7 +346,7 @@ function refrescarRecordatorios(datos) {
   // local en los dos casos, que dice otra cosa y funciona sin red.
   const instancias = losQuiere() && hayAvisosRemotos()
     ? []
-    : instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS))
+    : instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS)).filter((instancia) => instancia.tramo !== 'llegada')
       .map((instancia) => ({ ...instancia, antelacion: antelacionDe(datos, instancia) }));
   programarRecordatorios(instancias, turnosPropios(datos, desde));
 }

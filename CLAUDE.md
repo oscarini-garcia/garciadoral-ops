@@ -59,9 +59,12 @@ pendiente. El hook lo inyecta al final del mapa.
   Óscar estaba enganchado en dos calendarios. `sinVuelosRepetidos`
   (`pwa/publico/js/modelo.js`) se queda con uno por número de vuelo y hora de
   salida —el que lleve `extra.vuelta`, si alguno— y lo usan `instanciasEn` y
-  `viajesDe`. `caraDe` pone 🛫 a la ida de un viaje con vuelta (trazada o
-  escrita) y 🛬 a la vuelta; las escalas y los vuelos sueltos conservan su
-  emoji. Queda: **los datos siguen duplicados** —sobra uno de los dos
+  `viajesDe`. **Y en la 1.87.0 cada vuelo sale dos veces**: `partirVuelo`
+  (`pwa/publico/js/semana.js`, dentro de `instanciasEn`) lo parte en el
+  despegue a su hora de salida y el aterrizaje a la de llegada, cada uno en
+  su día, con `tramo` en la instancia; la línea pone 🛫 o 🛬 por él. El 🛫/🛬
+  por ida y vuelta de la 1.84.0 se retiró, y los recordatorios locales no
+  programan el aterrizaje. Queda: **los datos siguen duplicados** —sobra uno de los dos
   calendarios, y quitarlo es lo que lo arregla de raíz—, y **el Worker y el
   plan de los domingos no deduplican**, así que la redacción con IA y el
   mensaje de WhatsApp pueden seguir contando el vuelo dos veces.

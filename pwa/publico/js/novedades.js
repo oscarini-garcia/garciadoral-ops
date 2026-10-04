@@ -18,6 +18,14 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.87.0',
+    fecha: '2026-10-04',
+    titulo: 'El vuelo, al despegar y al aterrizar',
+    lineas: [
+      'Cada vuelo sale dos veces en la agenda: 🛫 a la hora de salida y 🛬 a la de llegada, cada uno en su día.',
+    ],
+  },
+  {
     version: '1.86.0',
     fecha: '2026-10-04',
     titulo: 'Recurrente también en el WhatsApp',

@@ -16,6 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { crearVista, presentarVuelo, sinVuelosRepetidos, tituloDeVuelo } from '../publico/js/modelo.js';
+import { instanciasEn } from '../publico/js/semana.js';
 
 /** Las notas tal como las escribe Flighty. */
 const NOTAS = 'Air France 1248 Paris to Barcelona ↗ 19:03 CEST ↘ 20:46 CEST '
@@ -133,11 +134,16 @@ test('entre dos copias se queda la que lleva la vuelta escrita', () => {
   assert.deepEqual(sinVuelosRepetidos([ida('a1', 'c1'), conVuelta]).map((e) => e.id), ['a2']);
 });
 
-test('la ida lleva el despegue y la vuelta el aterrizaje', () => {
-  const v = crearVista({
-    personas: [], tipos_evento: [], eventos: [ida('a1', 'c1'), ida('a2', 'c2'), vuelta('b1', 'c1'), vuelta('b2', 'c2')],
-  });
-  assert.equal(v.caraDe(v.evento('a1')).emoji, '🛫');
-  assert.equal(v.caraDe(v.evento('b1')).emoji, '🛬');
-  assert.equal(v.caraDe(v.evento('a1')).titulo, 'Barcelona → Múnich · VY 1812');
+test('un vuelo sale dos veces: al despegar y al aterrizar, cada uno a su hora', () => {
+  const datos = { personas: [], tipos_evento: [], eventos: [ida('a1', 'c1')], plugins: {} };
+  const partes = instanciasEn(datos, new Date(2026, 9, 5), new Date(2026, 9, 11));
+  assert.deepEqual(partes.map((p) => [p.tramo, p.inicio.getHours(), p.inicio.getMinutes()]),
+    [['salida', 7, 35], ['llegada', 9, 40]]);
+});
+
+test('un vuelo que llega de madrugada aterriza al día siguiente', () => {
+  const nocturno = { ...ida('n1', 'c1'), inicio: '2026-10-07T23:10', fin: '2026-10-08T01:05' };
+  const datos = { personas: [], tipos_evento: [], eventos: [nocturno], plugins: {} };
+  const partes = instanciasEn(datos, new Date(2026, 9, 8), new Date(2026, 9, 8));
+  assert.deepEqual(partes.map((p) => [p.tramo, p.inicio.getDate()]), [['llegada', 8]]);
 });
