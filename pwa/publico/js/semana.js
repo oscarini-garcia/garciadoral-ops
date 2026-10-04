@@ -415,13 +415,19 @@ const estaCancelado = (dia) => Boolean(dia?.cancelado) && dia.cancelado !== 0 &&
  * aparato y el círculo de lo que se deriva en el dispositivo (`plugins.js`), y
  * los días de una actividad en los que se dijo que no hay.
  */
-export function instanciasEn(instantanea, desde, hasta) {
+export function instanciasEn(instantanea, desde, hasta, { conCanceladas = false } = {}) {
   const fuentes = [...sinVuelosRepetidos((instantanea.eventos || []).filter((e) => estaActivo(e))), ...eventosDerivados(instantanea)]
     .filter((evento) => seEnsena(instantanea, evento));
   return fuentes
     .flatMap((evento) => ocurrencias(evento, desde, hasta))
     .flatMap((instancia) => partirVuelo(instancia, desde, hasta))
-    .filter((instancia) => !estaCancelado(diaDeEvento(instantanea, instancia.evento.id, iso(instancia.inicio))));
+    // Un día en que se dijo que no hay se cae de todo lo que cuenta —avisos,
+    // redacción, marcas del mes—, y solo las pantallas que lo enseñan tachado,
+    // para poder devolverlo, lo piden (specs/propuesta-recurrentes-y-recetas.html, A1).
+    .flatMap((instancia) => {
+      if (!estaCancelado(diaDeEvento(instantanea, instancia.evento.id, iso(instancia.inicio)))) return [instancia];
+      return conCanceladas ? [{ ...instancia, cancelada: true }] : [];
+    });
 }
 
 /**

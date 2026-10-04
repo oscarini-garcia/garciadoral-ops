@@ -509,7 +509,7 @@ function laVozDeLio(dia, ctx) {
  * almacén local ya pasó por la visibilidad en el servidor.
  */
 function bloqueDelDia(dia, ctx) {
-  const apariciones = repartirPorDia(instanciasEn(ctx.vista.datos, dia, dia), [dia]).get(iso(dia)) || [];
+  const apariciones = repartirPorDia(instanciasEn(ctx.vista.datos, dia, dia, { conCanceladas: true }), [dia]).get(iso(dia)) || [];
   const sinHora = apariciones.filter((a) => !horaDe(a));
   const conHora = apariciones.filter((a) => horaDe(a));
 
@@ -577,6 +577,7 @@ function lineaDelRiel(aparicion, ctx) {
     class: 'linea', type: 'button',
     'data-banda': texto.banda ? 'si' : 'no',
     'data-suave': texto.suave ? 'si' : 'no',
+    'data-cancelada': texto.cancelada ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     el('span', { class: 'linea-emoji', texto: texto.emoji }),

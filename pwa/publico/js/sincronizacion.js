@@ -463,6 +463,27 @@ export async function proponerCenas(fechas, { hay = '', descartadas = [] } = {})
 }
 
 /**
+ * Los ingredientes y los pasos de una receta del recetario, escritos por la IA
+ * (specs/propuesta-recurrentes-y-recetas.html, C1). No se guardan aquí: los
+ * guarda quien los pide, en la receta, por la cola de siempre. En la
+ * demostración no hay Worker, y se devuelve una receta de muestra.
+ */
+export async function pedirReceta(recetaId) {
+  if (configuracion.demostracion) {
+    return {
+      ingredientes: ['1 calabaza mediana', '1 cebolla', '600 g de pechuga de pavo', 'Aceite de oliva, sal y pimienta'],
+      pasos: ['Pochar la cebolla y añadir la calabaza en dados.', 'Cubrir de agua, cocer 20 minutos y triturar.', 'Hacer el pavo a la plancha, cuatro minutos por lado.'],
+      tiempo: 35,
+    };
+  }
+  const { ingredientes = [], pasos = [], tiempo = null } = await peticion('/api/cena/receta', {
+    method: 'POST',
+    body: JSON.stringify({ receta_id: recetaId }),
+  });
+  return { ingredientes, pasos, tiempo };
+}
+
+/**
  * Una tanda de cinco emojis para un sitio, a partir de su nombre.
  *
  * A menudo no hay sitio todavía —se pide desde «Un sitio nuevo»—, así que aquí

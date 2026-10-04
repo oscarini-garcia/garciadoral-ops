@@ -346,8 +346,40 @@ export const esOtro = (valor) => typeof valor === 'string' && valor.startsWith(P
 export const nombreDeOtro = (valor) => (esOtro(valor) ? valor.slice(PREFIJO_OTRO.length) : '');
 export const comoOtro = (nombre) => `${PREFIJO_OTRO}${String(nombre || '').trim()}`;
 
+/**
+ * «Por su cuenta»: la niña va o vuelve sola. Viaja como un «otro» con un texto
+ * fijo, para no tocar el modelo, y se lee aparte en los tres sitios —aquí, la
+ * redacción del Worker y el plan de los domingos— para que la frase diga «va
+ * por su cuenta» y no «lleva por su cuenta»
+ * (specs/propuesta-recurrentes-y-recetas.html, B1). Es distinto de «Nadie»,
+ * que es no saberlo.
+ */
+export const POR_SU_CUENTA = 'otro:por su cuenta';
+export const esPorSuCuenta = (valor) => esOtro(valor) && nombreDeOtro(valor).trim().toLowerCase() === 'por su cuenta';
+
+/**
+ * Quién lleva y quién recoge, dicho como se dice: «lleva y recoge Ana» si es
+ * la misma persona, «va por su cuenta» o «vuelve por su cuenta» si va sola.
+ * `nombre` convierte un valor en su nombre. Devuelve las partes, ya en
+ * minúscula, para que quien las pinte decida cómo las une.
+ */
+export function partesDelReparto(lleva, recoge, nombre) {
+  if (lleva && recoge && lleva === recoge && !esPorSuCuenta(lleva)) {
+    return [{ verbo: 'lleva y recoge', quien: nombre(lleva) }];
+  }
+  if (lleva && recoge && esPorSuCuenta(lleva) && esPorSuCuenta(recoge)) {
+    return [{ verbo: 'va y vuelve por su cuenta', quien: null }];
+  }
+  const parte = (valor, verbo, solo) => {
+    if (!valor) return null;
+    return esPorSuCuenta(valor) ? { verbo: solo, quien: null } : { verbo, quien: nombre(valor) };
+  };
+  return [parte(lleva, 'lleva', 'va por su cuenta'), parte(recoge, 'recoge', 'vuelve por su cuenta')].filter(Boolean);
+}
+
 /** Las tres letras de «otro» para la pastilla de la semana: «Abu», «Aut». */
 export const inicialesDeOtro = (valor) => {
+  if (esPorSuCuenta(valor)) return 'solo';
   const nombre = nombreDeOtro(valor).replace(/^(la|el|los|las)\s+/i, '').trim();
   return nombre ? nombre.slice(0, 1).toUpperCase() + nombre.slice(1, 3) : '··';
 };
@@ -356,7 +388,9 @@ export const inicialesDeOtro = (valor) => {
 export function otrosRecientes() {
   try {
     const lista = JSON.parse(localStorage.getItem(CLAVE_OTROS) || '[]');
-    return Array.isArray(lista) ? lista.filter((n) => typeof n === 'string' && n.trim()) : [];
+    return Array.isArray(lista)
+      ? lista.filter((n) => typeof n === 'string' && n.trim() && !esPorSuCuenta(comoOtro(n)))
+      : [];
   } catch {
     return [];
   }

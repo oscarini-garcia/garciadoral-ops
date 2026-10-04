@@ -161,17 +161,28 @@ def _reparto(agenda: Agenda, aparicion: Aparicion) -> str:
     suelto = agenda.dia_de_evento(evento.id, aparicion.dia)
     lleva = (suelto.quien("lleva") if suelto else None) or del_dia.get("lleva")
     recoge = (suelto.quien("recoge") if suelto else None) or del_dia.get("recoge")
-    partes = []
-    for verbo, quien in (("lleva", lleva), ("recoge", recoge)):
+    def nombre(quien: object) -> str | None:
         # «otro» es alguien que no es de casa, escrito como texto (C4).
         if isinstance(quien, str) and quien.startswith("otro:"):
-            nombre = quien[5:].strip()
-            if nombre:
-                partes.append(f"{verbo} {nombre}")
-            continue
+            return quien[5:].strip() or None
         persona = agenda.persona(quien)
-        if persona is not None:
-            partes.append(f"{verbo} {persona.nombre_corto}")
+        return persona.nombre_corto if persona is not None else None
+
+    def sola(texto: str | None) -> bool:
+        # «Por su cuenta»: va o vuelve sola (specs/propuesta-recurrentes-y-recetas.html, B1).
+        return (texto or "").strip().lower() == "por su cuenta"
+
+    n_lleva, n_recoge = nombre(lleva), nombre(recoge)
+    partes = []
+    if n_lleva and n_recoge and sola(n_lleva) and sola(n_recoge):
+        partes.append("va y vuelve por su cuenta")
+    elif n_lleva and n_recoge and n_lleva == n_recoge:
+        partes.append(f"lleva y recoge {n_lleva}")
+    else:
+        if n_lleva:
+            partes.append("va por su cuenta" if sola(n_lleva) else f"lleva {n_lleva}")
+        if n_recoge:
+            partes.append("vuelve por su cuenta" if sola(n_recoge) else f"recoge {n_recoge}")
     return f" ({', '.join(partes)})" if partes else ""
 
 

@@ -27,6 +27,31 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Días que no hay, «por su cuenta» y la receta (1.96.0).** Decidido como
+  A1 · B1 · C1 en `specs/propuesta-recurrentes-y-recetas.html`. **«No hay …
+  este día» pregunta antes**, y el día cancelado ya no desaparece: las vistas
+  que lo enseñan piden `instanciasEn(…, { conCanceladas: true })` (semana,
+  detalle del mes y día) y lo pintan tachado (`data-cancelada`); su hoja dice
+  «Este día no hay» con «Sí hay», que escribe `cancelado: 0`. Avisos,
+  redacción y marcas del mes siguen sin contarlo. **«Por su cuenta»** es un
+  «otro» con texto fijo (`POR_SU_CUENTA`, `esPorSuCuenta`,
+  `partesDelReparto` en `pwa/publico/js/plugins.js`), chip propio en Cambiar
+  junto a «Nadie», y se lee aparte en los tres sitios —la línea, `lineaDe` en
+  `api/src/redaccion.js` y `_reparto` en `scripts/agenda/mensaje.py`—: «va
+  por su cuenta», «vuelve por su cuenta», y «lleva y recoge Ana» cuando
+  coincide la persona. **La receta escrita**: columnas `ingredientes` y
+  `pasos` en `receta` (migración `0029`, `.unavez`), un encargo de
+  instrucción fija (`INSTRUCCION_RECETA_POR_DEFECTO`,
+  `componerMaterialDeReceta`, `interpretarReceta`, `POST /api/cena/receta`)
+  que devuelve y no guarda; la noche enseña ingredientes y pasos
+  (`bloqueDeReceta` en `vistas/cenas.js`) o «Cómo se hace», que los pide y
+  los guarda por la cola; el formulario de la receta los edita y tiene
+  «Escribirla con IA», y su antiguo «Cómo se hace» pasa a «Cómo se cocina».
+  **Y lo guardado durante una sincronización ya no se pierde**: `sincronizar`
+  vuelve a aplicar sobre la respuesta lo que siga en la cola y da otra vuelta
+  (`otraVuelta`); era lo que dejaba la cena elegida sin verse hasta refrescar.
+  Queda: la academia cancelada por error se devuelve tocándola en la agenda
+  con «Sí hay»; el plan de los domingos no enseña los días que no hay.
 - **El día de una recurrente (1.95.0).** Decidido como A4 · B2 · C1 en
   `specs/propuesta-dia-de-recurrente.html`. La hoja de un día de una
   recurrente dice quién va en la línea de la fecha (`quienesDeLaRecurrente`,

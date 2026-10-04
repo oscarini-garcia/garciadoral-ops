@@ -16,7 +16,7 @@ import {
   abrirHoja, acordeon, avisar, botonIcono, campo, carruselDePropuestas, cerrarHoja, el, entrada, icono, vaciar,
 } from '../ui.js';
 import { toque } from '../native.js';
-import { guardar, proponerCenas, retirar } from '../sincronizacion.js';
+import { guardar, pedirReceta, proponerCenas, retirar } from '../sincronizacion.js';
 import { nuevoId } from '../modelo.js';
 import {
   INICIALES_DIA, MESES_LARGOS, formatearFechaLarga, hoy, indiceDia, iso, lunesDe, sumarDias,
@@ -207,6 +207,9 @@ export function abrirNoche(fecha, ctx) {
       campo('Qué se cena', que, 'Una receta del recetario, o lo que sea: «pizza, pedida», «fuera».'),
       campo('Las niñas', ninas, 'Solo si cenan otra cosa.'),
     );
+    // La receta del plato apuntado, con sus ingredientes y sus pasos (C1).
+    const receta = cena?.receta_id ? recetaPorId(datos, cena.receta_id) : null;
+    if (receta) cuerpo.append(bloqueDeReceta(receta, ctx));
 
     // El veredicto, cuando ya se ha cenado (F1): lo que hace que la
     // sugerencia aprenda. Tocar el que está puesto lo quita.
@@ -515,7 +518,7 @@ function recetario(cuerpo, ctx) {
   // Lo que es, dicho donde se mira: no es un libro de recetas con pasos.
   cuerpo.append(el('p', {
     class: 'pista',
-    texto: 'Los platos que ya habéis cenado o apuntado. La IA repite lo que gustó y no vuelve a lo que no, y «De las de siempre» propone desde aquí sin IA.',
+    texto: 'Los platos que ya habéis cenado o apuntado, con su receta cuando se ha escrito. La IA repite lo que gustó y no vuelve a lo que no, y «De las de siempre» propone desde aquí sin IA.',
   }));
   if (!lista.length) {
     cuerpo.append(el('p', { class: 'pista', texto: 'Se llena solo al elegir lo que se propone, o a mano.' }));
@@ -547,6 +550,76 @@ function recetario(cuerpo, ctx) {
   }, ['+ Una receta']));
 }
 
+// ------------------------------------------------------------ La receta --
+
+const lineasDe = (texto) => String(texto || '').split('\n').map((l) => l.trim()).filter(Boolean);
+
+/** Pide la receta a la IA y la guarda en el recetario. Lo que ya estuviera
+ *  escrito a mano en el tiempo se respeta. */
+async function completarReceta(receta) {
+  const escrita = await pedirReceta(receta.id);
+  if (!escrita.ingredientes.length) throw new Error('sin receta');
+  await guardar('receta', receta.id, {
+    ingredientes: escrita.ingredientes.join('\n'),
+    pasos: escrita.pasos.join('\n'),
+    ...(receta.tiempo || !escrita.tiempo ? {} : { tiempo: escrita.tiempo }),
+  });
+  return escrita;
+}
+
+/**
+ * La receta de un plato en el detalle de la noche: los ingredientes y los
+ * pasos si ya están, y si no «Cómo se hace», que los pide a la IA y los deja
+ * guardados para la próxima vez (specs/propuesta-recurrentes-y-recetas.html,
+ * C1). Se corrigen a mano desde el recetario.
+ */
+function bloqueDeReceta(receta, ctx) {
+  const nodo = el('div', { class: 'grupo receta-escrita' });
+  const pintar = (r) => {
+    vaciar(nodo);
+    const ingredientes = lineasDe(r.ingredientes);
+    const pasos = lineasDe(r.pasos);
+    if (!ingredientes.length && !pasos.length) {
+      const boton = el('button', {
+        class: 'boton-mini receta-pedir', type: 'button',
+        onclick: async () => {
+          toque();
+          boton.disabled = true;
+          boton.lastChild.textContent = 'Escribiendo la receta…';
+          try {
+            const escrita = await completarReceta(r);
+            pintar({ ...r, ingredientes: escrita.ingredientes.join('\n'), pasos: escrita.pasos.join('\n'), tiempo: r.tiempo || escrita.tiempo });
+          } catch {
+            avisar('No se ha podido escribir la receta; prueba otra vez');
+            boton.disabled = false;
+            boton.lastChild.textContent = 'Cómo se hace';
+          }
+        },
+      }, [icono('destello'), el('span', { texto: 'Cómo se hace' })]);
+      nodo.append(boton);
+      return;
+    }
+    if (ingredientes.length) {
+      nodo.append(
+        el('p', { class: 'grupo-titulo', texto: `Ingredientes · ${ingredientes.length}` }),
+        el('ul', { class: 'receta-ingredientes' }, ingredientes.map((i) => el('li', { texto: i }))),
+      );
+    }
+    if (pasos.length) {
+      nodo.append(
+        el('p', { class: 'grupo-titulo', texto: r.tiempo ? `Cómo se hace · ${r.tiempo} min` : 'Cómo se hace' }),
+        el('ol', { class: 'receta-pasos' }, pasos.map((p) => el('li', { texto: p }))),
+      );
+    }
+    nodo.append(el('button', {
+      class: 'enlace-discreto', type: 'button',
+      onclick: () => { toque(); abrirReceta(ctx, r.id); },
+    }, ['Corregir la receta']));
+  };
+  pintar(receta);
+  return nodo;
+}
+
 function abrirReceta(ctx, id) {
   const receta = id ? recetaPorId(ctx.vista.datos, id) : null;
 
@@ -557,11 +630,38 @@ function abrirReceta(ctx, id) {
     const etiquetas = entrada({ value: receta?.etiquetas || '', placeholder: 'ligera, proteína, verdura' });
     const nota = el('textarea', { rows: '3', placeholder: 'Sal a la lubina, plancha fuerte y limón al final' });
     nota.value = receta?.nota || '';
+    const ingredientes = el('textarea', { rows: '4', placeholder: 'Uno por línea' });
+    ingredientes.value = receta?.ingredientes || '';
+    const pasos = el('textarea', { rows: '5', placeholder: 'Un paso por línea' });
+    pasos.value = receta?.pasos || '';
+
+    // Ingredientes y pasos se escriben a mano o se piden a la IA, y lo pedido
+    // cae en los campos para corregirlo antes de guardar (C1).
+    const pedir = receta ? el('button', {
+      class: 'boton-mini receta-pedir', type: 'button',
+      onclick: async () => {
+        toque();
+        pedir.disabled = true;
+        try {
+          const escrita = await pedirReceta(receta.id);
+          if (!escrita.ingredientes.length) throw new Error('sin receta');
+          ingredientes.value = escrita.ingredientes.join('\n');
+          pasos.value = escrita.pasos.join('\n');
+          if (!tiempo.value && escrita.tiempo) tiempo.value = String(escrita.tiempo);
+        } catch {
+          avisar('No se ha podido escribir la receta; prueba otra vez');
+        }
+        pedir.disabled = false;
+      },
+    }, [icono('destello'), el('span', { texto: 'Escribirla con IA' })]) : null;
 
     cuerpo.append(
       campo('Nombre', nombre),
-      campo('Cómo se hace', como),
+      campo('Cómo se cocina', como, 'Plancha, horno, vapor…'),
       campo('Minutos', tiempo),
+      campo('Ingredientes', ingredientes),
+      campo('Pasos', pasos),
+      ...(pedir ? [pedir] : []),
       campo('Etiquetas', etiquetas, 'Separadas por comas.'),
       campo('Nota', nota),
       el('div', { class: 'acciones' }, [
@@ -577,6 +677,8 @@ function abrirReceta(ctx, id) {
               tiempo: Number.isFinite(minutos) && minutos > 0 ? minutos : null,
               etiquetas: etiquetas.value.trim() || null,
               nota: nota.value.trim() || null,
+              ingredientes: lineasDe(ingredientes.value).join('\n').slice(0, 4000) || null,
+              pasos: lineasDe(pasos.value).join('\n').slice(0, 4000) || null,
               autor_id: receta?.autor_id || ctx.vista.yo.id,
               activo: 1,
             });

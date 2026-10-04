@@ -76,7 +76,7 @@ tener que recorrer la aplicación entera cada vez.
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
   INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
   INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_CENA_POR_DEFECTO · INSTRUCCION_SANTO_POR_DEFECTO
-  …y 25 más
+  …y 28 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
   restosDeCuenta · administradoresRestantes · aplicarCambio
@@ -139,7 +139,7 @@ tener que recorrer la aplicación entera cada vez.
   NOVEDADES
 - **plugins.js** — Los plugins de la agenda: qué hay, en qué familia está cada uno y qué mandos comparten…
   PLUGINS · IDS_PLUGIN · pluginPorId · CON_CIRCULO · CON_NOMBRE · CIRCULO_POR_DEFECTO
-  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 24 más
+  circuloAdmite · AVISO_CUMPLES_POR_DEFECTO · ajustesDe · nombreDePlugin · …y 27 más
 - **semana.js** — La semana como marco fijo de siete días.
   INICIALES_DIA · NOMBRES_DIA · MESES_LARGOS · TECHO_EVENTOS_DIA · indiceDia · parsearMomento
   soloFecha · iso · isoConHora · sumarDias · …y 20 más
@@ -148,7 +148,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 18 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 19 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -220,6 +220,7 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/sitio/apuntar` — cinco apuntes para un sitio y una clase
 - `POST /api/sitio/emoji` — cinco emojis para el nombre de un sitio
 - `POST /api/cena/proponer` — cenas para una noche, o una por noche de la semana
+- `POST /api/cena/receta` — ingredientes y pasos de una receta del recetario
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
@@ -305,7 +306,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**405** en total.
+**408** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -327,6 +328,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/lio.test.js` — 23
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
+- `api/test/receta.test.js` — 3
 - `api/test/recordatorios.test.js` — 8
 - `api/test/redaccion-chispa.test.js` — 9
 - `api/test/redaccion-cumple.test.js` — 10

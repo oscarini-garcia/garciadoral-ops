@@ -61,7 +61,7 @@ const CAMPOS = {
   mejora: ['texto', 'hecho', 'autor_id', 'activo'],
   // Cenas (`api/migraciones/0025_cenas.sql`): el recetario de la casa y lo que
   // se cena cada noche, con lo de las niñas aparte cuando no es lo mismo.
-  receta: ['nombre', 'como', 'tiempo', 'etiquetas', 'nota', 'autor_id', 'activo'],
+  receta: ['nombre', 'como', 'tiempo', 'etiquetas', 'nota', 'ingredientes', 'pasos', 'autor_id', 'activo'],
   cena: [
     'fecha', 'receta_id', 'texto', 'ninas_receta_id', 'ninas_texto', 'veredicto', 'autor_id', 'activo',
   ],
