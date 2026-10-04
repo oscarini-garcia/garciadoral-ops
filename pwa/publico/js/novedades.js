@@ -22,7 +22,7 @@ export const NOVEDADES = [
     fecha: '2026-10-04',
     titulo: 'El día, más fácil de leer y de rellenar',
     lineas: [
-      'La fecha del día y sus flechas se ven siempre arriba, también hoy.',
+      'La fecha del día se ve siempre arriba; sus flechas van junto al selector, como en la semana y el mes.',
       'Las monedas de Lío en «Día» llevan el nombre entero, no solo las iniciales.',
       'Dos toques en una hora del día abren el formulario con ese día y esa hora.',
     ],
