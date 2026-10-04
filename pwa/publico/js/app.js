@@ -344,11 +344,42 @@ function refrescarRecordatorios(datos) {
   // mañana con estas mismas antelaciones (`api/src/recordatorios.js`), y aquí
   // no se programa: sonarían dos por lo mismo. El turno de Lío sigue siendo
   // local en los dos casos, que dice otra cosa y funciona sin red.
-  const instancias = losQuiere() && hayAvisosRemotos()
+  const todas = instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS));
+  const previos = losQuiere() && hayAvisosRemotos()
     ? []
-    : instanciasEn(datos, desde, sumarDias(desde, HORIZONTE_RECORDATORIOS_DIAS)).filter((instancia) => instancia.tramo !== 'llegada')
+    : todas.filter((instancia) => instancia.tramo !== 'llegada')
       .map((instancia) => ({ ...instancia, antelacion: antelacionDe(datos, instancia) }));
-  programarRecordatorios(instancias, turnosPropios(datos, desde));
+  programarRecordatorios([...previos, ...avisosDeVuelo(datos, todas)], turnosPropios(datos, desde));
+}
+
+/**
+ * Un vuelo suena al despegar y al aterrizar, a su hora y en hora de Madrid
+ * (specs/propuesta-avisos-de-vuelo.html, A3 · B1 · C1 · D1).
+ *
+ * Suenan todos los vuelos que quien mira ve en su agenda, con el nombre de
+ * quien vuela: que Óscar ha aterrizado es justo lo que le sirve a Ana. Va
+ * aparte del aviso previo y también con los avisos remotos puestos, porque el
+ * servidor solo avisa por la mañana de lo de mañana. Encendido de origen en
+ * todos los teléfonos; se apaga en Ajustes › Avisos.
+ */
+function avisosDeVuelo(datos, instancias) {
+  if (!quiereVuelos()) return [];
+  const vista = crearVista(datos);
+  return instancias
+    .filter((instancia) => instancia.tramo)
+    .map((instancia) => {
+      const despega = instancia.tramo === 'salida';
+      const hora = `${String(instancia.inicio.getHours()).padStart(2, '0')}:${String(instancia.inicio.getMinutes()).padStart(2, '0')}`;
+      return {
+        ...instancia,
+        antelacion: 'momento',
+        aviso: {
+          title: `${despega ? '🛫 Despega' : '🛬 Aterriza'}: ${vista.caraDe(instancia.evento).titulo}`,
+          body: [quienVuela(vista, instancia.evento), `a las ${hora}`].filter(Boolean).join(' · ')
+            .replace(/^a las/, 'A las'),
+        },
+      };
+    });
 }
 
 /**
@@ -592,6 +623,18 @@ const CLAVE_AVISOS = 'agenda.avisos';
 
 const losQuiere = () => localStorage.getItem(CLAVE_AVISOS) === 'si';
 
+/** Los avisos al despegar y al aterrizar: encendidos salvo que se apaguen. */
+const CLAVE_AVISOS_VUELOS = 'agenda.avisos.vuelos';
+const quiereVuelos = () => {
+  try { return localStorage.getItem(CLAVE_AVISOS_VUELOS) !== 'no'; } catch { return true; }
+};
+
+/** De quién es un vuelo, con el apodo si lo hay. */
+function quienVuela(vista, evento) {
+  const dueno = vista.duenyoDelCalendario?.(evento) || null;
+  return dueno ? (dueno.apodo || dueno.nombre) : null;
+}
+
 /**
  * Vuelve a dar el token en cada arranque, si se han pedido.
  *
@@ -665,7 +708,19 @@ function bloqueDeAvisos(dentro) {
     casilla.disabled = false;
   });
 
+  // Los vuelos van aparte: son avisos que programa el propio teléfono, a la
+  // hora del despegue y del aterrizaje, y no dependen del permiso de arriba
+  // (specs/propuesta-avisos-de-vuelo.html, A3).
+  const vuelos = el('input', { type: 'checkbox' });
+  vuelos.checked = quiereVuelos();
+  vuelos.addEventListener('change', () => {
+    try { localStorage.setItem(CLAVE_AVISOS_VUELOS, vuelos.checked ? 'si' : 'no'); } catch { /* sin almacén */ }
+    ctx.reprogramarAvisos();
+  });
+
   dentro.append(
+    el('label', { class: 'conmutador' }, [vuelos, 'Vuelos al despegar y al aterrizar']),
+    el('p', { class: 'pista', texto: 'Suena a la hora de salida y a la de llegada de cada vuelo de la agenda, diga de quién es. En este teléfono.' }),
     el('label', { class: 'conmutador' }, [casilla, 'Avisarme en este teléfono']),
     linea,
     // Lo que se avisa se dice, porque no es evidente y porque acota: nadie se

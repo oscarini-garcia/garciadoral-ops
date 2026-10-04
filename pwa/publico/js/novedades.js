@@ -18,6 +18,15 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.88.0',
+    fecha: '2026-10-04',
+    titulo: 'Avisos al despegar y al aterrizar',
+    lineas: [
+      'Cada vuelo de la agenda suena al despegar y al aterrizar, a su hora y con el nombre de quien vuela.',
+      'Viene encendido en todos los teléfonos; se apaga en Ajustes › Avisos.',
+    ],
+  },
+  {
     version: '1.87.0',
     fecha: '2026-10-04',
     titulo: 'El vuelo, al despegar y al aterrizar',

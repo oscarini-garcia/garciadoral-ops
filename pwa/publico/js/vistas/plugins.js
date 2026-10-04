@@ -405,6 +405,7 @@ function bloqueDeViajes(cuerpo, ctx) {
         : null,
     ]));
   }
+  cuerpo.append(el('p', { class: 'pista', texto: 'Además del aviso de arriba, cada vuelo suena al despegar y al aterrizar. Eso se enciende y se apaga en Ajustes › Avisos.' }));
   cuerpo.append(el('p', { class: 'pista', texto: 'El enlace de Flighty de cada uno. Se pega una vez y los vuelos llegan solos; cada uno pega el suyo, y quien administra puede pegar el de los demás.' }));
   cuerpo.append(lista);
 
