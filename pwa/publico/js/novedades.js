@@ -18,6 +18,15 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.95.0',
+    fecha: '2026-10-05',
+    titulo: 'El día de una recurrente, más sencillo',
+    lineas: [
+      'La hoja de un día de una recurrente dice quién va junto a la fecha y quién lleva y recoge en una línea.',
+      '«Cambiar» abre aparte quién lleva y quién recoge; «otro» se escribe en una línea, sin caja ni «Vale».',
+    ],
+  },
+  {
     version: '1.94.0',
     fecha: '2026-10-04',
     titulo: 'El día, más fácil de leer y de rellenar',
