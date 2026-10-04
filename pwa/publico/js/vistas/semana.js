@@ -117,12 +117,7 @@ function mesesDe(desde, hasta) {
   if (desde.getMonth() !== hasta.getMonth()) return `${corto(desde)} – ${corto(hasta)} ${hasta.getFullYear()}`;
   return `${mes(hasta)} de ${hasta.getFullYear()}`;
 }
-
 export function pintarAgenda(pantalla, subcabecera, ctx) {
-  const paso = (rotulo, pasos, etiqueta) => el('button', {
-    type: 'button', 'aria-label': etiqueta,
-    onclick: () => { mover(pasos); ctx.refrescar(); },
-  }, [rotulo]);
 
   // Una sola fila de mandos: con qué vista se mira y por dónde se anda. El
   // rótulo del periodo no está aquí, sino arriba, ocupando la línea del título
@@ -138,9 +133,14 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
           }, [rotulo]),
         ),
       ]),
-      el('div', { class: 'paso empujar' }, [
-        paso('‹', -1, 'Anterior'),
-        paso('›', 1, 'Siguiente'),
+      // Ir a un día con el calendario propio, en vez de flechas: pasar de uno
+      // en uno ya lo hace el deslizamiento.
+      el('div', { class: 'empujar' }, [
+        el('button', {
+          class: 'icono-accion', type: 'button', 'data-tono': 'discreto',
+          'aria-label': 'Ir a un día', title: 'Ir a un día',
+          onclick: () => { toque(); abrirIrADia(ctx); },
+        }, [icono('calendario')]),
       ]),
       el('div', { class: 'compartir-periodo' }, [
         // «Qué hay en la agenda»: los plugins con su interruptor, a un toque de
@@ -357,6 +357,26 @@ function eleccionDeCompartir(nombre, pista, insignia, accion) {
 async function compartirTexto(titulo, texto) {
   const enviado = await compartir({ titulo, texto });
   if (!enviado) avisar('No he podido compartirlo');
+}
+
+/** La hoja de «Ir a un día»: el calendario propio, ya abierto, sobre el día
+ *  que se está mirando. Elegir lleva la vista que sea a ese día. */
+function abrirIrADia(ctx) {
+  abrirHoja('Ir a un día', (cuerpo) => {
+    const fecha = selectorDeFecha({
+      valor: iso(ancla),
+      alCambiar: (elegido) => {
+        if (!elegido) return;
+        const destino = parsearMomento(elegido);
+        ultimoPaso = destino > ancla ? 1 : destino < ancla ? -1 : 0;
+        ancla = destino;
+        cerrarHoja();
+        ctx.refrescar();
+      },
+    });
+    cuerpo.append(fecha.nodo);
+    fecha.nodo.querySelector('.fecha-boton')?.click();
+  });
 }
 
 function mover(pasos) {

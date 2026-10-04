@@ -466,13 +466,11 @@ textarea:-webkit-autofill:focus {
   .icono-accion-texto { display: none; }
 }
 
-/* Los tres grupos —vistas, flechas y compartir— caben en la anchura de un
-   teléfono si «Capas» se queda en su icono y las flechas se estrechan. */
-@media (max-width: 459px) {
+/* Vistas, calendario y compartir caben en una fila; por debajo de 400 puntos
+   «Capas» se queda en su icono para que quepan. */
+@media (max-width: 399px) {
   .vistas .icono-accion.con-texto { width: 34px; padding: 0; justify-content: center; }
   .vistas .icono-accion-texto { display: none; }
-  .vistas .paso { gap: 0; }
-  .vistas .paso button { width: 28px; }
 }
 @media (max-width: 400px) {
   .vistas .seg button { padding-left: 9px; padding-right: 9px; }

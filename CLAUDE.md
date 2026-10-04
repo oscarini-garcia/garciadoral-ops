@@ -38,10 +38,12 @@ pendiente. El hook lo inyecta al final del mapa.
   efecto el «la aplicación escribe la suya abajo a la derecha en Hoy» de la
   forma de contar cada vuelta.
 - **El día, más fácil de leer y de rellenar (1.94.0).** El título de «Día»
-  es solo la fecha (`tituloDeAgenda` en `vistas/semana.js`), y **las flechas
-  vuelven junto al conmutador en las tres vistas**: hasta 459 puntos «Capas»
-  se queda en su icono y las flechas se estrechan para que todo quepa en una
-  fila desde 375 (a 320 baja de línea el compartir). Por encima de 18 letras
+  es solo la fecha (`tituloDeAgenda` en `vistas/semana.js`), y **en las tres
+  vistas las flechas se sustituyen por un icono de calendario** junto al
+  conmutador (`icono('calendario')`), que abre la hoja «Ir a un día» con el
+  calendario propio ya desplegado (`abrirIrADia`, sobre `selectorDeFecha`);
+  elegir lleva la vista que sea a ese día. Pasar de uno en uno queda para el
+  deslizamiento. Por debajo de 400 puntos «Capas» se queda en su icono. Por encima de 18 letras
   el mes se abrevia sin «de» («Domingo 4 Oct», `tituloDelDia`). La pregunta de
   repetir la cena de ayer solo sale mirando hoy.
   Las monedas de Lío del día llevan el apodo o el nombre
