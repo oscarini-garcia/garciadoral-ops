@@ -47,7 +47,7 @@ export const PLUGINS = [
     de: 'cenas, citas y lo que no tiene regla',
   },
   {
-    id: 'extraescolares', nombre: 'Extraescolares', emoji: '🐴', familia: 'escrito',
+    id: 'extraescolares', nombre: 'Recurrentes', emoji: '🐴', familia: 'escrito',
     de: 'con su curso, su horario y quién lleva',
   },
   {

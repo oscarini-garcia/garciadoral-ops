@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.85.0',
+    fecha: '2026-10-04',
+    titulo: 'Recurrentes',
+    lineas: [
+      'Las extraescolares pasan a llamarse Recurrentes, y su hoja dice «Recurrente» en vez de «Entreno».',
+      'Una actividad puede ser de varias personas.',
+      'En la semana, entre paréntesis quién va, y detrás quién lleva y quién recoge: «Academia (Falu, Amaya) ↑Yle ↓An».',
+    ],
+  },
+  {
     version: '1.84.0',
     fecha: '2026-10-04',
     titulo: 'Los vuelos, una vez y con despegue y aterrizaje',
