@@ -27,6 +27,17 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Hoy, como una línea del tiempo (1.90.0).** Decidido como A2 · B3 · C2 ·
+  D2 en `specs/propuesta-hoy-como-la-agenda.html`. `bloqueDelDia`
+  (`vistas/hoy.js`) es un riel de una fila por hora —de las 8 o antes a las 22
+  o después—, cada cosa en la fila de su hora con la misma línea que la semana
+  (`lineaDelRiel`, sobre `textoDeLinea`), lo pasado atenuado y `.riel-ahora` a
+  la hora de ahora; lo que no tiene hora va encima. Lío son solo las monedas
+  de la agenda (`monedaDeLio`, ahora exportada), con las de ayer sin marcar
+  detrás de «Ayer»: marcar desde Hoy pasa de un toque a dos, a sabiendas. Se
+  quedan la frase del día, la voz de Lío y «Esta noche». `tarjetaDelDia` y
+  `filaDeTurno` dejan de usarse en Hoy. Queda la segunda parte: llevar este
+  día a la agenda como vista «Día» y quitar Hoy de la barra.
 - **Agenda: semana y mes (1.89.0).** Se retiró la vista de lista
   (`vistaLista` y sus rótulos de proximidad y de día, con `.lista-dia`): con
   la semana enseñando cada día entero ya no hacía falta. El conmutador tiene

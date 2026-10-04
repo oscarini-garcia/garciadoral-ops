@@ -179,7 +179,7 @@ tener que recorrer la aplicación entera cada vez.
 - **semana.js** — La agenda: semana y mes sobre los mismos datos.
   reiniciarAgenda · volverAHoyEnAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone
   abrirLioDelDia · filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta
-  …y 11 más
+  …y 12 más
 - **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
   reiniciarSitios · hayFabEnSitios · tituloDeSitios · irALugar · nuevoDesdeSitios
   pintarSitios · abrirApunte

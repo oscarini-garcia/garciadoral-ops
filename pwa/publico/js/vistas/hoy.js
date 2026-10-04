@@ -26,7 +26,7 @@ import { escribirLaChispa, escribirLoDeLio, estado, guardar } from '../sincroniz
 import { frasesGuardadas, guardarFrases } from '../almacen.js';
 import { VERSION_APP } from '../version.js';
 import {
-  abrirDetalleEvento, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, filaDeTurno, textoDeLinea, textoDePropuesta, textoDeTratoDia,
+  abrirDetalleEvento, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, monedaDeLio, textoDeLinea, textoDePropuesta, textoDeTratoDia,
 } from './semana.js';
 import { hayLio, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
 import { aplicarLioDeEscapada, escapadasDe } from './plugins.js';
@@ -422,20 +422,23 @@ function tarjetaDePeticion({ trato, de }, ctx) {
 function bloqueDeLio(dia, ctx) {
   if (!hayLio(ctx.vista.datos)) return [];
 
-  const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: '🐾 Lío' }),
-    laVozDeLio(dia, ctx),
+  // Solo las monedas, como en la agenda: el sol o la luna, las iniciales y el
+  // borde que dice cómo va; marcar es tocarlas y contestar en la hoja del
+  // turno (specs/propuesta-hoy-como-la-agenda.html, B3). Lo de ayer que quedó
+  // sin marcar sube detrás, con su rótulo, una vez.
+  const ayer = sumarDias(dia, -1);
+  const rezagados = turnosDe(ctx.vista.datos, ayer).filter((turno) => turno.estado === 'sin-marcar' && !turno.trato);
+  const monedas = el('div', { class: 'hoy-lio' }, [
+    ...turnosDe(ctx.vista.datos, dia).map((turno) => monedaDeLio(turno, ctx)),
+    rezagados.length ? el('span', { class: 'hoy-lio-ayer', texto: 'Ayer' }) : null,
+    ...rezagados.map((turno) => monedaDeLio(turno, ctx)),
   ]);
 
-  for (const turno of turnosDe(ctx.vista.datos, dia)) grupo.append(filaDeTurno(turno, ctx));
-
-  const ayer = sumarDias(dia, -1);
-  for (const turno of turnosDe(ctx.vista.datos, ayer)) {
-    if (turno.estado !== 'sin-marcar' || turno.trato) continue;
-    grupo.append(filaDeTurno(turno, ctx, { rezagado: true }));
-  }
-
-  return [grupo];
+  return [el('div', { class: 'grupo' }, [
+    el('p', { class: 'grupo-titulo', texto: '🐾 Lío' }),
+    laVozDeLio(dia, ctx),
+    monedas,
+  ])];
 }
 
 /**
@@ -472,63 +475,69 @@ function laVozDeLio(dia, ctx) {
 // ------------------------------------------------------------ Lo de hoy --
 
 /**
- * Lo que hay hoy, con los cumpleaños incluidos: se componen en el dispositivo y
- * llegan por el mismo camino que los demás eventos.
+ * El día como una línea del tiempo (specs/propuesta-hoy-como-la-agenda.html,
+ * A2): una fila por hora, de las ocho —o antes, si algo empieza antes— a las
+ * diez de la noche —o después—, cada cosa en la fila de su hora, lo pasado
+ * atenuado y una raya en tinta a la hora de ahora. Lo que dura todo el día
+ * (un cumpleaños, un viaje, alguien fuera) va encima, sin hora.
  *
  * Es lo visible para quien mira, sin volver a filtrar nada: lo que está en el
  * almacén local ya pasó por la visibilidad en el servidor.
  */
 function bloqueDelDia(dia, ctx) {
   const apariciones = repartirPorDia(instanciasEn(ctx.vista.datos, dia, dia), [dia]).get(iso(dia)) || [];
+  const sinHora = apariciones.filter((a) => !horaDe(a));
+  const conHora = apariciones.filter((a) => horaDe(a));
 
-  const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: 'Para hoy' }),
-  ]);
+  const grupo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: 'Para hoy' })]);
+  for (const aparicion of sinHora) grupo.append(lineaDelRiel(aparicion, ctx));
+  if (!apariciones.length) grupo.append(el('p', { class: 'hoy-nada', texto: 'Hoy no hay nada apuntado.' }));
 
-  if (!apariciones.length) {
-    grupo.append(el('p', { class: 'vacio', texto: 'Hoy no hay nada apuntado.' }));
-    return grupo;
+  const horas = conHora.map((a) => a.instancia.inicio.getHours());
+  const desde = Math.min(8, ...horas);
+  const hasta = Math.max(22, ...horas);
+  const ahora = new Date();
+  const esHoy = iso(ahora) === iso(dia);
+
+  const riel = el('div', { class: 'riel' });
+  for (let hora = desde; hora <= hasta; hora += 1) {
+    const deEsta = conHora.filter((a) => a.instancia.inicio.getHours() === hora);
+    const pasada = esHoy && hora < ahora.getHours();
+    const fila = el('div', { class: 'riel-fila', 'data-pasada': pasada ? 'si' : 'no' }, [
+      el('span', { class: 'riel-hora', texto: String(hora).padStart(2, '0') }),
+      el('div', { class: 'riel-cosas' }, deEsta.map((a) => lineaDelRiel(a, ctx))),
+    ]);
+    if (esHoy && hora === ahora.getHours()) {
+      fila.append(el('span', {
+        class: 'riel-ahora', 'aria-hidden': 'true',
+        style: `top:${Math.round((ahora.getMinutes() / 60) * 100)}%`,
+      }));
+    }
+    riel.append(fila);
   }
-
-  for (const aparicion of apariciones) grupo.append(tarjetaDelDia(aparicion, ctx));
+  grupo.append(riel);
   return grupo;
 }
 
-/**
- * La tarjeta de un evento de hoy. Es la de la lista de la agenda sin la fecha:
- * aquí todas son del mismo día, y repetirlo en cada línea sería escribir catorce
- * veces lo que ya dice la cabecera.
- */
-function tarjetaDelDia(aparicion, ctx) {
+/** Una cosa del día en el riel: la misma línea que en la semana —emoji,
+ *  título con su paréntesis y la hora— y abre su hoja. */
+function lineaDelRiel(aparicion, ctx) {
   const hora = horaDe(aparicion);
   const texto = textoDeLinea(aparicion, ctx);
-  const participantes = ctx.vista.participantes(aparicion.evento).map((id) => ctx.vista.nombre(id));
-  const esEdad = Boolean(texto.de && /^\d+$/.test(texto.de));
-
-  const pie = [
-    hora ? null : 'Todo el día',
-    texto.de && !esEdad ? texto.de : null,
-    aparicion.evento.ubicacion,
-    participantes.length ? participantes.join(', ') : null,
-    texto.parentesisLargo || texto.parentesis || null,
-  ].filter(Boolean).join(' · ');
-
   return el('button', {
-    class: 'tarjeta', type: 'button',
+    class: 'linea', type: 'button',
+    'data-banda': texto.banda ? 'si' : 'no',
     'data-suave': texto.suave ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
-    el('div', { class: 'tarjeta-fila' }, [
-      el('span', { class: 'linea-emoji', texto: texto.emoji }),
-      el('h3', {}, [
-        texto.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
-        texto.parentesis ? el('span', { class: 'linea-de', texto: ` (${texto.parentesis})` }) : null,
-        texto.tras ? el('span', { class: 'linea-de', texto: ` ${texto.tras}` }) : null,
-        esEdad ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
-      ]),
-      hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
+    el('span', { class: 'linea-emoji', texto: texto.emoji }),
+    el('span', { class: 'linea-titulo' }, [
+      texto.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
+      texto.parentesis ? el('span', { class: 'linea-de', texto: ` (${texto.parentesis})` }) : null,
+      texto.tras ? el('span', { class: 'linea-de', texto: ` ${texto.tras}` }) : null,
+      texto.de ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
     ]),
-    pie ? el('p', { texto: pie }) : null,
+    hora ? el('span', { class: 'linea-hora', texto: hora }) : null,
   ]);
 }
 

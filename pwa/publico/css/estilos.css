@@ -489,6 +489,21 @@ textarea:-webkit-autofill:focus {
 
 /* Columna, para que el pie se pueda ir al fondo. */
 .pantalla-hoy { display: flex; flex-direction: column; }
+/* Hoy como línea del tiempo (specs/propuesta-hoy-como-la-agenda.html, A2):
+   una fila por hora, la hora a la izquierda y lo de esa hora a la derecha, lo
+   pasado atenuado y una raya en tinta a la hora de ahora. */
+.riel { display: flex; flex-direction: column; margin-top: 4px; }
+.riel-fila { position: relative; display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; min-height: 30px; border-top: 1px solid var(--line); }
+.riel-fila[data-pasada="si"] { opacity: .45; }
+.riel-hora { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); padding-top: 3px; font-variant-numeric: tabular-nums; }
+.riel-cosas { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; min-width: 0; }
+.riel-ahora { position: absolute; left: 0; right: 0; height: 0; border-top: 2px solid var(--tinta); pointer-events: none; }
+.riel-ahora::before { content: ''; position: absolute; left: 30px; top: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); }
+.riel .linea-titulo, .grupo > .linea .linea-titulo { white-space: normal; }
+.hoy-nada { color: var(--ink-faint); font-size: 14.5px; margin: 2px 0 4px; }
+/* Lío en Hoy: solo las monedas, como en la agenda (B3). */
+.hoy-lio { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hoy-lio-ayer { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--ink-faint); margin-left: 8px; text-transform: uppercase; }
 
 /* La frase del día. En cursiva y en serifa porque es una voz y no un dato: en
    la fuente de palo, al lado de las tarjetas, se leería como un aviso del
