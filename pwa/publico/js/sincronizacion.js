@@ -47,6 +47,9 @@ let estadoActual = {
 };
 const suscriptores = new Set();
 let sincronizando = false;
+// Un cambio que llega mientras otra sincronización está en vuelo pide otra
+// vuelta al terminar: si no, se quedaba en la cola hasta el siguiente aviso.
+let otraVuelta = false;
 
 export const instantanea = () => instantaneaActual;
 export const estado = () => estadoActual;
@@ -564,7 +567,8 @@ export const probarRedaccion = (fecha, eventos = []) =>
   peticion('/api/ia/probar', { method: 'POST', body: JSON.stringify({ fecha, eventos }) });
 
 export async function sincronizar() {
-  if (configuracion.demostracion || sincronizando) return instantaneaActual;
+  if (configuracion.demostracion) return instantaneaActual;
+  if (sincronizando) { otraVuelta = true; return instantaneaActual; }
   if (!navigator.onLine) { fijarEstado('sin-conexion'); return instantaneaActual; }
 
   sincronizando = true;
@@ -591,8 +595,15 @@ export async function sincronizar() {
       nueva = await peticion('/api/sync');
     }
 
+    // Lo guardado mientras la petición viajaba no está en la respuesta: se
+    // vuelve a aplicar encima, o desaparecería de la pantalla hasta la
+    // siguiente sincronización. Pasaba al elegir una cena —la receta y la
+    // noche son dos guardados seguidos— y en cualquier par de toques rápidos.
     instantaneaActual = nueva;
-    await guardarInstantanea(nueva);
+    const resto = await leerCola();
+    for (const { orden, ...cambio } of resto) aplicarEnLocal(cambio);
+    if (resto.length) { derivarEnLocal(); otraVuelta = true; }
+    await guardarInstantanea(instantaneaActual);
     fijarEstado('al-dia', new Date().toISOString(), noAplicados);
   } catch (error) {
     if (error.sesionCaducada) {
@@ -606,5 +617,9 @@ export async function sincronizar() {
     sincronizando = false;
   }
 
+  if (otraVuelta) {
+    otraVuelta = false;
+    if (estadoActual.estado === 'al-dia') queueMicrotask(() => { sincronizar(); });
+  }
   return instantaneaActual;
 }

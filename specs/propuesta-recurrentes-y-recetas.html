@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recurrentes y recetas</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+    /* Los de la aplicación, para que las maquetas se parezcan a la pantalla. */
+    --papel: #FBF9F5;
+    --papel3: #EAE6DC;
+    --tinta: #0E6E62;
+    --tinta-suave: rgba(14, 110, 98, 0.14);
+    --tinta-ink: #FBF9F5;
+    --no: #B5523B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+      --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+      --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+    --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+    --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 16px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin: 0 0 4px; }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    color: var(--ink); font: inherit; transition: border-color 0.12s ease; display: block;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--ac); flex: none; }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-size: 10.5px; letter-spacing: 0.07em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--papel); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--sub); font-size: 12px; letter-spacing: 0.03em; }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 620; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+  .hj { display: block; max-width: 360px; background: var(--papel); border-radius: 14px 14px 0 0; padding: 12px 14px 14px; font-size: 13px; color: var(--ink); }
+  .hj-cab { display: flex; align-items: center; gap: 8px; }
+  .hj-tit { font-family: Georgia, "Times New Roman", serif; font-size: 20px; flex: 1; }
+  .ico { display: inline-flex; width: 26px; height: 26px; border-radius: 7px; background: var(--papel3); align-items: center; justify-content: center; font-size: 12px; color: var(--sub); }
+  .ico.t { background: var(--tinta-suave); color: var(--tinta); }
+  .hj-sub { display: block; color: var(--sub); font-size: 12.5px; margin-top: 2px; }
+  .hj-sub b { color: var(--ink); font-weight: 500; }
+  .fila { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); min-height: 34px; }
+  .fila:first-of-type { border-top: 0; }
+  .eti { flex: none; width: 52px; font-weight: 600; font-size: 12.5px; }
+  .val { flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; overflow: hidden; }
+  .val.wrap { flex-wrap: wrap; }
+  .flecha { color: var(--sub); margin-left: auto; flex: none; }
+  .chip { flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 99px; font-size: 12px; box-shadow: inset 0 0 0 1px var(--line-hard); color: var(--ink); white-space: nowrap; }
+  .chip.on { background: var(--tinta); color: var(--tinta-ink); box-shadow: none; }
+  .chip.dash { box-shadow: none; border: 1px dashed var(--line-hard); color: var(--sub); }
+  .mon { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 22px; padding: 0 5px; border-radius: 99px; font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--sub); box-shadow: inset 0 0 0 1.2px var(--line-hard); }
+  .mon.on { box-shadow: inset 0 0 0 1.6px var(--tinta); color: var(--ink); background: var(--tinta-suave); }
+  .despl { display: flex; gap: 5px; padding: 2px 0 8px 60px; overflow: hidden; }
+  .fundido { -webkit-mask-image: linear-gradient(90deg, #000 80%, transparent); mask-image: linear-gradient(90deg, #000 80%, transparent); }
+  .escribe { flex: 1; min-width: 0; border-bottom: 1px solid var(--line-hard); color: var(--sub); font-size: 12.5px; padding: 2px 0; }
+  .escribe .cur { color: var(--ink); }
+  .mas { color: var(--tinta); font-weight: 600; flex: none; }
+  .enlace { display: block; text-align: center; color: var(--sub); text-decoration: underline; font-size: 12px; margin-top: 10px; }
+  .seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: var(--papel3); }
+  .seg span { padding: 2px 10px; border-radius: 6px; font-size: 12px; color: var(--sub); }
+  .seg span.on { background: var(--papel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .com { display: block; color: var(--sub); font-size: 12px; margin-top: 10px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .mini { display: block; max-width: 360px; margin-top: 8px; background: var(--papel); border-radius: 12px; padding: 10px 14px; font-size: 13px; }
+  .mini .hj-tit { font-size: 16px; }
+  .lin { display: flex; align-items: baseline; gap: 6px; font-size: 13px; padding: 4px 0; }
+  .lin .e { flex: none; } .lin .t { flex: 1; } .lin .h { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--sub); }
+  .lin.tachada .t { text-decoration: line-through; color: var(--sub); } .lin.tachada .e, .lin.tachada .h { opacity: .5; }
+  .aviso { display: flex; align-items: center; gap: 10px; background: var(--ink); color: var(--papel); border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-top: 8px; max-width: 360px; }
+  .aviso b { color: var(--tinta); margin-left: auto; font-weight: 600; filter: brightness(1.6); }
+  .confirma { display: block; max-width: 360px; background: var(--papel); border-radius: 14px 14px 0 0; padding: 12px 14px; font-size: 13px; margin-top: 8px; box-shadow: 0 -1px 0 var(--line); }
+  .confirma .hj-tit { font-size: 17px; }
+  .botones { display: flex; gap: 8px; margin-top: 10px; }
+  .btn { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 9px; font-size: 12.5px; background: var(--papel3); color: var(--ink); }
+  .btn.p { background: var(--tinta); color: var(--tinta-ink); }
+  .btn.no { background: var(--no); color: #fff; }
+  .ing { display: block; font-size: 12.5px; margin: 4px 0 0; padding-left: 0; }
+  .ing span { display: block; padding: 2px 0; } .ing span::before { content: "· "; color: var(--sub); }
+  .pasos { display: block; font-size: 12.5px; margin-top: 4px; }
+  .pasos span { display: block; padding: 2px 0; } .pasos i { font-style: normal; color: var(--tinta); font-family: ui-monospace, Menlo, monospace; margin-right: 6px; }
+  .rot { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .1em; color: var(--sub); margin-top: 10px; text-transform: uppercase; }
+  .dest { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 99px; font-size: 12.5px; box-shadow: inset 0 0 0 1px var(--line-hard); margin-top: 8px; }
+  .dest em { font-style: normal; color: var(--tinta); }
+  .campo-t { display: block; border: 1px solid var(--line-hard); border-radius: 8px; padding: 6px 8px; font-size: 12px; color: var(--sub); margin-top: 4px; min-height: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Recurrentes y recetas</h1>
+  <p class="stand">Lo pedido: <em>que «no hay» pida confirmación; recuperar la academia de mañana; si lleva y trae la misma persona, decirlo, y que una parte la pueda hacer por su cuenta; y en el detalle de la cena, la receta y los ingredientes</em>.</p>
+  <p class="stand">Lo de la cena que no aparecía hasta refrescar no es una opción: es un fallo de la sincronización y se arregla aparte. Cuando dos guardados van seguidos —la receta y luego la cena—, el segundo se perdía en pantalla si el primero estaba subiendo.</p>
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · No hay</p>
+    <p class="qtitle">¿Cómo se confirma «No hay … este día» y cómo se deshace?</p>
+    <p class="qwhy">Hoy un toque cancela el día sin preguntar, y el día cancelado desaparece de la agenda: no hay forma de volver a él. Así se perdió la academia de mañana. Con A1 o A3 se recupera desde la propia pantalla.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Confirmar, y el día cancelado queda tachado</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="confirma"><span class="hj-tit">¿No hay academia el martes 6?</span><span class="hj-sub">Solo ese día; los demás siguen igual.</span><span class="botones"><span class="btn no">No hay</span><span class="btn">Cancelar</span></span></span><span class="hj"><span class="rot" style="margin-top:0">Martes 6</span><span class="lin tachada"><span class="e">🔁</span><span class="t">Academia (Falu) · no hay</span><span class="h">16:00</span></span><span class="lin"><span class="e">🩺</span><span class="t">Médico Lío</span><span class="h">18:00</span></span></span><span class="confirma"><span class="hj-tit">🔁 Academia</span><span class="hj-sub">Martes 6 de octubre · 16:00 · Falu</span><span class="fila" style="border:0"><span class="val">Este día <b style="margin-left:4px">no hay</b></span><span class="chip" style="margin-left:auto">Sí hay</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Antes de cancelar, una hoja pregunta «¿No hay academia el martes 6?». Después, el día no desaparece: queda <b>tachado y atenuado</b> en la semana y en el día, y al tocarlo su hoja dice «Este día no hay» con «Sí hay» para devolverlo. Se ve lo que se ha quitado, a costa de una línea más en ese día.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Confirmar, y deshacer solo al momento</span></span>
+        <span class="mock"><span class="confirma"><span class="hj-tit">¿No hay academia el martes 6?</span><span class="hj-sub">Solo ese día; los demás siguen igual.</span><span class="botones"><span class="btn no">No hay</span><span class="btn">Cancelar</span></span></span><span class="aviso">Anotado: no hay academia <b>Deshacer</b></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">La misma pregunta, y tras cancelar un aviso con «Deshacer» durante unos segundos. El día cancelado <b>sigue sin verse</b>: pasado el aviso, devolverlo pide editar la recurrente. No recupera la academia de mañana por sí solo.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Confirmar, y los días sin en la hoja de la recurrente</span></span>
+        <span class="mock"><span class="confirma"><span class="hj-tit">¿No hay academia el martes 6?</span><span class="hj-sub">Solo ese día; los demás siguen igual.</span><span class="botones"><span class="btn no">No hay</span><span class="btn">Cancelar</span></span></span><span class="confirma"><span class="hj-tit">🔁 Academia</span><span class="rot">Días sin</span><span class="fila" style="border:0"><span class="val">Martes 6 de octubre</span><span class="chip" style="margin-left:auto">Devolver</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">La pregunta, y el día cancelado se va de la agenda como hoy, pero la hoja de cada día de la recurrente lista los próximos «días sin» con «Devolver». <b>La agenda queda limpia</b>; recuperar un día pide saber que esa lista existe.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escriba en la nota qué espera.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Lleva y recoge</p>
+    <p class="qtitle">¿Cómo se dice que lleva y recoge la misma persona, y que una parte la hace sola?</p>
+    <p class="qwhy">Se entiende así: si la misma persona lleva y recoge, que se diga una vez; y que se pueda apuntar que una de las dos partes la hace la niña por su cuenta. Si no era eso, la nota de B es el sitio.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">«Lleva y recoge Ana», y «Por su cuenta» como opción</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">🔁 Academia</span></span><span class="hj-sub">Martes 6 de octubre · 16:00 · Falu</span><span class="fila" style="border:0;margin-top:6px"><span class="dia-t" style="flex:1">Va <b>por su cuenta</b> · recoge <b>Óscar</b></span><span class="chip">Cambiar</span></span></span><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">🔁 Academia</span></span><span class="hj-sub">Martes 6 de octubre · 16:00 · Falu</span><span class="fila" style="border:0;margin-top:6px"><span class="dia-t" style="flex:1">Lleva y recoge <b>Ana</b></span><span class="chip">Cambiar</span></span></span><span class="confirma"><span class="rot" style="margin-top:0">Lleva</span><span class="despl" style="padding:4px 0;flex-wrap:wrap"><span class="chip">Nadie</span><span class="chip">Ana</span><span class="chip">Óscar</span><span class="chip on">Por su cuenta</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Cuando coinciden, la línea dice «Lleva y recoge Ana». «Por su cuenta» es un chip más en la hoja de Cambiar, junto a «Nadie», y la línea lo escribe como «Va por su cuenta» o «Vuelve por su cuenta». <b>Se distingue de «Nadie»</b> —que es no saberlo— y la redacción con IA y el WhatsApp lo cuentan bien. Pide un valor nuevo en los tres sitios de la regla.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Lo mismo, con «por su cuenta» como un «otro»</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">🔁 Academia</span></span><span class="hj-sub">Martes 6 de octubre · 16:00 · Falu</span><span class="fila" style="border:0;margin-top:6px"><span class="dia-t" style="flex:1">Lleva <b>Por su cuenta</b> · recoge <b>Óscar</b></span><span class="chip">Cambiar</span></span></span><span class="confirma"><span class="rot" style="margin-top:0">Lleva</span><span class="despl" style="padding:4px 0;flex-wrap:wrap"><span class="chip">Nadie</span><span class="chip">Ana</span><span class="chip">Óscar</span><span class="chip on">Por su cuenta</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">«Por su cuenta» se apunta como un «otro» más, que ya existe: no hace falta tocar el modelo. La línea une «Lleva y recoge Ana» igual. Pero <b>se lee raro</b> —«Lleva Por su cuenta»— y la redacción lo trata como si fuera una persona.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Solo unir la línea</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">🔁 Academia</span></span><span class="hj-sub">Martes 6 de octubre · 16:00 · Falu</span><span class="fila" style="border:0;margin-top:6px"><span class="dia-t" style="flex:1">Lleva y recoge <b>Ana</b></span><span class="chip">Cambiar</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Únicamente «Lleva y recoge Ana» cuando coinciden; lo de ir por su cuenta se apunta como «Nadie». <b>Lo más corto</b>, y deja sin decir lo que se pedía de la parte que va sola.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escriba en la nota qué espera.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · La receta</p>
+    <p class="qtitle">¿Cómo llegan los ingredientes y los pasos al detalle de una cena?</p>
+    <p class="qwhy">Hoy el detalle de la noche solo dice el nombre del plato y, si vino de la IA, la frase del porqué. La receta tiene ya un campo «cómo» sin usar; los ingredientes serían uno nuevo.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">A petición, con la IA, y se guarda</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit">Cena del martes 6</span></span><span class="hj-sub">Crema de calabaza y pavo a la plancha</span><span class="dest"><em>✦</em> Cómo se hace</span><span style="display:block;border-top:1px solid var(--line);margin-top:10px"></span><span class="rot">Ingredientes · 4</span><span class="ing"><span>1 calabaza mediana</span><span>1 cebolla</span><span>600 g de pechuga de pavo</span><span>Aceite, sal y pimienta</span></span><span class="rot">Cómo se hace · 35 min</span><span class="pasos"><span><i>1</i>Pochar la cebolla y añadir la calabaza en dados.</span><span><i>2</i>Cubrir de agua, cocer 20 min y triturar.</span><span><i>3</i>Hacer el pavo a la plancha, 4 min por lado.</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">En la hoja de la noche y en la del recetario, «Cómo se hace» pide a la IA ingredientes (para cuántos se cocina en casa) y pasos, y <b>los guarda en la receta</b>: la próxima vez que se cene ya están, sin volver a pedirlos. Se pueden corregir a mano. Solo cuesta una llamada cuando alguien lo quiere ver.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Al elegir, siempre</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit">Cena del martes 6</span></span><span class="hj-sub">Crema de calabaza y pavo a la plancha</span><span class="rot">Ingredientes · 4</span><span class="ing"><span>1 calabaza mediana</span><span>1 cebolla</span><span>600 g de pechuga de pavo</span><span>Aceite, sal y pimienta</span></span><span class="rot">Cómo se hace · 35 min</span><span class="pasos"><span><i>1</i>Pochar la cebolla y añadir la calabaza en dados.</span><span><i>2</i>Cubrir de agua, cocer 20 min y triturar.</span><span><i>3</i>Hacer el pavo a la plancha, 4 min por lado.</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Cada propuesta que se elige pide en el acto ingredientes y pasos, y la hoja los enseña siempre. <b>Nunca hay que pedirlo</b>, pero se paga una llamada por cada cena elegida —también al rellenar la semana entera— y elegir tarda más.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Escrito a mano</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit">Cena del martes 6</span></span><span class="hj-sub">Crema de calabaza y pavo a la plancha</span><span class="rot">Ingredientes</span><span class="campo-t">Uno por línea…</span><span class="rot">Cómo se hace</span><span class="campo-t">Los pasos…</span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Dos campos en la receta, «Ingredientes» y «Cómo se hace», que escribe quien quiera. <b>Sin IA ni coste</b>, y fiel a cómo se cocina en casa; queda vacío hasta que alguien se siente a escribirlo.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escriba en la nota qué espera.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+  <div class="foot">
+    <p>No se toca: la hoja de Cambiar decidida en la 1.95.0 ni cómo se proponen las cenas.</p>
+  </div>
+</div>
+<div class="bar"><div class="barin"><span class="count" id="count"></span><button class="copy" id="copy">Copiar</button></div></div>
+<script>
+  const KEY = "options.recurrentes-y-recetas";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+  function toggle(t) {
+    const l = t[0]; const none = l + "0"; const list = picked(l); const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) next = on ? [] : [t];
+    else if (on) next = list.filter((x) => x !== t);
+    else if (t === none) next = [t];
+    else next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    if (next.length) state.picks[l] = next; else delete state.picks[l];
+  }
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) { const n = (state.notes[l] || "").trim(); if (n) lines.push(l + ": " + n); }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) { const t = btn.dataset.t; btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t))); }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" + (missing.length ? " — falta: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toque una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+  document.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { toggle(btn.dataset.t); keep(); paint(); }));
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => { state.notes[area.dataset.n] = area.value; keep(); });
+  });
+  copy.addEventListener("click", async () => {
+    const text = block(); let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {} t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+  paint();
+</script>
+</body>
+</html>
