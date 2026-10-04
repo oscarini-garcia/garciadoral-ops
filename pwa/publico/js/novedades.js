@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.81.0',
+    fecha: '2026-10-04',
+    titulo: 'La semana, como el mes',
+    lineas: [
+      'Lío ya no ocupa dos renglones por día: van dos monedas a la derecha, con el sol o la luna y las iniciales; al tocarlas se abre el turno.',
+      'Los días con algo apuntado llevan el fondo verde suave, como en el mes; hoy se marca con un borde.',
+      'La semana también se cambia deslizando hacia arriba (siguiente) o hacia abajo (anterior), cuando cabe entera en la pantalla.',
+    ],
+  },
+  {
     version: '1.80.0',
     fecha: '2026-10-04',
     titulo: 'El mes dice qué días tienen algo',
