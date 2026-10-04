@@ -27,6 +27,15 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El mes marca los días con algo y Lío va en monedas (1.80.0).** Decidido
+  como A2 · B3 · C2 en `specs/propuesta-mes-marcas-y-lio.html`. La celda con
+  algo lleva fondo tintado suave (`data-algo`); Lío no cuenta porque no entra
+  en el reparto. En el detalle del día, los turnos de Lío dejan de ser
+  tarjetas: dos monedas junto a la fecha con el sol o la luna y las iniciales
+  (`monedaDeLio`), borde en tinta si salió, en `--regalo` si no y discontinuo
+  con un cambio pedido; tocarlas abre la hoja del turno (`abrirTurnoDeLio`).
+  Marcar el visto desde el mes es ahora abrir la hoja; desde Hoy sigue siendo
+  un toque.
 - **El mes, más compacto (1.79.0).** La celda del mes es solo el número: se
   retiró el punto de «hay algo» (`.mes-punto`) y la celda pasa de cuadrada a
   38 de alto; `vistaMes` pinta solo las semanas que tocan el mes (cuatro a

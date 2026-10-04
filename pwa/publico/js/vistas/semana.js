@@ -1044,12 +1044,13 @@ function vistaMes(ctx) {
   const rejilla = el('div', { class: 'mes' });
   for (const inicial of INICIALES_DIA) rejilla.append(el('div', { class: 'mes-cabecera', texto: inicial }));
 
-  // Sin punto de «hay algo»: la celda es solo el número, y así la parrilla
-  // ocupa menos y deja más detalle del día a la vista. Lo que hay lo dice el
-  // detalle de debajo.
   for (const dia of celdas) {
     rejilla.append(el('button', {
       class: 'mes-celda', type: 'button',
+      // El día con algo lleva fondo tintado suave
+      // (specs/propuesta-mes-marcas-y-lio.html, A2). Lío no entra en el
+      // reparto —sus turnos van aparte—, así que no cuenta.
+      'data-algo': (reparto.get(iso(dia)) || []).length ? 'si' : 'no',
       'data-fuera': dia.getMonth() === ancla.getMonth() ? 'no' : 'si',
       'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
       'aria-pressed': iso(dia) === seleccionado ? 'true' : 'false',
@@ -1062,17 +1063,21 @@ function vistaMes(ctx) {
   // Solo sobre la parrilla: en el detalle de debajo, bajar es desplazar.
   deslizarVertical(rejilla, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
 
-  const detalle = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: formatearFechaLarga(ancla) }),
-  ]);
   const delDia = porViajesPrimero(reparto.get(iso(ancla)) || []);
   const turnos = hayLio(ctx.vista.datos) ? turnosDe(ctx.vista.datos, ancla) : [];
 
-  if (!delDia.length && !turnos.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
-  // La mañana de Lío abre el día y la noche lo cierra (E1).
-  for (const turno of turnos.filter((t) => t.turno.id === 'manana')) detalle.append(filaDeTurno(turno, ctx));
+  // Lío no va en tarjetas sino en dos monedas junto a la fecha, con el sol o
+  // la luna y las iniciales de quien lo tiene; el borde dice cómo va. Tocarlas
+  // abre la hoja del turno (specs/propuesta-mes-marcas-y-lio.html, B3 · C2).
+  const detalle = el('div', { class: 'grupo' }, [
+    el('div', { class: 'mes-detalle-titulo' }, [
+      el('p', { class: 'grupo-titulo', texto: formatearFechaLarga(ancla) }),
+      turnos.length ? el('div', { class: 'mes-lio' }, turnos.map((turno) => monedaDeLio(turno, ctx))) : null,
+    ]),
+  ]);
+
+  if (!delDia.length) detalle.append(el('p', { class: 'vacio', texto: 'Nada este día.' }));
   for (const aparicion of delDia) detalle.append(tarjetaDeEvento(aparicion, ctx, { conFecha: false }));
-  for (const turno of turnos.filter((t) => t.turno.id !== 'manana')) detalle.append(filaDeTurno(turno, ctx));
 
   // El día del mes que no tiene ningún evento se llena igual que la fila vacía
   // de la semana: doblando el toque sobre su hueco. Los turnos de Lío no cuentan
@@ -1084,6 +1089,23 @@ function vistaMes(ctx) {
     rejilla,
     detalle,
     zonaLibre(ctx, () => ancla),
+  ]);
+}
+
+/** Un turno de Lío en el detalle del mes: el sol o la luna y las iniciales de
+ *  quien lo tiene, con el borde en tinta si salió y en el color de aviso si no
+ *  salió. */
+function monedaDeLio(turno, ctx) {
+  const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
+  return el('button', {
+    class: 'mes-lio-moneda', type: 'button',
+    'data-estado': turno.estado,
+    'data-pedido': turno.trato ? 'si' : 'no',
+    'aria-label': `Lío ${nombreDeTurno(turno.turno).toLowerCase()}: ${resumenDeTurno(turno, ctx)}. Ver el turno.`,
+    onclick: () => { toque(); abrirTurnoDeLio(turno.fecha, turno.turno.id, ctx); },
+  }, [
+    el('span', { 'aria-hidden': 'true', texto: turno.turno.emoji }),
+    el('span', { class: 'mes-lio-quien', texto: quien ? inicialesDe(quien) : '·' }),
   ]);
 }
 

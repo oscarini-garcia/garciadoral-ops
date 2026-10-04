@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.80.0',
+    fecha: '2026-10-04',
+    titulo: 'El mes dice qué días tienen algo',
+    lineas: [
+      'En el mes, los días con algo apuntado llevan un fondo verde suave; Lío no cuenta.',
+      'Los turnos de Lío ya no son tarjetas en el detalle del día: van junto a la fecha, con el sol o la luna y las iniciales de quien lo tiene.',
+      'El borde dice cómo va: verde si salió, en rojo si no salió. Al tocarlos se abre el turno.',
+    ],
+  },
+  {
     version: '1.79.0',
     fecha: '2026-10-04',
     titulo: 'El mes, más compacto',
