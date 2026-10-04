@@ -27,6 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Recurrentes (1.85.0).** Decidido como A2 · B1 · C1 en
+  `specs/propuesta-recurrentes.html`. El plugin `extraescolares` se llama de
+  origen «Recurrentes» (el identificador no cambia, ni `plugin_id:
+  'extraescolar'`) y la hoja de una actividad escribe «Recurrente» en vez del
+  nombre de su tipo, que sigue siendo `entreno` en los datos. «De quién es»
+  admite varias personas (sin `unica`), y la línea de la semana lleva entre
+  paréntesis quién va, con el apodo, y detrás, en `linea.tras`, las flechas de
+  quién lleva y quién recoge. C1 es quitar desde la hoja de Viajes el enlace
+  que pegó Óscar y quedarse con el calendario de siempre (`cal-viajes`, por el
+  secreto `VIAJES_ICAL_URL`). Queda: si un administrador había bautizado el
+  plugin, ese nombre manda sobre el nuevo; y el plan de los domingos y la
+  redacción siguen viendo el tipo `entreno`.
 - **Los vuelos, una vez y con despegue y aterrizaje (1.84.0).** Cada vuelo
   salía dos veces porque el identificador de un evento importado sale del
   calendario y del UID (`idDeViaje` en `api/src/viajes.js`), y el feed de

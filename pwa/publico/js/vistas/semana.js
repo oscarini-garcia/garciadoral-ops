@@ -891,6 +891,9 @@ export function textoDeLinea(aparicion, ctx) {
     // actividad, o de quién es un vuelo. Entre paréntesis y no como pastillas
     // a la derecha, para que la hora se quede donde está en todas las líneas.
     parentesis: null,
+    // Lo que va detrás del paréntesis, sin separador: las flechas de quién
+    // lleva y quién recoge una actividad.
+    tras: null,
     banda: plugin === 'viajes' || plugin === 'finde' || id.startsWith('derivado:ausencia:'),
     suave: false,
     pastillas: [],
@@ -924,8 +927,15 @@ export function textoDeLinea(aparicion, ctx) {
       return persona ? String(persona.apodo || persona.nombre || '').trim().slice(0, 2) : null;
     };
     const nombre = (quien) => (esOtro(quien) ? nombreDeOtro(quien) : (ctx.vista.persona(quien)?.apodo || ctx.vista.nombre(quien)));
+    // Entre paréntesis quién va, con el apodo, y detrás, sin paréntesis,
+    // quién lleva y quién recoge (specs/propuesta-recurrentes.html, B1).
+    const quienes = ctx.vista.participantes(evento)
+      .map((id) => ctx.vista.persona(id))
+      .filter(Boolean)
+      .map((persona) => persona.apodo || persona.nombre);
+    if (quienes.length) linea.parentesis = quienes.join(', ');
     if (reparto.lleva || reparto.recoge) {
-      linea.parentesis = [
+      linea.tras = [
         reparto.lleva ? `↑${letras(reparto.lleva)}` : null,
         reparto.recoge ? `↓${letras(reparto.recoge)}` : null,
       ].filter(Boolean).join(' ');
@@ -980,6 +990,7 @@ function lineaDeEvento(aparicion, ctx) {
     el('span', { class: 'linea-titulo' }, [
       texto.titulo + (aparicion.continuacion && !texto.banda ? ' (cont.)' : ''),
       texto.parentesis ? el('span', { class: 'linea-de', texto: ` (${texto.parentesis})`, title: texto.parentesisLargo || texto.parentesis }) : null,
+      texto.tras ? el('span', { class: 'linea-de', texto: ` ${texto.tras}`, title: texto.parentesisLargo || texto.tras }) : null,
       texto.de ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
       aparicion.continuacion && texto.banda ? el('span', { class: 'linea-de', texto: ' · cont.' }) : null,
     ]),
@@ -1479,7 +1490,9 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
           texto: [
             dias > 1 ? `${dias} días` : null,
             evento.jornada_completa ? 'Todo el día' : horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false }),
-            ctx.vista.tipoEvento(evento.tipo_id)?.nombre,
+            // Una actividad no es un «Entreno», aunque su tipo lo diga: es
+            // recurrente (specs/propuesta-recurrentes.html, A2).
+            plugin === 'extraescolares' ? 'Recurrente' : ctx.vista.tipoEvento(evento.tipo_id)?.nombre,
             duenyo ? `de ${duenyo.nombre}` : null,
             evento.ubicacion,
           ].filter(Boolean).join(' · '),

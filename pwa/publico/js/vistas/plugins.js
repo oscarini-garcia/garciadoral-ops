@@ -873,13 +873,14 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
     pintarDias();
 
     cuerpo.append(
-      campo('Qué', titulo, 'Con el emoji delante, si quieres otro que el de un entreno.'),
+      campo('Qué', titulo, 'Con el emoji delante, si quieres otro.'),
       campoDeGente(ctx, {
         etiqueta: 'De quién es',
         elegidos: borrador.quien,
         alCambiar: (ids) => { borrador.quien = ids; },
         memoria: 'evento',
-        unica: true,
+        // Puede ser de varias: la academia de las dos
+        // (specs/propuesta-recurrentes.html).
       }),
       el('div', { class: 'campo' }, [el('label', { texto: 'Qué días' }), chips]),
       el('div', { class: 'campo' }, [

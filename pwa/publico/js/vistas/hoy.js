@@ -523,6 +523,7 @@ function tarjetaDelDia(aparicion, ctx) {
       el('h3', {}, [
         texto.titulo + (aparicion.continuacion ? ' (cont.)' : ''),
         texto.parentesis ? el('span', { class: 'linea-de', texto: ` (${texto.parentesis})` }) : null,
+        texto.tras ? el('span', { class: 'linea-de', texto: ` ${texto.tras}` }) : null,
         esEdad ? el('span', { class: 'linea-de', texto: ` · ${texto.de}` }) : null,
       ]),
       hora ? el('span', { class: 'linea-hora empujar', texto: hora }) : null,
