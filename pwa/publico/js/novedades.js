@@ -22,8 +22,8 @@ export const NOVEDADES = [
     fecha: '2026-10-04',
     titulo: 'Avisos al despegar y al aterrizar',
     lineas: [
-      'Cada vuelo suena en el teléfono al despegar y al aterrizar, a su hora.',
-      'Se apagan con «Nunca» en el aviso de Viajes.',
+      'Cada vuelo de la agenda suena al despegar y al aterrizar, a su hora y con el nombre de quien vuela.',
+      'Viene encendido en todos los teléfonos; se apaga en Ajustes › Avisos.',
     ],
   },
   {

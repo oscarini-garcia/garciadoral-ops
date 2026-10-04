@@ -66,8 +66,12 @@ pendiente. El hook lo inyecta al final del mapa.
   por ida y vuelta de la 1.84.0 se retiró. **Y desde la 1.88.0 cada vuelo
   suena al despegar y al aterrizar**, a la hora exacta (`avisosDeVuelo` en
   `app.js`, antelación `'momento'` en `native.js`), aparte del aviso previo y
-  también con los avisos remotos puestos; los calla «Nunca» en el aviso de
-  Viajes. El aviso previo (la víspera) sigue sin programar el aterrizaje.
+  también con los avisos remotos puestos. Decidido como A3 · B1 · C1 · D1 en
+  `specs/propuesta-avisos-de-vuelo.html`: el interruptor está en Ajustes ›
+  Avisos (`agenda.avisos.vuelos`, de este teléfono), suenan **todos** los
+  vuelos que quien mira ve, con el nombre de quien vuela, y viene encendido
+  de origen: Ana recibe los de Óscar sin tocar nada. Son avisos locales, así
+  que cada teléfono los programa al sincronizar. El aviso previo (la víspera) sigue sin programar el aterrizaje.
   **Y sobre el calendario que sobraba**: en la hoja de Viajes ya solo queda
   uno, «Viajes (Óscar)», con 41 vuelos en el feed y 41 cargados; no hay nada
   que quitar, y si un vuelo llega repetido es dentro del propio feed. Queda: **los datos siguen duplicados** —sobra uno de los dos

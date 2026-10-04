@@ -62,7 +62,7 @@ import {
 import { pintarCenas, reiniciarCenas } from './vistas/cenas.js';
 import { hayCenas } from './cenas.js';
 import { hayAvisos, marcarVisto, novedades, porContestar } from './avisos.js';
-import { antelacionDe, avisoDePlugin, avisosDePlugins, resolverTratoDeDia } from './plugins.js';
+import { antelacionDe, avisosDePlugins, resolverTratoDeDia } from './plugins.js';
 import { abrirMenuDeNuevo } from './vistas/plugins.js';
 
 const PESTANAS = {
@@ -353,15 +353,17 @@ function refrescarRecordatorios(datos) {
 }
 
 /**
- * Un vuelo suena al despegar y al aterrizar, a su hora y en hora de Madrid.
+ * Un vuelo suena al despegar y al aterrizar, a su hora y en hora de Madrid
+ * (specs/propuesta-avisos-de-vuelo.html, A3 · B1 · C1 · D1).
  *
- * Va aparte del aviso previo y también con los avisos remotos puestos: el
- * servidor solo avisa por la mañana de lo de mañana, y esto es otra cosa, el
- * momento mismo. Solo se calla si el plugin de Viajes está en «Nunca» en este
- * aparato.
+ * Suenan todos los vuelos que quien mira ve en su agenda, con el nombre de
+ * quien vuela: que Óscar ha aterrizado es justo lo que le sirve a Ana. Va
+ * aparte del aviso previo y también con los avisos remotos puestos, porque el
+ * servidor solo avisa por la mañana de lo de mañana. Encendido de origen en
+ * todos los teléfonos; se apaga en Ajustes › Avisos.
  */
 function avisosDeVuelo(datos, instancias) {
-  if (avisoDePlugin('viajes') === 'nunca') return [];
+  if (!quiereVuelos()) return [];
   const vista = crearVista(datos);
   return instancias
     .filter((instancia) => instancia.tramo)
@@ -373,7 +375,8 @@ function avisosDeVuelo(datos, instancias) {
         antelacion: 'momento',
         aviso: {
           title: `${despega ? '🛫 Despega' : '🛬 Aterriza'}: ${vista.caraDe(instancia.evento).titulo}`,
-          body: `A las ${hora}`,
+          body: [quienVuela(vista, instancia.evento), `a las ${hora}`].filter(Boolean).join(' · ')
+            .replace(/^a las/, 'A las'),
         },
       };
     });
@@ -620,6 +623,18 @@ const CLAVE_AVISOS = 'agenda.avisos';
 
 const losQuiere = () => localStorage.getItem(CLAVE_AVISOS) === 'si';
 
+/** Los avisos al despegar y al aterrizar: encendidos salvo que se apaguen. */
+const CLAVE_AVISOS_VUELOS = 'agenda.avisos.vuelos';
+const quiereVuelos = () => {
+  try { return localStorage.getItem(CLAVE_AVISOS_VUELOS) !== 'no'; } catch { return true; }
+};
+
+/** De quién es un vuelo, con el apodo si lo hay. */
+function quienVuela(vista, evento) {
+  const dueno = vista.duenyoDelCalendario?.(evento) || null;
+  return dueno ? (dueno.apodo || dueno.nombre) : null;
+}
+
 /**
  * Vuelve a dar el token en cada arranque, si se han pedido.
  *
@@ -693,7 +708,19 @@ function bloqueDeAvisos(dentro) {
     casilla.disabled = false;
   });
 
+  // Los vuelos van aparte: son avisos que programa el propio teléfono, a la
+  // hora del despegue y del aterrizaje, y no dependen del permiso de arriba
+  // (specs/propuesta-avisos-de-vuelo.html, A3).
+  const vuelos = el('input', { type: 'checkbox' });
+  vuelos.checked = quiereVuelos();
+  vuelos.addEventListener('change', () => {
+    try { localStorage.setItem(CLAVE_AVISOS_VUELOS, vuelos.checked ? 'si' : 'no'); } catch { /* sin almacén */ }
+    ctx.reprogramarAvisos();
+  });
+
   dentro.append(
+    el('label', { class: 'conmutador' }, [vuelos, 'Vuelos al despegar y al aterrizar']),
+    el('p', { class: 'pista', texto: 'Suena a la hora de salida y a la de llegada de cada vuelo de la agenda, diga de quién es. En este teléfono.' }),
     el('label', { class: 'conmutador' }, [casilla, 'Avisarme en este teléfono']),
     linea,
     // Lo que se avisa se dice, porque no es evidente y porque acota: nadie se
