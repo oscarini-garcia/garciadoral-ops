@@ -27,6 +27,16 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El día arriba, con sus flechas (1.93.0).** En «Día» el título de la
+  agenda es la fecha (`tituloDelDia`, ya sin saludo) con dos flechas a los
+  lados (`.titulo-dia`), y la fila de mandos pierde las suyas en esa vista;
+  el texto se encoge y recorta antes que partirse. El compartir del día sale
+  siempre, también vacío («Nada apuntado.»). El arrastre es el de la semana:
+  `.cuerpo-dia` lleva `touch-action: pan-y` y `deslizarVertical` con la misma
+  regla de caber en pantalla. La versión deja de pintarse al pie del día
+  (`pieDeVersion` queda sin uso; la versión está en Ajustes), lo que deja sin
+  efecto el «la aplicación escribe la suya abajo a la derecha en Hoy» de la
+  forma de contar cada vuelta.
 - **El día, en orden (1.92.0).** Lo que se pidió para Hoy se aplicó sobre la
   vista «Día» con las recomendadas de `specs/propuesta-hoy-orden.html` (A1 ·
   B1 · C1 · D1; la ronda quedó sin contestar en el PR #171): Lío es una fila
