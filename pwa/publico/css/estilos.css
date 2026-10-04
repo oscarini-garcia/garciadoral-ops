@@ -471,7 +471,7 @@ textarea:-webkit-autofill:focus {
    ya eso mismo, y volver a hoy es tocar «Agenda» en la barra. Vuelven en
    cuanto hay sitio, que es también donde el ratón se queda sin deslizamiento
    con el que pasar de semana. El corte está medido: a 410 px entran justas. */
-@media (max-width: 409px) {
+@media (max-width: 459px) {
   .vistas .paso { display: none; }
   .compartir-periodo { margin-left: auto; }
 }
@@ -503,6 +503,12 @@ textarea:-webkit-autofill:focus {
 .hoy-nada { color: var(--ink-faint); font-size: 14.5px; margin: 2px 0 4px; }
 /* Lío en Hoy: solo las monedas, como en la agenda (B3). */
 .hoy-lio { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.hoy-fila { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 2px 0; }
+.hoy-fila-eti { flex: 0 0 44px; font-weight: 600; font-size: 15px; color: var(--ink); }
+.hoy-fila[data-ayer="si"] .hoy-fila-eti, .hoy-fila[data-ayer="si"] .cena-plato { color: var(--ink-soft); font-weight: 400; }
+.hoy-cena { display: flex; flex-direction: column; }
+/* Las notas —la frase del día y la voz de Lío— al final del día. */
+.hoy-notas { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
 .hoy-lio-ayer { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--ink-faint); margin-left: 8px; text-transform: uppercase; }
 
 /* La frase del día. En cursiva y en serifa porque es una voz y no un dato: en

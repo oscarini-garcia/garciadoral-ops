@@ -130,15 +130,18 @@ export function cuerpoDelDia(dia, ctx) {
     cuerpo.append(el('p', { class: 'hoy-sync', texto: aviso, title: motivoDeSincronizacion() || null }));
   }
 
-  cuerpo.append(
+  // El orden pedido: Lío, la cena, el día y, al final, las notas —la frase
+  // del día y la voz de Lío—, que se leen después de lo que se consulta.
+  const notas = esHoy ? [laChispa(dia, ctx), ...(hayLio(ctx.vista.datos) ? [laVozDeLio(dia, ctx)] : [])] : [];
+  cuerpo.append(...[
     ...(esHoy ? bandaDePeticiones(ctx) : []),
     ...(esHoy ? bandaDeEscapadas(dia, ctx) : []),
-    esHoy ? laChispa(dia, ctx) : null,
     ...bloqueDeLio(dia, ctx),
-    bloqueDelDia(dia, ctx),
     ...bloqueDeCenas(dia, ctx),
+    bloqueDelDia(dia, ctx),
+    notas.length ? el('div', { class: 'hoy-notas' }, notas) : null,
     esHoy ? pieDeVersion() : null,
-  );
+  ].filter(Boolean));
   return cuerpo;
 }
 
@@ -440,16 +443,19 @@ function bloqueDeLio(dia, ctx) {
   // turno (specs/propuesta-hoy-como-la-agenda.html, B3). Lo de ayer que quedó
   // sin marcar sube detrás, con su rótulo, una vez.
   const ayer = sumarDias(dia, -1);
-  const rezagados = turnosDe(ctx.vista.datos, ayer).filter((turno) => turno.estado === 'sin-marcar' && !turno.trato);
+  // Solo mirando hoy: mirando mañana, «ayer» sería hoy, que aún está abierto.
+  const esHoy = iso(dia) === iso(hoy());
+  const rezagados = esHoy ? turnosDe(ctx.vista.datos, ayer).filter((turno) => turno.estado === 'sin-marcar' && !turno.trato) : [];
   const monedas = el('div', { class: 'hoy-lio' }, [
     ...turnosDe(ctx.vista.datos, dia).map((turno) => monedaDeLio(turno, ctx)),
     rezagados.length ? el('span', { class: 'hoy-lio-ayer', texto: 'Ayer' }) : null,
     ...rezagados.map((turno) => monedaDeLio(turno, ctx)),
   ]);
 
-  return [el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: '🐾 Lío' }),
-    laVozDeLio(dia, ctx),
+  // Una fila con su nombre a la izquierda, como la de la cena: así se sabe
+  // de un vistazo qué son el sol y la luna.
+  return [el('div', { class: 'hoy-fila' }, [
+    el('span', { class: 'hoy-fila-eti', texto: 'Lío' }),
     monedas,
   ])];
 }
@@ -576,9 +582,10 @@ function bloqueDeCenas(dia, ctx) {
   const plato = platoDe(datos, cena);
   const ninas = platoDeLasNinas(datos, cena);
 
-  const grupo = el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: '🍽️ Esta noche' }),
-    el('div', { class: 'cena-hoy' }, [
+  // Una fila como la de Lío: «Cena», el plato y el verbo.
+  const grupo = el('div', { class: 'hoy-cena' }, [
+    el('div', { class: 'hoy-fila' }, [
+      el('span', { class: 'hoy-fila-eti', texto: 'Cena' }),
       el('button', {
         class: 'cena-hoy-texto', type: 'button',
         onclick: () => { toque(); abrirNoche(esta, ctx); },
@@ -603,13 +610,14 @@ function bloqueDeCenas(dia, ctx) {
       avisar(veredicto === 'repetir' ? 'Anotado: se repite' : 'Anotado: no más');
       ctx.refrescar();
     };
-    grupo.append(el('div', { class: 'cena-hoy', 'data-ayer': 'si' }, [
+    grupo.append(el('div', { class: 'hoy-fila', 'data-ayer': 'si' }, [
+      el('span', { class: 'hoy-fila-eti', texto: 'Ayer' }),
       el('button', {
         class: 'cena-hoy-texto', type: 'button',
         'aria-label': `Ayer: ${platoDeAyer}. Cambiar lo que se cenó`,
         onclick: () => { toque(); abrirNoche(ayer, ctx); },
       }, [
-        el('span', { class: 'cena-plato', texto: `Ayer: ${platoDeAyer}` }),
+        el('span', { class: 'cena-plato', texto: platoDeAyer }),
         el('span', { class: 'cena-ninas', texto: '¿Repetir? Si fue otra cosa, tócalo.' }),
       ]),
       el('button', { class: 'boton-mini empujar', type: 'button', onclick: () => contestar('repetir') }, ['Sí']),
