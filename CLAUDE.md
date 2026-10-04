@@ -27,6 +27,17 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **La semana, sin verde y deslizando otra vez (1.83.0).** Probada la 1.82.0
+  en el teléfono: el arrastre lateral había dejado de cambiar de semana. La
+  semana y el cuerpo del mes llevan ahora `touch-action: pan-y` —con el
+  `manipulation` heredado de `body`, iOS podía quedarse también el arrastre
+  lateral y cancelar el puntero—; `.arrastre-vertical` sigue mandando cuando
+  cabe. **El tinte de los días con algo se retiró de la semana** («no hace
+  falta resaltar»); el mes lo conserva y `data-algo` sigue en el marcado. La
+  banda de un vuelo se sale su relleno (`margin: 0 -8px`) para que su emoji y
+  su hora caigan en la columna de las demás líneas. Queda por confirmar en el
+  teléfono que el arrastre lateral vuelve a ir: el arreglo es la causa más
+  probable, no una reproducción.
 - **La semana legible (1.82.0).** Probada la 1.81.0 en el teléfono, los
   títulos se cortaban: fecha y monedas dejaban unos 120 de 320 puntos.
   Decidido como A3 · B1 en `specs/propuesta-semana-legible.html`: las monedas

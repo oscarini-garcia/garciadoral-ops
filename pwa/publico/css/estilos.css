@@ -740,7 +740,6 @@ textarea:-webkit-autofill:focus {
   padding: 10px 12px;
   min-height: 58px;
 }
-.dia[data-algo="si"] { background: var(--tinta-suave); border-color: transparent; }
 .dia[data-hoy="si"] { border-color: var(--tinta); box-shadow: inset 0 0 0 .5px var(--tinta); }
 /* Lío en la semana: las monedas del detalle del mes, apiladas bajo el número
    en la columna de la fecha, para que los eventos lleguen al borde
@@ -751,7 +750,15 @@ textarea:-webkit-autofill:focus {
 .dia-lio .mes-lio-moneda::after { inset: -2px -4px; }
 /* Y lo que no cabe en una línea pasa a la segunda, con tope de dos (B1). */
 .semana .linea-titulo { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* El navegador se queda solo el desplazamiento vertical; el horizontal es del
+   gesto de cambiar de periodo. Con `manipulation`, que es lo que hereda de
+   `body`, iOS podía tomar también el arrastre lateral y cancelar el puntero a
+   medio gesto, y la semana dejó de pasar de semana. */
+.semana, .cuerpo-agenda { touch-action: pan-y; }
 .semana.arrastre-vertical { touch-action: none; }
+/* La banda de un viaje se sale lo que mide su relleno, para que su emoji y su
+   hora caigan en la misma columna que los de las demás líneas. */
+.semana .linea[data-banda="si"] { margin: 0 -8px; width: calc(100% + 16px); }
 .dia-fecha { text-align: left; }
 .dia-inicial { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-faint); }
 .dia-numero { font-family: var(--serif); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
