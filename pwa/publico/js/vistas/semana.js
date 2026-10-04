@@ -884,7 +884,9 @@ export function textoDeLinea(aparicion, ctx) {
   const plugin = pluginDeEvento(evento);
   const id = String(evento.id || '');
   const linea = {
-    emoji: cara.emoji,
+    // Un vuelo sale dos veces: 🛫 al despegar y 🛬 al aterrizar, cada uno a
+    // su hora (`partirVuelo` en semana.js).
+    emoji: aparicion.instancia?.tramo === 'salida' ? '🛫' : aparicion.instancia?.tramo === 'llegada' ? '🛬' : cara.emoji,
     titulo: cara.titulo,
     de: null,
     // Lo que va entre paréntesis detrás del título: quién lleva y recoge una

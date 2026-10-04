@@ -11,7 +11,6 @@
  */
 
 import { ciudadDeAeropuerto } from './aeropuertos.js';
-import { viajesDe } from './viajes.js';
 
 export const EMOJI_POR_DEFECTO = '📌';
 
@@ -323,20 +322,6 @@ export const nuevoId = () =>
 export const ahora = () => new Date().toISOString();
 
 export function crearVista(instantanea) {
-  // Qué tramo de un viaje es cada vuelo, calculado una vez por vista: la cara
-  // de un evento se pide en cada línea de la semana.
-  let papeles = null;
-  const papelDeVuelo = (id) => {
-    if (!papeles) {
-      papeles = new Map();
-      for (const viaje of viajesDe(instantanea)) {
-        if (!viaje.hasta) continue;
-        papeles.set(viaje.ida.id, '🛫');
-        if (viaje.vuelta) papeles.set(viaje.vuelta.id, '🛬');
-      }
-    }
-    return papeles.get(id) || null;
-  };
   const personas = new Map((instantanea.personas || []).map((p) => [p.id, p]));
   const categorias = new Map((instantanea.categorias || []).map((c) => [c.id, c]));
   const tipos = new Map((instantanea.tipos_evento || []).map((t) => [t.id, t]));
@@ -395,12 +380,6 @@ export function crearVista(instantanea) {
       // la otra puerta y se quedaba sin traducir: el detalle enseñaba la ficha
       // bien, con los códigos, y encima el título en códigos también.
       const deVuelo = tituloDeVuelo(evento);
-      // Y el emoji dice qué tramo es: 🛫 el de ida y 🛬 el de vuelta de un
-      // viaje emparejado; una escala, o un vuelo sin pareja, se queda con el
-      // que traiga.
-      const papel = deVuelo ? papelDeVuelo(evento.id) : null;
-      if (papel) return { emoji: papel, titulo: deVuelo };
-
       if (propio) {
         return { emoji: propio[1], titulo: deVuelo || titulo.slice(propio[0].length) || titulo };
       }

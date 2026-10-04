@@ -11,7 +11,7 @@
  * UTC y desplazaría medio calendario.
  */
 
-import { estaActivo, sinVuelosRepetidos } from './modelo.js';
+import { estaActivo, presentarVuelo, sinVuelosRepetidos } from './modelo.js';
 import { ajustesDe, seEnsena } from './plugins.js';
 import { eventosDeFuera } from './viajes.js';
 
@@ -420,7 +420,24 @@ export function instanciasEn(instantanea, desde, hasta) {
     .filter((evento) => seEnsena(instantanea, evento));
   return fuentes
     .flatMap((evento) => ocurrencias(evento, desde, hasta))
+    .flatMap((instancia) => partirVuelo(instancia, desde, hasta))
     .filter((instancia) => !estaCancelado(diaDeEvento(instantanea, instancia.evento.id, iso(instancia.inicio))));
+}
+
+/**
+ * Un vuelo en dos momentos: el despegue a su hora de salida y el aterrizaje a
+ * la de llegada, cada uno en su día. Como una sola instancia de la salida a la
+ * llegada solo se veía la hora de salida, y un vuelo que llega de madrugada
+ * salía además como «(cont.)» al día siguiente. `tramo` es lo que lee la
+ * línea para poner 🛫 o 🛬; un vuelo sin hora de llegada se queda como estaba.
+ */
+function partirVuelo(instancia, desde, hasta) {
+  if (!presentarVuelo(instancia.evento) || !(instancia.fin > instancia.inicio)) return [instancia];
+  const dentro = (momento) => soloFecha(momento) >= soloFecha(desde) && soloFecha(momento) <= soloFecha(hasta);
+  return [
+    { ...instancia, fin: instancia.inicio, tramo: 'salida' },
+    { ...instancia, inicio: instancia.fin, fin: instancia.fin, tramo: 'llegada' },
+  ].filter((parte) => dentro(parte.inicio));
 }
 
 /**
