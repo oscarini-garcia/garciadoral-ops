@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hoy: orden y vacío</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+    /* Los de la aplicación, para que las maquetas se parezcan a la pantalla. */
+    --papel: #FBF9F5;
+    --papel3: #EAE6DC;
+    --tinta: #0E6E62;
+    --tinta-suave: rgba(14, 110, 98, 0.14);
+    --tinta-ink: #FBF9F5;
+    --no: #B5523B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+      --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+      --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+    --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+    --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 16px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin: 0 0 4px; }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    color: var(--ink); font: inherit; transition: border-color 0.12s ease; display: block;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--ac); flex: none; }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-size: 10.5px; letter-spacing: 0.07em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--papel); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--sub); font-size: 12px; letter-spacing: 0.03em; }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 620; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+
+  
+  .tel { display: block; max-width: 340px; background: var(--papel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .sal { display: block; font-family: Georgia, serif; font-size: 20px; color: var(--ink); }
+  .fec { display: block; font-size: 12px; color: var(--sub); margin-bottom: 10px; }
+  .chis { display: block; font-size: 12px; color: var(--sub); font-style: italic; margin: -4px 0 10px; }
+  .rot { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; letter-spacing: .12em; color: var(--sub); margin: 10px 0 5px; }
+  .dia { display: grid; grid-template-columns: 46px 1fr; gap: 8px; border: 1.5px solid var(--tinta); border-radius: 11px; padding: 8px 10px; background: var(--papel); }
+  .dia.chico { border: 1px solid var(--line); opacity: .9; }
+  .fecha .ini { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; color: var(--sub); }
+  .fecha .num { display: block; font-family: Georgia, serif; font-size: 22px; color: var(--tinta); line-height: 1.1; }
+  .dia.chico .fecha .num { font-size: 17px; color: var(--ink); }
+  .pila { display: flex; flex-direction: column; gap: 3px; margin-top: 5px; align-items: flex-start; }
+  .mon { display: inline-flex; align-items: center; gap: 2px; height: 18px; padding: 0 5px 0 3px; border-radius: 99px; font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; color: var(--sub); box-shadow: inset 0 0 0 1.2px var(--line-hard); background: var(--papel); white-space: nowrap; }
+  .mon.hecho { box-shadow: inset 0 0 0 1.4px var(--tinta); color: var(--ink); }
+  .mon.no { box-shadow: inset 0 0 0 1.4px var(--no); }
+  .cont { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .ev { display: flex; align-items: baseline; gap: 6px; font-size: 13px; color: var(--ink); }
+  .ev .t { flex: 1; min-width: 0; }
+  .ev .t small { color: var(--sub); font-size: 11px; }
+  .ev .h { flex: none; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--sub); }
+  .ev.pasado { opacity: .5; }
+  .ev.ahora .h { color: var(--tinta); font-weight: 700; }
+  .ev.suave .t { color: var(--sub); }
+  .ahora-raya { display: flex; align-items: center; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; color: var(--tinta); }
+  .ahora-raya::after { content: ""; flex: 1; height: 1.5px; background: var(--tinta); }
+  .riel { display: grid; grid-template-columns: 34px 1fr; column-gap: 8px; }
+  .riel .hh { font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--sub); padding-top: 2px; border-top: 1px solid var(--line); height: 22px; }
+  .riel .cc { border-top: 1px solid var(--line); height: 22px; font-size: 12px; color: var(--ink); padding-top: 2px; display: flex; gap: 5px; align-items: center; }
+  .riel .cc.ahora { border-top: 1.5px solid var(--tinta); }
+  .grande { display: block; border: 1.5px solid var(--tinta); border-radius: 11px; padding: 10px 12px; margin-bottom: 8px; }
+  .grande small { display: block; color: var(--sub); font-size: 11px; font-family: ui-monospace, Menlo, monospace; letter-spacing: .08em; }
+  .grande b { display: block; font-size: 16px; font-weight: 600; color: var(--ink); margin: 2px 0; }
+  .grande span { font-size: 12px; color: var(--sub); }
+  .franja { display: block; margin-top: 8px; }
+  .franja .ft { display: flex; align-items: center; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; letter-spacing: .1em; color: var(--sub); margin-bottom: 4px; }
+  .franja .ft::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .fila { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink); padding: 5px 0; }
+  .fila small { color: var(--sub); font-size: 11px; }
+  .fila .v { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1.2px var(--line-hard); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: var(--sub); flex: none; }
+  .fila .v + .v { margin-left: 4px; }
+  .tarj { display: flex; align-items: center; gap: 8px; background: var(--papel3); border-radius: 9px; padding: 7px 10px; margin-top: 5px; font-size: 12.5px; color: var(--ink); }
+  .tarj small { display: block; color: var(--sub); font-size: 11px; }
+  .tarj .v { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1.2px var(--line-hard); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: var(--sub); flex: none; background: var(--papel); }
+  .banda { display: block; background: var(--tinta-suave); border-radius: 9px; padding: 7px 10px; font-size: 12px; color: var(--ink); margin-bottom: 8px; }
+
+  .fila2 { display: flex; align-items: center; gap: 6px; padding: 4px 0; font-size: 12.5px; color: var(--ink); }
+  .eti { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .1em; color: var(--sub); text-transform: uppercase; width: 44px; flex: none; }
+  .eti2 { font-size: 12.5px; color: var(--ink); font-weight: 600; width: 44px; flex: none; }
+  .cena { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink); padding: 4px 0; }
+  .cena .bt { margin-left: auto; font-size: 11px; padding: 3px 9px; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--line-hard); color: var(--sub); }
+  .nota { display: block; font-size: 11.5px; color: var(--sub); font-style: italic; margin-top: 4px; }
+  .notas { display: block; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .riel2 { display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; }
+  .riel2 .hh { font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--sub); border-top: 1px solid var(--line); padding-top: 2px; min-height: 20px; }
+  .riel2 .cc { border-top: 1px solid var(--line); font-size: 12px; color: var(--ink); padding-top: 2px; min-height: 20px; }
+  .riel2 .hh.p, .riel2 .cc.p { opacity: .45; }
+  .riel2 .cc.ah { border-top: 2px solid var(--tinta); }
+  .riel2.bajo .hh, .riel2.bajo .cc { min-height: 11px; padding-top: 0; font-size: 8.5px; }
+  .vacio1 { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sub); padding: 6px 0; border-top: 2px solid var(--tinta); margin-top: 4px; }
+  .vacio1 b { font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--tinta); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hoy: orden y vacío</h1>
+  <p class="stand">Lo pedido sobre la 1.90.0: <em>reducir la línea del tiempo cuando no hay nada; las notas al final del día; «Lío» a la izquierda del sol para que se sepa qué es; justo después la cena, y después el resto</em>. El orden queda así —Lío, cena, el día, las notas— en todas las maquetas; lo que se pregunta es la forma de cada pieza.</p>
+  <section class="q" data-q="A"><p class="qhead">Pregunta A · Día vacío</p><p class="qtitle">¿Cómo se ve el día cuando no hay nada, o poco?</p><p class="qwhy">Hoy el riel va de 8 a 22 siempre; vacío ocupa media pantalla.</p><div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Sin nada, una línea; con algo, el riel de siempre</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="rot">PARA HOY</span><span class="vacio1"><b>11:35</b>Hoy no hay nada apuntado.</span><span class="notas"><span class="nota">Domingo sin agenda: el sofá también cuenta como actividad extraescolar.</span><span class="nota">🐾 «Esta noche me saca Ana. Ya era hora.»</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Un día vacío no dibuja horas: una sola línea con la raya de ahora y «Hoy no hay nada apuntado». Con algo apuntado, el riel de la 1.90.0, de 8 a 22. <b>Lo vacío ocupa una línea</b> y lo lleno no cambia. Coste: dos formas distintas según el día.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Sin nada, solo desde ahora y en filas bajas</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="rot">PARA HOY</span><span class="riel2 bajo"><span class="hh ah">11</span><span class="cc ah"></span><span class="hh ">12</span><span class="cc "></span><span class="hh ">13</span><span class="cc "></span><span class="hh ">14</span><span class="cc "></span><span class="hh ">15</span><span class="cc "></span><span class="hh ">16</span><span class="cc "></span><span class="hh ">17</span><span class="cc "></span><span class="hh ">18</span><span class="cc "></span><span class="hh ">19</span><span class="cc "></span><span class="hh ">20</span><span class="cc "></span><span class="hh ">21</span><span class="cc "></span><span class="hh ">22</span><span class="cc "></span></span><span class="notas"><span class="nota">Domingo sin agenda: el sofá también cuenta como actividad extraescolar.</span><span class="nota">🐾 «Esta noche me saca Ana. Ya era hora.»</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Un día vacío enseña solo lo que queda —de ahora a las 22— y con filas de la mitad de alto. <b>Sigue siendo un riel</b>, y deja ver la tarde libre. Coste: sigue ocupando casi media pantalla para decir que no hay nada.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Solo las horas con algo, y la de ahora</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="rot">PARA HOY</span><span class="riel2 "><span class="hh p">10</span><span class="cc p">☕ Desayuno con la abuela</span><span class="hh ah">11</span><span class="cc ah"></span><span class="hh ">17</span><span class="cc ">🐴 Hípica (Falu) 17:00</span><span class="hh ">18</span><span class="cc ">🛬 Roma → Barcelona 18:48</span></span><span class="notas"><span class="nota">Domingo sin agenda: el sofá también cuenta como actividad extraescolar.</span><span class="nota">🐾 «Esta noche me saca Ana. Ya era hora.»</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Siempre, haya o no cosas: el riel enseña únicamente las horas que tienen algo y la hora de ahora; un día vacío se queda en la fila de ahora. <b>Lo más corto en todos los casos</b>. Coste: se pierde lo que daba el riel completo, ver el hueco libre de la tarde.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Riel completo, filas a la mitad</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="rot">PARA HOY</span><span class="riel2 bajo"><span class="hh p">08</span><span class="cc p"></span><span class="hh p">09</span><span class="cc p"></span><span class="hh p">10</span><span class="cc p">☕ Desayuno</span><span class="hh ah">11</span><span class="cc ah"></span><span class="hh ">12</span><span class="cc "></span><span class="hh ">13</span><span class="cc "></span><span class="hh ">14</span><span class="cc "></span><span class="hh ">15</span><span class="cc "></span><span class="hh ">16</span><span class="cc "></span><span class="hh ">17</span><span class="cc ">🐴 Hípica</span><span class="hh ">18</span><span class="cc ">🛬 Roma → BCN</span><span class="hh ">19</span><span class="cc "></span><span class="hh ">20</span><span class="cc "></span><span class="hh ">21</span><span class="cc "></span><span class="hh ">22</span><span class="cc "></span></span><span class="notas"><span class="nota">Domingo sin agenda: el sofá también cuenta como actividad extraescolar.</span><span class="nota">🐾 «Esta noche me saca Ana. Ya era hora.»</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Las horas de 8 a 22 siempre, pero a la mitad de alto, con o sin cosas. <b>Mantiene la forma del día entero</b>. Coste: las cosas quedan apretadas en filas bajas y un día vacío sigue midiendo lo mismo.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cómo debería verse un día vacío.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <section class="q" data-q="B"><p class="qhead">Pregunta B · Lío</p><p class="qtitle">¿Cómo se identifica la fila de Lío?</p><p class="qwhy">Hoy las monedas van bajo el rótulo «🐾 Lío».</p><div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">«Lío» a la izquierda, en la misma fila</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Una fila: la palabra «Lío» a la izquierda y las monedas detrás, sin rótulo de grupo encima. <b>Se lee de un vistazo qué son</b> y ahorra la línea del rótulo. Es la misma forma que «Cena» en la pregunta C, de modo que las dos filas se leen como una pareja. Coste: la huella 🐾 desaparece.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">«🐾 Lío» en versalita a la izquierda</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti">🐾 Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Igual que B1 con la huella y el rótulo en versalita gris, como los rótulos de grupo. <b>Conserva el 🐾</b>. Coste: en versalita y gris pesa menos que las monedas y se lee como un rótulo, no como el nombre de la fila.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">La palabra dentro de cada moneda</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="mon hecho">🐾 Lío ☀️ Lu</span><span class="mon ">🐾 Lío 🌙 An</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Cada moneda dice «🐾 Lío ☀️ Lu». <b>Cada moneda se explica sola</b>, también fuera de Hoy. Coste: las monedas doblan su ancho y repiten «Lío» dos veces.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Una frase en lugar de monedas</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span style="font-size:12px">☀️ <b>Lu</b> ✓ · 🌙 <b>An</b>, sin marcar</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">«Lío: ☀️ Lu ✓ · 🌙 An, sin marcar», en texto. <b>Lo más legible</b>. Coste: deja de ser la moneda de la agenda y de abrir el turno de un toque.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cómo debería identificarse Lío.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <section class="q" data-q="C"><p class="qhead">Pregunta C · Cena</p><p class="qtitle">¿Qué forma tiene la cena, justo después de Lío?</p><p class="qwhy">Hoy es la tarjeta «Esta noche», al final.</p><div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Una fila como la de Lío</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="fila2" style="color:var(--sub);font-size:11.5px"><span class="eti2" style="color:var(--sub)">Ayer</span>Tortilla de espinacas · ¿repetir? <span class="cena"><span class="bt">Sí</span><span class="bt">No</span></span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">Justo debajo de Lío, «Cena» a la izquierda, el plato y «Cambiar»; la pregunta de ayer, si la hay, en una fila fina debajo. <b>Lío y la cena, las dos cosas de cada día, juntas arriba y con la misma forma</b>. Coste: el plato de las niñas, si lo hay, va en una segunda línea pequeña.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">La tarjeta de «Esta noche», más arriba</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="rot">🍽️ ESTA NOCHE</span><span class="tarj"><span>Salmón al horno con espárragos</span><span class="v" style="width:auto;padding:0 8px;border-radius:99px">Cambiar</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">La tarjeta de hoy, tal cual, subida justo después de Lío. <b>No cambia nada salvo el sitio</b>. Coste: rompe la forma de filas que tendría Lío, y el rótulo vuelve a gastar una línea.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cómo debería verse la cena.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <section class="q" data-q="D"><p class="qhead">Pregunta D · Notas</p><p class="qtitle">¿Cómo van las frases al final del día?</p><p class="qwhy">«Las notas» se leen aquí como la frase del día y la voz de Lío; si se refería a otra cosa, dígalo en la nota.</p><div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">Las dos frases al pie, en gris</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="rot">PARA HOY</span><span class="riel2 "><span class="hh p">10</span><span class="cc p">☕ Desayuno con la abuela</span><span class="hh ah">11</span><span class="cc ah"></span><span class="hh ">17</span><span class="cc ">🐴 Hípica (Falu) 17:00</span><span class="hh ">18</span><span class="cc ">🛬 Roma → Barcelona 18:48</span></span><span class="notas"><span class="nota">Domingo sin agenda: el sofá también cuenta como actividad extraescolar.</span><span class="nota">🐾 «Esta noche me saca Ana. Ya era hora.»</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">La frase del día y la voz de Lío bajan al final, tras una raya fina y antes de la versión, en cursiva gris. <b>Arriba queda solo lo que se consulta</b>. Coste: quien no baja no las lee, y la voz de Lío se separa de sus monedas.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Al pie, la de Lío junto a su fila</span></span>
+        <span class="mock"><span class="tel"><span class="sal">Buenos días, Ana</span><span class="fec">domingo 4 de Octubre</span><span class="fila2"><span class="eti2">Lío</span><span class="mon hecho">☀️Lu</span><span class="mon ">🌙An</span><span style="font-size:10px;color:var(--sub);margin-left:6px">AYER</span><span class="mon ">☀️Ma</span></span><span class="nota" style="margin:-2px 0 4px 50px">🐾 «Esta noche me saca Ana. Ya era hora.»</span><span class="cena"><span class="eti2">Cena</span><span>Salmón al horno con espárragos</span><span class="bt">Cambiar</span></span><span class="rot">PARA HOY</span><span class="riel2 "><span class="hh p">10</span><span class="cc p">☕ Desayuno con la abuela</span><span class="hh ah">11</span><span class="cc ah"></span><span class="hh ">17</span><span class="cc ">🐴 Hípica (Falu) 17:00</span><span class="hh ">18</span><span class="cc ">🛬 Roma → Barcelona 18:48</span></span><span class="notas"><span class="nota">Domingo sin agenda: el sofá también cuenta como actividad extraescolar.</span></span></span><span class="caption">Ilustrativo: domingo 4, a las 11:35.</span></span>
+        <p class="obody">La frase del día baja al pie; la voz de Lío se queda bajo sus monedas, en pequeño. <b>Lío habla donde está Lío</b>. Coste: una línea más arriba, entre Lío y la cena.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, dónde irían las frases.</p>
+      </button>
+    </div><details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque copiado."></textarea></details></section>
+  <div class="foot"><p>No cambia: la banda de peticiones arriba cuando la hay, el riel con lo pasado atenuado y la raya de ahora cuando hay cosas, y tocar una moneda para marcar.</p></div>
+</div>
+<div class="bar"><div class="barin"><span class="count" id="count"></span><button class="copy" id="copy">Copiar</button></div></div>
+<script>
+
+
+  const KEY = "options.hoy-orden";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+  function toggle(t) {
+    const l = t[0]; const none = l + "0"; const list = picked(l); const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) next = on ? [] : [t];
+    else if (on) next = list.filter((x) => x !== t);
+    else if (t === none) next = [t];
+    else next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    if (next.length) state.picks[l] = next; else delete state.picks[l];
+  }
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) { const n = (state.notes[l] || "").trim(); if (n) lines.push(l + ": " + n); }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) { const t = btn.dataset.t; btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t))); }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" + (missing.length ? " — falta: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toque una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+  document.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { toggle(btn.dataset.t); keep(); paint(); }));
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => { state.notes[area.dataset.n] = area.value; keep(); });
+  });
+  copy.addEventListener("click", async () => {
+    const text = block(); let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {} t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+  paint();
+</script>
+</body>
+</html>
