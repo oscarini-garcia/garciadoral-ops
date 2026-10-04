@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semana como el mes</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+    /* Los de la aplicación, para que las maquetas se parezcan a la pantalla. */
+    --papel: #FBF9F5;
+    --papel3: #EAE6DC;
+    --tinta: #0E6E62;
+    --tinta-suave: rgba(14, 110, 98, 0.14);
+    --tinta-ink: #FBF9F5;
+    --no: #B5523B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+      --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+      --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+    --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+    --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 16px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin: 0 0 4px; }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    color: var(--ink); font: inherit; transition: border-color 0.12s ease; display: block;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--ac); flex: none; }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-size: 10.5px; letter-spacing: 0.07em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--papel); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--sub); font-size: 12px; letter-spacing: 0.03em; }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 620; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+
+  
+  /* ---- Maqueta de la semana ---- */
+  .wk { display: flex; flex-direction: column; gap: 6px; max-width: 340px; }
+  .wk .dia { display: grid; grid-template-columns: 38px 1fr; gap: 8px; align-items: center;
+    background: var(--papel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+  .wk .dia.algo { background: var(--tinta-suave); border-color: transparent; }
+  .wk .dia.hoy-c1 { box-shadow: inset 0 0 0 1.5px var(--tinta); }
+  .wk .dia.fino { background: transparent; border-color: transparent; padding: 1px 10px; }
+  .wk .fecha { display: block; line-height: 1.05; }
+  .wk .ini { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 9.5px; letter-spacing: .1em; color: var(--sub); }
+  .wk .num { display: block; font-family: Georgia, serif; font-size: 17px; color: var(--ink); }
+  .wk .dia.fino .fecha { display: flex; gap: 5px; align-items: baseline; }
+  .wk .dia.fino .num { font-size: 13.5px; color: var(--sub); }
+  .wk .num.c2 { display: inline-flex; width: 24px; height: 24px; border-radius: 50%; background: var(--tinta); color: var(--tinta-ink); align-items: center; justify-content: center; font-size: 14px; }
+  .wk .num.c3 { color: var(--tinta); }
+  .wk .hoytxt { display: inline-block; font-family: ui-monospace, Menlo, monospace; font-size: 8.5px; letter-spacing: .08em; color: var(--tinta); margin-left: 2px; }
+  .wk .cont { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .wk .fila { display: flex; align-items: center; gap: 6px; min-height: 22px; font-size: 13px; color: var(--ink); }
+  .wk .fila .h { margin-left: auto; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--sub); }
+  .wk .guion { color: var(--sub); font-size: 13px; }
+  .wk .gris { color: var(--sub); font-size: 12px; }
+  .wk .monedas { margin-left: auto; display: inline-flex; gap: 4px; flex: none; }
+  .wk .mon { display: inline-flex; align-items: center; gap: 2px; height: 20px; padding: 0 6px 0 4px; border-radius: 99px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--sub); box-shadow: inset 0 0 0 1.2px var(--line-hard); background: var(--papel); }
+  .wk .mon.hecho { box-shadow: inset 0 0 0 1.4px var(--tinta); color: var(--ink); }
+  .wk .mon.no { box-shadow: inset 0 0 0 1.4px var(--no); }
+  .wk .mon.solo { padding: 0 4px; }
+  .wk .pila { display: flex; flex-direction: column; gap: 2px; margin-top: 3px; }
+  .wk .pila .mon { height: 16px; font-size: 9px; padding: 0 4px 0 2px; }
+  .wk .marca { display: inline-flex; width: 12px; height: 12px; border-radius: 50%; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; line-height: 1; }
+  .wk .marca.hecho { background: var(--tinta); color: var(--tinta-ink); }
+  .wk .marca.no { background: var(--no); color: #fff; }
+  .wk .marca.sin { box-shadow: inset 0 0 0 1.2px var(--line-hard); }
+  .wk .ico { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Semana como el mes</h1>
+  <p class="stand">Lo pedido: <em>qué cambiar en la semana para que funcione y se vea con los mismos principios que el mes</em>. Los del mes son tres: Lío no ocupa líneas, sino monedas con iniciales; los días con algo se distinguen con un fondo tintado; y lo que no aporta se compacta. Hoy, en la semana, cada día lleva dos renglones de Lío y todos los días pesan lo mismo, tengan algo o no.</p>
+  <p class="stand">Las maquetas son ilustrativas: de lunes 28 a viernes 2, hoy jueves 1. Cada opción se dibuja con las de las otras preguntas en su recomendada, para que se lea entera.</p>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Lío en la semana</p>
+    <p class="qtitle">¿Dónde va Lío dentro de cada día?</p>
+    <p class="qwhy">Hoy son dos renglones por día —14 en la semana— y son lo que más se ve, aunque sea lo único que se repite. Tocar Lío seguiría abriendo el día de Lío, como ahora.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Monedas a la derecha, en la primera línea</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock" data-m="A2,B3,C1"></span>
+        <p class="obody">Las mismas dos monedas que el detalle del mes, ☀️ y 🌙 con iniciales y el borde que dice cómo va, alineadas a la derecha de la primera línea del día. <b>Es la misma figura que en el mes</b>, y un día con un evento ocupa un solo renglón. Coste: la hora del primer evento se desplaza a la izquierda de las monedas y esa línea se estrecha; un título largo se recorta antes.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Monedas bajo el número del día</span></span>
+        <span class="mock" data-m="A1,B3,C1"></span>
+        <p class="obody">Las monedas, más pequeñas, apiladas en la columna de la fecha, bajo el número. <b>Los eventos conservan el ancho entero</b> y la hora en su sitio. Coste: un día vacío no puede ser una línea fina —la pila pide alto—, así que choca con compactar los vacíos (pregunta B), y las monedas a 16 puntos se leen con esfuerzo.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Solo el estado, sin iniciales</span></span>
+        <span class="mock" data-m="A3,B3,C1"></span>
+        <p class="obody">Sol y luna con un redondel de estado —verde salió, rojo no salió, vacío sin marcar—, sin decir de quién es. <b>Es lo más pequeño</b> y deja la semana casi solo para los eventos. Coste: no se distingue de un vistazo a quién le toca cada turno de la semana, que es justo lo que se mira al planificar.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Un solo renglón gris por día</span></span>
+        <span class="mock" data-m="A4,B3,C1"></span>
+        <p class="obody">Los dos turnos juntos en una línea gris de texto, «☀️ Ós · 🌙 An», como primera línea del día. <b>Pasa de dos renglones a uno</b> y se lee como texto, no como botones. Coste: sigue ocupando un renglón en cada día, incluidos los vacíos, y pierde el orden «la mañana abre y la noche cierra».</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Lío sigue en dos renglones por día; en la nota, qué se busca en su lugar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Días con algo</p>
+    <p class="qtitle">¿Cómo se distinguen los días con algo de los vacíos?</p>
+    <p class="qwhy">En el mes, el día con algo lleva fondo tintado. En la semana todos son tarjetas iguales, y el vacío lleva un guion que ocupa lo mismo que un evento. Lío no cuenta como «algo».</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Tinte y vacíos en línea fina</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock" data-m="A2,B3,C1"></span>
+        <p class="obody">El día con algo es tarjeta con el fondo tintado del mes; el vacío pierde la tarjeta y queda en una línea baja con el día en línea, «M 29», y sus monedas. <b>Es el mismo código que el mes y la semana cabe en mucho menos alto</b>. Coste: la semana deja de ser siete bloques iguales; quien la lee como una rejilla pierde esa forma, y el doble toque para crear en un vacío tiene menos superficie.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Solo el tinte</span></span>
+        <span class="mock" data-m="A2,B1,C1"></span>
+        <p class="obody">Todas las tarjetas siguen iguales de forma; las que tienen algo llevan el fondo tintado. <b>Cambia lo mínimo</b> y conserva la rejilla de siete. Coste: no gana alto; los vacíos siguen ocupando una tarjeta entera.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Solo compactar los vacíos</span></span>
+        <span class="mock" data-m="A2,B2,C1"></span>
+        <p class="obody">Sin tinte: los días con algo siguen como tarjeta neutra y los vacíos pasan a línea fina. <b>Gana el alto sin añadir color</b>. Coste: rompe la coherencia con el mes, donde el tinte es la marca; aquí la marca sería la forma.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Tinte y vacíos seguidos en una línea</span></span>
+        <span class="mock" data-m="A2,B4,C1"></span>
+        <p class="obody">Como B1, pero los vacíos consecutivos se juntan en una sola línea, «M 29 – X 30 · nada». <b>Es lo más compacto</b>. Coste: esa línea no puede llevar las monedas de Lío de dos días, así que Lío desaparece de esos días en la semana, y crear en uno concreto pide abrir antes el tramo.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Los días siguen todos iguales; en la nota, qué se busca en su lugar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · Hoy</p>
+    <p class="qtitle">Si el tinte pasa a significar «tiene algo», ¿cómo se marca hoy?</p>
+    <p class="qwhy">Hoy, en la semana, el día de hoy es el único tintado. Si el tinte marca los días con algo, hoy necesita otra señal; en el mes es un borde en tinta.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Borde en tinta</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock" data-m="A2,B3,C1"></span>
+        <p class="obody">La tarjeta de hoy lleva un borde de tinta, con o sin tinte debajo. <b>Es exactamente la señal de hoy en el mes</b>. Coste: un borde fino se ve menos que un relleno; si hoy está vacío, la línea fina necesita igualmente su borde y se vuelve tarjeta.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Número en círculo</span></span>
+        <span class="mock" data-m="A2,B3,C2"></span>
+        <p class="obody">El número del día va en un círculo relleno de tinta, como en el calendario de iOS. <b>Se encuentra al instante</b> y no compite con el tinte del fondo. Coste: en el mes, el relleno pleno significa «día elegido», no «hoy»; aquí diría otra cosa con la misma figura.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Número en tinta y «HOY»</span></span>
+        <span class="mock" data-m="A2,B3,C3"></span>
+        <p class="obody">El número en color tinta y la palabra «HOY» en versalita junto a la inicial. <b>Lo dice con palabras</b>, sin figura nueva. Coste: es la señal más débil de las tres sobre un fondo ya tintado.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cómo debería marcarse hoy.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p>Lo que no cambia: el conmutador, las flechas, el deslizamiento horizontal y volver a hoy tocando «Agenda». Tocar una moneda en la semana abriría la hoja del turno, como en el mes (C2 de la ronda anterior). La semana no gana deslizamiento vertical: es una lista que se desplaza.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  // Las maquetas: una función que dibuja la semana de ejemplo según la
+  // combinación (Lío, marca de días, hoy). Contenido estático, sin controles.
+  const DIAS = [
+    { i: 'L', n: 28, ev: [['🏇', 'Entreno de hípica', '18:00']], m: ['Ós', 'hecho'], no: ['An', 'hecho'] },
+    { i: 'M', n: 29, ev: [], m: ['An', 'hecho'], no: ['Ós', 'hecho'] },
+    { i: 'X', n: 30, ev: [], m: ['Ós', 'hecho'], no: ['An', 'no'] },
+    { i: 'J', n: 1, hoy: true, ev: [['📌', 'Dentista', '17:00'], ['🎂', 'Cumple de la abuela', '']], m: ['An', 'hecho'], no: ['Ós', 'sin'] },
+    { i: 'V', n: 2, ev: [], m: ['Ós', 'sin'], no: ['An', 'sin'] },
+  ];
+  const MARCA = { hecho: '✓', no: '✕', sin: '' };
+  const mon = (emo, [q, e], cls = '') => `<span class="mon ${e} ${cls}">${emo}${q}</span>`;
+  const estado = (emo, [, e]) => `<span class="ico">${emo}<span class="marca ${e}">${MARCA[e]}</span></span>`;
+  function lio(d, a) {
+    if (a === 'A2') return `<span class="monedas">${mon('☀️', d.m)}${mon('🌙', d.no)}</span>`;
+    if (a === 'A3') return `<span class="monedas">${estado('☀️', d.m)}${estado('🌙', d.no)}</span>`;
+    return '';
+  }
+  function fecha(d, a, c, fino) {
+    const num = d.hoy && c === 'C2' ? `<span class="num c2">${d.n}</span>`
+      : `<span class="num ${d.hoy && c === 'C3' ? 'c3' : ''}">${d.n}</span>`;
+    const hoytxt = d.hoy && c === 'C3' ? '<span class="hoytxt">HOY</span>' : '';
+    const pila = a === 'A1' ? `<span class="pila">${mon('☀️', d.m)}${mon('🌙', d.no)}</span>` : '';
+    return `<span class="fecha"><span class="ini">${d.i}${hoytxt}</span>${num}${fino ? '' : pila}</span>`;
+  }
+  function filas(d, a) {
+    const out = [];
+    if (a === 'A4') out.push(`<span class="fila gris">☀️ ${d.m[0]} · 🌙 ${d.no[0]}</span>`);
+    if (!d.ev.length) out.push(`<span class="fila"><span class="guion">—</span>${lio(d, a)}</span>`);
+    d.ev.forEach(([e, t, h], k) => {
+      const hora = h ? `<span class="h">${h}</span>` : '';
+      const extra = k === 0 ? lio(d, a) : '';
+      out.push(`<span class="fila">${e} ${t}${a === 'A2' && k === 0 ? (h ? `<span class="h" style="margin-left:auto">${h}</span>` : '') + extra.replace('margin-left: auto','') : hora + extra}</span>`);
+    });
+    return out.join('');
+  }
+  function semana(a, b, c) {
+    const out = [];
+    for (let k = 0; k < DIAS.length; k++) {
+      const d = DIAS[k];
+      const algo = d.ev.length > 0;
+      const tinte = algo && (b === 'B1' || b === 'B3' || b === 'B4');
+      const compacta = !algo && !d.hoy && (b === 'B2' || b === 'B3' || b === 'B4') && a !== 'A1';
+      if (!algo && !d.hoy && b === 'B4') {
+        const sig = DIAS[k + 1];
+        if (sig && !sig.ev.length && !sig.hoy) {
+          out.push(`<span class="dia fino"><span class="fecha"><span class="ini">${d.i}</span><span class="num">${d.n}</span></span><span class="cont"><span class="fila"><span class="gris">– ${sig.i} ${sig.n} · nada</span></span></span></span>`);
+          k++; continue;
+        }
+      }
+      const cls = ['dia', tinte ? 'algo' : '', compacta ? 'fino' : '', d.hoy && c === 'C1' ? 'hoy-c1' : ''].join(' ');
+      if (compacta) {
+        out.push(`<span class="${cls}"><span class="fecha"><span class="ini">${d.i}</span><span class="num">${d.n}</span></span><span class="cont"><span class="fila">${lio(d, a) || (a === 'A4' ? `<span class="gris">☀️ ${d.m[0]} · 🌙 ${d.no[0]}</span>` : '')}</span></span></span>`);
+      } else {
+        out.push(`<span class="${cls}">${fecha(d, a, c, false)}<span class="cont">${filas(d, a)}</span></span>`);
+      }
+    }
+    return `<span class="wk">${out.join('')}</span><span class="caption">Ilustrativo.</span>`;
+  }
+  document.querySelectorAll('.mock[data-m]').forEach((m) => {
+    const [a, b, c] = m.dataset.m.split(',');
+    m.innerHTML = semana(a, b, c);
+  });
+
+  const KEY = "options.semana-como-mes";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+  function toggle(t) {
+    const l = t[0]; const none = l + "0"; const list = picked(l); const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) next = on ? [] : [t];
+    else if (on) next = list.filter((x) => x !== t);
+    else if (t === none) next = [t];
+    else next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    if (next.length) state.picks[l] = next; else delete state.picks[l];
+  }
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) { const n = (state.notes[l] || "").trim(); if (n) lines.push(l + ": " + n); }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) { const t = btn.dataset.t; btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t))); }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" + (missing.length ? " — falta: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toque una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+  document.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { toggle(btn.dataset.t); keep(); paint(); }));
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => { state.notes[area.dataset.n] = area.value; keep(); });
+  });
+  copy.addEventListener("click", async () => {
+    const text = block(); let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {} t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+  paint();
+</script>
+</body>
+</html>
