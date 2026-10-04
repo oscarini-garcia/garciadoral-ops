@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.93.0',
+    fecha: '2026-10-04',
+    titulo: 'El día arriba, con sus flechas',
+    lineas: [
+      'En «Día», el título es la fecha, con flechas a los lados para ir al día anterior o al siguiente.',
+      'El botón de compartir está siempre, también en un día sin nada.',
+      'Arrastrar funciona como en la semana: a los lados y, si el día cabe en la pantalla, arriba y abajo.',
+      'Se retira la versión del pie del día; sigue en Ajustes.',
+    ],
+  },
+  {
     version: '1.92.0',
     fecha: '2026-10-04',
     titulo: 'El día, en orden',

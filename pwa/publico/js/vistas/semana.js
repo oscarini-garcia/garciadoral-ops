@@ -85,7 +85,19 @@ export function volverAHoyEnAgenda() {
  * teléfono es un día más de semana a la vista.
  */
 export function tituloDeAgenda(ctx) {
-  if (modo === 'dia') return tituloDelDia(ancla, ctx);
+  if (modo === 'dia') {
+    // El día arriba, con sus flechas a los lados: atrás y adelante de día en
+    // día, sin depender de que quepan en la fila de mandos.
+    const flecha = (rotulo, pasos, etiqueta) => el('button', {
+      class: 'titulo-flecha', type: 'button', 'aria-label': etiqueta,
+      onclick: () => { toque(); mover(pasos); ctx.refrescar(); },
+    }, [rotulo]);
+    return el('span', { class: 'titulo-dia' }, [
+      el('span', { class: 'titulo-dia-texto', texto: tituloDelDia(ancla, ctx) }),
+      flecha('‹', -1, 'Día anterior'),
+      flecha('›', 1, 'Día siguiente'),
+    ]);
+  }
   if (modo === 'semana') {
     const lunes = lunesDe(ancla);
     return mesesDe(lunes, sumarDias(lunes, 6));
@@ -136,7 +148,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
           }, [rotulo]),
         ),
       ]),
-      el('div', { class: 'paso empujar' }, [
+      modo === 'dia' ? el('span', { class: 'empujar' }) : el('div', { class: 'paso empujar' }, [
         paso('‹', -1, 'Anterior'),
         paso('›', 1, 'Siguiente'),
       ]),
@@ -172,7 +184,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   // solo se adueña del dedo (`touch-action: none`) cuando la semana cabe
   // entera en la pantalla. Si no cabe, el navegador desplaza y el gesto no
   // salta.
-  if (modo === 'semana') {
+  if (modo === 'semana' || modo === 'dia') {
     deslizarVertical(cuerpo, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
     requestAnimationFrame(() => {
       cuerpo.classList.toggle('arrastre-vertical', pantalla.scrollHeight <= pantalla.clientHeight + 1);
@@ -244,8 +256,11 @@ function accionesDelPeriodo(ctx) {
   const dias = diasDelPeriodo();
   const reparto = repartoDelPeriodo(ctx, dias);
   const bloques = textoDelPeriodo(ctx, dias, reparto);
-  // Un periodo sin nada no se ofrece: no habría nada que enviar.
-  if (!bloques.length) return [];
+  // Un periodo sin nada no se ofrece: no habría nada que enviar. El día sí,
+  // siempre, como en las demás vistas que tienen algo: compartir un día vacío
+  // es decir que ese día no hay nada.
+  if (!bloques.length && modo !== 'dia') return [];
+  if (!bloques.length) bloques.push('Nada apuntado.');
 
   const titulo = tituloDeLoCompartido(dias);
   return [botonDeCompartir(ctx, {

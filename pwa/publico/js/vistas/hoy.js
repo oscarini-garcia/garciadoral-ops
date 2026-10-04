@@ -140,15 +140,19 @@ export function cuerpoDelDia(dia, ctx) {
     ...bloqueDeCenas(dia, ctx),
     bloqueDelDia(dia, ctx),
     notas.length ? el('div', { class: 'hoy-notas' }, notas) : null,
-    esHoy ? pieDeVersion() : null,
   ].filter(Boolean));
   return cuerpo;
 }
 
 /** El saludo cuando se mira hoy; el día escrito cuando se mira otro. Es el
  *  título de la agenda en la vista «Día». */
-export function tituloDelDia(dia, ctx) {
-  return iso(dia) === iso(hoy()) ? tituloDeHoy(ctx) : formatearFechaLarga(dia);
+export function tituloDelDia(dia) {
+  const texto = formatearFechaLarga(dia);
+  const largo = texto.charAt(0).toUpperCase() + texto.slice(1);
+  // Con las dos flechas al lado, «Miércoles 30 de Septiembre» no cabe: el
+  // mes se abrevia antes que recortar la fecha.
+  if (largo.length <= 20) return largo;
+  return largo.replace(/ de (\p{L})(\p{L}{2})\p{L}*$/u, (_, a, b) => ` de ${a}${b}`);
 }
 
 // ------------------------------------------------------- Las escapadas --
