@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.92.0',
+    fecha: '2026-10-04',
+    titulo: 'El día, en orden',
+    lineas: [
+      'En «Día», arriba Lío —con su nombre a la izquierda— y justo después la cena; luego el día y, al final, la frase del día y la de Lío.',
+      'Ya no aparece «null» encima de Lío al mirar otro día.',
+      'Los mandos de la agenda caben en una sola fila.',
+    ],
+  },
+  {
     version: '1.91.0',
     fecha: '2026-10-04',
     titulo: 'Hoy pasa a la agenda como «Día»',

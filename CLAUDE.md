@@ -27,6 +27,15 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El día, en orden (1.92.0).** Lo que se pidió para Hoy se aplicó sobre la
+  vista «Día» con las recomendadas de `specs/propuesta-hoy-orden.html` (A1 ·
+  B1 · C1 · D1; la ronda quedó sin contestar en el PR #171): Lío es una fila
+  con «Lío» a la izquierda y las monedas (`.hoy-fila`), la cena otra fila
+  igual justo debajo, después el riel y al final, en `.hoy-notas`, la frase
+  del día y la voz de Lío. Se arregla el «null» que salía mirando otro día
+  —`append` nativo convierte `null` en texto—, los turnos de «ayer» solo
+  suben mirando hoy, y las flechas se esconden hasta 459 puntos para que los
+  mandos quepan en una fila.
 - **Hoy pasa a la agenda como «Día» (1.91.0).** La pestaña Hoy se retiró de
   la barra (cinco entradas para quien vive en casa, Agenda la primera) y su
   contenido es la vista «Día» de la agenda, primera del conmutador y la de
