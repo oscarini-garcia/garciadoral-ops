@@ -1490,8 +1490,8 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
           texto: [
             dias > 1 ? `${dias} días` : null,
             evento.jornada_completa ? 'Todo el día' : horaDe(aparicion || { evento, instancia: { inicio }, continuacion: false }),
-            // Una actividad no es un «Entreno», aunque su tipo lo diga: es
-            // recurrente (specs/propuesta-recurrentes.html, A2).
+            // Una actividad dice «Recurrente» aunque se escribiera antes de
+            // existir ese tipo (specs/propuesta-recurrentes.html, A2).
             plugin === 'extraescolares' ? 'Recurrente' : ctx.vista.tipoEvento(evento.tipo_id)?.nombre,
             duenyo ? `de ${duenyo.nombre}` : null,
             evento.ubicacion,

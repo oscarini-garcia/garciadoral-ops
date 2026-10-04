@@ -537,7 +537,7 @@ function bloqueDeCumples(cuerpo, ctx) {
  * cuatro. Los tres que ahora tienen plugin propio —cumpleaños, santo y viaje—
  * no se ofrecen aquí.
  */
-export const TIPOS_DE_OTROS_PLUGINS = ['cumpleanos', 'santo', 'viaje'];
+export const TIPOS_DE_OTROS_PLUGINS = ['cumpleanos', 'santo', 'viaje', 'recurrente'];
 
 export function tiposVisibles(ctx, ademas = null) {
   const ajustes = ajustesDe(ctx.vista.datos, 'puntuales');
@@ -927,7 +927,9 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
 
           await guardar('evento', existente ? existente.id : nuevoId(), {
             titulo: titulo.value.trim(),
-            tipo_id: existente?.tipo_id && !TIPOS_DE_OTROS_PLUGINS.includes(existente.tipo_id) ? existente.tipo_id : 'entreno',
+            // Siempre «Recurrente»: es lo que leen el plan de los domingos y la
+            // redacción con IA (specs/propuesta-recurrentes.html).
+            tipo_id: 'recurrente',
             plugin_id: 'extraescolar',
             inicio: inicioIso,
             fin: finIso,

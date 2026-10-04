@@ -27,6 +27,15 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El tipo «Recurrente» (1.86.0).** Lo que quedaba de la 1.85.0: el plan de
+  los domingos y la redacción leían el tipo `entreno` y el WhatsApp decía
+  «🏃 academia». Hay un tipo nuevo, `recurrente` (🔁), en
+  `datos/catalogos.json`, en la semilla `0002` y en la migración `0028`
+  (`.unavez`), que además pasa a él las actividades que seguían en `entreno`.
+  El formulario de la actividad escribe siempre `recurrente`, y el tipo queda
+  fuera del selector de un evento puntual (`TIPOS_DE_OTROS_PLUGINS`). Una
+  actividad cuyo título empieza por emoji conserva ese emoji, como cualquier
+  evento.
 - **Recurrentes (1.85.0).** Decidido como A2 · B1 · C1 en
   `specs/propuesta-recurrentes.html`. El plugin `extraescolares` se llama de
   origen «Recurrentes» (el identificador no cambia, ni `plugin_id:
