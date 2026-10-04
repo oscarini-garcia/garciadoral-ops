@@ -176,7 +176,7 @@ tener que recorrer la aplicación entera cada vez.
   reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · marcaDeSeleccionada
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
   …y 3 más
-- **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
+- **semana.js** — La agenda: semana y mes sobre los mismos datos.
   reiniciarAgenda · volverAHoyEnAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone
   abrirLioDelDia · filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta
   …y 11 más

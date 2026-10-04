@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.89.0',
+    fecha: '2026-10-04',
+    titulo: 'Agenda: semana y mes',
+    lineas: [
+      'Se retira la vista de lista: la semana ya enseña cada día entero.',
+      'Una semana entre dos meses se titula abreviada, en una línea: «Sep – Oct 2026».',
+      'El botón de capas lleva su nombre, «Capas».',
+    ],
+  },
+  {
     version: '1.88.0',
     fecha: '2026-10-04',
     titulo: 'Avisos al despegar y al aterrizar',

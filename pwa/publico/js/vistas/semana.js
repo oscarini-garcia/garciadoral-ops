@@ -1,12 +1,12 @@
 /**
- * La agenda: semana, mes y lista sobre los mismos datos.
+ * La agenda: semana y mes sobre los mismos datos.
  *
- * Las tres vistas son necesarias porque responden a preguntas distintas: qué
- * hay estos días, cómo se reparte el mes y qué viene a continuación
- * (specs/ux.md §10). La de semana es la de por defecto y la que abre la
- * aplicación.
+ * Las dos vistas responden a preguntas distintas: qué hay estos días y cómo se
+ * reparte el mes (specs/ux.md §10). La de semana es la de por defecto y la que
+ * abre la aplicación. Hubo una tercera, la lista, que se retiró cuando la
+ * semana pasó a enseñar cada día entero.
  *
- * Sobre las tres se navega igual: el encabezado dice de cuándo se habla —mes y
+ * Sobre las dos se navega igual: el encabezado dice de cuándo se habla —mes y
  * año incluidos—, las flechas pasan al periodo anterior o al siguiente y el
  * deslizamiento lateral hace lo mismo sin buscarlas. Lo que pasa el gesto es el
  * periodo que se esté mirando: la semana, el mes o, dentro de la hoja de día,
@@ -85,9 +85,7 @@ export function tituloDeAgenda() {
     const lunes = lunesDe(ancla);
     return mesesDe(lunes, sumarDias(lunes, 6));
   }
-  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
-  const desde = hoy();
-  return `desde ${MESES_LARGOS[desde.getMonth()]} de ${desde.getFullYear()}`;
+  return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
 }
 
 /**
@@ -98,15 +96,18 @@ export function tituloDeAgenda() {
  * que el rótulo tiene que añadir es en qué mes y en qué año caen esos días.
  * Quitarlos deja además sitio para escribirlo del tamaño de las demás pestañas.
  *
- * Los dos meses solo se nombran cuando la semana los cruza, y el año dos veces
- * solo cuando cruza el año —una vez al año, y esa se parte en dos líneas—.
+ * Los dos meses solo se nombran cuando la semana los cruza, y entonces
+ * abreviados; el año dos veces solo cuando cruza el año.
  */
 function mesesDe(desde, hasta) {
   const mes = (fecha) => MESES_LARGOS[fecha.getMonth()];
+  // Cuando la semana cruza de mes, los dos van abreviados para que el título
+  // quepa en una sola línea: «Sep – Oct 2026», «Dic 2026 – Ene 2027».
+  const corto = (fecha) => MESES_LARGOS[fecha.getMonth()].slice(0, 3);
   if (desde.getFullYear() !== hasta.getFullYear()) {
-    return `${mes(desde)} de ${desde.getFullYear()} – ${mes(hasta)} de ${hasta.getFullYear()}`;
+    return `${corto(desde)} ${desde.getFullYear()} – ${corto(hasta)} ${hasta.getFullYear()}`;
   }
-  if (desde.getMonth() !== hasta.getMonth()) return `${mes(desde)} – ${mes(hasta)} de ${hasta.getFullYear()}`;
+  if (desde.getMonth() !== hasta.getMonth()) return `${corto(desde)} – ${corto(hasta)} ${hasta.getFullYear()}`;
   return `${mes(hasta)} de ${hasta.getFullYear()}`;
 }
 
@@ -122,7 +123,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   vaciar(subcabecera).append(
     el('div', { class: 'vistas' }, [
       el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
-        ...['semana', 'mes', 'lista'].map((nombre) =>
+        ...['semana', 'mes'].map((nombre) =>
           el('button', {
             type: 'button',
             'aria-pressed': modo === nombre ? 'true' : 'false',
@@ -130,19 +131,20 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
           }, [nombre[0].toUpperCase() + nombre.slice(1)]),
         ),
       ]),
-      // La lista arranca siempre en hoy y llega hasta donde llegue: no hay
-      // periodo anterior ni siguiente al que saltar, ni sitio al que volver.
-      modo === 'lista' ? null : el('div', { class: 'paso empujar' }, [
+      el('div', { class: 'paso empujar' }, [
         paso('‹', -1, 'Anterior'),
         paso('›', 1, 'Siguiente'),
       ]),
-      el('div', { class: `compartir-periodo${modo === 'lista' ? ' empujar' : ''}` }, [
+      el('div', { class: 'compartir-periodo' }, [
         // «Qué hay en la agenda»: los plugins con su interruptor, a un toque de
         // la pantalla donde se ven (specs/propuesta-plugins-agenda.html, B1).
-        botonIcono('capas', {
-          etiqueta: 'Qué hay en la agenda', tono: 'discreto',
+        // Con su rótulo, «Capas», ahora que la lista ha dejado sitio; en los
+        // teléfonos más estrechos se queda en el icono (CSS).
+        el('button', {
+          class: 'icono-accion con-texto', type: 'button', 'data-tono': 'discreto',
+          'aria-label': 'Qué hay en la agenda', title: 'Qué hay en la agenda',
           onclick: () => { toque(); abrirPlugins(ctx); },
-        }),
+        }, [icono('capas'), el('span', { class: 'icono-accion-texto', texto: 'Capas' })]),
         ...accionesDelPeriodo(ctx),
       ]),
     ]),
@@ -154,16 +156,11 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   // encuentra sitio libre.
   pantalla.classList.add('pantalla-agenda');
 
-  let cuerpo;
-  if (modo === 'semana') cuerpo = vistaSemana(ctx);
-  else if (modo === 'mes') cuerpo = vistaMes(ctx);
-  else cuerpo = vistaLista(ctx);
+  const cuerpo = modo === 'mes' ? vistaMes(ctx) : vistaSemana(ctx);
 
   // El deslizamiento se cuelga del cuerpo de la vista, que se construye entero
   // en cada pintado: así no quedan escuchadores viejos sobre la pantalla.
-  if (modo !== 'lista') {
-    deslizarHorizontal(cuerpo, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
-  }
+  deslizarHorizontal(cuerpo, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
   // La semana también se arrastra en vertical, como la parrilla del mes:
   // arriba, la siguiente; abajo, la anterior. Pero la semana es una lista que
   // puede no caber, y entonces arrastrar en vertical es desplazar: el gesto
@@ -183,17 +180,9 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   pantalla.append(cuerpo);
 }
 
-/**
- * Los días que abarca lo que se está mirando, para compartirlo.
- *
- * La lista no es un periodo: arranca en hoy y llega a seis meses vista, y
- * mandar eso entero da un mensaje que nadie lee. Desde ahí se comparte **lo que
- * viene en siete días**, que es lo mismo que manda el plan de los domingos: así
- * no hay dos ideas distintas de «lo que viene» rondando la aplicación.
- */
+/** Los días que abarca lo que se está mirando, para compartirlo. */
 function diasDelPeriodo() {
   if (modo === 'semana') return diasDeLaSemana(lunesDe(ancla));
-  if (modo === 'lista') return Array.from({ length: 7 }, (_, i) => sumarDias(hoy(), i));
 
   const primero = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
   const cuantos = new Date(ancla.getFullYear(), ancla.getMonth() + 1, 0).getDate();
@@ -208,25 +197,19 @@ function diasDelPeriodo() {
  * septiembre, el 1 de septiembre; mirando este mes, el día en que estás. Antes
  * proponía hoy siempre, así que crear desde la semana que viene nacía en la de
  * esta y había que corregir la fecha a mano.
- *
- * La lista propone hoy sin más: no es un periodo sino una cuerda que arranca
- * justamente ahí.
  */
 export function fechaQuePropone() {
-  if (diaMirado && (modo === 'lista' || diasDelPeriodo().some((dia) => iso(dia) === iso(diaMirado)))) return diaMirado;
-  if (modo === 'lista') return hoy();
+  if (diaMirado && diasDelPeriodo().some((dia) => iso(dia) === iso(diaMirado))) return diaMirado;
   const dias = diasDelPeriodo();
   const ahora = hoy();
   return dias.some((dia) => iso(dia) === iso(ahora)) ? ahora : dias[0];
 }
 
-/** El rótulo de lo que se comparte. No sirve `tituloDeAgenda`: en la lista dice
- *  «desde Julio de 2026», que no es el tramo que sale por el compartir. */
+/** El rótulo de lo que se comparte, con los días: el título de la pantalla
+ *  los omite y, en una semana entre dos meses, abrevia. */
 function tituloDeLoCompartido(dias) {
   if (modo === 'semana') return formatearRango(dias[0]);
-  if (modo === 'mes') return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
-  return `Del ${dias[0].getDate()} de ${MESES_LARGOS[dias[0].getMonth()]}`
-    + ` al ${dias[6].getDate()} de ${MESES_LARGOS[dias[6].getMonth()]}`;
+  return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
 }
 
 function repartoDelPeriodo(ctx, dias) {
@@ -270,7 +253,7 @@ function accionesDelPeriodo(ctx) {
   })];
 }
 
-const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : modo === 'lista' ? 'lo que viene' : 'la semana');
+const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : 'la semana');
 
 // ------------------------------------------------------------- Compartir --
 
@@ -1126,150 +1109,6 @@ function zonaLibre(ctx, diaDe) {
     el('div', { class: 'zona-libre', 'aria-hidden': 'true' }),
     () => { toque(); abrirFormularioEvento(ctx, { fecha: diaDe() }); },
   );
-}
-
-// ---------------------------------------------------------------- Lista --
-
-/**
- * Cuántas cosas enseña la lista.
- *
- * Sin tope, la lista se extendía seis meses y con los turnos de Lío dentro eso
- * son casi cuatrocientas filas: nadie baja hasta ahí, y componerlas cuesta en
- * cada pintado. Cincuenta es lo que se recorre de un tirón, y el rótulo del
- * final dice hasta dónde llega para que no parezca que se acabó el calendario.
- */
-const TECHO_LISTA = 50;
-
-function vistaLista(ctx) {
-  const desde = hoy();
-  const hasta = sumarDias(desde, 180);
-  const conLio = hayLio(ctx.vista.datos);
-
-  // Cada cosa con el día al que pertenece y su orden dentro de él, para que
-  // los viajes abran el día, los demás eventos vayan detrás y Lío cierre.
-  //
-  // Y lo que dura varios días sale **todos** los días que dura, igual que en la
-  // semana y en el mes. Antes salía una sola vez, en su día de arranque, y eso
-  // dejaba la lista mintiendo justo sobre lo que se le pregunta: quien mira el
-  // domingo quiere saber si ese día hay alguien en casa, no si empezó el sábado.
-  // El reparto es el mismo de siempre, sobre los días que la lista abarca.
-  const diasDeLaLista = Array.from(
-    { length: Math.round((hasta - desde) / 86400000) + 1 },
-    (_, i) => sumarDias(desde, i),
-  );
-  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, desde, hasta), diasDeLaLista);
-
-  const cosas = [];
-  for (const dia of diasDeLaLista) {
-    for (const aparicion of reparto.get(iso(dia)) || []) {
-      cosas.push({
-        dia: aparicion.dia,
-        orden: ordenDeEvento(aparicion.evento),
-        momento: aparicion.instancia.inicio,
-        pintar: () => tarjetaDeEvento(aparicion, ctx, { conFecha: false }),
-      });
-    }
-  }
-
-  if (conLio) {
-    // Los turnos se componen día a día, y solo hasta donde el techo puede
-    // llegar: derivar seis meses de turnos para tirar el 90 % es trabajo que se
-    // nota al pasar de pestaña.
-    for (let i = 0; i <= TECHO_LISTA; i += 1) {
-      const dia = sumarDias(desde, i);
-      if (dia > hasta) break;
-      for (const turno of turnosDe(ctx.vista.datos, dia)) {
-        // La mañana abre el día y la noche lo cierra (E1), como en la semana.
-        cosas.push({
-          dia, orden: turno.turno.id === 'manana' ? ORDEN_LIO_MANANA : ORDEN_LIO, momento: inicioDeVentana(dia, turno.turno.id),
-          pintar: () => filaDeTurno(turno, ctx),
-        });
-      }
-    }
-  }
-
-  cosas.sort((a, b) => a.dia - b.dia || a.orden - b.orden || a.momento - b.momento);
-
-  const contenedor = el('div', { class: 'cuerpo-agenda' });
-
-  if (!cosas.length) {
-    contenedor.append(el('p', { class: 'vacio', texto: 'No hay nada en los próximos seis meses.' }));
-    contenedor.append(zonaLibre(ctx, hoy));
-    return contenedor;
-  }
-
-  const visibles = cosas.slice(0, TECHO_LISTA);
-  let grupoActual = null;
-  let diaActual = null;
-  let mesEscrito = null;
-  let nodo = null;
-
-  for (const cosa of visibles) {
-    const grupo = nombreDeGrupo(cosa.dia, desde);
-    if (grupo !== grupoActual) {
-      grupoActual = grupo;
-      diaActual = null;
-      nodo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: grupo })]);
-      contenedor.append(nodo);
-    }
-
-    // El separador de día solo tiene sentido dentro de un grupo que abarque
-    // varios: «Hoy» y «Mañana» son ya un día, y escribirlo debajo sería decir dos
-    // veces lo mismo en dos renglones seguidos.
-    const clave = iso(cosa.dia);
-    if (grupoAbarcaVariosDias(grupo) && clave !== diaActual) {
-      diaActual = clave;
-      const conMes = cosa.dia.getMonth() !== mesEscrito;
-      mesEscrito = cosa.dia.getMonth();
-      nodo.append(el('p', { class: 'lista-dia' }, [
-        el('span', { texto: rotuloDeDia(cosa.dia, conMes) }),
-      ]));
-    }
-
-    nodo.append(cosa.pintar());
-  }
-
-  // Hasta dónde se ha llegado, para que el final de la lista no se confunda con
-  // el final de la agenda.
-  if (cosas.length > visibles.length) {
-    contenedor.append(el('p', {
-      class: 'pista',
-      texto: `Hasta el ${formatearFechaLarga(visibles[visibles.length - 1].dia)}.`
-        + ' Lo que venga después se ve en la semana o en el mes.',
-    }));
-  }
-
-  contenedor.append(zonaLibre(ctx, hoy));
-  return contenedor;
-}
-
-function nombreDeGrupo(momento, referencia) {
-  const dias = Math.round((soloFecha(momento) - referencia) / 86400000);
-  if (dias <= 0) return 'Hoy';
-  if (dias === 1) return 'Mañana';
-  if (dias < 7) return 'Esta semana';
-  if (dias < 14) return 'La semana que viene';
-  if (dias < 32) return 'Este mes';
-  return `${MESES_LARGOS[momento.getMonth()]} de ${momento.getFullYear()}`;
-}
-
-/** Los dos primeros grupos son de un solo día y no llevan separador dentro. */
-const grupoAbarcaVariosDias = (grupo) => grupo !== 'Hoy' && grupo !== 'Mañana';
-
-/**
- * «Miércoles 29», y con el mes cuando el mes cambia.
- *
- * Escribirlo siempre alargaría veinte rótulos para repetir un dato que solo
- * cambia una vez al mes; no escribirlo nunca dejaría «Lunes 3» sin saber de qué
- * mes dentro de un grupo que cruza de julio a agosto. Se escribe en el primer
- * día de cada mes, y a partir de ahí se hereda leyendo hacia arriba.
- */
-function rotuloDeDia(dia, conMes) {
-  const nombre = NOMBRES_DIA[indiceDia(dia)];
-  const cabeza = nombre.charAt(0).toUpperCase() + nombre.slice(1);
-  return conMes
-    ? `${cabeza} ${dia.getDate()} de ${MESES_LARGOS[dia.getMonth()]}`
-    : `${cabeza} ${dia.getDate()}`;
 }
 
 /**

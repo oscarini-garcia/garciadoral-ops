@@ -27,6 +27,15 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Agenda: semana y mes (1.89.0).** Se retiró la vista de lista
+  (`vistaLista` y sus rótulos de proximidad y de día, con `.lista-dia`): con
+  la semana enseñando cada día entero ya no hacía falta. El conmutador tiene
+  dos posiciones y `fechaQuePropone` ya no distingue la lista. Una semana que
+  cruza de mes se titula con los meses abreviados para caber en una línea
+  (`mesesDe`: «Sep – Oct 2026», «Dic 2026 – Ene 2027»), y el botón de capas
+  lleva el rótulo «Capas», que se esconde por debajo de 340 puntos. Queda:
+  `tarjetaDeEvento` sigue sirviendo al detalle del mes y a Hoy, y
+  `specs/ux.md` §10 todavía describe la lista.
 - **El tipo «Recurrente» (1.86.0).** Lo que quedaba de la 1.85.0: el plan de
   los domingos y la redacción leían el tipo `entreno` y el WhatsApp decía
   «🏃 academia». Hay un tipo nuevo, `recurrente` (🔁), en
