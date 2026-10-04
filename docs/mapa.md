@@ -167,7 +167,7 @@ tener que recorrer la aplicación entera cada vez.
 - **familia.js** — Gente: el registro de personas y la ficha de cada una.
   reiniciarFamilia · pintarFamilia · abrirFicha · abrirFormularioPersona
 - **hoy.js** — Hoy: la pantalla con la que abre la aplicación.
-  reiniciarHoy · tituloDeHoy · pintarHoy · nuevoPieDeVersion
+  reiniciarHoy · tituloDeHoy · pintarHoy · cuerpoDelDia · tituloDelDia · nuevoPieDeVersion
 - **plugins.js** — «Qué hay en la agenda»: la hoja de los plugins, la de cada uno, y los dos formularios que…
   abrirPlugins · actividadesDe · escapadasDe · abrirHojaDePlugin · TIPOS_DE_OTROS_PLUGINS
   tiposVisibles · quienesVan · abrirMenuDeNuevo · abrirFormularioActividad

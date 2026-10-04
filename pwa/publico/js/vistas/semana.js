@@ -34,13 +34,16 @@ import { abrirCumple, abrirDetalleRegalo, abrirSelectorDeRegalo, ocasionDeEvento
 import { bloqueDeComentarios } from '../comentarios.js';
 import { campoDeGente, recordarElegidos } from '../gente.js';
 import { compartir, toque } from '../native.js';
+import { cuerpoDelDia, tituloDelDia } from './hoy.js';
 import {
   TURNOS, cogerTurno, desmarcar, genteDeCasa, hayLio, inicialesDe, inicioDeVentana,
   marcarHecho, marcarNoHecho, nombreDeTurno, pedirCambio, resolverPropuesta, retirarPropuesta,
   rotuloDeTurno, turnoDe, turnosDe,
 } from '../lio.js';
 
-let modo = 'semana';
+// La vista «Día» es la de por defecto: es lo que era la pantalla de Hoy, y la
+// aplicación abre en ella.
+let modo = 'dia';
 /** El último día que se abrió en su hoja: si cae en el periodo que se mira, es
  *  el día que se tiene delante y el «+» nace en él
  *  (`specs/propuesta-formularios-fechas-regalos.html`, B1). */
@@ -51,7 +54,7 @@ let ancla = hoy();
 let ultimoPaso = 0;
 
 export function reiniciarAgenda() {
-  modo = 'semana';
+  modo = 'dia';
   ancla = hoy();
   ultimoPaso = 0;
 }
@@ -67,6 +70,7 @@ export function volverAHoyEnAgenda() {
   const antes = ancla;
   ancla = ahora;
   ultimoPaso = antes < ahora ? 1 : antes > ahora ? -1 : 0;
+  if (modo === 'dia' && iso(antes) === iso(ahora)) ultimoPaso = 0;
   if (modo === 'semana' && iso(lunesDe(antes)) === iso(lunesDe(ahora))) ultimoPaso = 0;
   if (modo === 'mes' && antes.getFullYear() === ahora.getFullYear() && antes.getMonth() === ahora.getMonth()) ultimoPaso = 0;
 }
@@ -80,7 +84,8 @@ export function volverAHoyEnAgenda() {
  * en lugar de una propia, la agenda gana una fila entera de pantalla, que en un
  * teléfono es un día más de semana a la vista.
  */
-export function tituloDeAgenda() {
+export function tituloDeAgenda(ctx) {
+  if (modo === 'dia') return tituloDelDia(ancla, ctx);
   if (modo === 'semana') {
     const lunes = lunesDe(ancla);
     return mesesDe(lunes, sumarDias(lunes, 6));
@@ -123,12 +128,12 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   vaciar(subcabecera).append(
     el('div', { class: 'vistas' }, [
       el('div', { class: 'seg', role: 'group', 'aria-label': 'Vista de la agenda' }, [
-        ...['semana', 'mes'].map((nombre) =>
+        ...[['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']].map(([nombre, rotulo]) =>
           el('button', {
             type: 'button',
             'aria-pressed': modo === nombre ? 'true' : 'false',
             onclick: () => { modo = nombre; ultimoPaso = 0; ctx.refrescar(); },
-          }, [nombre[0].toUpperCase() + nombre.slice(1)]),
+          }, [rotulo]),
         ),
       ]),
       el('div', { class: 'paso empujar' }, [
@@ -156,7 +161,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
   // encuentra sitio libre.
   pantalla.classList.add('pantalla-agenda');
 
-  const cuerpo = modo === 'mes' ? vistaMes(ctx) : vistaSemana(ctx);
+  const cuerpo = modo === 'mes' ? vistaMes(ctx) : modo === 'dia' ? cuerpoDelDia(ancla, ctx) : vistaSemana(ctx);
 
   // El deslizamiento se cuelga del cuerpo de la vista, que se construye entero
   // en cada pintado: así no quedan escuchadores viejos sobre la pantalla.
@@ -182,6 +187,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
 
 /** Los días que abarca lo que se está mirando, para compartirlo. */
 function diasDelPeriodo() {
+  if (modo === 'dia') return [soloFecha(ancla)];
   if (modo === 'semana') return diasDeLaSemana(lunesDe(ancla));
 
   const primero = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
@@ -208,6 +214,7 @@ export function fechaQuePropone() {
 /** El rótulo de lo que se comparte, con los días: el título de la pantalla
  *  los omite y, en una semana entre dos meses, abrevia. */
 function tituloDeLoCompartido(dias) {
+  if (modo === 'dia') return formatearFechaLarga(dias[0]);
   if (modo === 'semana') return formatearRango(dias[0]);
   return `${MESES_LARGOS[ancla.getMonth()]} de ${ancla.getFullYear()}`;
 }
@@ -253,7 +260,7 @@ function accionesDelPeriodo(ctx) {
   })];
 }
 
-const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : 'la semana');
+const nombreDelPeriodo = () => (modo === 'mes' ? 'el mes' : modo === 'dia' ? 'el día' : 'la semana');
 
 // ------------------------------------------------------------- Compartir --
 
@@ -348,9 +355,11 @@ async function compartirTexto(titulo, texto) {
 }
 
 function mover(pasos) {
-  ancla = modo === 'semana'
-    ? sumarDias(ancla, 7 * pasos)
-    : new Date(ancla.getFullYear(), ancla.getMonth() + pasos, 1);
+  ancla = modo === 'dia'
+    ? sumarDias(ancla, pasos)
+    : modo === 'semana'
+      ? sumarDias(ancla, 7 * pasos)
+      : new Date(ancla.getFullYear(), ancla.getMonth() + pasos, 1);
   ultimoPaso = pasos;
 }
 

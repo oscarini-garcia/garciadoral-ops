@@ -47,7 +47,7 @@ import { formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
 import { VERSION_APP } from './version.js';
 import { NOVEDADES } from './novedades.js';
 import { hayLio, inicioDeVentana, resolverPropuesta, rotuloDeTurno, turnosDe } from './lio.js';
-import { nuevoPieDeVersion, pintarHoy, reiniciarHoy, tituloDeHoy } from './vistas/hoy.js';
+import { nuevoPieDeVersion, reiniciarHoy } from './vistas/hoy.js';
 import {
   abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, pintarAgenda, reiniciarAgenda, tituloDeAgenda, volverAHoyEnAgenda,
 } from './vistas/semana.js';
@@ -66,11 +66,8 @@ import { antelacionDe, avisosDePlugins, resolverTratoDeDia } from './plugins.js'
 import { abrirMenuDeNuevo } from './vistas/plugins.js';
 
 const PESTANAS = {
-  // Hoy tampoco repite su nombre arriba: allí va el saludo, que es lo que esta
-  // pantalla tiene que decir y no cabe en ningún otro sitio. Va sin botón
-  // flotante porque no es una pantalla en la que se cree nada: se abre, se mira
-  // y se entra a lo que haya.
-  hoy: { titulo: tituloDeHoy, pintar: pintarHoy, fab: null },
+  // Hoy dejó la barra: es la vista «Día» de la agenda, la primera del
+  // conmutador y la que abre la aplicación.
   // La agenda no repite su nombre en la cabecera: la vista en la que se está ya
   // se lee en el conmutador, y el sitio lo ocupa mejor el periodo, que es lo
   // único de esa pantalla que cambia. Por eso su título es una función: cambia
@@ -107,7 +104,7 @@ const PESTANAS = {
   cenas: { titulo: 'Cenas', pintar: pintarCenas, fab: null },
 };
 
-let pestana = 'hoy';
+let pestana = 'semana';
 let configuracion = {};
 let sesionActual = null;
 const ctx = {
@@ -422,7 +419,7 @@ function refrescar() {
   const conCenas = hayCenas(datos);
   const botonCenas = document.querySelector('.tab[data-pestana="cenas"]');
   if (botonCenas) botonCenas.hidden = !conCenas;
-  if (!conCenas && pestana === 'cenas') pestana = 'hoy';
+  if (!conCenas && pestana === 'cenas') pestana = 'semana';
 
   const definicion = PESTANAS[pestana];
 
@@ -1456,7 +1453,7 @@ async function salir() {
   await olvidarTodo();
   borrarSesion();
   sesionActual = null;
-  pestana = 'hoy';
+  pestana = 'semana';
   reiniciarHoy(); reiniciarAgenda(); reiniciarRegalos(); reiniciarSitios(); reiniciarFamilia(); reiniciarCenas();
   document.getElementById('aplicacion').hidden = true;
   mostrarAcceso();
