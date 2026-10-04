@@ -784,9 +784,25 @@ textarea:-webkit-autofill:focus {
   align-items: center; justify-content: center;
   font-variant-numeric: tabular-nums; font-size: 15.5px; color: var(--ink-soft);
 }
+.mes-celda[data-algo="si"] { background: color-mix(in srgb, var(--tinta) 14%, transparent); color: var(--ink); }
 .mes-celda[data-fuera="si"] { color: var(--ink-faint); opacity: .45; }
 .mes-celda[aria-pressed="true"] { background: var(--tinta); color: var(--paper); }
 .mes-celda[data-hoy="si"] { border: 1px solid var(--tinta); }
+
+/* El detalle del día en el mes: la fecha y, a su derecha, las dos monedas de
+   Lío (specs/propuesta-mes-marcas-y-lio.html, B3). */
+.mes-detalle-titulo { display: flex; align-items: center; gap: 8px; }
+.mes-lio { margin-left: auto; display: inline-flex; gap: 6px; flex: none; }
+.mes-lio-moneda {
+  position: relative; display: inline-flex; align-items: center; gap: 4px;
+  height: 28px; padding: 0 9px 0 6px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: var(--paper);
+  font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
+}
+.mes-lio-moneda::after { content: ""; position: absolute; inset: -8px -2px; }
+.mes-lio-moneda[data-estado="hecho"] { border-color: var(--tinta); color: var(--ink); }
+.mes-lio-moneda[data-estado="no-hecho"] { border-color: var(--regalo); }
+.mes-lio-moneda[data-pedido="si"] { border-style: dashed; }
 
 /* ---------------------------------------------------------------- Piezas -- */
 
