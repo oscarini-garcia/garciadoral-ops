@@ -109,7 +109,7 @@ function deQueVa(id, ctx) {
   if (id === 'puntuales') return 'cenas, citas y lo que no tiene regla';
   if (id === 'extraescolares') {
     const nombres = actividadesDe(ctx).map((e) => ctx.vista.caraDe(e).titulo);
-    return nombres.length ? nombres.slice(0, 3).join(', ') : 'ninguna actividad todavía';
+    return nombres.length ? nombres.slice(0, 3).join(', ') : 'ninguna recurrente todavía';
   }
   if (id === 'finde') {
     const proxima = escapadasDe(ctx).find((e) => iso(parsearMomento(e.fin || e.inicio)) >= iso(hoy()));
@@ -610,9 +610,9 @@ function bloqueDeExtraescolares(cuerpo, ctx) {
   cuerpo.append(el('p', { class: 'grupo-titulo', texto: 'Actividades' }));
   cuerpo.append(actividades.length ? lista : el('p', { class: 'vacio', texto: 'Ninguna todavía.' }));
   cuerpo.append(el('div', { class: 'acciones' }, [
-    el('button', { class: 'boton crecer', type: 'button', onclick: () => abrirFormularioActividad(ctx) }, ['Nueva actividad']),
+    el('button', { class: 'boton crecer', type: 'button', onclick: () => abrirFormularioActividad(ctx) }, ['Nueva recurrente']),
   ]));
-  cuerpo.append(el('p', { class: 'pista', texto: 'Cada actividad lleva su curso, sus días, su hora y quién lleva y recoge. Un día suelto se cambia desde la propia agenda.' }));
+  cuerpo.append(el('p', { class: 'pista', texto: 'Cada recurrente lleva desde cuándo y hasta cuándo, sus días, su hora y quién lleva y recoge. Un día suelto se cambia desde la propia agenda.' }));
 }
 
 const horaDeActividad = (evento) => {
@@ -682,7 +682,7 @@ export function abrirMenuDeNuevo(ctx, { fecha = fechaQuePropone() } = {}) {
   const datos = ctx.vista.datos;
   const filas = [
     { id: 'puntuales', texto: 'Evento', pista: 'una cena, una cita, lo que sea de un día', abrir: () => abrirFormularioEvento(ctx, { fecha }) },
-    { id: 'extraescolares', texto: 'Actividad', pista: 'con su curso, sus días y su hora', abrir: () => abrirFormularioActividad(ctx, { fecha }) },
+    { id: 'extraescolares', texto: 'Recurrente', pista: 'lo que se repite cada semana, con sus días y su hora', abrir: () => abrirFormularioActividad(ctx, { fecha }) },
     { id: 'finde', texto: 'Fin de semana', pista: 'una escapada, con su sitio y quién va', abrir: () => abrirFormularioEscapada(ctx, { fecha }) },
   ];
   abrirHoja('Nuevo', (cuerpo) => {
@@ -691,7 +691,9 @@ export function abrirMenuDeNuevo(ctx, { fecha = fechaQuePropone() } = {}) {
       cuerpo.append(el('button', { class: 'eleccion', type: 'button', onclick: fila.abrir }, [
         el('span', { class: 'eleccion-emoji', 'aria-hidden': 'true', texto: emojiVisible(ajustes.emoji) }),
         el('span', { class: 'eleccion-texto' }, [
-          el('span', { class: 'eleccion-nombre', texto: fila.id === 'puntuales' ? fila.texto : ajustes.nombre }),
+          el('span', { class: 'eleccion-nombre', // En singular, como «Evento», salvo que alguien haya bautizado el
+          // plugin con otro nombre.
+          texto: fila.id === 'puntuales' || (fila.id === 'extraescolares' && ajustes.nombre === 'Recurrentes') ? fila.texto : ajustes.nombre }),
           el('span', { class: 'eleccion-pista', texto: fila.pista }),
         ]),
       ]));
@@ -725,17 +727,17 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
   };
 
   const borrar = existente ? botonIcono('borrar', {
-    etiqueta: 'Borrar la actividad', tono: 'peligro',
+    etiqueta: 'Borrar la recurrente', tono: 'peligro',
     onclick: async () => {
       await retirar('evento', existente.id);
       toque('media');
       cerrarHoja();
-      avisar('Actividad borrada');
+      avisar('Recurrente borrada');
       ctx.refrescar();
     },
   }) : null;
 
-  abrirHoja(existente ? 'Editar la actividad' : 'Nueva actividad', (cuerpo) => {
+  abrirHoja(existente ? 'Editar la recurrente' : 'Nueva recurrente', (cuerpo) => {
     const titulo = entrada({ value: borrador.titulo, placeholder: '🐴 Hípica' });
     if (!existente) enfocarAlAbrir(titulo);
 
@@ -889,8 +891,8 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
         el('p', { class: 'pista', texto: 'Cada día a la suya. Empieza y termina; el fin puede quedarse vacío.' }),
       ]),
       campo('Dónde', lugar),
-      campo('Desde', desde.nodo, 'El primer día del curso.'),
-      campo('Hasta', hasta.nodo, 'El último. Sin fin, la actividad sigue cada semana.'),
+      campo('Desde', desde.nodo, 'El primer día.'),
+      campo('Hasta', hasta.nodo, 'El último. Sin fin, sigue cada semana.'),
       el('div', { class: 'campo' }, [
         el('label', { texto: 'Quién lleva y quién recoge' }),
         reparto,
@@ -948,7 +950,7 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
           recordarElegidos('evento', borrador.quien);
           toque('media');
           cerrarHoja();
-          avisar(existente ? 'Actividad guardada' : 'Actividad creada');
+          avisar(existente ? 'Recurrente guardada' : 'Recurrente creada');
           ctx.refrescar();
         },
       }, [existente ? 'Guardar' : 'Crear']),

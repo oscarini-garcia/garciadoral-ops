@@ -47,8 +47,8 @@ export const PLUGINS = [
     de: 'cenas, citas y lo que no tiene regla',
   },
   {
-    id: 'extraescolares', nombre: 'Recurrentes', emoji: '🐴', familia: 'escrito',
-    de: 'con su curso, su horario y quién lleva',
+    id: 'extraescolares', nombre: 'Recurrentes', emoji: '🔁', familia: 'escrito',
+    de: 'lo que se repite cada semana, con quién lleva',
   },
   {
     id: 'finde', nombre: 'Fin de semana', emoji: '🧳', familia: 'escrito',
@@ -99,12 +99,20 @@ export const AVISO_CUMPLES_POR_DEFECTO = { familia: 7, extendida: 1, amigos: 0 }
  * círculo, tipos visibles, antelación por círculo y si salen los santos y la
  * edad.
  */
+/** Lo que fue el nombre o el emoji de origen de un plugin y quedó guardado en
+ *  sus ajustes. Guardar la hoja escribía el nombre entero aunque nadie lo
+ *  hubiera tocado, así que «Extraescolares» y 🐴 siguieron mandando después
+ *  de que el plugin pasara a llamarse «Recurrentes»: se leen como no escritos. */
+const DE_ORIGEN_ANTES = { extraescolares: { nombre: ['Extraescolares'], emoji: ['🐴'] } };
+
 export function ajustesDe(instantanea, id) {
   const base = pluginPorId(id) || { nombre: id, emoji: '📌' };
   const escrito = instantanea?.plugins?.[id] || {};
+  const antes = DE_ORIGEN_ANTES[id] || {};
+  const propio = (campo) => (escrito[campo] && !(antes[campo] || []).includes(escrito[campo]) ? escrito[campo] : null);
   return {
-    nombre: escrito.nombre || base.nombre,
-    emoji: escrito.emoji || base.emoji,
+    nombre: propio('nombre') || base.nombre,
+    emoji: propio('emoji') || base.emoji,
     circulo: ANCHURA[escrito.circulo] !== undefined ? escrito.circulo : (CIRCULO_POR_DEFECTO[id] || 'amigos'),
     tipos: Array.isArray(escrito.tipos) ? escrito.tipos : null,
     aviso: { ...AVISO_CUMPLES_POR_DEFECTO, ...(escrito.aviso || {}) },

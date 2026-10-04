@@ -24,6 +24,7 @@ export const NOVEDADES = [
     lineas: [
       'Las actividades recurrentes tienen tipo propio, «Recurrente» 🔁, en vez de «Entreno».',
       'El WhatsApp de los domingos y la redacción con IA ya no las cuentan como entrenos.',
+      'Donde aún decía «Extraescolares» o «actividad», ahora dice «Recurrente», con su icono 🔁.',
     ],
   },
   {

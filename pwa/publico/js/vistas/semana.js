@@ -1649,7 +1649,7 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
     el('p', { class: 'grupo-titulo', texto: `Este ${NOMBRES_DIA[indiceDia(aparicion.dia)]} ${aparicion.dia.getDate()}` }),
     ...filaDe('lleva'),
     ...filaDe('recoge'),
-    el('p', { class: 'pista', texto: 'Vale para este día. Cogerlo tú se escribe en el acto; pedírselo a otro espera a que conteste. Todos los días se cambian en la actividad.' }),
+    el('p', { class: 'pista', texto: 'Vale para este día. Cogerlo tú se escribe en el acto; pedírselo a otro espera a que conteste. Todos los días se cambian en la recurrente.' }),
     el('button', {
       class: 'enlace-discreto', type: 'button',
       onclick: async () => {
