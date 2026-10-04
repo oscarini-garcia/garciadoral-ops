@@ -22,7 +22,7 @@
  * vuelo, y sin ella el viaje sin vuelta no dice nada de los días de después.
  */
 
-import { estaActivo, presentarVuelo } from './modelo.js';
+import { estaActivo, presentarVuelo, sinVuelosRepetidos } from './modelo.js';
 import { iso, parsearMomento, soloFecha, sumarDias } from './semana.js';
 
 /** A partir de cuántos días sin volver se deja de esperar la vuelta. */
@@ -30,8 +30,8 @@ const DIAS_DE_UN_VIAJE = 30;
 
 /** Los vuelos importados vivos, con lo que hace falta para emparejarlos. */
 function vuelosDe(instantanea) {
-  return (instantanea?.eventos || [])
-    .filter((e) => e.origen === 'importado' && estaActivo(e))
+  return sinVuelosRepetidos((instantanea?.eventos || [])
+    .filter((e) => e.origen === 'importado' && estaActivo(e)))
     .map((evento) => ({ evento, vuelo: presentarVuelo(evento), dia: soloFecha(parsearMomento(evento.inicio)) }))
     .filter((v) => v.vuelo && v.dia && !Number.isNaN(v.dia.getTime()))
     .sort((a, b) => a.dia - b.dia || String(a.evento.inicio).localeCompare(String(b.evento.inicio)));

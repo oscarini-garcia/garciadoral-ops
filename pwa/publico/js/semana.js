@@ -11,7 +11,7 @@
  * UTC y desplazaría medio calendario.
  */
 
-import { estaActivo } from './modelo.js';
+import { estaActivo, sinVuelosRepetidos } from './modelo.js';
 import { ajustesDe, seEnsena } from './plugins.js';
 import { eventosDeFuera } from './viajes.js';
 
@@ -416,7 +416,7 @@ const estaCancelado = (dia) => Boolean(dia?.cancelado) && dia.cancelado !== 0 &&
  * los días de una actividad en los que se dijo que no hay.
  */
 export function instanciasEn(instantanea, desde, hasta) {
-  const fuentes = [...(instantanea.eventos || []).filter((e) => estaActivo(e)), ...eventosDerivados(instantanea)]
+  const fuentes = [...sinVuelosRepetidos((instantanea.eventos || []).filter((e) => estaActivo(e))), ...eventosDerivados(instantanea)]
     .filter((evento) => seEnsena(instantanea, evento));
   return fuentes
     .flatMap((evento) => ocurrencias(evento, desde, hasta))
