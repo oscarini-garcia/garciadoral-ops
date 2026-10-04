@@ -628,7 +628,7 @@ function bloqueDeCenas(dia, ctx) {
   const ayer = iso(sumarDias(dia, -1));
   const deAyer = cenaDe(datos, ayer);
   const platoDeAyer = platoDe(datos, deAyer);
-  if (platoDeAyer && !deAyer.veredicto) {
+  if (esta === iso(hoy()) && platoDeAyer && !deAyer.veredicto) {
     const contestar = async (veredicto) => {
       toque();
       await escribirNoche(datos, ayer, { veredicto }, ctx.vista.yo.id);

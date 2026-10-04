@@ -85,19 +85,9 @@ export function volverAHoyEnAgenda() {
  * teléfono es un día más de semana a la vista.
  */
 export function tituloDeAgenda(ctx) {
-  if (modo === 'dia') {
-    // El día arriba, con sus flechas a los lados: atrás y adelante de día en
-    // día, sin depender de que quepan en la fila de mandos.
-    const flecha = (rotulo, pasos, etiqueta) => el('button', {
-      class: 'titulo-flecha', type: 'button', 'aria-label': etiqueta,
-      onclick: () => { toque(); mover(pasos); ctx.refrescar(); },
-    }, [rotulo]);
-    return el('span', { class: 'titulo-dia' }, [
-      el('span', { class: 'titulo-dia-texto', texto: tituloDelDia(ancla, ctx) }),
-      flecha('‹', -1, 'Día anterior'),
-      flecha('›', 1, 'Día siguiente'),
-    ]);
-  }
+  // El día es solo la fecha: sus flechas van junto al conmutador, como en la
+  // semana y el mes.
+  if (modo === 'dia') return el('span', { class: 'titulo-dia-texto', texto: tituloDelDia(ancla, ctx) });
   if (modo === 'semana') {
     const lunes = lunesDe(ancla);
     return mesesDe(lunes, sumarDias(lunes, 6));
@@ -148,7 +138,7 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
           }, [rotulo]),
         ),
       ]),
-      modo === 'dia' ? el('span', { class: 'empujar' }) : el('div', { class: 'paso empujar' }, [
+      el('div', { class: 'paso empujar' }, [
         paso('‹', -1, 'Anterior'),
         paso('›', 1, 'Siguiente'),
       ]),
