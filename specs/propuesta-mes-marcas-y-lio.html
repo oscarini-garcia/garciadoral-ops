@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes: marcas y Lío</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+    /* Los de la aplicación, para que las maquetas se parezcan a la pantalla. */
+    --papel: #FBF9F5;
+    --papel3: #EAE6DC;
+    --tinta: #0E6E62;
+    --tinta-suave: rgba(14, 110, 98, 0.14);
+    --tinta-ink: #FBF9F5;
+    --no: #B5523B;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+      --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+      --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+    --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+    --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 16px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin: 0 0 4px; }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    color: var(--ink); font: inherit; transition: border-color 0.12s ease; display: block;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--ac); flex: none; }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-size: 10.5px; letter-spacing: 0.07em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--papel); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--sub); font-size: 12px; letter-spacing: 0.03em; }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 620; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+
+  /* ---- Maqueta del mes ---- */
+  .mm { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; max-width: 340px; }
+  .mm .h { font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .1em; color: var(--sub); text-align: center; padding: 2px 0 4px; }
+  .mm .d { position: relative; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13.5px; font-variant-numeric: tabular-nums; color: var(--sub); }
+  .mm .d.hoy { box-shadow: inset 0 0 0 1px var(--tinta); }
+  .mm .d.sel { background: var(--tinta); color: var(--tinta-ink); }
+  /* A1 */
+  .a1 .d { color: var(--sub); opacity: .7; }
+  .a1 .d.e { color: var(--ink); opacity: 1; font-weight: 700; }
+  .a1 .d.sel { opacity: 1; color: var(--tinta-ink); }
+  /* A2 */
+  .a2 .d.e { background: var(--tinta-suave); color: var(--ink); }
+  .a2 .d.sel { background: var(--tinta); color: var(--tinta-ink); }
+  /* A3 */
+  .a3 .d.e::after { content: ""; position: absolute; left: 50%; bottom: 4px; width: 12px; height: 2px; margin-left: -6px; border-radius: 2px; background: var(--tinta); }
+  .a3 .d.e { color: var(--ink); }
+  .a3 .d.sel::after { background: var(--tinta-ink); }
+  .a3 .d.sel { color: var(--tinta-ink); }
+  /* A4 */
+  .a4 .d.e::after { content: ""; position: absolute; top: 3px; right: 3px; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--tinta) transparent transparent; border-top-right-radius: 3px; }
+  .a4 .d.e { color: var(--ink); }
+  .a4 .d.sel::after { border-color: transparent var(--tinta-ink) transparent transparent; }
+  .a4 .d.sel { color: var(--tinta-ink); }
+
+  /* ---- Maqueta del detalle del día ---- */
+  .dia { display: block; max-width: 340px; }
+  .dia .t { display: flex; align-items: center; gap: 8px; font-family: Georgia, 'Times New Roman', serif; font-size: 16.5px; color: var(--ink); margin: 0 0 8px; }
+  .dia .t .der { margin-left: auto; display: inline-flex; gap: 6px; font-family: -apple-system, sans-serif; }
+  .tarjeta { display: block; background: var(--papel3); border-radius: 10px; padding: 8px 12px; margin-top: 6px; font-size: 14px; color: var(--ink); }
+  .tarjeta small { display: block; color: var(--sub); font-size: 12px; }
+  .ico { display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; color: var(--sub); }
+  .marca { display: inline-flex; width: 15px; height: 15px; border-radius: 50%; align-items: center; justify-content: center; font-size: 9.5px; line-height: 1; font-weight: 700; }
+  .marca.si { background: var(--tinta); color: var(--tinta-ink); }
+  .marca.no { background: var(--no); color: #fff; }
+  .marca.nada { box-shadow: inset 0 0 0 1.3px var(--line-hard); }
+  .linea { display: block; font-size: 13px; color: var(--sub); margin: -4px 0 6px; }
+  .linea b { color: var(--ink); font-weight: 600; }
+  .moneda { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px 0 5px; border-radius: 99px; font-size: 11.5px; font-family: ui-monospace, Menlo, monospace; color: var(--ink); box-shadow: inset 0 0 0 1.4px var(--line-hard); }
+  .moneda.si { box-shadow: inset 0 0 0 1.6px var(--tinta); }
+  .pie { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; color: var(--sub); }
+  .pie .flecha { margin-left: auto; }
+  .pastilla { display: flex; align-items: center; gap: 10px; background: var(--papel3); border-radius: 10px; padding: 8px 12px; margin-top: 6px; font-size: 14px; color: var(--ink); }
+  .pastilla small { display: block; color: var(--sub); font-size: 12px; }
+  .pastilla .bts { margin-left: auto; display: inline-flex; gap: 6px; }
+  .pastilla .bt { width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--line-hard); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: var(--sub); }
+  .activo { box-shadow: 0 0 0 2px var(--ac); border-radius: 99px; }
+  /* C2: la hoja */
+  .tel { display: block; position: relative; max-width: 340px; height: 190px; border-radius: 12px; overflow: hidden; background: var(--papel); box-shadow: inset 0 0 0 1px var(--line); }
+  .tel .velo { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+  .tel .hoja { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card); border-radius: 14px 14px 0 0; padding: 10px 14px 12px; }
+  .tel .asa { display: block; width: 36px; height: 4px; border-radius: 4px; background: var(--line-hard); margin: 0 auto 8px; }
+  .tel .fondo { display: block; padding: 10px 14px; opacity: .9; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mes: marcas y Lío</h1>
+  <p class="stand">Lo pedido: <em>marcar distinto los días que tienen cosas, sin que cuente Lío</em>, y <em>sacar a Lío de las pastillas</em> del detalle del día —iconos pequeños junto al día que, al tocarlos, se abran como pastilla—. Tres preguntas; las maquetas son ilustrativas, con días y nombres de ejemplo.</p>
+
+  <!-- A -->
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · Días con algo</p>
+    <p class="qtitle">¿Cómo se distingue en la parrilla un día que tiene algo?</p>
+    <p class="qwhy">Los turnos de Lío no cuentan, porque los hay todos los días. La celda mide 38 de alto y no debe crecer; la marca tiene que convivir con «hoy» (borde) y con el día elegido (relleno). En las maquetas tienen algo el 9, 12, 13, 15 y 17; hoy es el 15 y está elegido el 12.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Número en negrita</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="mm a1">
+            <span class="h">L</span><span class="h">M</span><span class="h">X</span><span class="h">J</span><span class="h">V</span><span class="h">S</span><span class="h">D</span>
+            <span class="d">7</span><span class="d">8</span><span class="d e">9</span><span class="d">10</span><span class="d">11</span><span class="d e sel">12</span><span class="d e">13</span>
+            <span class="d">14</span><span class="d e hoy">15</span><span class="d">16</span><span class="d e">17</span><span class="d">18</span><span class="d">19</span><span class="d">20</span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">El día con algo va en tinta y negrita; el vacío, en gris. <b>No añade nada a la celda</b>, así que no ocupa ni un punto más, y es lo que hace el calendario de iOS en su vista compacta. Coste: la diferencia es de peso, no de forma; con poca luz o de un vistazo rápido se distingue menos que una marca.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Fondo tintado suave</span></span>
+        <span class="mock">
+          <span class="mm a2">
+            <span class="h">L</span><span class="h">M</span><span class="h">X</span><span class="h">J</span><span class="h">V</span><span class="h">S</span><span class="h">D</span>
+            <span class="d">7</span><span class="d">8</span><span class="d e">9</span><span class="d">10</span><span class="d">11</span><span class="d e sel">12</span><span class="d e">13</span>
+            <span class="d">14</span><span class="d e hoy">15</span><span class="d">16</span><span class="d e">17</span><span class="d">18</span><span class="d">19</span><span class="d">20</span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">La celda con algo lleva un fondo verde muy claro. <b>Es lo que más se ve</b> y deja leer el mes de un vistazo como un mapa de días ocupados. Coste: el elegido es el mismo color a fondo pleno, así que conviven dos rellenos del mismo tono; y en un mes cargado la parrilla se vuelve una mancha verde.</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Raya bajo el número</span></span>
+        <span class="mock">
+          <span class="mm a3">
+            <span class="h">L</span><span class="h">M</span><span class="h">X</span><span class="h">J</span><span class="h">V</span><span class="h">S</span><span class="h">D</span>
+            <span class="d">7</span><span class="d">8</span><span class="d e">9</span><span class="d">10</span><span class="d">11</span><span class="d e sel">12</span><span class="d e">13</span>
+            <span class="d">14</span><span class="d e hoy">15</span><span class="d">16</span><span class="d e">17</span><span class="d">18</span><span class="d">19</span><span class="d">20</span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">Una raya corta bajo el número, dentro de la celda de 38. <b>Es el punto de antes, pero sin pedir alto</b>: el punto iba debajo del número y obligaba a una celda más alta; la raya cabe en el margen inferior. Coste: es otra marca pequeña que hay que buscar con la vista, la misma familia que lo que se quitó.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Esquina marcada</span></span>
+        <span class="mock">
+          <span class="mm a4">
+            <span class="h">L</span><span class="h">M</span><span class="h">X</span><span class="h">J</span><span class="h">V</span><span class="h">S</span><span class="h">D</span>
+            <span class="d">7</span><span class="d">8</span><span class="d e">9</span><span class="d">10</span><span class="d">11</span><span class="d e sel">12</span><span class="d e">13</span>
+            <span class="d">14</span><span class="d e hoy">15</span><span class="d">16</span><span class="d e">17</span><span class="d">18</span><span class="d">19</span><span class="d">20</span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">Un pequeño triángulo en la esquina superior derecha, como una página doblada. Tampoco pide alto y se distingue bien del borde de hoy. Coste: <b>es una figura que la aplicación no usa en ningún otro sitio</b>, y junto al borde de «hoy» la esquina se carga.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La parrilla sigue sin distinguir los días; en la nota, qué se busca en su lugar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <!-- B -->
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Lío sin pastillas</p>
+    <p class="qtitle">¿Cómo se ven los turnos de Lío en el detalle del día?</p>
+    <p class="qwhy">Hoy son dos tarjetas de 60 puntos cada una, encima y debajo de los eventos, y en un día sin nada más ocupan todo el detalle. En las maquetas: por la mañana salió (visto), por la noche está sin marcar. Al tocar, se abre la pastilla de siempre (pregunta C).</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Iconos junto al día</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="dia">
+            <span class="t">martes 15 de Septiembre
+              <span class="der">
+                <span class="ico">☀️<span class="marca si">✓</span></span>
+                <span class="ico">🌙<span class="marca nada"></span></span>
+              </span>
+            </span>
+            <span class="tarjeta">Dentista<small>17:00 · Ana</small></span>
+            <span class="tarjeta">Hípica<small>18:30 · Mariona</small></span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">El sol y la luna, a la derecha de la fecha, con un redondel que dice el estado: verde con visto si salió, rojo con aspa si no salió, vacío si nadie marcó. <b>No ocupa ninguna línea propia</b>: el detalle empieza directamente por los eventos. Coste: no dice de quién es el turno hasta tocarlo; quién toca hoy ya lo dice Hoy, pero aquí se pierde.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">Una línea bajo el día</span></span>
+        <span class="mock">
+          <span class="dia">
+            <span class="t">martes 15 de Septiembre</span>
+            <span class="linea">☀️ <b>Tú</b> ✓ &nbsp;·&nbsp; 🌙 <b>Óscar</b>, sin marcar</span>
+            <span class="tarjeta">Dentista<small>17:00 · Ana</small></span>
+            <span class="tarjeta">Hípica<small>18:30 · Mariona</small></span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">Un renglón gris de texto bajo la fecha, con los dos turnos y de quién son; cada mitad se toca por separado. <b>Dice quién y cómo va sin abrir nada</b>. Coste: es una línea más que B1 (unos 20 puntos) y, con nombres largos o «no salió», puede partirse en dos.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">Monedas con iniciales</span></span>
+        <span class="mock">
+          <span class="dia">
+            <span class="t">martes 15 de Septiembre
+              <span class="der">
+                <span class="moneda si">☀️ AN</span>
+                <span class="moneda">🌙 OS</span>
+              </span>
+            </span>
+            <span class="tarjeta">Dentista<small>17:00 · Ana</small></span>
+            <span class="tarjeta">Hípica<small>18:30 · Mariona</small></span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">En el sitio de B1, dos cápsulas con el icono y las iniciales de quien tiene el turno —las mismas de las pastillas de la semana—; el borde verde dice que salió. <b>Quién y cómo, sin línea propia</b>. Coste: es lo más parecido a una pastilla de todo lo que hay aquí, aunque pequeña; y el estado se lee solo por el color del borde.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Al pie, en una línea plegada</span></span>
+        <span class="mock">
+          <span class="dia">
+            <span class="t">martes 15 de Septiembre</span>
+            <span class="tarjeta">Dentista<small>17:00 · Ana</small></span>
+            <span class="tarjeta">Hípica<small>18:30 · Mariona</small></span>
+            <span class="pie">🐾 Lío · ☀️ ✓ · 🌙 sin marcar <span class="flecha">›</span></span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">Lío se va al final del detalle, en un renglón con la huella que se despliega en las dos pastillas. <b>Lo del día va primero y Lío no compite</b>. Coste: rompe el orden decidido en la E1 de los ocho cambios —la mañana abre el día y la noche lo cierra—, y al pie queda fuera de la vista si el día tiene muchas cosas.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">Lío sigue en tarjetas; en la nota, qué se busca en su lugar.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <!-- C -->
+  <section class="q" data-q="C">
+    <p class="qhead">Pregunta C · Al tocar</p>
+    <p class="qtitle">Al tocar un icono de Lío, ¿dónde se abre la pastilla?</p>
+    <p class="qwhy">La pastilla es la fila de hoy: quién, cómo va y los botones de visto y aspa. Lo que cambia es si aparece en el sitio o encima.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">Se despliega en el sitio</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock">
+          <span class="dia">
+            <span class="t">martes 15 de Septiembre
+              <span class="der">
+                <span class="ico">☀️<span class="marca si">✓</span></span>
+                <span class="ico activo">🌙<span class="marca nada"></span></span>
+              </span>
+            </span>
+            <span class="pastilla">🌙 <span>Por la noche<small>le toca a Óscar · sin marcar</small></span><span class="bts"><span class="bt">✓</span><span class="bt">✕</span></span></span>
+            <span class="tarjeta">Dentista<small>17:00 · Ana</small></span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">El icono queda señalado y la pastilla aparece bajo la fecha, empujando los eventos; tocarlo otra vez la recoge. <b>Marcar «salió» sigue siendo un toque más</b>, sin tapar el mes. Coste: la lista se mueve al abrirla, y hay que decidir si se recoge sola al cambiar de día (propuesta: sí).</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Abre la hoja del turno</span></span>
+        <span class="mock">
+          <span class="tel">
+            <span class="fondo"><span class="dia"><span class="t">martes 15 de Septiembre</span><span class="tarjeta">Dentista<small>17:00 · Ana</small></span></span></span>
+            <span class="velo"></span>
+            <span class="hoja">
+              <span class="asa"></span>
+              <span class="pastilla" style="margin-top:0">🌙 <span>Por la noche<small>le toca a Óscar · sin marcar</small></span><span class="bts"><span class="bt">✓</span><span class="bt">✕</span></span></span>
+            </span>
+          </span>
+          <span class="caption">Ilustrativo.</span>
+        </span>
+        <p class="obody">El toque abre la hoja del turno que ya existe (cambios, propuestas, «no salió»). <b>No hay nada nuevo que construir</b> y la pantalla no se mueve. Coste: tapa el mes y marcar es abrir y cerrar una hoja, que para un visto rápido es más que hoy.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">En la nota, cómo debería comportarse el toque.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p>Lo que no se toca aquí: la parrilla compacta, sin el botón «Hoy» y con el deslizamiento vertical (1.79.0). Lo que se decida en B vale para el detalle del mes; la semana y Hoy conservan su forma salvo que se diga lo contrario en la nota.</p>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="barin">
+    <span class="count" id="count"></span>
+    <button class="copy" id="copy">Copiar</button>
+  </div>
+</div>
+
+<script>
+  const KEY = "options.mes-marcas-y-lio";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+  function toggle(t) {
+    const l = t[0]; const none = l + "0"; const list = picked(l); const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) next = on ? [] : [t];
+    else if (on) next = list.filter((x) => x !== t);
+    else if (t === none) next = [t];
+    else next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    if (next.length) state.picks[l] = next; else delete state.picks[l];
+  }
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) { const n = (state.notes[l] || "").trim(); if (n) lines.push(l + ": " + n); }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) { const t = btn.dataset.t; btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t))); }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" + (missing.length ? " — falta: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toque una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+  document.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { toggle(btn.dataset.t); keep(); paint(); }));
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => { state.notes[area.dataset.n] = area.value; keep(); });
+  });
+  copy.addEventListener("click", async () => {
+    const text = block(); let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {} t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+  paint();
+</script>
+</body>
+</html>
