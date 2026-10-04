@@ -452,7 +452,7 @@ textarea:-webkit-autofill:focus {
    se anda y cómo se lleva uno lo que ve. De cuándo se habla lo dice el título
    de la pantalla, arriba, que es una fila que la agenda ya tenía puesta y no
    estaba usando.
-   Son cuatro grupos en la anchura de un teléfono, así que el hueco entre ellos
+   Son tres grupos en la anchura de un teléfono, así que el hueco entre ellos
    es corto y los botones de compartir, algo más finos que los de una hoja. */
 .vistas { display: flex; align-items: center; gap: 6px; width: 100%; flex-wrap: wrap; }
 .compartir-periodo { display: inline-flex; gap: 6px; }
@@ -460,9 +460,9 @@ textarea:-webkit-autofill:focus {
 .vistas .icono-accion { width: 34px; height: 34px; }
 .vistas .icono-accion .icono-svg svg { width: 17px; height: 17px; }
 
-/* Los cuatro grupos —vistas, flechas, compartir y «Hoy»— no caben en la anchura
-   de un teléfono, y las flechas son lo único que sobra: el deslizamiento
-   lateral hace ya eso mismo, y de «Hoy» no hay gesto que sustituya. Vuelven en
+/* Los tres grupos —vistas, flechas y compartir— no caben en la anchura de un
+   teléfono, y las flechas son lo único que sobra: el deslizamiento lateral hace
+   ya eso mismo, y volver a hoy es tocar «Agenda» en la barra. Vuelven en
    cuanto hay sitio, que es también donde el ratón se queda sin deslizamiento
    con el que pasar de semana. El corte está medido: a 410 px entran justas. */
 @media (max-width: 409px) {
@@ -473,14 +473,6 @@ textarea:-webkit-autofill:focus {
 @media (max-width: 360px) {
   .seg button { padding: 5px 7px; font-size: 13.5px; }
 }
-/* Volver a hoy: discreto, porque solo hace falta cuando uno se ha ido lejos. */
-.boton-hoy {
-  min-height: 38px; padding: 6px 14px; border-radius: 999px;
-  border: 1px solid var(--line); background: var(--paper-2);
-  font-size: 15.5px; color: var(--ink-soft);
-}
-.boton-hoy:hover { background: var(--paper-3); color: var(--ink); }
-
 .empujar { margin-left: auto; }
 
 /* ------------------------------------------------------------------ Hoy -- */
@@ -785,18 +777,16 @@ textarea:-webkit-autofill:focus {
 .desbordamiento { font-size: 14px; color: var(--tinta); text-align: left; min-height: 26px; }
 
 /* Vista de mes */
-.mes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.mes { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; touch-action: none; }
 .mes-cabecera { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; color: var(--ink-faint); text-align: center; padding: 6px 0; }
 .mes-celda {
-  aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
+  height: 38px; border-radius: 8px; display: flex;
+  align-items: center; justify-content: center;
   font-variant-numeric: tabular-nums; font-size: 15.5px; color: var(--ink-soft);
 }
 .mes-celda[data-fuera="si"] { color: var(--ink-faint); opacity: .45; }
 .mes-celda[aria-pressed="true"] { background: var(--tinta); color: var(--paper); }
 .mes-celda[data-hoy="si"] { border: 1px solid var(--tinta); }
-.mes-punto { width: 4px; height: 4px; border-radius: 50%; background: var(--tinta); }
-.mes-celda[aria-pressed="true"] .mes-punto { background: var(--paper); }
 
 /* ---------------------------------------------------------------- Piezas -- */
 

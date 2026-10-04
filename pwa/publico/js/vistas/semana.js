@@ -14,7 +14,7 @@
  */
 
 import {
-  abrirHoja, avisar, botonIcono, campo, cerrarHoja, deslizarHorizontal, masOpciones, dobleToque, el, enfocarAlAbrir, enlazar, entrada, icono, seleccion, selectorDeFecha, selectorDeHora, vaciar,
+  abrirHoja, avisar, botonIcono, campo, cerrarHoja, deslizarHorizontal, deslizarVertical, masOpciones, dobleToque, el, enfocarAlAbrir, enlazar, entrada, icono, seleccion, selectorDeFecha, selectorDeHora, vaciar,
 } from '../ui.js';
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, estaActivo, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
@@ -54,6 +54,21 @@ export function reiniciarAgenda() {
   modo = 'semana';
   ancla = hoy();
   ultimoPaso = 0;
+}
+
+/**
+ * Volver a hoy sin cambiar de vista: es lo que hace tocar «Agenda» en la barra
+ * estando ya en ella. Antes era un botón «Hoy» en la subcabecera, que ocupaba
+ * sitio para algo que solo hace falta cuando uno se ha ido lejos; el gesto de
+ * volver a tocar la pestaña en la que se está es el que usa iOS para eso.
+ */
+export function volverAHoyEnAgenda() {
+  const ahora = hoy();
+  const antes = ancla;
+  ancla = ahora;
+  ultimoPaso = antes < ahora ? 1 : antes > ahora ? -1 : 0;
+  if (modo === 'semana' && iso(lunesDe(antes)) === iso(lunesDe(ahora))) ultimoPaso = 0;
+  if (modo === 'mes' && antes.getFullYear() === ahora.getFullYear() && antes.getMonth() === ahora.getMonth()) ultimoPaso = 0;
 }
 
 /**
@@ -130,14 +145,6 @@ export function pintarAgenda(pantalla, subcabecera, ctx) {
         }),
         ...accionesDelPeriodo(ctx),
       ]),
-      // Volver es tan necesario como irse: con las flechas y el deslizamiento,
-      // tres gestos distraídos dejan la agenda en un mes que no le importa a
-      // nadie y sin forma evidente de regresar.
-      modo === 'lista' ? null : el('button', {
-        class: 'boton-hoy', type: 'button',
-        'aria-label': 'Volver a hoy',
-        onclick: () => { toque(); ancla = hoy(); ultimoPaso = 0; ctx.refrescar(); },
-      }, ['Hoy']),
     ]),
   );
 
@@ -1024,27 +1031,36 @@ const porViajesPrimero = (apariciones) => [...apariciones].sort(
 function vistaMes(ctx) {
   const primero = new Date(ancla.getFullYear(), ancla.getMonth(), 1);
   const arranque = lunesDe(primero);
-  const celdas = Array.from({ length: 42 }, (_, i) => sumarDias(arranque, i));
-  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, celdas[0], celdas[41]), celdas);
+  // Solo las semanas que tocan el mes: cinco casi siempre, cuatro o seis
+  // cuando cae así. Rellenar siempre hasta seis gastaba una fila de pantalla
+  // en días de otro mes.
+  const ultimo = new Date(ancla.getFullYear(), ancla.getMonth() + 1, 0);
+  const semanas = Math.round((lunesDe(ultimo) - arranque) / (7 * 86400000)) + 1;
+  const celdas = Array.from({ length: semanas * 7 }, (_, i) => sumarDias(arranque, i));
+  const reparto = repartirPorDia(instanciasEn(ctx.vista.datos, celdas[0], celdas[celdas.length - 1]), celdas);
   const clavehoy = iso(hoy());
   const seleccionado = iso(ancla);
 
   const rejilla = el('div', { class: 'mes' });
   for (const inicial of INICIALES_DIA) rejilla.append(el('div', { class: 'mes-cabecera', texto: inicial }));
 
+  // Sin punto de «hay algo»: la celda es solo el número, y así la parrilla
+  // ocupa menos y deja más detalle del día a la vista. Lo que hay lo dice el
+  // detalle de debajo.
   for (const dia of celdas) {
-    const tiene = (reparto.get(iso(dia)) || []).length > 0;
     rejilla.append(el('button', {
       class: 'mes-celda', type: 'button',
       'data-fuera': dia.getMonth() === ancla.getMonth() ? 'no' : 'si',
       'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
       'aria-pressed': iso(dia) === seleccionado ? 'true' : 'false',
       onclick: () => { ancla = dia; ctx.refrescar(); },
-    }, [
-      String(dia.getDate()),
-      tiene ? el('span', { class: 'mes-punto' }) : null,
-    ]));
+    }, [String(dia.getDate())]));
   }
+
+  // Sobre la parrilla se pasa de mes también en vertical, como en el
+  // calendario de iOS: hacia arriba, el siguiente; hacia abajo, el anterior.
+  // Solo sobre la parrilla: en el detalle de debajo, bajar es desplazar.
+  deslizarVertical(rejilla, (pasos) => { toque(); mover(pasos); ctx.refrescar(); });
 
   const detalle = el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: formatearFechaLarga(ancla) }),

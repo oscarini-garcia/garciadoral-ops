@@ -154,7 +154,7 @@ tener que recorrer la aplicación entera cada vez.
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
 - **ui.js** — Piezas de interfaz reutilizables: construcción de nodos, hoja modal y avisos.
   el · vaciar · enlazar · colorDePersona · iniciales · avatar · icono · botonIcono
-  abrirHoja · cerrarHoja · …y 15 más
+  abrirHoja · cerrarHoja · …y 16 más
 - **version.js** — La versión de la aplicación, escrita donde la web puede leerla.
   VERSION_APP
 - **viajes.js** — Los viajes de cada uno, emparejados a partir de sus vuelos.
@@ -177,9 +177,9 @@ tener que recorrer la aplicación entera cada vez.
   personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
   …y 3 más
 - **semana.js** — La agenda: semana, mes y lista sobre los mismos datos.
-  reiniciarAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone · abrirLioDelDia
-  filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta · textoDePropuesta
-  …y 10 más
+  reiniciarAgenda · volverAHoyEnAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone
+  abrirLioDelDia · filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta
+  …y 11 más
 - **sitios.js** — Sitios: lo que una casa sabe de un lugar y se le olvida cada año.
   reiniciarSitios · hayFabEnSitios · tituloDeSitios · irALugar · nuevoDesdeSitios
   pintarSitios · abrirApunte

@@ -27,6 +27,18 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **El mes, más compacto (1.79.0).** La celda del mes es solo el número: se
+  retiró el punto de «hay algo» (`.mes-punto`) y la celda pasa de cuadrada a
+  38 de alto; `vistaMes` pinta solo las semanas que tocan el mes (cuatro a
+  seis) en vez de 42 casillas siempre. **El botón «Hoy» de la subcabecera se
+  retiró**: volver a hoy es tocar «Agenda» en la barra estando ya en ella
+  (`volverAHoyEnAgenda`, desde `prepararInterfaz` en `app.js`), en la vista
+  que sea. **Y la parrilla del mes pasa de mes también en vertical**
+  (`deslizarVertical` en `ui.js`): arriba, el siguiente; abajo, el anterior,
+  como en iOS; en horizontal sigue izquierda → siguiente, como la semana. La
+  parrilla lleva `touch-action: none`, así que desde ella ya no se desplaza la
+  página; el detalle de debajo sí. Queda por revisar el resto de la página
+  del mes, que era el siguiente paso anunciado.
 - **Formularios, fechas y regalos (1.78.0).** Decidido como A1 · B1 · C1 en
   `specs/propuesta-formularios-fechas-regalos.html`. **Lo que apunta un
   administrador —idea o regalo, no un deseo propio— no lo ve quien no lo es**,
