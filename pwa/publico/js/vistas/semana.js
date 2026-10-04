@@ -1079,7 +1079,7 @@ function vistaMes(ctx) {
 /** Un turno de Lío en el detalle del mes: el sol o la luna y las iniciales de
  *  quien lo tiene, con el borde en tinta si salió y en el color de aviso si no
  *  salió. */
-function monedaDeLio(turno, ctx) {
+export function monedaDeLio(turno, ctx) {
   const quien = ctx.vista.persona(turno.hechoPorId) || ctx.vista.persona(turno.asignadoId);
   return el('button', {
     class: 'mes-lio-moneda', type: 'button',

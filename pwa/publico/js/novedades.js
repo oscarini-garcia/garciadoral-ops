@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.90.0',
+    fecha: '2026-10-04',
+    titulo: 'Hoy, como una línea del tiempo',
+    lineas: [
+      'Hoy enseña el día hora a hora, con lo pasado atenuado y una raya a la hora de ahora.',
+      'Lío va en las monedas de la agenda; se marca tocándolas. Lo de ayer sin marcar sale detrás, con «Ayer».',
+      'Se quedan la frase del día, la voz de Lío y «Esta noche».',
+    ],
+  },
+  {
     version: '1.89.0',
     fecha: '2026-10-04',
     titulo: 'Agenda: semana y mes',
