@@ -46,7 +46,7 @@ tener que recorrer la aplicación entera cada vez.
 
 - **apns.js** — El transporte hasta el teléfono: APNs con autenticación por token.
   hayApnsConfigurado · tokenDeProveedor · olvidarTokenDeProveedor · enviarAviso
-- **asistente.js** — Lo que Claude puede hacer con la agenda: consultar y apuntar, como quien tiene la…
+- **asistente.js** — Lo que Claude puede hacer con la agenda: consultar, apuntar, cambiar y comentar, como quien…
   SERVIDOR · herramientasDe · instruccionesDe
 - **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
   CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · aparatosDe · olvidarToken
@@ -319,7 +319,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**430** en total.
+**441** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -339,7 +339,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23
-- `api/test/mcp.test.js` — 22
+- `api/test/mcp.test.js` — 33
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
 - `api/test/receta.test.js` — 3
