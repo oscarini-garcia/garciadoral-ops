@@ -21,6 +21,10 @@
   --regalo:     #8E3B5E;
   --regalo-suave:#F5E4EA;
   --aviso:      #A8641B;
+  /* Los festivos: un rojo apagado, el de un calendario de papel
+     (specs/propuesta-festivos.html, D3). */
+  --festivo:    #B5523B;
+  --festivo-suave:#F7E7E1;
   --sello-bg:   #E9EEF3;
   --sello-line: rgba(110, 134, 158, .22);
   --sello-text: #5B7288;
@@ -79,6 +83,8 @@
     --regalo:     #E48FAE;
     --regalo-suave:#33202A;
     --aviso:      #E0A253;
+    --festivo:    #E08A73;
+    --festivo-suave:#35221D;
     --sello-bg:   #1A252B;
     --sello-line: rgba(156, 176, 186, .22);
     --sello-text: #9CB0BA;
@@ -103,6 +109,7 @@
   --ink: #1C2B33; --ink-soft: #5F7280; --ink-faint: #64747F;
   --line: #E2DED4; --tinta: #0E6E62; --tinta-suave: #DCEDE9;
   --regalo: #8E3B5E; --regalo-suave: #F5E4EA; --aviso: #A8641B;
+  --festivo: #B5523B; --festivo-suave: #F7E7E1;
   --sello-bg: #E9EEF3; --sello-line: rgba(110,134,158,.22); --sello-text: #5B7288;
   --paper-alto: #FFFDFA; --paper-alto-2: #F6F2EA; --paper-alto-3: #EDE8DE;
   --borde-alto: rgba(28,43,51,.06); --velo: rgba(8,16,20,.55);
@@ -115,6 +122,7 @@
   --ink: #E7EEF1; --ink-soft: #9CB0BA; --ink-faint: #748994;
   --line: #263238; --tinta: #55C9B4; --tinta-suave: #12312E;
   --regalo: #E48FAE; --regalo-suave: #33202A; --aviso: #E0A253;
+  --festivo: #E08A73; --festivo-suave: #35221D;
   --sello-bg: #1A252B; --sello-line: rgba(156,176,186,.22); --sello-text: #9CB0BA;
   --paper-alto: #1E282D; --paper-alto-2: #253238; --paper-alto-3: #2C3C43;
   --borde-alto: rgba(231,238,241,.07); --velo: rgba(0,0,0,.68);
@@ -768,6 +776,15 @@ textarea:-webkit-autofill:focus {
   min-height: 58px;
 }
 .dia[data-hoy="si"] { border-color: var(--tinta); box-shadow: inset 0 0 0 .5px var(--tinta); }
+/* Un festivo tiñe el día entero, y su nombre va en su color, sin emoji ni hora
+   (specs/propuesta-festivos.html, D3). */
+.dia[data-festivo="si"] { background: var(--festivo-suave); }
+.grupo[data-festivo="si"] { background: var(--festivo-suave); border-radius: 12px; padding: 10px 12px; }
+.linea[data-festivo="si"] .linea-titulo { color: var(--festivo); font-weight: 500; }
+.festivo-fila { display: flex; align-items: baseline; gap: 10px; margin: 0; padding: 8px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.festivo-fila:first-child { border-top: 0; }
+.festivo-fecha { flex: none; width: 46%; color: var(--ink-soft); }
+.festivo-nombre { flex: 1; min-width: 0; }
 /* Lío en la semana: las monedas del detalle del mes, apiladas bajo el número
    en la columna de la fecha, para que los eventos lleguen al borde
    (specs/propuesta-semana-legible.html, A3). */
@@ -832,6 +849,7 @@ textarea:-webkit-autofill:focus {
   font-variant-numeric: tabular-nums; font-size: 15.5px; color: var(--ink-soft);
 }
 .mes-celda[data-algo="si"] { background: color-mix(in srgb, var(--tinta) 14%, transparent); color: var(--ink); }
+.mes-celda[data-festivo="si"] { background: var(--festivo-suave); color: var(--festivo); }
 .mes-celda[data-fuera="si"] { color: var(--ink-faint); opacity: .45; }
 .mes-celda[aria-pressed="true"] { background: var(--tinta); color: var(--paper); }
 .mes-celda[data-hoy="si"] { border: 1px solid var(--tinta); }

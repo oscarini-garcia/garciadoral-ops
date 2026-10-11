@@ -32,7 +32,7 @@ import { hayLio, resolverPropuesta, tratosParaMi, turnosDe } from '../lio.js';
 import { aplicarLioDeEscapada, escapadasDe } from './plugins.js';
 import { irALugar } from './sitios.js';
 import { porClase, estaHecho } from '../sitios.js';
-import { pluginOculto, tratosDeDiaParaMi, resolverTratoDeDia } from '../plugins.js';
+import { pluginDeEvento, pluginOculto, tratosDeDiaParaMi, resolverTratoDeDia } from '../plugins.js';
 import { cenaDe, escribirNoche, hayCenas, platoDe, platoDeLasNinas } from '../cenas.js';
 import { abrirNoche } from './cenas.js';
 
@@ -514,7 +514,9 @@ function bloqueDelDia(dia, ctx) {
   const conHora = apariciones.filter((a) => horaDe(a));
 
   const esHoy = iso(new Date()) === iso(dia);
-  const grupo = el('div', { class: 'grupo' }, [el('p', { class: 'grupo-titulo', texto: esHoy ? 'Para hoy' : 'Este día' })]);
+  // Un festivo tiñe el día entero (specs/propuesta-festivos.html, D3).
+  const festivo = apariciones.some((a) => pluginDeEvento(a.evento) === 'festivos');
+  const grupo = el('div', { class: 'grupo', 'data-festivo': festivo ? 'si' : 'no' }, [el('p', { class: 'grupo-titulo', texto: esHoy ? 'Para hoy' : 'Este día' })]);
   for (const aparicion of sinHora) grupo.append(lineaDelRiel(aparicion, ctx));
   // Sin nada con hora, el riel no se dibuja: catorce filas vacías ocupaban
   // media pantalla para decir que no había nada.
@@ -578,6 +580,7 @@ function lineaDelRiel(aparicion, ctx) {
     'data-banda': texto.banda ? 'si' : 'no',
     'data-suave': texto.suave ? 'si' : 'no',
     'data-cancelada': texto.cancelada ? 'si' : 'no',
+    'data-festivo': texto.festivo ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     el('span', { class: 'linea-emoji', texto: texto.emoji }),

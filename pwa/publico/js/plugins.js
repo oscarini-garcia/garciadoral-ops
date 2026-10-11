@@ -2,7 +2,7 @@
  * Los plugins de la agenda: qué hay, en qué familia está cada uno y qué mandos
  * comparten todos.
  *
- * Cada cosa que cae en un día viene de un plugin, y son seis en dos familias
+ * Cada cosa que cae en un día viene de un plugin, y son siete en dos familias
  * (`specs/propuesta-plugins-agenda.html`, A1): tres que **se derivan** de una
  * fuente que nadie escribe evento a evento —Lío del cuadro de reparto, los
  * viajes del Flighty de cada uno, los cumpleaños y santos de las fichas de
@@ -43,6 +43,10 @@ export const PLUGINS = [
     de: 'de las fichas de Gente',
   },
   {
+    id: 'festivos', nombre: 'Festivos', emoji: '📅', familia: 'derivado',
+    de: 'del calendario oficial del lugar, y los que se añaden a mano',
+  },
+  {
     id: 'puntuales', nombre: 'Puntuales', emoji: '📌', familia: 'escrito',
     de: 'cenas, citas y lo que no tiene regla',
   },
@@ -61,7 +65,7 @@ export const IDS_PLUGIN = PLUGINS.map((p) => p.id);
 export const pluginPorId = (id) => PLUGINS.find((p) => p.id === id) || null;
 
 /** Los que tienen mando de círculo. Lío está fijo en casa por su propio módulo. */
-export const CON_CIRCULO = ['viajes', 'cumples', 'puntuales', 'extraescolares', 'finde'];
+export const CON_CIRCULO = ['viajes', 'cumples', 'festivos', 'puntuales', 'extraescolares', 'finde'];
 
 /** Los que se pueden llamar de otra manera: los escritos, que son los que la casa
  *  bautiza —«Hípica» donde pone «Extraescolares»—. Lío ya se llama Lío. */
@@ -76,6 +80,7 @@ export const CIRCULO_POR_DEFECTO = {
   lio: 'familia',
   viajes: 'amigos',
   cumples: 'amigos',
+  festivos: 'amigos',
   puntuales: 'amigos',
   extraescolares: 'familia',
   finde: 'familia',
@@ -140,10 +145,12 @@ export function pluginDeEvento(evento) {
   if (!evento) return 'puntuales';
   if (evento.plugin_id === 'extraescolar') return 'extraescolares';
   if (evento.plugin_id === 'finde') return 'finde';
+  if (evento.plugin_id === 'festivo') return 'festivos';
   if (evento.origen === 'importado') return 'viajes';
   const id = String(evento.id || '');
   if (id.startsWith('derivado:cumpleanos:') || id.startsWith('derivado:santo:')) return 'cumples';
   if (id.startsWith('derivado:fuera:')) return 'viajes';
+  if (id.startsWith('derivado:festivo:')) return 'festivos';
   if (id.startsWith('derivado:ausencia:')) return 'lio';
   return 'puntuales';
 }
@@ -157,7 +164,8 @@ export function pluginDeEvento(evento) {
 export function seEnsena(instantanea, evento) {
   const plugin = pluginDeEvento(evento);
   if (pluginOculto(plugin)) return false;
-  if (String(evento?.id || '').startsWith('derivado:')) {
+  // Los festivos oficiales ya llegan recortados por su círculo en el Worker.
+  if (String(evento?.id || '').startsWith('derivado:') && plugin !== 'festivos') {
     return circuloAdmite(ajustesDe(instantanea, plugin).circulo, instantanea?.yo?.circulo);
   }
   return true;
@@ -211,7 +219,9 @@ export const ANTELACIONES = [
 /** Lo que había antes de que hubiera mando: media hora antes de lo que tiene
  *  hora y la tarde de la víspera de lo que dura todo el día, que aquí se lee
  *  como «la víspera». */
-const AVISO_POR_DEFECTO = { viajes: 'vispera', puntuales: 'vispera', extraescolares: 'nunca', finde: 'vispera' };
+const AVISO_POR_DEFECTO = {
+  viajes: 'vispera', puntuales: 'vispera', extraescolares: 'nunca', finde: 'vispera', festivos: 'nunca',
+};
 
 export const avisoDePlugin = (id) => leerLista(CLAVE_AVISOS)[id] || AVISO_POR_DEFECTO[id] || 'vispera';
 

@@ -11,6 +11,7 @@ import { contarPendientes } from './portero/solicitudes.js';
 import { Rechazo } from './portero/errores.js';
 import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
 import { guardarPlugin, leerPlugins } from './plugins.js';
+import { festivosDelRegistro } from './festivos.js';
 import { VEREDICTOS, guardarCocina, leerCocina } from './cenas.js';
 
 const CAMPOS = {
@@ -32,7 +33,12 @@ const CAMPOS = {
   // Lo que le pasa a una aparición concreta de un evento que se repite: que ese
   // día no hay, o que ese martes lleva y recoge otro. El identificador se
   // compone —`dia:<evento>:<fecha>`— como el de un paseo de Lío.
-  evento_dia: ['evento_id', 'fecha', 'cancelado', 'lleva_id', 'recoge_id', 'lleva_otro', 'recoge_otro', 'autor_id', 'activo'],
+  evento_dia: [
+    'evento_id', 'fecha', 'cancelado', 'lleva_id', 'recoge_id', 'lleva_otro', 'recoge_otro', 'autor_id', 'activo',
+    // «Sí hay» en un festivo: ese día la recurrente va aunque el festivo la
+    // anulara (`api/migraciones/0031_festivos.unavez.sql`).
+    'hay_en_festivo',
+  ],
   // Que alguien no está unos días. Se escribe en su ficha y la lee Lío.
   ausencia: ['persona_id', 'desde', 'hasta', 'cubre_id', 'motivo', 'autor_id', 'activo'],
   idea: [
@@ -275,9 +281,15 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     mejoras: mejoras.map((m) => ({ ...m, hecho: bool(m.hecho), activo: bool(m.activo) })),
     // Los plugins: lo que le pasa a un día suelto de un evento que se repite,
     // quién no está unos días, y lo que la casa ha ajustado de cada plugin.
-    dias_evento: diasDeEvento.map((d) => ({ ...d, cancelado: bool(d.cancelado), activo: bool(d.activo) })),
+    dias_evento: diasDeEvento.map((d) => ({
+      ...d, cancelado: bool(d.cancelado), hay_en_festivo: bool(d.hay_en_festivo), activo: bool(d.activo),
+    })),
     ausencias: ausencias.map((a) => ({ ...a, activo: bool(a.activo) })),
     plugins,
+    // Los festivos oficiales del lugar de la casa, de la tabla por año o, donde
+    // no llega, de la regla (`festivos.js`). Se componen aquí y no en cada
+    // pantalla para que la regla exista en un solo sitio.
+    festivos: festivosDelRegistro(plugins),
     // Cenas: el recetario, lo cenado cada noche y cómo se cocina en casa.
     recetas: recetas.map((r) => ({ ...r, activo: bool(r.activo) })),
     cenas: cenas.map((c) => ({ ...c, activo: bool(c.activo) })),

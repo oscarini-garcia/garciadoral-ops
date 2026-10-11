@@ -46,6 +46,7 @@ import {
 import { visible } from './visibilidad.js';
 import { idCena } from './cenas.js';
 import { esComentable } from './comentables.js';
+import { festivoQueAnula } from './festivos.js';
 import { TOPE_DE_MEJORA } from './repositorio.js';
 
 /** Cómo se presenta este servidor en la lista de conectores de Claude. */
@@ -66,7 +67,7 @@ const REPETICIONES = { ninguna: null, semanal: 'cada semana', mensual: 'cada mes
 
 /** Los tipos que el formulario de un evento puntual no ofrece, porque tienen
  *  plugin propio (`TIPOS_DE_OTROS_PLUGINS` en `vistas/plugins.js`). */
-const TIPOS_DE_OTROS_PLUGINS = ['cumpleanos', 'santo', 'viaje', 'recurrente'];
+const TIPOS_DE_OTROS_PLUGINS = ['cumpleanos', 'santo', 'viaje', 'recurrente', 'festivo'];
 
 const ROTULO_DE_CIRCULO = { familia: 'Familia, en casa', extendida: 'Familia extendida', amigos: 'Amigos' };
 const ESTADO_DE_REGALO = { pendiente: 'por comprar', comprado: 'listo', envuelto: 'listo', entregado: 'entregado' };
@@ -367,7 +368,7 @@ function repartirPorDias(instantanea, desde, hasta) {
         poner(dia, lineaDelEvento(evento, instantanea, dia, {
           sigue: paso > 0,
           ultimo: dura ? sumarDias(arranque, dura) : null,
-          cancelado: cancelados.has(`${evento.id}:${dia}`),
+          cancelado: cancelados.has(`${evento.id}:${dia}`) || Boolean(festivoQueAnula(instantanea, evento, dia)),
         }), String(evento.id).startsWith('derivado:') ? null : refDe('evento', evento.id));
       }
     }

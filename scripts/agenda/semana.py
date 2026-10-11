@@ -17,6 +17,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Iterator
 
 from .modelo import Agenda, Evento, ParticipanteEvento
+from .festivos import eventos_de_festivos, festivo_que_anula
 from .plugins import santos_activos
 
 DIAS_SEMANA = 7
@@ -180,6 +181,9 @@ def eventos_derivados(agenda: Agenda) -> list[Evento]:
                 )
             )
 
+    # Los festivos oficiales del lugar de la casa, que el registro trae hechos.
+    derivados += eventos_de_festivos(agenda)
+
     return derivados
 
 
@@ -342,6 +346,10 @@ def instancias_de_la_semana(
             # `evento_dia` con `cancelado`, y manda sobre la regla semanal.
             dia = agenda.dia_de_evento(evento.id, instancia.inicio.date())
             if dia is not None and dia.cancelado:
+                continue
+            # Ni el día que es festivo, si la recurrente no va en festivos
+            # (specs/propuesta-festivos.html, E1).
+            if festivo_que_anula(agenda, evento, instancia.inicio.date()):
                 continue
             resultado.append(instancia)
     return resultado

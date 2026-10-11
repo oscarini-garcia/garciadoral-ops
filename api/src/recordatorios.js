@@ -24,10 +24,13 @@ import { enviarAviso, hayApnsConfigurado } from './apns.js';
 import { componerInstantanea } from './filtrado.js';
 import { circuloAdmite, circuloDe, pluginDeEvento } from './plugins.js';
 import { olvidarToken } from './avisos.js';
+import { eventosDeFestivos, festivoQueAnula } from './festivos.js';
 
 /** Los mismos cuatro valores que ofrece la hoja de cada plugin. */
 const ANTELACION_EN_DIAS = { nunca: null, dia: 0, vispera: 1, semana: 7 };
-const AVISO_POR_DEFECTO = { viajes: 'vispera', puntuales: 'vispera', extraescolares: 'nunca', finde: 'vispera' };
+const AVISO_POR_DEFECTO = {
+  viajes: 'vispera', puntuales: 'vispera', extraescolares: 'nunca', finde: 'vispera', festivos: 'nunca',
+};
 const AVISO_CUMPLES_POR_DEFECTO = { familia: 7, extendida: 1, amigos: 0 };
 
 /** Hasta cuántos días adelante se mira: la antelación más larga que se ofrece. */
@@ -99,12 +102,14 @@ export function arranquesEntre(evento, desde, hasta) {
 
 // ------------------------------------------------------------ Componer --
 
-/** Lo derivado de las fichas, como lo deriva el dispositivo: cumpleaños y
- *  santos de quien esté a la vista de esta persona, según el círculo del plugin. */
+/** Lo derivado, como lo deriva el dispositivo: cumpleaños y santos de quien
+ *  esté a la vista de esta persona, según el círculo del plugin, y los
+ *  festivos oficiales, que la instantánea ya trae recortados por el suyo. */
 export function derivadosDe(instantanea) {
   const plugins = instantanea.plugins || {};
   const yo = instantanea.yo || {};
-  if (!circuloAdmite(circuloDe(plugins, 'cumples'), yo.circulo)) return [];
+  const festivos = eventosDeFestivos(instantanea);
+  if (!circuloAdmite(circuloDe(plugins, 'cumples'), yo.circulo)) return festivos;
   const conSantos = plugins.cumples?.santos !== false;
   const salida = [];
   for (const persona of instantanea.personas || []) {
@@ -122,7 +127,7 @@ export function derivadosDe(instantanea) {
       });
     }
   }
-  return salida;
+  return salida.concat(festivos);
 }
 
 /** Con cuántos días se avisa de un evento a este aparato, o `null`. */
@@ -189,7 +194,8 @@ export function recordatoriosDe(registro, aparato, hoy) {
     if (antelacion === null) continue;
     const objetivo = sumarDias(hoy, antelacion);
     for (const fecha of arranquesEntre(evento, objetivo, objetivo)) {
-      if (cancelados.has(`${evento.id}:${fecha}`)) continue;
+      // Un día que no hay, dicho a mano o por ser festivo (E1), no avisa.
+      if (cancelados.has(`${evento.id}:${fecha}`) || festivoQueAnula(instantanea, evento, fecha)) continue;
       salida.push({
         para: persona.id,
         titulo: caraDe(instantanea, evento),

@@ -14,6 +14,7 @@
 import { estaActivo, presentarVuelo, sinVuelosRepetidos } from './modelo.js';
 import { ajustesDe, seEnsena } from './plugins.js';
 import { eventosDeFuera } from './viajes.js';
+import { eventosDeFestivos, festivoQueAnula } from './festivos.js';
 
 export const INICIALES_DIA = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 export const NOMBRES_DIA = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -209,7 +210,9 @@ export function eventosDerivados(instantanea) {
     });
   }
 
-  return derivados.concat(eventosDeFuera(instantanea));
+  // Y los festivos oficiales, que la instantánea trae hechos
+  // (specs/propuesta-festivos.html, A1).
+  return derivados.concat(eventosDeFuera(instantanea), eventosDeFestivos(instantanea));
 }
 
 /**
@@ -424,9 +427,16 @@ export function instanciasEn(instantanea, desde, hasta, { conCanceladas = false 
     // Un día en que se dijo que no hay se cae de todo lo que cuenta —avisos,
     // redacción, marcas del mes—, y solo las pantallas que lo enseñan tachado,
     // para poder devolverlo, lo piden (specs/propuesta-recurrentes-y-recetas.html, A1).
+    // Y una recurrente el día que es festivo, si no va en festivos (E1 de
+    // specs/propuesta-festivos.html): sale tachada, y «Sí hay» la devuelve.
     .flatMap((instancia) => {
-      if (!estaCancelado(diaDeEvento(instantanea, instancia.evento.id, iso(instancia.inicio)))) return [instancia];
-      return conCanceladas ? [{ ...instancia, cancelada: true }] : [];
+      const fecha = iso(instancia.inicio);
+      if (estaCancelado(diaDeEvento(instantanea, instancia.evento.id, fecha))) {
+        return conCanceladas ? [{ ...instancia, cancelada: true }] : [];
+      }
+      const festivo = festivoQueAnula(instantanea, instancia.evento, fecha);
+      if (!festivo) return [instancia];
+      return conCanceladas ? [{ ...instancia, cancelada: true, festivo }] : [];
     });
 }
 
@@ -479,6 +489,9 @@ export function repartirPorDia(instancias, dias) {
 }
 
 function orden(aparicion) {
+  // Un festivo abre el día: es lo que cambia todo lo demás
+  // (specs/propuesta-festivos.html, D3).
+  if (aparicion.evento.plugin_id === 'festivo' || String(aparicion.evento.id || '').startsWith('derivado:festivo:')) return -2;
   if (aparicion.evento.jornada_completa || aparicion.continuacion) return -1;
   return aparicion.instancia.inicio.getHours() * 60 + aparicion.instancia.inicio.getMinutes();
 }

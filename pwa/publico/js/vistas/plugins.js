@@ -36,6 +36,7 @@ import { toque } from '../native.js';
 import { VERSION_APP } from '../version.js';
 import { lugaresDe, nombreDeLugar } from '../sitios.js';
 import { abrirFormularioEvento, fechaQuePropone } from './semana.js';
+import { festivosApuntados, festivosOficiales, previsionesDe } from '../festivos.js';
 
 /** ¿Es de casa quien mira? Lío y Sitios solo existen para quien lo es. */
 const deCasa = (ctx) => (ctx.vista.datos.yo?.circulo || ctx.vista.persona(ctx.vista.yo.id)?.circulo) === 'familia';
@@ -43,7 +44,7 @@ const deCasa = (ctx) => (ctx.vista.datos.yo?.circulo || ctx.vista.persona(ctx.vi
 // ------------------------------------------------------- La lista de plugins --
 
 /**
- * La hoja con los seis. Cada fila dice de qué va —«de Óscar, por Flighty»,
+ * La hoja con los siete. Cada fila dice de qué va —«de Óscar, por Flighty»,
  * «hípica, martes»—, lleva su interruptor y abre su hoja.
  */
 export function abrirPlugins(ctx) {
@@ -106,6 +107,11 @@ function deQueVa(id, ctx) {
     const cuantos = ctx.vista.personas().filter((p) => p.fecha_nacimiento).length;
     return cuantos ? `${cuantos} con fecha en Gente` : 'nadie con fecha en Gente';
   }
+  if (id === 'festivos') {
+    const proximo = festivosOficiales(datos).find((f) => f.fecha >= iso(hoy()));
+    return [datos.festivos?.nombre || null, proximo ? `el próximo, ${proximo.nombre}` : null].filter(Boolean).join(' · ')
+      || 'sin calendario todavía';
+  }
   if (id === 'puntuales') return 'cenas, citas y lo que no tiene regla';
   if (id === 'extraescolares') {
     const nombres = actividadesDe(ctx).map((e) => ctx.vista.caraDe(e).titulo);
@@ -141,6 +147,7 @@ export function abrirHojaDePlugin(id, ctx) {
       lio: bloqueDeLio,
       viajes: bloqueDeViajes,
       cumples: bloqueDeCumples,
+      festivos: bloqueDeFestivos,
       puntuales: bloqueDePuntuales,
       extraescolares: bloqueDeExtraescolares,
       finde: bloqueDeFinde,
@@ -531,6 +538,141 @@ function bloqueDeCumples(cuerpo, ctx) {
   );
 }
 
+// -------------------------------------------------------------- Festivos --
+
+/**
+ * Los festivos (specs/propuesta-festivos.html): dónde, que es de la casa y lo
+ * cambia quien administra (B1); lo que aún es previsión porque la tabla del
+ * año no está; los próximos oficiales; y los añadidos a mano, con a quién
+ * afectan (C1) —nadie marcado es toda la casa—.
+ */
+function bloqueDeFestivos(cuerpo, ctx) {
+  const datos = ctx.vista.datos;
+  const festivos = datos.festivos || {};
+  const administra = ctx.vista.esAdministrador();
+  const lugares = festivos.lugares || [];
+
+  if (administra && lugares.length > 1) {
+    const seg = segmentado(lugares.map((l) => [l.id, l.nombre]), festivos.lugar, async (valor) => {
+      await guardarAjustesDePlugin(datos, 'festivos', { lugar: valor });
+      // La lista la compone el Worker con el lugar nuevo: hay que ir a buscarla.
+      await sincronizar();
+      ctx.refrescar();
+    });
+    cuerpo.append(campo('Dónde', seg, 'Los locales cambian con el lugar; los de Cataluña son los mismos.'));
+  } else {
+    cuerpo.append(el('p', { class: 'pista', texto: `Dónde: ${festivos.nombre || 'Barcelona'}. Otro lugar se añade a la tabla de festivos.` }));
+  }
+
+  const previsiones = previsionesDe(datos);
+  if (previsiones.length) {
+    cuerpo.append(el('p', {
+      class: 'pista', 'data-tono': 'aviso',
+      texto: `Todavía no están publicados ${previsiones.join(' ni ')}: salen calculados y pueden cambiar.`,
+    }));
+  }
+
+  const hoyIso = iso(hoy());
+  const proximos = festivosOficiales(datos).filter((f) => f.fecha >= hoyIso).slice(0, 6);
+  cuerpo.append(el('p', { class: 'grupo-titulo', texto: 'Próximos' }));
+  cuerpo.append(proximos.length
+    ? el('div', { class: 'festivos-lista' }, proximos.map((f) => el('p', { class: 'festivo-fila' }, [
+      el('span', { class: 'festivo-fecha', texto: formatearFechaLarga(parsearMomento(f.fecha)) }),
+      el('span', { texto: f.nombre }),
+    ])))
+    : el('p', { class: 'vacio', texto: 'Ninguno a la vista.' }));
+
+  // Añadidos a mano: los que aún no han pasado, con su «Quitar».
+  const apuntados = festivosApuntados(datos).filter((e) => String(e.inicio).slice(0, 10) >= hoyIso);
+  const nombreDe = (id) => ctx.vista.persona(id)?.apodo || ctx.vista.nombre(id);
+  cuerpo.append(el('p', { class: 'grupo-titulo', texto: 'Añadidos a mano' }));
+  if (!apuntados.length) {
+    cuerpo.append(el('p', { class: 'vacio', texto: 'Ninguno. Aquí van los que no vienen en el calendario: los de libre disposición del cole, un puente.' }));
+  }
+  for (const evento of apuntados) {
+    const afecta = ctx.vista.protagonistas(evento).map(nombreDe);
+    cuerpo.append(el('div', { class: 'festivo-fila' }, [
+      el('span', { class: 'festivo-fecha', texto: formatearFechaLarga(parsearMomento(evento.inicio)) }),
+      el('span', { class: 'festivo-nombre', texto: `${evento.titulo} · ${afecta.length ? afecta.join(', ') : 'toda la casa'}` }),
+      el('button', {
+        class: 'boton-mini', type: 'button', 'aria-label': `Quitar ${evento.titulo}`,
+        onclick: async () => {
+          await retirar('evento', evento.id);
+          avisar('Festivo quitado');
+          ctx.refrescar();
+          abrirHojaDePlugin('festivos', ctx);
+        },
+      }, ['Quitar']),
+    ]));
+  }
+
+  // Añadir uno: el día, cómo se llama y a quién afecta.
+  const propuesta = iso(fechaQuePropone());
+  const fecha = selectorDeFecha({ valor: propuesta > hoyIso ? propuesta : hoyIso, min: hoyIso });
+  const nombre = entrada({ placeholder: 'Libre disposición del cole', 'aria-label': 'Cómo se llama' });
+  const afectados = new Set();
+  const chips = el('div', { class: 'opciones' });
+  const deCasa = ctx.vista.personasDe('familia');
+  const pintarChips = () => {
+    vaciar(chips);
+    chips.append(el('button', {
+      class: 'opcion', type: 'button', 'aria-pressed': afectados.size ? 'false' : 'true',
+      onclick: () => { afectados.clear(); pintarChips(); },
+    }, ['Toda la casa']));
+    for (const persona of deCasa) {
+      chips.append(el('button', {
+        class: 'opcion', type: 'button', 'aria-pressed': afectados.has(persona.id) ? 'true' : 'false',
+        onclick: () => {
+          if (afectados.has(persona.id)) afectados.delete(persona.id); else afectados.add(persona.id);
+          pintarChips();
+        },
+      }, [persona.apodo || persona.nombre]));
+    }
+  };
+  pintarChips();
+  cuerpo.append(
+    el('p', { class: 'grupo-titulo', texto: 'Añadir un festivo' }),
+    campo('Qué día', fecha.nodo),
+    campo('Cómo se llama', nombre),
+    el('div', { class: 'campo' }, [
+      el('label', { texto: 'A quién afecta' }),
+      chips,
+      el('p', { class: 'pista', texto: 'Un festivo de alguien solo deja sin día a sus recurrentes; uno de toda la casa, a todas.' }),
+    ]),
+    // En su sitio y no pegada al pie: debajo siguen los próximos.
+    el('div', { class: 'acciones en-su-sitio' }, [
+      el('button', {
+        class: 'boton crecer', type: 'button',
+        onclick: async () => {
+          const titulo = nombre.value.trim();
+          if (!fecha.valor) { avisar('Elige el día'); return; }
+          if (!titulo) { avisar('Ponle un nombre'); nombre.focus(); return; }
+          await guardar('evento', nuevoId(), {
+            titulo,
+            tipo_id: 'festivo',
+            plugin_id: 'festivo',
+            inicio: fecha.valor,
+            fin: null,
+            jornada_completa: 1,
+            ubicacion: '',
+            notas: '',
+            repeticion: 'ninguna',
+            categoria_id: null,
+            origen: 'manual',
+            autor_id: ctx.vista.yo.id,
+            activo: 1,
+            participantes: [...afectados].map((persona_id) => ({ persona_id, rol: 'protagonista' })),
+          });
+          toque('media');
+          avisar('Festivo añadido');
+          ctx.refrescar();
+          abrirHojaDePlugin('festivos', ctx);
+        },
+      }, ['Añadir']),
+    ]),
+  );
+}
+
 // ------------------------------------------------------------- Puntuales --
 
 /**
@@ -538,7 +680,7 @@ function bloqueDeCumples(cuerpo, ctx) {
  * cuatro. Los tres que ahora tienen plugin propio —cumpleaños, santo y viaje—
  * no se ofrecen aquí.
  */
-export const TIPOS_DE_OTROS_PLUGINS = ['cumpleanos', 'santo', 'viaje', 'recurrente'];
+export const TIPOS_DE_OTROS_PLUGINS = ['cumpleanos', 'santo', 'viaje', 'recurrente', 'festivo'];
 
 export function tiposVisibles(ctx, ademas = null) {
   const ajustes = ajustesDe(ctx.vista.datos, 'puntuales');
@@ -725,6 +867,8 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
     quien: existente ? ctx.vista.protagonistas(existente) : [],
     dias: new Set(diasSemanalesDe(existente) || (inicio ? [indiceDia(inicio)] : [])),
     reparto: { ...(extra.reparto || {}) },
+    // En festivos no hay, salvo que se diga (specs/propuesta-festivos.html, E1).
+    enFestivos: extra.en_festivos === 'si' ? 'si' : 'no',
   };
 
   const borrar = existente ? botonIcono('borrar', {
@@ -892,6 +1036,8 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
         el('p', { class: 'pista', texto: 'Cada día a la suya. Empieza y termina; el fin puede quedarse vacío.' }),
       ]),
       campo('Dónde', lugar),
+      campo('En festivos', segmentado([['no', 'No hay'], ['si', 'Sí hay']], borrador.enFestivos, (valor) => { borrador.enFestivos = valor; }),
+        'Con «No hay», el día festivo sale tachado y se devuelve desde ese día con «Sí hay». Un festivo de alguien solo cuenta si la recurrente es suya.'),
       campo('Desde', desde.nodo, 'El primer día.'),
       campo('Hasta', hasta.nodo, 'El último. Sin fin, sigue cada semana.'),
       el('div', { class: 'campo' }, [
@@ -941,7 +1087,7 @@ export function abrirFormularioActividad(ctx, { id = null, fecha = null } = {}) 
             notas: existente?.notas || '',
             repeticion: 'semanal',
             repeticion_hasta: hasta.valor || null,
-            extra: { ...extra, dias, reparto, horario: horarioNuevo },
+            extra: { ...extra, dias, reparto, horario: horarioNuevo, en_festivos: borrador.enFestivos },
             categoria_id: existente?.categoria_id || null,
             origen: 'manual',
             autor_id: existente?.autor_id || ctx.vista.yo.id,

@@ -27,6 +27,35 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Festivos (1.99.0).** Decidido como A1 · B1 · C1 · D3 · E1 en
+  `specs/propuesta-festivos.html`. **Los oficiales salen de
+  `datos/festivos.json`**, una tabla por año copiada de los calendarios
+  publicados —el laboral de Cataluña y los dos locales de cada municipio—, y
+  **la regla de reserva** (fijos y Pascua) cubre lo que la tabla aún no tiene;
+  las dos viven solo en `api/src/festivos.js`, que el Worker importa como JSON
+  y compone en el registro (`festivos`: lugar, días del año pasado, este y el
+  que viene, y `por_regla`). La aplicación y el plan de los domingos leen esa
+  lista y no calculan nada. **Cada otoño hay que añadir el año siguiente** a la
+  tabla —2027 tiene Cataluña y no los locales de Barcelona, que salen por regla
+  y la hoja lo avisa—; tocar solo ese fichero ya despliega el Worker
+  (`desplegar-api.yml`). **El lugar es de la casa**: `plugins.festivos.lugar`,
+  en la hoja del plugin nuevo «Festivos» (Capas), solo administradores; hoy la
+  tabla solo conoce Barcelona. **Los raros** son filas de `evento` con
+  `plugin_id = 'festivo'` y tipo `festivo` (migración `0031`), añadidos desde
+  la misma hoja, con a quién afectan en sus protagonistas —nadie es toda la
+  casa—; se cambió «el cole» del mock por personas. **Se ven** con el día
+  tintado (`data-festivo`, `--festivo`) en día, semana y mes, y su nombre como
+  primera línea sin emoji ni hora. **Y una recurrente no tiene día en festivo**
+  (`festivoQueAnula` en los tres sitios: `api/src/festivos.js`,
+  `pwa/publico/js/festivos.js`, `scripts/agenda/festivos.py`) salvo
+  `extra.en_festivos = 'si'` —«En festivos» en el formulario— o «Sí hay» ese
+  día, que es `evento_dia.hay_en_festivo` (migración `0031`); un festivo de
+  alguien solo anula lo suyo. Sale tachada con «festivo», no avisa y Claude la
+  cuenta como «este día no hay». Queda: **la tabla de 2027 sin los locales de
+  Barcelona** (salen en la orden de fiestas locales, en diciembre); otros
+  lugares, que piden su fila en la tabla y su regla; los festivos no entran en
+  el «+» ni se apuntan desde Claude (C2 y C3 no se eligieron); y el aviso de
+  festivos viene en «Nunca».
 - **Desde Claude también se cambia, se borra, se marca y se comenta (1.98.0).**
   Diez herramientas más en `api/src/asistente.js` —`ver_detalle`,
   `editar_evento`, `editar_idea`, `editar_regalo`, `editar_apunte`,

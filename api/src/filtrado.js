@@ -104,6 +104,11 @@ export function componerInstantanea(registro, observador) {
     })),
     // Lo que la casa ha ajustado de cada plugin, para que la pantalla lo lea.
     plugins,
+    // Los festivos oficiales del lugar de la casa, ya calculados: hasta donde
+    // llegue su plugin, como lo escrito. Fuera del círculo, una lista vacía.
+    festivos: circuloAdmite(circuloDe(plugins, 'festivos'), observador.circulo)
+      ? registro.festivos
+      : { ...(registro.festivos || {}), dias: [], por_regla: [] },
     emojis_permitidos: registro.emojis_permitidos,
     eventos,
     ideas,

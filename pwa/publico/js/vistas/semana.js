@@ -26,7 +26,7 @@ import {
 } from '../plugins.js';
 import { viajeDelVuelo } from '../viajes.js';
 import {
-  abrirFormularioActividad, abrirFormularioEscapada, abrirMenuDeNuevo, abrirPlugins, quienesVan, tiposVisibles,
+  abrirFormularioActividad, abrirFormularioEscapada, abrirHojaDePlugin, abrirMenuDeNuevo, abrirPlugins, quienesVan, tiposVisibles,
 } from './plugins.js';
 import { abrirFicha } from './familia.js';
 import { irALugar } from './sitios.js';
@@ -427,6 +427,8 @@ function vistaSemana(ctx) {
       class: 'dia',
       'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
       'data-algo': vacio ? 'no' : 'si',
+      // El día festivo, tintado entero (specs/propuesta-festivos.html, D3).
+      'data-festivo': apariciones.some((a) => pluginDeEvento(a.evento) === 'festivos') ? 'si' : 'no',
     }, [
       el('button', {
         class: 'dia-fecha', type: 'button',
@@ -918,6 +920,15 @@ export function textoDeLinea(aparicion, ctx) {
     pastillas: [],
   };
 
+  // Un festivo es su nombre en color, sin emoji ni hora, y tiñe el día entero
+  // (specs/propuesta-festivos.html, D3).
+  if (plugin === 'festivos') {
+    linea.festivo = true;
+    linea.emoji = '';
+    linea.titulo = evento.titulo;
+    return linea;
+  }
+
   if (id.startsWith('derivado:cumpleanos:')) {
     linea.titulo = cara.titulo.replace(/^Cumpleaños de /, 'Cumple de ');
     const persona = ctx.vista.persona(evento.persona_origen_id);
@@ -940,7 +951,8 @@ export function textoDeLinea(aparicion, ctx) {
   // Un día que no hay: tachado, con «no hay» detrás y sin quién lleva.
   if (aparicion.instancia?.cancelada) {
     linea.cancelada = true;
-    linea.de = 'no hay';
+    // Si lo que la deja sin día es un festivo, se dice (E1).
+    linea.de = aparicion.instancia.festivo ? 'festivo' : 'no hay';
     return linea;
   }
   if (plugin === 'extraescolares') {
@@ -1000,6 +1012,7 @@ function lineaDeEvento(aparicion, ctx) {
     'data-banda': texto.banda ? 'si' : 'no',
     'data-suave': texto.suave ? 'si' : 'no',
     'data-cancelada': texto.cancelada ? 'si' : 'no',
+    'data-festivo': texto.festivo ? 'si' : 'no',
     onclick: () => abrirDetalleEvento(aparicion.evento.id, ctx, aparicion),
   }, [
     // Un evento de varios días se marca con una banda continua en el margen,
@@ -1041,7 +1054,7 @@ const ORDEN_LIO = 2;
 
 const ordenDeEvento = (evento) => {
   const plugin = pluginDeEvento(evento);
-  const enmarca = evento.tipo_id === 'viaje' || plugin === 'viajes' || plugin === 'finde'
+  const enmarca = evento.tipo_id === 'viaje' || plugin === 'viajes' || plugin === 'finde' || plugin === 'festivos'
     || String(evento.id || '').startsWith('derivado:ausencia:');
   return enmarca ? ORDEN_VIAJE : ORDEN_EVENTO;
 };
@@ -1075,6 +1088,7 @@ function vistaMes(ctx) {
       // (specs/propuesta-mes-marcas-y-lio.html, A2). Lío no entra en el
       // reparto —sus turnos van aparte—, así que no cuenta.
       'data-algo': (reparto.get(iso(dia)) || []).length ? 'si' : 'no',
+      'data-festivo': (reparto.get(iso(dia)) || []).some((a) => pluginDeEvento(a.evento) === 'festivos') ? 'si' : 'no',
       'data-fuera': dia.getMonth() === ancla.getMonth() ? 'no' : 'si',
       'data-hoy': iso(dia) === clavehoy ? 'si' : 'no',
       'aria-pressed': iso(dia) === seleccionado ? 'true' : 'false',
@@ -1309,6 +1323,7 @@ export function abrirDetalleEvento(eventoId, ctx, aparicion = null) {
   if (identificador.startsWith('derivado:santo:')) return abrirSanto(evento, ctx, aparicion);
   if (identificador.startsWith('derivado:ausencia:')) return abrirAusencia(evento, ctx);
   if (identificador.startsWith('derivado:fuera:')) return abrirFuera(evento, ctx);
+  if (pluginDeEvento(evento) === 'festivos') return abrirFestivo(evento, ctx, aparicion);
 
   // Un cumpleaños abre la hoja de cumpleaños, que ya existe en Regalos y sabe
   // cosas que esta no: cuántos cumple, la felicitación y sus regalos. Tener dos
@@ -1472,21 +1487,27 @@ function bloqueDelDiaDeActividad(evento, aparicion, ctx) {
   const volver = () => { ctx.refrescar(); abrirDetalleEvento(evento.id, ctx, aparicion); };
   const titulo = ctx.vista.caraDe(evento).titulo.toLowerCase();
 
-  const escribirCancelado = (cancelado) => guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
+  const escribirCancelado = (cancelado, ademas = {}) => guardar('evento_dia', idDiaDeEvento(evento.id, fechaIso), {
     evento_id: evento.id, fecha: fechaIso, cancelado, autor_id: ctx.vista.yo.id, activo: 1,
     ...columnasDeQuien('lleva', reparto.lleva), ...columnasDeQuien('recoge', reparto.recoge),
+    ...ademas,
   });
 
   // Un día que no hay se enseña tachado en la agenda, y desde aquí se devuelve
   // (specs/propuesta-recurrentes-y-recetas.html, A1).
+  // Y el que no hay por ser festivo, igual: «Sí hay» lo devuelve solo ese día
+  // (specs/propuesta-festivos.html, E1).
   if (aparicion.instancia?.cancelada) {
+    const festivo = aparicion.instancia.festivo || null;
     return el('div', { class: 'grupo dia-recurrente' }, [
       el('div', { class: 'hoy-fila' }, [
-        el('span', { class: 'dia-recurrente-texto' }, ['Este día ', el('b', { texto: 'no hay' })]),
+        el('span', { class: 'dia-recurrente-texto' }, festivo
+          ? [`${festivo}: `, el('b', { texto: 'no hay' })]
+          : ['Este día ', el('b', { texto: 'no hay' })]),
         el('button', {
           class: 'boton-mini empujar', type: 'button',
           onclick: async () => {
-            await escribirCancelado(0);
+            await (festivo ? escribirCancelado(0, { hay_en_festivo: 1 }) : escribirCancelado(0));
             toque('media');
             cerrarHoja();
             avisar(`De nuevo hay ${titulo} ese día`);
@@ -1810,6 +1831,51 @@ function abrirSanto(evento, ctx, aparicion) {
 }
 
 /** La hoja de una ausencia: entre qué días, y a quién le pasan sus turnos. */
+/**
+ * La hoja de un festivo: qué es, de dónde sale y qué recurrentes deja sin día.
+ * Uno apuntado a mano se borra desde aquí; uno oficial no se toca, y la hoja
+ * de Festivos —el lugar, los añadidos— queda a un toque
+ * (specs/propuesta-festivos.html).
+ */
+function abrirFestivo(evento, ctx, aparicion = null) {
+  const datos = ctx.vista.datos;
+  const dia = aparicion ? aparicion.dia : parsearMomento(evento.inicio);
+  const manual = evento.plugin_id === 'festivo';
+  const afecta = manual ? ctx.vista.protagonistas(evento).map((id) => ctx.vista.persona(id)?.apodo || ctx.vista.nombre(id)) : [];
+  const deDonde = manual
+    ? `Añadido a mano · ${afecta.length ? `para ${afecta.join(', ')}` : 'para toda la casa'}`
+    : `${evento.extra?.ambito === datos.festivos?.lugar ? `Local de ${datos.festivos?.nombre || ''}` : 'Oficial en Cataluña'}`
+      + (evento.extra?.de === 'regla' ? ' · previsto, todavía sin publicar' : '');
+  const sinDia = instanciasEn(datos, dia, dia, { conCanceladas: true })
+    .filter((i) => i.cancelada && i.festivo)
+    .map((i) => ctx.vista.caraDe(i.evento).titulo);
+
+  abrirHoja(evento.titulo, (cuerpo) => {
+    cuerpo.append(
+      el('p', { texto: formatearFechaLarga(dia) }),
+      el('p', { class: 'pista', texto: deDonde }),
+    );
+    if (sinDia.length) {
+      cuerpo.append(el('p', { class: 'pista', texto: `Ese día no hay: ${sinDia.join(', ')}. Cada una se devuelve desde su día con «Sí hay».` }));
+    }
+    const acciones = [
+      el('button', { class: 'boton crecer', type: 'button', onclick: () => abrirHojaDePlugin('festivos', ctx) }, ['Ver los festivos']),
+    ];
+    if (manual) {
+      acciones.push(el('button', {
+        class: 'boton', 'data-tono': 'peligro', type: 'button',
+        onclick: async () => {
+          await retirar('evento', evento.id);
+          cerrarHoja();
+          avisar('Festivo quitado');
+          ctx.refrescar();
+        },
+      }, ['Quitar']));
+    }
+    cuerpo.append(el('div', { class: 'acciones' }, acciones));
+  });
+}
+
 function abrirAusencia(evento, ctx) {
   const extra = evento.extra || {};
   const ausencia = (ctx.vista.datos.ausencias || []).find((a) => a.id === extra.ausencia);

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-IDS_PLUGIN = ("lio", "viajes", "cumples", "puntuales", "extraescolares", "finde")
+IDS_PLUGIN = ("lio", "viajes", "cumples", "festivos", "puntuales", "extraescolares", "finde")
 
 #: Lo mismo que en el Worker: lo derivado de la ficha y lo puntual llegan a
 #: todo el mundo; lo de casa —el perro, las actividades, las escapadas— se
@@ -23,6 +23,7 @@ CIRCULO_POR_DEFECTO = {
     "lio": "familia",
     "viajes": "amigos",
     "cumples": "amigos",
+    "festivos": "amigos",
     "puntuales": "amigos",
     "extraescolares": "familia",
     "finde": "familia",
@@ -54,6 +55,8 @@ def plugin_de_evento(evento: Any) -> str:
         return "extraescolares"
     if plugin_id == "finde":
         return "finde"
+    if plugin_id == "festivo":
+        return "festivos"
     if getattr(evento, "origen", None) == "importado":
         return "viajes"
     identificador = str(getattr(evento, "id", "") or "")
@@ -61,6 +64,8 @@ def plugin_de_evento(evento: Any) -> str:
         return "cumples"
     if identificador.startswith("derivado:fuera:"):
         return "viajes"
+    if identificador.startswith("derivado:festivo:"):
+        return "festivos"
     if identificador.startswith("derivado:ausencia:"):
         return "lio"
     return "puntuales"

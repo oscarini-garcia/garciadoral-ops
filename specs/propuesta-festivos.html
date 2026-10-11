@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Festivos</title>
+<style>
+  :root {
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --lift: #fafcfe;
+    --ink: #1c2733;
+    --sub: #55677a;
+    --line: rgba(28, 39, 51, 0.12);
+    --line-hard: rgba(28, 39, 51, 0.28);
+    --ac: #1793a8;
+    --ac-ink: #ffffff;
+    --rec: #7a8ea1;
+    /* Los de la aplicación, para que las maquetas se parezcan a la pantalla. */
+    --papel: #FBF9F5;
+    --papel3: #EAE6DC;
+    --tinta: #0E6E62;
+    --tinta-suave: rgba(14, 110, 98, 0.14);
+    --tinta-ink: #FBF9F5;
+    --no: #B5523B;
+    --fest: #B5523B;
+    --fest-suave: rgba(181, 82, 59, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+      --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+      --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+      --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+      --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73; --fest: #E08A73; --fest-suave: rgba(224, 138, 115, 0.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181d; --card: #1e242b; --lift: #242b33; --ink: #dce5ee; --sub: #93a4b5;
+    --line: rgba(220, 229, 238, 0.12); --line-hard: rgba(220, 229, 238, 0.3);
+    --ac: #40c4d8; --ac-ink: #10181d; --rec: #7f92a5;
+    --papel: #10171A; --papel3: #1F2A30; --tinta: #55C9B4;
+    --tinta-suave: rgba(85, 201, 180, 0.18); --tinta-ink: #10171A; --no: #E08A73; --fest: #E08A73; --fest-suave: rgba(224, 138, 115, 0.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15.5px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 16px 140px; }
+  .mono { font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  h1 { font-size: 27px; line-height: 1.2; margin: 0 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+  .stand { color: var(--sub); margin: 0 0 8px; max-width: 60ch; }
+  .stand em { color: var(--ink); font-style: italic; }
+  .q { margin-top: 44px; }
+  .qhead { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); margin: 0 0 4px; }
+  .qtitle { font-size: 19px; font-weight: 650; margin: 0 0 6px; text-wrap: balance; }
+  .qwhy { color: var(--sub); margin: 0 0 14px; max-width: 62ch; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    color: var(--ink); font: inherit; transition: border-color 0.12s ease; display: block;
+  }
+  .opt:hover { border-color: var(--line-hard); }
+  .opt:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+  .opt[aria-pressed="true"] { border-color: var(--ac); box-shadow: 0 0 0 1.5px var(--ac); }
+  .optrow { display: flex; align-items: baseline; gap: 10px; }
+  .tok { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; font-weight: 600; color: var(--ac); flex: none; }
+  .oname { font-weight: 640; font-size: 16px; }
+  .rec { margin-left: auto; flex: none; font-size: 10.5px; letter-spacing: 0.07em; color: var(--rec); border: 1px solid var(--line-hard); border-radius: 99px; padding: 2px 8px; }
+  .obody { color: var(--sub); margin: 6px 0 0; font-size: 14.5px; max-width: 62ch; }
+  .obody b { color: var(--ink); font-weight: 600; }
+  .mock { display: block; margin: 12px 0 2px; background: var(--papel); border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; overflow: hidden; }
+  .mock .caption { display: block; margin-top: 8px; color: var(--sub); font-size: 12px; letter-spacing: 0.03em; }
+  .opt.none .oname { color: var(--sub); font-weight: 600; }
+  .opt.none .tok { color: var(--sub); }
+  details.note { margin-top: 10px; }
+  details.note summary { cursor: pointer; color: var(--sub); font-size: 13.5px; list-style: none; display: inline-block; border-bottom: 1px dashed var(--line-hard); }
+  details.note summary::-webkit-details-marker { display: none; }
+  details.note textarea { margin-top: 8px; width: 100%; min-height: 60px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical; }
+  .foot { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--sub); font-size: 14px; max-width: 62ch; }
+  .foot b { color: var(--ink); font-weight: 600; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--lift); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)); }
+  .barin { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+  .count { color: var(--sub); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .count .mono { color: var(--ink); }
+  .copy { flex: none; background: var(--ac); color: var(--ac-ink); border: 0; border-radius: 99px; padding: 9px 18px; font: inherit; font-weight: 620; font-size: 14.5px; cursor: pointer; }
+  .copy:disabled { opacity: 0.45; cursor: default; }
+  @media (prefers-reduced-motion: reduce) { .opt { transition: none; } }
+  .hj { display: block; max-width: 360px; background: var(--papel); border-radius: 14px 14px 0 0; padding: 12px 14px 14px; font-size: 13px; color: var(--ink); }
+  .hj-cab { display: flex; align-items: center; gap: 8px; }
+  .hj-tit { font-family: Georgia, "Times New Roman", serif; font-size: 20px; flex: 1; }
+  .ico { display: inline-flex; width: 26px; height: 26px; border-radius: 7px; background: var(--papel3); align-items: center; justify-content: center; font-size: 12px; color: var(--sub); }
+  .ico.t { background: var(--tinta-suave); color: var(--tinta); }
+  .hj-sub { display: block; color: var(--sub); font-size: 12.5px; margin-top: 2px; }
+  .hj-sub b { color: var(--ink); font-weight: 500; }
+  .fila { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); min-height: 34px; }
+  .fila:first-of-type { border-top: 0; }
+  .eti { flex: none; width: 52px; font-weight: 600; font-size: 12.5px; }
+  .val { flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; overflow: hidden; }
+  .val.wrap { flex-wrap: wrap; }
+  .flecha { color: var(--sub); margin-left: auto; flex: none; }
+  .chip { flex: none; display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 99px; font-size: 12px; box-shadow: inset 0 0 0 1px var(--line-hard); color: var(--ink); white-space: nowrap; }
+  .chip.on { background: var(--tinta); color: var(--tinta-ink); box-shadow: none; }
+  .chip.dash { box-shadow: none; border: 1px dashed var(--line-hard); color: var(--sub); }
+  .mon { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 22px; padding: 0 5px; border-radius: 99px; font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: var(--sub); box-shadow: inset 0 0 0 1.2px var(--line-hard); }
+  .mon.on { box-shadow: inset 0 0 0 1.6px var(--tinta); color: var(--ink); background: var(--tinta-suave); }
+  .despl { display: flex; gap: 5px; padding: 2px 0 8px 60px; overflow: hidden; }
+  .fundido { -webkit-mask-image: linear-gradient(90deg, #000 80%, transparent); mask-image: linear-gradient(90deg, #000 80%, transparent); }
+  .escribe { flex: 1; min-width: 0; border-bottom: 1px solid var(--line-hard); color: var(--sub); font-size: 12.5px; padding: 2px 0; }
+  .escribe .cur { color: var(--ink); }
+  .mas { color: var(--tinta); font-weight: 600; flex: none; }
+  .enlace { display: block; text-align: center; color: var(--sub); text-decoration: underline; font-size: 12px; margin-top: 10px; }
+  .seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: var(--papel3); }
+  .seg span { padding: 2px 10px; border-radius: 6px; font-size: 12px; color: var(--sub); }
+  .seg span.on { background: var(--papel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .com { display: block; color: var(--sub); font-size: 12px; margin-top: 10px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .mini { display: block; max-width: 360px; margin-top: 8px; background: var(--papel); border-radius: 12px; padding: 10px 14px; font-size: 13px; }
+  .mini .hj-tit { font-size: 16px; }
+  .lin { display: flex; align-items: baseline; gap: 6px; font-size: 13px; padding: 4px 0; }
+  .lin .e { flex: none; } .lin .t { flex: 1; } .lin .h { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--sub); }
+  .lin.tachada .t { text-decoration: line-through; color: var(--sub); } .lin.tachada .e, .lin.tachada .h { opacity: .5; }
+  .aviso { display: flex; align-items: center; gap: 10px; background: var(--ink); color: var(--papel); border-radius: 10px; padding: 8px 12px; font-size: 12.5px; margin-top: 8px; max-width: 360px; }
+  .aviso b { color: var(--tinta); margin-left: auto; font-weight: 600; filter: brightness(1.6); }
+  .confirma { display: block; max-width: 360px; background: var(--papel); border-radius: 14px 14px 0 0; padding: 12px 14px; font-size: 13px; margin-top: 8px; box-shadow: 0 -1px 0 var(--line); }
+  .confirma .hj-tit { font-size: 17px; }
+  .botones { display: flex; gap: 8px; margin-top: 10px; }
+  .btn { display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 9px; font-size: 12.5px; background: var(--papel3); color: var(--ink); }
+  .btn.p { background: var(--tinta); color: var(--tinta-ink); }
+  .btn.no { background: var(--no); color: #fff; }
+  .ing { display: block; font-size: 12.5px; margin: 4px 0 0; padding-left: 0; }
+  .ing span { display: block; padding: 2px 0; } .ing span::before { content: "· "; color: var(--sub); }
+  .pasos { display: block; font-size: 12.5px; margin-top: 4px; }
+  .pasos span { display: block; padding: 2px 0; } .pasos i { font-style: normal; color: var(--tinta); font-family: ui-monospace, Menlo, monospace; margin-right: 6px; }
+  .rot { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: .1em; color: var(--sub); margin-top: 10px; text-transform: uppercase; }
+  .dest { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 99px; font-size: 12.5px; box-shadow: inset 0 0 0 1px var(--line-hard); margin-top: 8px; }
+  .dest em { font-style: normal; color: var(--tinta); }
+  .campo-t { display: block; border: 1px solid var(--line-hard); border-radius: 8px; padding: 6px 8px; font-size: 12px; color: var(--sub); margin-top: 4px; min-height: 30px; }
+  .code { display: block; white-space: pre; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; line-height: 1.55; color: var(--ink); overflow: hidden; }
+  .sample { display: block; color: var(--ink); font-size: 14px; line-height: 1.55; }
+  .sample + .sample { margin-top: 6px; }
+  .sem { display: block; max-width: 360px; background: var(--papel); border-radius: 12px; padding: 4px 12px; }
+  .sd { display: flex; gap: 10px; padding: 7px 4px; border-top: 1px solid var(--line); }
+  .sd:first-child { border-top: 0; }
+  .sd.banda { background: var(--fest-suave); border-radius: 8px; }
+  .sn { flex: none; width: 34px; text-align: center; font-size: 10.5px; color: var(--sub); line-height: 1.15; }
+  .sn b { display: block; font-size: 18px; font-weight: 500; color: var(--ink); }
+  .sn.f b { color: var(--fest); }
+  .sl { flex: 1; min-width: 0; display: block; }
+  .sl .lin { padding: 1px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Festivos</h1>
+  <p class="stand">Lo pedido: <em>marcar los festivos, con un ajuste de dónde (Barcelona), y poder marcar también los festivos raros que a veces se añaden a mano</em>.</p>
+  <p class="stand">Entiendo por «raros» los días que no vienen en el calendario oficial: los de libre disposición del cole, un puente o un festivo que se decreta un año concreto. Si no era eso, dilo en la nota de C. Las fechas de las maquetas son las de la semana del 12 de octubre de 2026.</p>
+
+  <section class="q" data-q="A">
+    <p class="qhead">Pregunta A · De dónde salen</p>
+    <p class="qtitle">¿De dónde saca la agenda los festivos oficiales?</p>
+    <p class="qwhy">En Barcelona son tres capas: los de España, los de Cataluña y los dos locales (Segunda Pascua y La Mercè). Las fechas cambian algún año por decreto, así que la fuente decide cuánto hay que mantener.</p>
+    <div class="opts">
+      <button class="opt" data-t="A1" aria-pressed="false">
+        <span class="optrow"><span class="tok">A1</span><span class="oname">Una tabla por año en el repositorio</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="code">festivos/2027.json
+{ "lugar": "barcelona",
+  "2027-01-06": "Reyes",
+  "2027-03-26": "Viernes Santo",
+  "2027-05-17": "Segunda Pascua",
+  "2027-09-24": "La Mercè", … }</span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Cada otoño, cuando salen los calendarios oficiales del año siguiente, se añade el fichero de ese año; Claude puede prepararlo en un PR. <b>Exacto y sin depender de nadie</b>, y la aplicación, el Worker y el plan de los domingos leen el mismo. Cuesta un paso al año; si falta, se usa la regla de A2 como reserva y Ajustes lo avisa.</p>
+      </button>
+      <button class="opt" data-t="A2" aria-pressed="false">
+        <span class="optrow"><span class="tok">A2</span><span class="oname">Una regla que se calcula sola</span></span>
+        <span class="mock"><span class="code">Fijos:   1/1 · 6/1 · 1/5 · 24/6 · 15/8
+         11/9 · 12/10 · 1/11 · 6/12
+         8/12 · 25/12 · 26/12
+Pascua:  Viernes Santo · Lunes de Pascua
+Locales: Segunda Pascua · 24/9</span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Fechas fijas más las que dependen de la Pascua. <b>No hay que hacer nada nunca</b>, pero el año que un decreto mueve un festivo la agenda se equivoca hasta que alguien lo corrige a mano (C4).</p>
+      </button>
+      <button class="opt" data-t="A3" aria-pressed="false">
+        <span class="optrow"><span class="tok">A3</span><span class="oname">Los datos abiertos de la Generalitat</span></span>
+        <span class="mock"><span class="code">Worker, cada 1 de diciembre
+  → calendario laboral de Cataluña
+  → fiestas locales del municipio elegido
+  → festivos del año siguiente</span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">El Worker descarga el calendario oficial, que trae también las fiestas locales de cada municipio: <b>cambiar de lugar es solo cambiar el nombre</b>. Depende de un servicio externo y de su formato, que habría que comprobar antes de construir, y el año siguiente no aparece hasta que se publica.</p>
+      </button>
+      <button class="opt" data-t="A4" aria-pressed="false">
+        <span class="optrow"><span class="tok">A4</span><span class="oname">Un calendario de festivos de terceros</span></span>
+        <span class="mock"><span class="code">Capas › Festivos › Enlace del calendario
+https://…/festivos-espana.ics</span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Se pega el enlace de un calendario público, como se hace con los vuelos. <b>Casi no hay que programar nada</b>, pero esos calendarios suelen traer solo los nacionales, o mezclar comunidades, y rara vez los locales de Barcelona. Se incluye para descartarla con conocimiento.</p>
+      </button>
+      <button class="opt none" data-t="A0" aria-pressed="false">
+        <span class="optrow"><span class="tok">A0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escribe en la nota qué esperas.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre A</summary><textarea data-n="A" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="B">
+    <p class="qhead">Pregunta B · Dónde</p>
+    <p class="qtitle">¿Dónde se ajusta el lugar, y para quién vale?</p>
+    <p class="qwhy">El lugar decide qué festivos locales salen. Lo que se elija aquí lo leen también el plan de los domingos, la redacción con IA y Claude.</p>
+    <div class="opts">
+      <button class="opt" data-t="B1" aria-pressed="false">
+        <span class="optrow"><span class="tok">B1</span><span class="oname">Uno para la casa, en la hoja de Festivos</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">Festivos</span></span><span class="hj-sub">Capas › Festivos · lo cambia quien administra</span><span class="fila" style="margin-top:6px"><span class="eti">Dónde</span><span class="val">Barcelona</span><span class="flecha">›</span></span><span class="fila"><span class="eti">Llega a</span><span class="val"><span class="chip on">Todos</span><span class="chip">Casa</span></span></span><span class="fila"><span class="eti">Aviso</span><span class="val">Sin aviso</span><span class="flecha">›</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Un plugin más de «Qué hay en la agenda», como Cumpleaños y santos, con su fila «Dónde». <b>Un solo dato y una sola verdad</b> para todos los teléfonos. No contempla que alguien trabaje o estudie en otro municipio.</p>
+      </button>
+      <button class="opt" data-t="B2" aria-pressed="false">
+        <span class="optrow"><span class="tok">B2</span><span class="oname">El de la casa, y además el de cada persona</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">Ana Doral</span></span><span class="hj-sub">Ficha</span><span class="fila" style="margin-top:6px"><span class="eti">Trabaja</span><span class="val">Sant Cugat</span><span class="flecha">›</span></span></span><span class="sem" style="margin-top:8px"><span class="sd"><span class="sn">Lun<b>14</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Festivo en Sant Cugat (Ana)</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">La casa en la hoja de Festivos y, en la ficha de quien quiera, dónde trabaja o estudia; sus locales salen con su nombre. <b>Cubre a quien tiene festivos distintos</b>, a costa de un campo más en la ficha y de más líneas en la agenda. Solo tiene sentido con A3, que sabe de todos los municipios.</p>
+      </button>
+      <button class="opt" data-t="B3" aria-pressed="false">
+        <span class="optrow"><span class="tok">B3</span><span class="oname">En los ajustes de cada teléfono</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">Ajustes</span></span><span class="hj-sub">Aspecto · solo en este teléfono</span><span class="fila" style="margin-top:6px"><span class="eti">Festivos</span><span class="val">Barcelona</span><span class="flecha">›</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Cada uno elige en su teléfono. <b>Libre para cada persona</b>, pero el plan de los domingos y la redacción con IA no sabrían cuál usar, y dos teléfonos podrían enseñar días distintos.</p>
+      </button>
+      <button class="opt" data-t="B4" aria-pressed="false">
+        <span class="optrow"><span class="tok">B4</span><span class="oname">Barcelona fijo, sin ajuste</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">Festivos</span></span><span class="hj-sub">Capas › Festivos</span><span class="fila" style="margin-top:6px"><span class="eti">Dónde</span><span class="val" style="color:var(--sub)">Barcelona</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Barcelona escrito en el código. <b>Lo más corto</b>; cambiar de lugar es un cambio de código, y no responde a lo que pediste de poder ajustarlo.</p>
+      </button>
+      <button class="opt none" data-t="B0" aria-pressed="false">
+        <span class="optrow"><span class="tok">B0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escribe en la nota qué esperas.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre B</summary><textarea data-n="B" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="C" data-multi="true">
+    <p class="qhead">Pregunta C · Los raros · se pueden combinar</p>
+    <p class="qtitle">¿Cómo se añade un festivo que no viene en el calendario oficial?</p>
+    <p class="qwhy">Un festivo añadido a mano se ve igual que uno oficial y lleva a quién afecta: a toda la casa, al cole o a una persona. Puedes elegir varias.</p>
+    <div class="opts">
+      <button class="opt" data-t="C1" aria-pressed="false">
+        <span class="optrow"><span class="tok">C1</span><span class="oname">«Añadir un festivo» en la hoja de Festivos</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">Festivos</span></span><span class="rot">Añadidos a mano</span><span class="fila" style="border:0"><span class="val">Viernes 16 de octubre · Libre disposición</span><span class="chip">Cole</span></span><span class="fila"><span class="escribe">Fecha, nombre…</span><span class="mas">+</span></span><span class="despl" style="padding:6px 0 0"><span class="chip on">Toda la casa</span><span class="chip">Cole</span><span class="chip">Ana</span><span class="chip">Óscar</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Una lista en la propia hoja, con su fila de escribir: fecha, nombre y a quién afecta. <b>Todo lo de festivos en un sitio</b>, también los del año siguiente cuando el cole los publica. Hay que saber que la hoja existe.</p>
+      </button>
+      <button class="opt" data-t="C2" aria-pressed="false">
+        <span class="optrow"><span class="tok">C2</span><span class="oname">Un tipo «Festivo» en el «+» de la agenda</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">Nuevo</span></span><span class="despl" style="padding:6px 0 0;flex-wrap:wrap"><span class="chip">Evento</span><span class="chip">Recurrente</span><span class="chip">Escapada</span><span class="chip on">Festivo</span></span><span class="fila" style="margin-top:6px"><span class="eti">Qué</span><span class="val">Libre disposición</span></span><span class="fila"><span class="eti">Cuándo</span><span class="val">Viernes 16 de octubre</span></span><span class="fila"><span class="eti">Para</span><span class="val"><span class="chip on">Cole</span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Una entrada más en el menú de nuevo, con la fecha del día que se está mirando. <b>Se apunta desde donde ya se apunta todo</b>; un festivo pasa a parecer un evento más en el menú.</p>
+      </button>
+      <button class="opt" data-t="C3" aria-pressed="false">
+        <span class="optrow"><span class="tok">C3</span><span class="oname">Desde Claude</span></span>
+        <span class="mock"><span class="sample">«El viernes 16 no hay cole, es de libre disposición.»</span><span class="sample" style="color:var(--sub)">Apuntado como festivo del cole: viernes 16 de octubre de 2026.</span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Una herramienta más del conector, o un tipo nuevo en <span class="mono">apuntar_evento</span>. <b>Útil para pasar de golpe la circular del cole</b> con todos sus días; no sustituye a una forma de hacerlo en la aplicación.</p>
+      </button>
+      <button class="opt" data-t="C4" aria-pressed="false">
+        <span class="optrow"><span class="tok">C4</span><span class="oname">Corregir un oficial: «Este año no»</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">La Mercè</span></span><span class="hj-sub">Jueves 24 de septiembre · local de Barcelona</span><span class="botones"><span class="btn">Este año no</span><span class="btn">Moverlo</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">En la hoja de un festivo oficial, quitarlo o moverlo solo ese año. <b>Imprescindible con A2</b>, que no se entera de los decretos; con A1 o A3 casi no se usaría.</p>
+      </button>
+      <button class="opt none" data-t="C0" aria-pressed="false">
+        <span class="optrow"><span class="tok">C0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escribe en la nota qué esperas.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre C</summary><textarea data-n="C" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="D">
+    <p class="qhead">Pregunta D · Cómo se ve</p>
+    <p class="qtitle">¿Cómo se marca un festivo en la agenda?</p>
+    <p class="qwhy">Lo mismo en el día, la semana y el mes. Las maquetas son tres días de la semana; el mes sigue la misma regla en su celda.</p>
+    <div class="opts">
+      <button class="opt" data-t="D1" aria-pressed="false">
+        <span class="optrow"><span class="tok">D1</span><span class="oname">El número en color y su nombre arriba del día</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="sem"><span class="sd"><span class="sn f">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Fiesta Nacional</span></span><span class="lin"><span class="e">🔁</span><span class="t">Academia (Falu)</span><span class="h">17:00</span></span></span></span><span class="sd"><span class="sn">Mar<b>13</b></span><span class="sl"><span class="lin"><span class="e">🩺</span><span class="t">Médico de Lío</span><span class="h">18:00</span></span></span></span><span class="sd"><span class="sn f">Vie<b>16</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Sin cole · libre disposición</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">El número del día en un rojo apagado, como en un calendario de papel, y el nombre como primera línea, sin hora. <b>Se ve de un vistazo y dice cuál es</b>; en el mes, el número en color.</p>
+      </button>
+      <button class="opt" data-t="D2" aria-pressed="false">
+        <span class="optrow"><span class="tok">D2</span><span class="oname">Solo una línea, como un cumpleaños</span></span>
+        <span class="mock"><span class="sem"><span class="sd"><span class="sn">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="e">🎌</span><span class="t">Fiesta Nacional</span></span><span class="lin"><span class="e">🔁</span><span class="t">Academia (Falu)</span><span class="h">17:00</span></span></span></span><span class="sd"><span class="sn">Mar<b>13</b></span><span class="sl"><span class="lin"><span class="e">🩺</span><span class="t">Médico de Lío</span><span class="h">18:00</span></span></span></span><span class="sd"><span class="sn">Vie<b>16</b></span><span class="sl"><span class="lin"><span class="e">🎌</span><span class="t">Sin cole · libre disposición</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Una línea con su emoji y nada más. <b>Lo que menos cambia la pantalla</b>; en el mes no se distingue un festivo de cualquier otro día con algo.</p>
+      </button>
+      <button class="opt" data-t="D3" aria-pressed="false">
+        <span class="optrow"><span class="tok">D3</span><span class="oname">El día entero con fondo</span></span>
+        <span class="mock"><span class="sem"><span class="sd banda"><span class="sn">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Fiesta Nacional</span></span><span class="lin"><span class="e">🔁</span><span class="t">Academia (Falu)</span><span class="h">17:00</span></span></span></span><span class="sd"><span class="sn">Mar<b>13</b></span><span class="sl"><span class="lin"><span class="e">🩺</span><span class="t">Médico de Lío</span><span class="h">18:00</span></span></span></span><span class="sd banda"><span class="sn">Vie<b>16</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Sin cole · libre disposición</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">El día tintado, como la banda de quien está fuera. <b>Lo más visible</b>, y lo que más pesa: el tinte de los días con algo se retiró de la semana en la 1.83.0 por resaltar de más.</p>
+      </button>
+      <button class="opt" data-t="D4" aria-pressed="false">
+        <span class="optrow"><span class="tok">D4</span><span class="oname">Solo el número en color</span></span>
+        <span class="mock"><span class="sem"><span class="sd"><span class="sn f">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="e">🔁</span><span class="t">Academia (Falu)</span><span class="h">17:00</span></span></span></span><span class="sd"><span class="sn">Mar<b>13</b></span><span class="sl"><span class="lin"><span class="e">🩺</span><span class="t">Médico de Lío</span><span class="h">18:00</span></span></span></span><span class="sd"><span class="sn f">Vie<b>16</b></span><span class="sl"><span class="lin" style="color:var(--sub)"><span class="t">Nada apuntado</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">El número en color y el nombre solo al abrir el día. <b>No ocupa ninguna línea</b>, pero no dice por qué es festivo, y el del cole no se distingue de uno oficial.</p>
+      </button>
+      <button class="opt none" data-t="D0" aria-pressed="false">
+        <span class="optrow"><span class="tok">D0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escribe en la nota qué esperas.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre D</summary><textarea data-n="D" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <section class="q" data-q="E">
+    <p class="qhead">Pregunta E · Las recurrentes</p>
+    <p class="qtitle">Si un día es festivo, ¿qué pasa con la academia o la hípica de ese día?</p>
+    <p class="qwhy">Es la consecuencia práctica de marcarlos: hoy la recurrente seguiría saliendo, y alguien tendría que decir «no hay» a mano.</p>
+    <div class="opts">
+      <button class="opt" data-t="E1" aria-pressed="false">
+        <span class="optrow"><span class="tok">E1</span><span class="oname">Cada recurrente dice si hay en festivos</span><span class="rec">RECOMENDADA</span></span>
+        <span class="mock"><span class="hj"><span class="hj-cab"><span class="hj-tit" style="font-size:17px">🔁 Academia</span></span><span class="fila" style="margin-top:6px"><span class="eti" style="width:auto;flex:1">En festivos</span><span class="seg"><span class="on">No hay</span><span>Sí hay</span></span></span></span><span class="sem" style="margin-top:8px"><span class="sd"><span class="sn f">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Fiesta Nacional</span></span><span class="lin tachada"><span class="e">🔁</span><span class="t">Academia (Falu) · festivo</span><span class="h">17:00</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Un ajuste por recurrente, «No hay» de origen. Ese día sale tachada, como un «no hay» de la 1.96.0, y «Sí hay» la devuelve. <b>Nadie tiene que acordarse</b>; un festivo del cole solo afecta a lo que dependa del cole si se marcó así.</p>
+      </button>
+      <button class="opt" data-t="E2" aria-pressed="false">
+        <span class="optrow"><span class="tok">E2</span><span class="oname">Preguntar la víspera</span></span>
+        <span class="mock"><span class="confirma"><span class="hj-tit">Mañana es festivo</span><span class="hj-sub">¿Hay academia el lunes 12?</span><span class="botones"><span class="btn">Sí hay</span><span class="btn no">No hay</span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">En el día de hoy sale la pregunta, como la de si Lío va a una escapada. <b>Decide alguien que sabe</b>, a costa de una pregunta cada festivo y de que nadie la conteste.</p>
+      </button>
+      <button class="opt" data-t="E3" aria-pressed="false">
+        <span class="optrow"><span class="tok">E3</span><span class="oname">Solo una señal en la línea</span></span>
+        <span class="mock"><span class="sem"><span class="sd"><span class="sn f">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Fiesta Nacional</span></span><span class="lin"><span class="e">🔁</span><span class="t">Academia (Falu) · ¿festivo?</span><span class="h">17:00</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">La recurrente sigue, con «¿festivo?» detrás. <b>No cambia nada solo</b>; recuerda que hay que comprobarlo y decir «no hay» a mano.</p>
+      </button>
+      <button class="opt" data-t="E4" aria-pressed="false">
+        <span class="optrow"><span class="tok">E4</span><span class="oname">Nada: el festivo solo se ve</span></span>
+        <span class="mock"><span class="sem"><span class="sd"><span class="sn f">Lun<b>12</b></span><span class="sl"><span class="lin"><span class="t" style="color:var(--fest)">Fiesta Nacional</span></span><span class="lin"><span class="e">🔁</span><span class="t">Academia (Falu)</span><span class="h">17:00</span></span></span></span></span><span class="caption">Ilustrativo.</span></span>
+        <p class="obody">Como hoy, con el festivo al lado. <b>Lo más simple</b>; la agenda puede decir que hay academia un día que no la hay.</p>
+      </button>
+      <button class="opt none" data-t="E0" aria-pressed="false">
+        <span class="optrow"><span class="tok">E0</span><span class="oname">Ninguna de estas</span></span>
+        <p class="obody">La pregunta sigue abierta; escribe en la nota qué esperas.</p>
+      </button>
+    </div>
+    <details class="note"><summary>Añadir una nota sobre E</summary><textarea data-n="E" placeholder="Viaja con la letra en el bloque copiado."></textarea></details>
+  </section>
+
+  <div class="foot">
+    <p><b>Decidido: A1 · B1 · C1 · D3 · E1</b> (11 de octubre de 2026). Construido en la 1.99.0. Un ajuste al construir: en C1, «a quién afecta» son las personas de casa —o toda la casa— y no «el cole»; un festivo del cole se apunta para quien va al cole, y deja sin día solo sus recurrentes.</p>
+    <p>Salga lo que salga, los festivos serían un plugin más de «Qué hay en la agenda», derivado como los cumpleaños, y se contarían también en el plan de los domingos, en la redacción con IA y en lo que Claude consulta.</p>
+  </div>
+</div>
+<div class="bar"><div class="barin"><span class="count" id="count"></span><button class="copy" id="copy">Copiar</button></div></div>
+<script>
+  const KEY = "options.festivos";
+  const TITLE = document.title;
+  const SECTIONS = [...document.querySelectorAll(".q")];
+  const LETTERS = SECTIONS.map((q) => q.dataset.q);
+  const MULTI = new Set(SECTIONS.filter((q) => q.dataset.multi === "true").map((q) => q.dataset.q));
+  const state = { picks: {}, notes: {} };
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if (saved.notes) state.notes = saved.notes;
+    for (const [l, v] of Object.entries(saved.picks || {})) {
+      const list = Array.isArray(v) ? v : v ? [v] : [];
+      if (list.length) state.picks[l] = list;
+    }
+  } catch {}
+  const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const count = document.getElementById("count");
+  const copy = document.getElementById("copy");
+  const picked = (l) => state.picks[l] || [];
+  const rank = (t) => parseInt(t.slice(1), 10);
+  const tokens = (l) => picked(l).join("+");
+  function toggle(t) {
+    const l = t[0]; const none = l + "0"; const list = picked(l); const on = list.includes(t);
+    let next;
+    if (!MULTI.has(l)) next = on ? [] : [t];
+    else if (on) next = list.filter((x) => x !== t);
+    else if (t === none) next = [t];
+    else next = [...list.filter((x) => x !== none), t].sort((a, b) => rank(a) - rank(b));
+    if (next.length) state.picks[l] = next; else delete state.picks[l];
+  }
+  function block() {
+    const done = LETTERS.filter((l) => picked(l).length);
+    const lines = ["Opciones — " + TITLE + ": " + (done.map(tokens).join(" · ") || "(nada elegido)")];
+    for (const l of LETTERS) { const n = (state.notes[l] || "").trim(); if (n) lines.push(l + ": " + n); }
+    const legend = [];
+    if (done.some((l) => picked(l).includes(l + "0"))) legend.push("0 = ninguna de estas");
+    if (done.some((l) => picked(l).length > 1)) legend.push("+ = todas esas");
+    if (legend.length) lines.push("(" + legend.join("; ") + ")");
+    return lines.join("\n");
+  }
+  function paint() {
+    for (const btn of document.querySelectorAll(".opt")) { const t = btn.dataset.t; btn.setAttribute("aria-pressed", String(picked(t[0]).includes(t))); }
+    const done = LETTERS.filter((l) => picked(l).length);
+    const missing = LETTERS.filter((l) => !picked(l).length);
+    count.innerHTML = done.length
+      ? '<span class="mono">' + done.map(tokens).join(" · ") + "</span>" + (missing.length ? " — falta: " + missing.join(", ") : "")
+      : "Nada elegido todavía: toca una opción, o «Ninguna de estas».";
+    copy.disabled = done.length === 0;
+  }
+  document.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { toggle(btn.dataset.t); keep(); paint(); }));
+  document.querySelectorAll("textarea[data-n]").forEach((area) => {
+    area.value = state.notes[area.dataset.n] || "";
+    if (area.value) area.closest("details").open = true;
+    area.addEventListener("input", () => { state.notes[area.dataset.n] = area.value; keep(); });
+  });
+  copy.addEventListener("click", async () => {
+    const text = block(); let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+      try { ok = document.execCommand("copy"); } catch {} t.remove();
+    }
+    copy.textContent = ok ? "Copiado" : "No se pudo copiar";
+    if (!ok) alert(text);
+    setTimeout(() => { copy.textContent = "Copiar"; }, 2000);
+  });
+  paint();
+</script>
+</body>
+</html>

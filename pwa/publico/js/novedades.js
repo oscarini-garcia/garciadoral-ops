@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.99.0',
+    fecha: '2026-10-11',
+    titulo: 'Festivos',
+    lineas: [
+      'La agenda marca los festivos de Barcelona: el día sale tintado y con su nombre, también en el mes.',
+      'En Capas › Festivos se ve dónde, los próximos, y se añaden los que no vienen en el calendario, como los de libre disposición del cole.',
+      'Las recurrentes no tienen ese día: sale tachada, y «Sí hay» la devuelve. En la recurrente se puede decir que en festivos sí hay.',
+      'Un festivo de una sola persona solo deja sin día a lo que es suyo.',
+    ],
+  },
+  {
     version: '1.98.0',
     fecha: '2026-10-11',
     titulo: 'Desde Claude, también cambiar y borrar',

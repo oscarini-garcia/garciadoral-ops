@@ -335,6 +335,9 @@ class DiaEvento:
     #: Quien lleva o recoge y no es de casa, como texto (C4).
     lleva_otro: str | None = None
     recoge_otro: str | None = None
+    #: «Sí hay» en un festivo: ese día la recurrente va aunque el festivo la
+    #: dejara sin día (specs/propuesta-festivos.html, E1).
+    hay_en_festivo: bool = False
     activo: bool = True
 
     def quien(self, campo: str) -> str | None:
@@ -403,6 +406,9 @@ class Agenda:
     #: Los ajustes de cada plugin, por su identificador: círculo, nombre,
     #: emoji, tipos, avisos y si salen los santos. Vacío es lo de origen.
     plugins: dict[str, dict[str, Any]] = field(default_factory=dict)
+    #: Los festivos oficiales del lugar de la casa, por fecha y con su nombre.
+    #: Los calcula el Worker —la tabla por año y la regla— y llegan hechos.
+    festivos: dict[date, str] = field(default_factory=dict)
 
     # -- consultas ---------------------------------------------------------- #
 
@@ -723,6 +729,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             recoge_id=bruto.get("recoge_id") or None,
             lleva_otro=bruto.get("lleva_otro") or None,
             recoge_otro=bruto.get("recoge_otro") or None,
+            hay_en_festivo=bool(bruto.get("hay_en_festivo", False)),
             activo=True,
         )
 
@@ -742,6 +749,13 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
                 activo=True,
             )
         )
+
+    festivos = datos.get("festivos")
+    if isinstance(festivos, dict):
+        for bruto in festivos.get("dias", []) or []:
+            fecha = _fecha(bruto.get("fecha")) if isinstance(bruto, dict) else None
+            if fecha is not None and fecha not in agenda.festivos:
+                agenda.festivos[fecha] = str(bruto.get("nombre") or "Festivo")
 
     plugins = datos.get("plugins")
     if isinstance(plugins, dict):
