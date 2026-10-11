@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.98.0',
+    fecha: '2026-10-11',
+    titulo: 'Desde Claude, también cambiar y borrar',
+    lineas: [
+      'Desde Claude ya se cambia y se borra lo apuntado: «el médico de Lío pásalo a las cinco».',
+      'Se marca lo que ya está en la maleta, una mejora hecha o que se ha sacado a Lío, y se comenta.',
+      '«Esta semana no hay hípica el jueves» quita solo ese día; borrar la serie entera lo pregunta antes.',
+      'Lo que tu cuenta no ve no se puede tocar desde Claude, ni sabiendo cómo se llama.',
+    ],
+  },
+  {
     version: '1.97.0',
     fecha: '2026-10-11',
     titulo: 'La agenda, también desde Claude',

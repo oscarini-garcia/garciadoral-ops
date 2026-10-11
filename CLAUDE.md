@@ -27,6 +27,34 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Desde Claude también se cambia, se borra, se marca y se comenta (1.98.0).**
+  Diez herramientas más en `api/src/asistente.js` —`ver_detalle`,
+  `editar_evento`, `editar_idea`, `editar_regalo`, `editar_apunte`,
+  `editar_mejora`, `borrar`, `marcar_hecho`, `marcar_paseo_de_lio` y
+  `comentar`—, todas en el Worker y sin migración. **Todo se nombra por
+  referencia**: cada línea de las consultas y cada «apuntar» llevan la suya
+  entre corchetes (`[evento:…]`, `[idea:…]`; la de una noche es su id,
+  `cena:AAAA-MM-DD`), y `porRef` la busca solo en la instantánea de quien
+  pregunta, de modo que lo que su cuenta no ve contesta igual que lo que no
+  existe. **Las reglas son las de la pantalla, y donde ya las aplica el Worker
+  se le dejan a él** —un apunte lo borra quien lo escribió o quien administra,
+  un comentario solo su autor, un sitio se borra vacío (aquí se comprueba
+  antes para decirlo mejor), un evento importado no se toca—; las que solo
+  vivían en la aplicación se repiten aquí: la serie entera y la idea con
+  regalos piden `confirmado`, con `fecha` se quita un día de lo que se repite
+  escribiendo `evento_dia` con `cancelado: 1`, de una recurrente o una escapada
+  solo se cambian título, sitio y notas, y Lío sigue a `marcarHecho` y
+  `marcarNoHecho` de `pwa/publico/js/lio.js`: el turno ajeno que venció sin
+  marcar es un trato y se rechaza, y «no salió» solo del propio. Borrar es
+  apagar, y lo que cuelga lo ordena `derivarEstados`: entregar un regalo cierra
+  su idea y quitarlo la devuelve al banco. Después de cambiar algo se relee y
+  se enseña cómo queda (`asiQueda`); si con el cambio la cuenta deja de verlo
+  —ponerse uno mismo entre quienes reciben una idea— se dice en vez de fallar.
+  `SERVIDOR.version` es 1.1.0. La aplicación sube a la 1.98.0 solo por el texto
+  de quitar el enlace en Ajustes, que ya no puede decir «consultar y apuntar»,
+  y por su tarjeta de Novedades. Queda: **devolver un día quitado («Sí hay»)**,
+  descartar una idea sin borrarla, votar un apunte, el día, la hora y quién
+  lleva de una recurrente y los tratos siguen siendo solo de la aplicación.
 - **Claude, por MCP (1.97.0).** La agenda se sirve a Claude como servidor MCP
   desde el propio Worker, en `/mcp/<enlace>`: cada persona crea el suyo en
   Ajustes › Claude y lo pega en Claude como conector personalizado
@@ -53,11 +81,10 @@ pendiente. El hook lo inyecta al final del mapa.
   verdad con todas las migraciones (`api/test/apoyo/d1.js`, sobre
   `node:sqlite`). En Ajustes, las filas de verbos del apartado llevan
   `.acciones.en-su-sitio`: pegajosas al pie, como las de un formulario, tapaban
-  la explicación. Queda: **desde Claude no se edita ni se borra** —ni marcar
-  algo hecho, ni comentar, ni dar una mejora por hecha—; **los vuelos repetidos
-  solo se juntan si la línea es idéntica**; y **la conexión desde claude.ai, el
-  escritorio y el móvil está sin probar de verdad**: aquí solo con los clientes
-  de los SDK.
+  la explicación. Queda: **los vuelos repetidos solo se juntan si la línea es
+  idéntica**; y **la conexión desde claude.ai, el escritorio y el móvil está sin
+  probar de verdad**: aquí solo con los clientes de los SDK. (Editar, borrar,
+  marcar y comentar, que también quedaban, llegaron en la 1.98.0.)
 - **Días que no hay, «por su cuenta» y la receta (1.96.0).** Decidido como
   A1 · B1 · C1 en `specs/propuesta-recurrentes-y-recetas.html`. **«No hay …
   este día» pregunta antes**, y el día cancelado ya no desaparece: las vistas

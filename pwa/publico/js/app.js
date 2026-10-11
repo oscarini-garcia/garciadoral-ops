@@ -1246,7 +1246,7 @@ function bloqueDeClaude(seccion) {
         el('p', {
           texto: pregunta === 'rehacer'
             ? 'El enlace de ahora dejará de valer y habrá que pegar el nuevo en Claude.'
-            : 'Claude dejará de poder consultar y apuntar con tu cuenta.',
+            : 'Claude dejará de poder consultar, apuntar, cambiar y borrar con tu cuenta.',
         }),
         el('div', { class: 'acciones en-su-sitio' }, [
           pregunta === 'rehacer'

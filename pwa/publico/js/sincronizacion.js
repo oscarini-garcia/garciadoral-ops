@@ -570,8 +570,8 @@ export const quitarEnlaceDeViajes = (personaId = null) =>
 
 /**
  * El enlace propio para conectar Claude. Va por su ruta y no por la cola por lo
- * mismo que el de Flighty: es una credencial —quien lo tiene consulta y apunta
- * como tú—, y por la cola pasaría por IndexedDB y por la instantánea. Se pide al
+ * mismo que el de Flighty: es una credencial —quien lo tiene consulta, apunta,
+ * cambia y borra como tú—, y por la cola pasaría por IndexedDB y por la instantánea. Se pide al
  * abrir el apartado y no se guarda en ningún sitio de este aparato.
  */
 export const leerEnlaceDeClaude = async () => (await peticion('/api/mcp/enlace')).enlace || null;
