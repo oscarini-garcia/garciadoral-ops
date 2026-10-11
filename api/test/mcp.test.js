@@ -1031,3 +1031,21 @@ test('comentar firma con quien habla, no repite y se borra solo lo propio', asyn
   }
   assert.doesNotMatch((await usar(env, deOscar, 'ver_detalle', { ref: ladron })).texto, /Comentarios/);
 });
+
+// -------------------------------------------------------------- Festivos --
+
+test('la agenda de Claude cuenta el festivo y la recurrente que se queda sin día', async () => {
+  const env = casa();
+  // El 12 de octubre es festivo todos los años, por la tabla o por la regla.
+  const anio = Number(hoyEnMadrid().slice(0, 4));
+  const fecha = `${anio}-10-12`;
+  const diaSemana = (new Date(`${fecha}T12:00:00Z`).getUTCDay() + 6) % 7;
+  insertar(env, 'evento', {
+    id: 'e-hipica', titulo: 'Hípica', tipo_id: 'recurrente', inicio: `${anio}-01-01T17:30:00`, repeticion: 'semanal',
+    plugin_id: 'extraescolar', extra: JSON.stringify({ dias: [diaSemana], reparto: {} }),
+  });
+  const camino = await enlaceDe(env, 'p-oscar');
+  const { texto } = await usar(env, camino, 'ver_agenda', { desde: fecha, hasta: fecha });
+  assert.match(texto, /todo el día · .*Fiesta Nacional/);
+  assert.match(texto, /Hípica.*este día no hay/);
+});

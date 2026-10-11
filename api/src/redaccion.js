@@ -39,6 +39,7 @@
  */
 
 import { IDS_TURNO, TURNOS, conAusencias, cuadroEn, inicioDeVentana, normalizarVersiones } from './lio.js';
+import { eventosDeFestivos } from './festivos.js';
 
 const ANTHROPIC = 'https://api.anthropic.com/v1';
 const VERSION_API = '2023-06-01';
@@ -596,6 +597,9 @@ function visiblesDe(instantanea) {
       jornada_completa: true,
     });
   }
+  // Los festivos oficiales: el aparato los deriva de `festivos`, que el
+  // registro trae ya calculados.
+  for (const festivo of eventosDeFestivos(instantanea)) porId.set(festivo.id, { ...festivo, titulo: `Festivo: ${festivo.titulo}` });
 
   return porId;
 }

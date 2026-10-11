@@ -12,6 +12,8 @@ tener que recorrer la aplicación entera cada vez.
 ### `scripts/agenda/` · Reglas del modelo, compartidas por el plan semanal
 
 - **__init__.py** — Agenda Familiar — implementación del modelo, la visibilidad y el plan semanal.
+- **festivos.py** — Los festivos en el plan de los domingos: los días oficiales y qué recurrentes dejan sin día.
+  es_festivo_manual · festivos_del_dia · festivo_que_anula · eventos_de_festivos
 - **fuente.py** — Lectura del registro canónico de la agenda.
   FuenteNoDisponible · leer_agenda
 - **lio.py** — Los turnos de paseo de Lío, derivados del cuadro semanal.
@@ -60,6 +62,9 @@ tener que recorrer la aplicación entera cada vez.
   cuentas
 - **derivar.js** — Estados que nadie mantiene a mano.
   derivarEstados
+- **festivos.js** — Los festivos: los oficiales del lugar de la casa, sacados de una tabla por año, y qué…
+  LUGAR_POR_DEFECTO · LUGARES · lugarDe · pascua · festivosOficiales · festivosDelRegistro
+  esFestivoManual · festivosDelDia · festivoQueAnula · eventosDeFestivos
 - **filtrado.js** — Composición del conjunto que se transmite a un dispositivo.
   componerInstantanea
 - **ical.js** — Parser de iCalendar (RFC 5545), reducido a lo que un calendario de viajes necesita…
@@ -133,6 +138,9 @@ tener que recorrer la aplicación entera cada vez.
   bloqueDeComentarios
 - **demo.js** — Modo demostración.
   cargarRegistroDemo · componerDemo
+- **festivos.js** — Los festivos en la aplicación: los oficiales que trae la instantánea, los apuntados a mano,…
+  esFestivoManual · festivosOficiales · festivosApuntados · festivosDelDia · festivoQueAnula
+  eventosDeFestivos · esDeFestivos · previsionesDe
 - **gente.js** — El campo con el que se elige gente, en todas las pantallas que lo piden.
   campoDeGente
 - **lio.js** — Lío: los turnos de paseo, sus estados y el trato que los cambia de dueño.
@@ -202,7 +210,7 @@ tener que recorrer la aplicación entera cada vez.
   primera_frase · docstring_js · simbolos_python · simbolos_js · modulos · rutas_del_worker
   workflows · referencias_a_specs · variables_de_entorno · pruebas · …y 7 más
 - **preparar-pwa.py** — Prepara los recursos de la PWA que se derivan de otros ficheros.
-  registro_de_demostracion · png · dibujar_icono · main
+  festivos_de_demostracion · registro_de_demostracion · png · dibujar_icono · main
 
 ## Rutas de la API
 
@@ -319,11 +327,12 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**441** en total.
+**451** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
 - `tests/test_despachar.py` — 10
+- `tests/test_festivos.py` — 3
 - `tests/test_lio.py` — 22
 - `tests/test_mensaje.py` — 12
 - `tests/test_modelo.py` — 25
@@ -337,9 +346,10 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/avisos.test.js` — 30
 - `api/test/cenas.test.js` — 10
 - `api/test/cuenta.test.js` — 6
+- `api/test/festivos.test.js` — 6
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23
-- `api/test/mcp.test.js` — 33
+- `api/test/mcp.test.js` — 34
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
 - `api/test/receta.test.js` — 3

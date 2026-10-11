@@ -96,6 +96,33 @@ RECETAS_DEMO = [
 ]
 
 
+def festivos_de_demostracion() -> dict:
+    """Los festivos de Barcelona que trae la tabla, como los compone el Worker.
+
+    Solo lo de la tabla: la regla de reserva vive en `api/src/festivos.js`, y la
+    demostración no la necesita porque sus fechas caen en años ya publicados.
+    """
+    tabla = json.loads((RAIZ / "datos" / "festivos.json").read_text(encoding="utf-8"))
+    lugar = "barcelona"
+    comunidad = tabla["lugares"][lugar]["comunidad"]
+    dias: dict[str, dict] = {}
+    por_regla = []
+    for anio, ambitos in sorted(tabla["anios"].items()):
+        for ambito in (comunidad, lugar):
+            if ambito not in ambitos:
+                por_regla.append({"anio": int(anio), "ambito": ambito, "nombre": tabla["lugares"].get(ambito, {}).get("nombre", ambito)})
+                continue
+            for fecha, nombre in ambitos[ambito].items():
+                dias.setdefault(fecha, {"fecha": fecha, "nombre": nombre, "ambito": ambito, "de": "tabla"})
+    return {
+        "lugar": lugar,
+        "nombre": tabla["lugares"][lugar]["nombre"],
+        "lugares": [{"id": clave, "nombre": valor["nombre"]} for clave, valor in tabla["lugares"].items()],
+        "dias": [dias[fecha] for fecha in sorted(dias)],
+        "por_regla": por_regla,
+    }
+
+
 def registro_de_demostracion() -> dict:
     catalogos = json.loads((RAIZ / "datos" / "catalogos.json").read_text(encoding="utf-8"))
     agenda = json.loads((RAIZ / "datos" / "agenda.ejemplo.json").read_text(encoding="utf-8"))
@@ -138,6 +165,8 @@ def registro_de_demostracion() -> dict:
         "dias_evento": agenda.get("dias_evento", []),
         "ausencias": agenda.get("ausencias", []),
         "plugins": agenda.get("plugins", {}),
+        # Los festivos oficiales, que en la base compone el Worker de la tabla.
+        "festivos": festivos_de_demostracion(),
         "calendarios_externos": agenda.get("calendarios_externos", []),
         # Cenas: un recetario corto y cómo se cocina en casa. Las noches no van
         # aquí: las compone `demo.js` sobre la semana en curso, porque con

@@ -35,6 +35,9 @@ on:
       # Le pasó a la `0018`; a la `0017` no, y solo porque su PR tocaba además
       # el repositorio.
       - 'api/migraciones/**'
+      # Y la tabla de festivos, que el Worker lleva dentro: añadir el año que
+      # viene es tocar solo este fichero, y tiene que bastar.
+      - 'datos/festivos.json'
       - 'api/wrangler.toml'
       - 'api/package.json'
       - '.github/workflows/desplegar-api.yml'

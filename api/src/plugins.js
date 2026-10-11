@@ -18,10 +18,12 @@
  * veces.
  */
 
+import { LUGARES } from './festivos.js';
+
 /** Cómo se llama la casilla de cada plugin en `configuracion`. */
 export const PREFIJO = 'plugins.';
 
-export const IDS_PLUGIN = ['lio', 'viajes', 'cumples', 'puntuales', 'extraescolares', 'finde'];
+export const IDS_PLUGIN = ['lio', 'viajes', 'cumples', 'festivos', 'puntuales', 'extraescolares', 'finde'];
 
 /**
  * Qué círculo recibe cada plugin si nadie ha dicho otra cosa. Es el más ancho
@@ -39,6 +41,7 @@ export const CIRCULO_POR_DEFECTO = {
   lio: 'familia',
   viajes: 'amigos',
   cumples: 'amigos',
+  festivos: 'amigos',
   puntuales: 'amigos',
   extraescolares: 'familia',
   finde: 'familia',
@@ -75,6 +78,7 @@ export function circuloDe(plugins, id) {
 export function pluginDeEvento(evento) {
   if (evento?.plugin_id === 'extraescolar') return 'extraescolares';
   if (evento?.plugin_id === 'finde') return 'finde';
+  if (evento?.plugin_id === 'festivo') return 'festivos';
   if (evento?.origen === 'importado') return 'viajes';
   // Lo derivado no es fila de `evento` y no pasa por la instantánea, pero el
   // cron de los recordatorios sí lo deriva aquí, con los mismos
@@ -82,12 +86,13 @@ export function pluginDeEvento(evento) {
   const id = String(evento?.id || '');
   if (id.startsWith('derivado:cumpleanos:') || id.startsWith('derivado:santo:')) return 'cumples';
   if (id.startsWith('derivado:fuera:')) return 'viajes';
+  if (id.startsWith('derivado:festivo:')) return 'festivos';
   if (id.startsWith('derivado:ausencia:')) return 'lio';
   return 'puntuales';
 }
 
 /** Sanea lo que llegue: solo los campos conocidos —círculo, nombre, emoji, tipos,
- *  aviso, santos y edad— y con la forma que se espera. */
+ *  aviso, santos, edad y el lugar de los festivos— y con la forma que se espera. */
 export function normalizarPlugin(bruto) {
   if (!bruto || typeof bruto !== 'object') return {};
   const limpio = {};
@@ -106,6 +111,8 @@ export function normalizarPlugin(bruto) {
   }
   if (typeof bruto.santos === 'boolean') limpio.santos = bruto.santos;
   if (typeof bruto.edad === 'boolean') limpio.edad = bruto.edad;
+  // Dónde están los festivos de la casa: uno de los lugares de la tabla.
+  if (typeof bruto.lugar === 'string' && LUGARES[bruto.lugar]) limpio.lugar = bruto.lugar;
   return limpio;
 }
 
