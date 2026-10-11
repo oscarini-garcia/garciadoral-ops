@@ -1187,6 +1187,14 @@ textarea:-webkit-autofill:focus {
   margin-inline: -20px; padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
   background: var(--paper);
 }
+/* Salvo los verbos que no cierran ningún formulario —copiar el enlace de
+   Claude, rehacerlo—: esos se quedan donde están, porque pegados al pie
+   taparían justo lo que el apartado explica debajo de ellos. */
+.hoja .acciones.en-su-sitio {
+  position: static; z-index: auto;
+  margin-inline: 0; padding: 0;
+  background: none;
+}
 
 /* «Más: …», la misma línea en todos los formularios: dice qué hay dentro. */
 .mas-opciones {
@@ -1402,6 +1410,15 @@ textarea:-webkit-autofill:focus {
   color: var(--ink-soft);
 }
 .traza.mal { color: var(--regalo); }
+
+/* El enlace para Claude: entero y en monoespaciada, porque es una credencial
+   que se copia y no un texto que se lea, y un toque lo selecciona de una vez. */
+.enlace-claude {
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  overflow-wrap: anywhere; user-select: all; -webkit-user-select: all;
+  background: var(--paper-2); border-radius: 10px; padding: 10px 12px;
+  color: var(--ink);
+}
 
 /* Un vuelo importado, como una tarjeta de embarque: origen y destino con su
    código de aeropuerto, la ciudad y la hora, y la duración en medio. */

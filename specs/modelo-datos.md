@@ -184,6 +184,16 @@ El recetario de la casa y lo que se cena cada noche. La forma de la pantalla est
 
 **Alcance.** Todo es del círculo `familia`, como Lío y Sitios: quien no vive en casa no lo recibe, y su barra se queda en cinco pestañas.
 
+---
+
+### 2.11 El enlace de Claude
+
+**Enlace MCP.** Una fila por enlace con el que Claude entra en la agenda en nombre de una persona (`docs/conectar-claude.md`): identificador al azar, persona, cuándo se creó, cuándo se usó por última vez y si sigue activo. **No guarda ningún secreto**: el enlace es el identificador más una firma de ese identificador y la persona con la clave del Worker, que se recalcula para comprobarlo y para volver a enseñarlo a su dueño.
+
+**Uno vivo por persona.** Crear otro apaga el anterior, y la baja de la cuenta —voluntaria o desde la ficha— lo apaga también, como los aparatos de §2.9; se apaga y no se borra, de modo que no revive si la cuenta vuelve. Además se comprueba en cada petición que la persona siga teniendo cuenta.
+
+**No relaja §6.** Lo que Claude lee es la instantánea de esa persona, compuesta con la misma función que la transmite a su teléfono, y lo que escribe pasa por las mismas reglas de escritura que la cola del dispositivo.
+
 ## 3. Diagrama entidad-relación
 
 ```mermaid

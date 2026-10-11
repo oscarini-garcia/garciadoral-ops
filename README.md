@@ -36,6 +36,7 @@ api/                  · Worker de Cloudflare y esquema de D1
 pwa/                  · la aplicación: web instalable y cáscara de iOS con OTA
 docs/
   despliegue-cloudflare.md · Cloudflare, Apple Developer y GitHub, paso a paso
+  conectar-claude.md  · el enlace de cada uno para usar la agenda desde Claude (MCP)
   mapa.md             · mapa del repositorio; generado, no se edita a mano
 herramientas/
   preparar-pwa.py     · iconos y datos de demostración

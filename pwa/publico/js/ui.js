@@ -137,6 +137,10 @@ const ICONOS = {
   // los diecisiete puntos a los que se dibuja, una segunda onda se apelmaza
   // con la primera en vez de leerse como sonido.
   megafono: '<path d="M5 9.5L17 5v14L5 14.5z"/><path d="M19.3 8.6a6.2 6.2 0 0 1 0 6.8"/>',
+  // Dos eslabones: el enlace con el que Claude entra en la agenda. Es el dibujo
+  // de «esto conecta con otro sitio», y no la marca de nadie.
+  enlace: '<path d="M10 13.6a4.3 4.3 0 0 0 6.1.4l2.8-2.8a4.3 4.3 0 0 0-6.1-6.1l-1.4 1.4"/>'
+    + '<path d="M14 10.4a4.3 4.3 0 0 0-6.1-.4l-2.8 2.8a4.3 4.3 0 0 0 6.1 6.1l1.4-1.4"/>',
   // Tres capas apiladas: es el dibujo de «qué hay en la agenda», la hoja que
   // lista los plugins con su interruptor, al lado del periodo en la agenda.
   capas: '<path d="M12 3.6 3.4 8.3 12 13l8.6-4.7z"/><path d="M3.4 12.6 12 17.3l8.6-4.7"/>'

@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.97.0',
+    fecha: '2026-10-11',
+    titulo: 'La agenda, también desde Claude',
+    lineas: [
+      'En Ajustes › Claude cada uno crea su enlace y lo pega en Claude como conector.',
+      'Desde una conversación se consulta la agenda y se apunta: «el miércoles que viene, médico de Lío».',
+      'También ideas de regalo, cosas para llevar a un sitio, la cena de una noche y mejoras de la aplicación.',
+      'Claude ve lo mismo que quien creó el enlace y nada más; hacer otro o quitarlo lo anula en el acto.',
+    ],
+  },
+  {
     version: '1.96.0',
     fecha: '2026-10-05',
     titulo: 'Días que no hay, «por su cuenta» y la receta',

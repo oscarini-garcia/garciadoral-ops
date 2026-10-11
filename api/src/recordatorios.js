@@ -101,7 +101,7 @@ export function arranquesEntre(evento, desde, hasta) {
 
 /** Lo derivado de las fichas, como lo deriva el dispositivo: cumpleaños y
  *  santos de quien esté a la vista de esta persona, según el círculo del plugin. */
-function derivadosDe(instantanea) {
+export function derivadosDe(instantanea) {
   const plugins = instantanea.plugins || {};
   const yo = instantanea.yo || {};
   if (!circuloAdmite(circuloDe(plugins, 'cumples'), yo.circulo)) return [];

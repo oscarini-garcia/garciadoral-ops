@@ -569,6 +569,19 @@ export const quitarEnlaceDeViajes = (personaId = null) =>
   peticion('/api/viajes/enlace', { method: 'DELETE', body: JSON.stringify({ persona_id: personaId }) });
 
 /**
+ * El enlace propio para conectar Claude. Va por su ruta y no por la cola por lo
+ * mismo que el de Flighty: es una credencial —quien lo tiene consulta y apunta
+ * como tú—, y por la cola pasaría por IndexedDB y por la instantánea. Se pide al
+ * abrir el apartado y no se guarda en ningún sitio de este aparato.
+ */
+export const leerEnlaceDeClaude = async () => (await peticion('/api/mcp/enlace')).enlace || null;
+
+/** Crea el enlace, y el anterior deja de valer en el acto. */
+export const crearEnlaceDeClaude = async () => (await peticion('/api/mcp/enlace', { method: 'POST' })).enlace;
+
+export const quitarEnlaceDeClaude = () => peticion('/api/mcp/enlace', { method: 'DELETE' });
+
+/**
  * El día del santo de un nombre, contestado por un modelo. Devuelve «MM-DD» o
  * `null` si no lo sabe; lo que vuelve se enseña antes de guardarse.
  */

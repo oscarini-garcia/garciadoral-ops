@@ -46,6 +46,8 @@ tener que recorrer la aplicación entera cada vez.
 
 - **apns.js** — El transporte hasta el teléfono: APNs con autenticación por token.
   hayApnsConfigurado · tokenDeProveedor · olvidarTokenDeProveedor · enviarAviso
+- **asistente.js** — Lo que Claude puede hacer con la agenda: consultar y apuntar, como quien tiene la…
+  SERVIDOR · herramientasDe · instruccionesDe
 - **avisos.js** — Lo que hace sonar un teléfono ajeno, decidido en el servidor.
   CATEGORIA_CAMBIO · CATEGORIA_CORRECCION · avisosDe · aparatosDe · olvidarToken
   empujarSolicitud · empujar
@@ -70,13 +72,14 @@ tener que recorrer la aplicación entera cada vez.
   PREFIJO · IDS_PLUGIN · CIRCULO_POR_DEFECTO · circuloAdmite · circuloDe · pluginDeEvento
   normalizarPlugin · leerPlugins · guardarPlugin
 - **recordatorios.js** — El aviso previo desde el servidor: «Mañana: 🐴 Hípica · 18:00».
-  arranquesEntre · antelacionDe · avisosDelAparato · recordatoriosDe · empujarRecordatorios
+  arranquesEntre · derivadosDe · antelacionDe · avisosDelAparato · recordatoriosDe
+  empujarRecordatorios
 - **redaccion.js** — Lo que la agenda le pide a un modelo de Anthropic: contar un día, proponer un regalo,…
   MODELOS_DE_RESERVA · MODELO_POR_DEFECTO · INSTRUCCION_POR_DEFECTO
   INSTRUCCION_REGALO_POR_DEFECTO · INSTRUCCION_FELICITACION_POR_DEFECTO
   INSTRUCCION_APUNTE_POR_DEFECTO · INSTRUCCION_CHISPA_POR_DEFECTO
   INSTRUCCION_LIO_POR_DEFECTO · INSTRUCCION_CENA_POR_DEFECTO · INSTRUCCION_SANTO_POR_DEFECTO
-  …y 28 más
+  …y 35 más
 - **repositorio.js** — Lectura y escritura del registro canónico sobre D1.
   TOPE_DE_MEJORA · leerRegistro · personaPorApple · personaPorId · darDeBajaCuenta
   restosDeCuenta · administradoresRestantes · aplicarCambio
@@ -100,6 +103,13 @@ tener que recorrer la aplicación entera cada vez.
 - **solicitudes.js** — La sala de espera: quien ha entrado con Apple y todavía no es del hogar.
   TOPE_PENDIENTES · purgarCaducadas · solicitudPorApple · anotarLlegada · contarPendientes
   pendientes · registrarSolicitud · retirarSolicitud · rechazarSolicitud · aprobarSolicitud
+
+### `api/src/mcp/` · Claude por MCP: el protocolo y el enlace de cada uno, sin saber del hogar
+
+- **enlace.js** — El enlace de cada uno para conectar Claude: una dirección que es a la vez la credencial.
+  credencialDe · enlaceVivo · crearEnlace · quitarEnlace · filaDelEnlace · anotarUso
+- **protocolo.js** — El protocolo MCP sobre HTTP, reducido a lo que necesita un servidor de herramientas.
+  VERSIONES_CON_SALUDO · VERSIONES_SIN_SALUDO · servirMcp
 
 ### `pwa/publico/js/` · La aplicación
 
@@ -148,7 +158,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 19 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 22 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -227,6 +237,9 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/ia/chispa` — cinco frases para la pantalla de Hoy
 - `POST /api/ia/lio` — cinco frases dichas por el perro
 - `POST /api/ia/probar` — redacta y devuelve la traza entera (administradores)
+- `GET  /api/mcp/enlace` — el enlace propio para conectar Claude, si lo hay
+- `POST /api/mcp/enlace` — crea el enlace propio, y apaga el anterior
+- `DELETE /api/mcp/enlace` — quita el enlace propio
 
 ## Workflows
 
@@ -257,8 +270,8 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `scripts/agenda/modelo.py` §7
 - **`specs/modelo-datos.md`**
   `api/src/avisos.js` §2.9 · `api/src/comentables.js` §2.3 · `api/src/filtrado.js` §7.3
-  `api/src/lio.js` §2.6 · `api/src/repositorio.js` §4 · `api/src/visibilidad.js`
-  `pwa/publico/js/avisos.js` §2.8 · `pwa/publico/js/lio.js` §2.6
+  `api/src/lio.js` §2.6 · `api/src/mcp/enlace.js` §2.11 · `api/src/repositorio.js` §4
+  `api/src/visibilidad.js` · `pwa/publico/js/avisos.js` §2.8 · `pwa/publico/js/lio.js` §2.6
   `pwa/publico/js/modelo.js` §4 · `pwa/publico/js/semana.js` §7.4
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §2.7
   `pwa/publico/js/vistas/regalos.js` §5.2, §7.4 · `scripts/agenda/__init__.py` §2, §4, §6
@@ -306,7 +319,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**408** en total.
+**430** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -326,6 +339,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/cuenta.test.js` — 6
 - `api/test/ical.test.js` — 19
 - `api/test/lio.test.js` — 23
+- `api/test/mcp.test.js` — 22
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
 - `api/test/receta.test.js` — 3

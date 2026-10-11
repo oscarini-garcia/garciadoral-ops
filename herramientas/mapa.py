@@ -49,6 +49,7 @@ AREAS = [
     ("scripts", "Los dos procesos programados y su transporte"),
     ("api/src", "Worker de Cloudflare: filtra antes de transmitir"),
     ("api/src/portero", "El portero: entrar con Apple, esperar y aprobar, sin saber del hogar"),
+    ("api/src/mcp", "Claude por MCP: el protocolo y el enlace de cada uno, sin saber del hogar"),
     ("pwa/publico/js", "La aplicación"),
     ("pwa/publico/js/vistas", "Las cinco secciones de la aplicación"),
     ("herramientas", "Utilidades de desarrollo"),

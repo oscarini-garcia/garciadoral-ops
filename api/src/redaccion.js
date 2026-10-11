@@ -491,7 +491,7 @@ function partes(fecha) {
   return { anio, mes: mes || 1, dia: dia || 1 };
 }
 
-function formatearFecha(fecha) {
+export function formatearFecha(fecha) {
   const { anio, mes, dia } = partes(fecha);
   const momento = new Date(Date.UTC(anio, mes - 1, dia));
   return `${NOMBRES_DIA[momento.getUTCDay()]} ${dia} de ${MESES[mes - 1]}`;
@@ -500,7 +500,7 @@ function formatearFecha(fecha) {
 /** «del 20 al 26 de Julio de 2026», con el mes y el año repetidos solo cuando
  *  el tramo los cruza. Es el encabezado que ve el modelo, y también lo único
  *  que le dice de cuándo se está hablando. */
-function formatearRango(desde, hasta) {
+export function formatearRango(desde, hasta) {
   const a = partes(desde);
   const b = partes(hasta);
   if (a.anio !== b.anio) {
@@ -601,7 +601,7 @@ function visiblesDe(instantanea) {
 }
 
 /** El apodo si lo hay, y si no el nombre: lo que se dice en casa. */
-function nombreCorto(instantanea, personaId) {
+export function nombreCorto(instantanea, personaId) {
   const persona = (instantanea.personas || []).find((p) => p.id === personaId);
   return persona ? (persona.apodo || persona.nombre) : null;
 }
@@ -620,7 +620,7 @@ function notaDeTiempo(fecha, hoy) {
 /** Los turnos de Lío de un día, en una línea, si hay cuadro: quien lo saca
  *  por la mañana y por la noche, con la fila escrita mandando sobre el cuadro
  *  y las ausencias pasando el turno a quien cubre. */
-function lineaDeLio(instantanea, fecha) {
+export function lineaDeLio(instantanea, fecha) {
   const versiones = normalizarVersiones(instantanea.lio_cuadro);
   if (!versiones.length && !(instantanea.paseos || []).length) return null;
   const dia = String(fecha).slice(0, 10);
@@ -658,7 +658,7 @@ export function componerMaterial(instantanea, fecha, ids = [], { hoy = null } = 
  * quién recoge —de casa o «otro», con lo escrito para el día suelto mandando
  * sobre el cuadro—, y quiénes van a una escapada.
  */
-function lineaDe(evento, instantanea = {}, fecha = null) {
+export function lineaDe(evento, instantanea = {}, fecha = null) {
   const hora = horaDeEseDia(evento, fecha);
   const extras = [];
   if (evento.plugin_id === 'extraescolar' && fecha) {
@@ -861,7 +861,7 @@ export function componerMaterialDeFelicitacion(
 
 /** Los años que cumple este año, que es como se habla de la edad al pensar un
  *  regalo. Sin fecha de nacimiento no se dice nada: inventarla sería peor. */
-function edadDe(persona, hoy) {
+export function edadDe(persona, hoy) {
   if (!persona.fecha_nacimiento) return null;
   const nacimiento = partes(persona.fecha_nacimiento);
   const referencia = partes(hoy || new Date().toISOString().slice(0, 10));
@@ -942,7 +942,7 @@ const DIAS_DE_MEMORIA = 14;
 const TOPE_DE_DESPENSA = 300;
 
 /** El nombre de lo cenado una noche: la receta enlazada, o el texto suelto. */
-function platoDe(instantanea, recetaId, texto) {
+export function platoDe(instantanea, recetaId, texto) {
   if (recetaId) {
     const receta = (instantanea.recetas || []).find((r) => r.id === recetaId);
     if (receta?.nombre) return receta.nombre;
