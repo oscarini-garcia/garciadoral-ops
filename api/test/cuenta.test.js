@@ -135,15 +135,18 @@ test('la baja deshace la cuenta y deja a la persona en el hogar', async () => {
   const db = baseFalsa();
   await darDeBajaCuenta(db, 'p-marta');
 
-  assert.equal(db.lote.length, 4);
+  assert.equal(db.lote.length, 5);
   for (const sentencia of db.lote) {
     assert.deepEqual(sentencia.args, ['p-marta'], sentencia.sql);
   }
 
-  const [dispositivos, avisos, accesos, persona] = db.lote;
+  const [dispositivos, avisos, accesos, enlaces, persona] = db.lote;
   assert.match(dispositivos.sql, /DELETE FROM dispositivo/);
   assert.match(avisos.sql, /DELETE FROM preferencia_notificacion/);
   assert.match(accesos.sql, /DELETE FROM acceso_categoria/);
+  // El enlace de Claude se apaga, no se borra: así no revive si la cuenta se
+  // vuelve a aprobar, y queda constancia de que lo hubo.
+  assert.match(enlaces.sql, /UPDATE enlace_mcp SET activo = 0/);
 
   // Lo que se va de la fila: el vínculo con Apple, la condición de titular y el
   // rol. Lo que no aparece por ninguna parte es un DELETE de la persona.

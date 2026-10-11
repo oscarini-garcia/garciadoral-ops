@@ -39,6 +39,13 @@
  *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
  *   POST   /api/ia/lio      · cinco frases dichas por el perro
  *   POST   /api/ia/probar   · redacta y devuelve la traza entera (administradores)
+ *   GET    /api/mcp/enlace  · el enlace propio para conectar Claude, si lo hay
+ *   POST   /api/mcp/enlace  · crea el enlace propio, y apaga el anterior
+ *   DELETE /api/mcp/enlace  · quita el enlace propio
+ *
+ * Y fuera de la tabla, por prefijo, el servidor MCP con el que Claude consulta
+ * y apunta: `/mcp/<enlace>`, donde el enlace es a la vez la credencial
+ * (`mcp/enlace.js`, `mcp/protocolo.js` y `asistente.js`).
  */
 
 import { verificarTokenDeApple } from './portero/apple.js';
@@ -76,6 +83,11 @@ import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
 import { empujar, empujarSolicitud } from './avisos.js';
 import { hayApnsConfigurado } from './apns.js';
+import { servirMcp } from './mcp/protocolo.js';
+import {
+  anotarUso, crearEnlace, credencialDe, enlaceVivo, filaDelEnlace, quitarEnlace,
+} from './mcp/enlace.js';
+import { SERVIDOR, herramientasDe, instruccionesDe } from './asistente.js';
 import {
   cabeUnaMas,
   componerMaterial,
@@ -403,10 +415,13 @@ async function sincronizar(peticion, env) {
   return json(instantanea);
 }
 
-async function recibirCambios(peticion, env, ctx) {
-  const lector = await lectorAutenticado(peticion, env);
-  const { cambios = [] } = await peticion.json();
-
+/**
+ * Un lote de cambios escrito como lo escribe siempre este Worker: cada uno por
+ * `aplicarCambio`, los estados derivados después y, a quien le afecte, su aviso.
+ * Lo usan la cola del teléfono y lo que se apunta desde Claude, para que las dos
+ * puertas no puedan escribir de dos maneras.
+ */
+async function aplicarLote(env, ctx, lector, cambios) {
   const resultados = [];
   const aplicados = [];
   for (const cambio of cambios) {
@@ -421,9 +436,9 @@ async function recibirCambios(peticion, env, ctx) {
 
   await derivarEstados(env.DB);
 
-  // Se devuelve la instantánea recién actualizada: el dispositivo se queda
-  // siempre con lo que le corresponde ver, incluido lo que acaba de dejar de
-  // corresponderle por haber pasado a ser destinatario de algo.
+  // Se devuelve el registro recién releído: el dispositivo se queda siempre con
+  // lo que le corresponde ver, incluido lo que acaba de dejar de corresponderle
+  // por haber pasado a ser destinatario de algo.
   const registro = await leerRegistro(env.DB);
 
   // Y a quien le afecte, se le hace sonar el teléfono. Va detrás de la respuesta
@@ -435,6 +450,13 @@ async function recibirCambios(peticion, env, ctx) {
     if (ctx?.waitUntil) ctx.waitUntil(empuje);
   }
 
+  return { resultados, registro };
+}
+
+async function recibirCambios(peticion, env, ctx) {
+  const lector = await lectorAutenticado(peticion, env);
+  const { cambios = [] } = await peticion.json();
+  const { resultados, registro } = await aplicarLote(env, ctx, lector, cambios);
   return json({ resultados, instantanea: await conBanderaDeRedaccion(env, componerInstantanea(registro, lector)) });
 }
 
@@ -1169,6 +1191,78 @@ async function probarLaRedaccion(peticion, env) {
   });
 }
 
+// ------------------------------------------------------- Claude, por MCP --
+
+/** El enlace tal como se pega en Claude: la dirección de este Worker con la
+ *  credencial detrás. Sale del propio `peticion.url` para que valga igual en
+ *  `workers.dev` que en un dominio propio. */
+async function enlaceParaAjustes(peticion, env, fila) {
+  if (!fila) return null;
+  return {
+    url: `${new URL(peticion.url).origin}/mcp/${await credencialDe(env.SESION_SECRETO, fila)}`,
+    creado_en: fila.creado_en,
+    usado_en: fila.usado_en || null,
+  };
+}
+
+/**
+ * El enlace propio, para enseñarlo en Ajustes. Se le da solo a su dueño y por su
+ * ruta, nunca en la instantánea: es una credencial, y la instantánea pasa por
+ * IndexedDB y por la cola de ida y vuelta.
+ */
+async function leerEnlaceDeClaude(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  return json({ enlace: await enlaceParaAjustes(peticion, env, await enlaceVivo(env.DB, lector.id)) });
+}
+
+async function crearEnlaceDeClaude(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  return json({ enlace: await enlaceParaAjustes(peticion, env, await crearEnlace(env.DB, lector.id)) });
+}
+
+async function quitarEnlaceDeClaude(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  await quitarEnlace(env.DB, lector.id);
+  return json({ baja: true });
+}
+
+/**
+ * Claude, por MCP: consultar la agenda y apuntar cosas desde una conversación.
+ *
+ * La credencial va en el camino —`/mcp/<enlace>`— porque así basta con pegar la
+ * dirección en Claude; también se acepta en `Authorization`, para el cliente que
+ * prefiera llevarla en una cabecera. Se comprueba en cada petición, y con ella
+ * que la persona siga teniendo cuenta: un enlace no sobrevive a una baja.
+ *
+ * Lo demás es lo de siempre con otra puerta: la instantánea de esa persona para
+ * leer y `aplicarLote` para escribir.
+ */
+async function atenderMcp(peticion, env, ctx) {
+  const enCamino = new URL(peticion.url).pathname.replace(/^\/mcp\/?/, '').replace(/\/+$/, '');
+  const fila = await filaDelEnlace(env.DB, env.SESION_SECRETO, enCamino || credencial(peticion));
+  const lector = await personaPorId(env.DB, fila.persona_id);
+  if (!lector || !lector.tiene_cuenta || !lector.activa) {
+    throw new SinCredencial('este enlace es de una cuenta que ya no está');
+  }
+
+  const uso = anotarUso(env.DB, fila).catch(() => {});
+  if (ctx?.waitUntil) ctx.waitUntil(uso);
+
+  const contexto = {
+    lector,
+    hoy: hoyEnCasa(),
+    leer: async () => componerInstantanea(await leerRegistro(env.DB), lector),
+    escribir: (cambios) => aplicarLote(env, ctx, lector, cambios),
+  };
+  return servirMcp(peticion, {
+    servidor: SERVIDOR,
+    instrucciones: () => instruccionesDe(contexto),
+    herramientas: herramientasDe(contexto),
+  });
+}
+
+const esCaminoDeMcp = (camino) => camino === '/mcp' || camino.startsWith('/mcp/');
+
 // ---------------------------------------------------------------------------
 
 // La resolución va por cuerpo y no por ruta con parámetro porque aquí los
@@ -1206,6 +1300,9 @@ const RUTAS = [
   ['POST', '/api/ia/chispa', escribirLaChispa],
   ['POST', '/api/ia/lio', escribirLoDeLio],
   ['POST', '/api/ia/probar', probarLaRedaccion],
+  ['GET', '/api/mcp/enlace', leerEnlaceDeClaude],
+  ['POST', '/api/mcp/enlace', crearEnlaceDeClaude],
+  ['DELETE', '/api/mcp/enlace', quitarEnlaceDeClaude],
 ];
 
 /**
@@ -1241,12 +1338,16 @@ export default {
     }
 
     const url = new URL(peticion.url);
-    const ruta = RUTAS.find(([metodo, camino]) => metodo === peticion.method && camino === url.pathname);
+    // El punto MCP va por prefijo y con cualquier método: lleva la credencial
+    // en el camino, y qué métodos admite lo decide el protocolo, no la tabla.
+    const manejador = esCaminoDeMcp(url.pathname)
+      ? atenderMcp
+      : RUTAS.find(([metodo, camino]) => metodo === peticion.method && camino === url.pathname)?.[2];
 
-    if (!ruta) return json({ error: 'no encontrado' }, 404, cors);
+    if (!manejador) return json({ error: 'no encontrado' }, 404, cors);
 
     try {
-      const respuesta = await ruta[2](peticion, env, ctx);
+      const respuesta = await manejador(peticion, env, ctx);
       for (const [clave, valor] of Object.entries(cors)) respuesta.headers.set(clave, valor);
       return respuesta;
     } catch (error) {

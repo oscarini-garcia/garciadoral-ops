@@ -1427,6 +1427,7 @@ error visible: es arruinar una sorpresa.
 | Contar el día siempre acaba compartiendo la lista tal cual | Algo falla en la llamada al modelo. El botón *Probar* de ese mismo apartado enseña la traza de cada intento: código HTTP, tipo de error y el mensaje de la API |
 | «demasiadas redacciones seguidas» o «demasiadas propuestas seguidas» | El freno por persona y minuto, compartido por las dos. Es deliberado: sin él, la clave de pago del hogar queda abierta a un bucle en la consola del navegador |
 | Un cambio hecho en el móvil no aparece en la web | Mire el indicador de sincronización. Si dice «sin sincronizar», el servidor rechazó algo: la consola del navegador lista qué y por qué |
+| Claude no conecta con la agenda | El enlace de esa persona ya no vale o no se ha desplegado la `0030`. Está todo en `docs/conectar-claude.md` §6 |
 
 Trazas en vivo del Worker:
 

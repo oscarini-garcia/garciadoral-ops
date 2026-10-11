@@ -20,8 +20,9 @@ import {
 import { borrarSesion, guardarSesion, leerSesion, olvidarTodo } from './almacen.js';
 import { crearVista, nuevoId } from './modelo.js';
 import {
-  darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardar, guardarAjustesDeIa, iniciar,
-  instantanea, leerAjustesDeIa, probarRedaccion, refrescarViajes, retirar, sincronizar, suscribir,
+  crearEnlaceDeClaude, darDeAltaLosAvisos, darDeBajaLosAvisos, detener, estado, guardar, guardarAjustesDeIa,
+  iniciar, instantanea, leerAjustesDeIa, leerEnlaceDeClaude, probarRedaccion, quitarEnlaceDeClaude,
+  refrescarViajes, retirar, sincronizar, suscribir,
 } from './sincronizacion.js';
 import { cargarConfiguracion, codigoDeAutorizacion, eliminarLaCuenta } from './sesion.js';
 import { iniciarAcceso, mostrarAcceso, volverALaEspera } from './acceso.js';
@@ -32,6 +33,7 @@ import {
   alTocarUnAviso,
   cancelarRecordatorios,
   comprobarActualizacion,
+  compartir,
   copiar,
   desactivarAvisosRemotos,
   esNativo,
@@ -885,6 +887,11 @@ function abrirAjustes() {
     // apartado lo enciende quien ha venido a buscarlo.
     if (!demostracion) cuerpo.append(acordeon('Avisos', bloqueDeAvisos, { icono: 'campana' }));
 
+    // Junto a Avisos porque es lo mismo visto desde fuera: por dónde llega la
+    // agenda a otro sitio. Y no en la demostración, donde no hay cuenta con la
+    // que Claude pudiera entrar.
+    if (!demostracion) cuerpo.append(acordeon('Claude', bloqueDeClaude, { icono: 'enlace' }));
+
     // Las ideas sobre la aplicación viven aquí y no en una pestaña porque son
     // sobre la herramienta y no sobre el trabajo, que es la misma razón por la
     // que están aquí la versión y la actualización.
@@ -1140,6 +1147,153 @@ function bloqueDeMejoras(seccion, cuenta = null) {
     return el('div', { class: 'tarjeta mejora', 'data-hecha': hecha(mejora) ? 'si' : null },
       [visto, cuerpo]);
   }
+}
+
+/**
+ * Claude: el enlace de cada uno para conectarlo a la agenda.
+ *
+ * Con él, Claude consulta la agenda y apunta cosas en nombre de quien lo creó
+ * —«el miércoles que viene, médico de Lío»— con lo que esa cuenta ve y puede
+ * escribir, y nada más (`api/src/asistente.js`). La dirección es la credencial,
+ * así que aquí se trata como una contraseña: se pide al desplegar el apartado y
+ * no se guarda en el aparato, y rehacerla o quitarla deja de valer en el acto la
+ * que hubiera. Por eso esas dos preguntan antes, y en el propio apartado: una
+ * hoja aparte se comería Ajustes y habría que volver a buscar dónde estaba uno.
+ */
+function bloqueDeClaude(seccion) {
+  const cuerpo = el('div', { class: 'grupo' });
+  let enlace = null;
+  let pedido = false;
+  let fallo = null;
+  // Qué se está preguntando: 'rehacer', 'quitar' o nada.
+  let pregunta = null;
+
+  const conBoton = (texto, hacer, { tono = null, crecer = true } = {}) => el('button', {
+    class: crecer ? 'boton crecer' : 'boton', 'data-tono': tono, type: 'button',
+    onclick: (evento) => hacer(evento.currentTarget),
+  }, [texto]);
+
+  const ocupado = (boton, texto) => { boton.disabled = true; boton.textContent = texto; };
+
+  async function crear(boton) {
+    ocupado(boton, 'Creando…');
+    try {
+      enlace = await crearEnlaceDeClaude();
+      pregunta = null;
+      toque('media');
+    } catch (error) {
+      avisar(`No se ha podido crear: ${error.message}`);
+    }
+    pintar();
+  }
+
+  async function quitar(boton) {
+    ocupado(boton, 'Quitando…');
+    try {
+      await quitarEnlaceDeClaude();
+      enlace = null;
+      pregunta = null;
+      avisar('Enlace quitado: Claude ya no entra con él');
+    } catch (error) {
+      avisar(`No se ha podido quitar: ${error.message}`);
+    }
+    pintar();
+  }
+
+  /** Lo que se sabe de su uso, que es lo que dice si Claude llegó a conectarse. */
+  const usoDe = () => (enlace.usado_en
+    ? `Claude lo usó por última vez ${formatearHace(new Date(enlace.usado_en))}.`
+    : 'Claude todavía no lo ha usado.');
+
+  function pintar() {
+    vaciar(cuerpo);
+    if (fallo) {
+      cuerpo.append(
+        el('p', { class: 'pista', 'data-tono': 'aviso', texto: `No se ha podido leer el enlace: ${fallo}` }),
+        el('div', { class: 'acciones en-su-sitio' }, [conBoton('Volver a intentarlo', () => cargar())]),
+      );
+      return;
+    }
+    if (!enlace) {
+      cuerpo.append(el('div', { class: 'acciones en-su-sitio' }, [conBoton('Crear mi enlace', crear)]));
+      return;
+    }
+
+    // Copiar lo dice en su propio botón durante dos segundos, como en Mejoras:
+    // la respuesta se quiere donde el dedo ya está.
+    const copia = conBoton('Copiar', async (boton) => {
+      const hecho = await copiar(enlace.url);
+      ocupado(boton, hecho ? 'Copiado' : 'No se ha podido');
+      setTimeout(() => { boton.textContent = 'Copiar'; boton.disabled = false; }, 2000);
+    });
+    cuerpo.append(
+      el('p', { class: 'enlace-claude', texto: enlace.url }),
+      el('div', { class: 'acciones en-su-sitio' }, [
+        copia,
+        // Compartir es para llevarlo al ordenador, que es donde se añade el conector.
+        conBoton('Compartir', () => compartir({ titulo: 'Enlace de la agenda para Claude', texto: enlace.url }), { tono: 'discreto' }),
+      ]),
+      el('p', { class: 'pista', texto: usoDe() }),
+      el('p', {
+        class: 'pista',
+        texto: 'En Claude: Configuración › Conectores › Añadir conector personalizado, y pega el enlace. '
+          + 'Quien lo tenga entra como tú: no se lo pases a nadie.',
+      }),
+    );
+
+    if (pregunta) {
+      cuerpo.append(
+        el('p', {
+          texto: pregunta === 'rehacer'
+            ? 'El enlace de ahora dejará de valer y habrá que pegar el nuevo en Claude.'
+            : 'Claude dejará de poder consultar y apuntar con tu cuenta.',
+        }),
+        el('div', { class: 'acciones en-su-sitio' }, [
+          pregunta === 'rehacer'
+            ? conBoton('Hacer otro', crear, { tono: 'peligro' })
+            : conBoton('Quitar', quitar, { tono: 'peligro' }),
+          conBoton('Cancelar', () => { pregunta = null; pintar(); }, { tono: 'discreto' }),
+        ]),
+      );
+      return;
+    }
+    cuerpo.append(el('div', { class: 'acciones en-su-sitio' }, [
+      el('button', { class: 'enlace-discreto', type: 'button', onclick: () => { pregunta = 'rehacer'; pintar(); } }, ['Hacer otro']),
+      el('button', { class: 'enlace-discreto', type: 'button', onclick: () => { pregunta = 'quitar'; pintar(); } }, ['Quitar']),
+    ]));
+  }
+
+  async function cargar() {
+    pedido = true;
+    fallo = null;
+    vaciar(cuerpo);
+    cuerpo.append(el('p', { class: 'pista', texto: 'Buscando tu enlace…' }));
+    try {
+      enlace = await leerEnlaceDeClaude();
+    } catch (error) {
+      fallo = error.message;
+    }
+    pintar();
+  }
+
+  seccion.append(
+    el('p', {
+      class: 'pista',
+      texto: 'Con un enlace tuyo, Claude consulta la agenda y apunta cosas por ti: «el miércoles que viene, médico '
+        + 'de Lío», «apunta para Ana una idea de regalo». Ve lo mismo que ves tú, y nada más.',
+    }),
+    cuerpo,
+  );
+
+  // Se pide al desplegar y no al abrir Ajustes: es una credencial, y no tiene
+  // por qué viajar cada vez que alguien entra aquí a cambiar el tema. El
+  // apartado todavía no existe mientras se construye su cuerpo; existe en
+  // cuanto `acordeon` termina, que es antes de esta microtarea.
+  queueMicrotask(() => {
+    const apartado = seccion.closest('details');
+    if (!apartado) { cargar(); return; }
+    apartado.addEventListener('toggle', () => { if (apartado.open && !pedido) cargar(); });
+  });
 }
 
 /** Una mejora dada por hecha. El Worker manda booleano y `guardar` deja el 1. */

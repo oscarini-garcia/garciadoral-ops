@@ -352,16 +352,20 @@ export async function darDeBajaCuenta(db, personaId) {
 
 /**
  * Lo que una cuenta deja sembrado fuera de su fila: los aparatos con su token
- * de avisos, las preferencias y los accesos a categorías restringidas. Se barre
- * igual en la baja voluntaria y en la retirada de la cuenta desde la ficha
- * —los dos caminos acaban en el mismo estado—; sin esto, el segundo dejaba el
- * canal de push vivo a nombre de alguien que ya no puede entrar.
+ * de avisos, las preferencias, los accesos a categorías restringidas y el
+ * enlace para conectar Claude. Se barre igual en la baja voluntaria y en la
+ * retirada de la cuenta desde la ficha —los dos caminos acaban en el mismo
+ * estado—; sin esto, el segundo dejaba el canal de push vivo a nombre de alguien
+ * que ya no puede entrar. El enlace ya deja de valer sin cuenta detrás, porque
+ * se comprueba en cada petición; se apaga igual para que no reviva si la cuenta
+ * se vuelve a aprobar.
  */
 export function restosDeCuenta(db, personaId) {
   return [
     db.prepare('DELETE FROM dispositivo WHERE persona_id = ?').bind(personaId),
     db.prepare('DELETE FROM preferencia_notificacion WHERE persona_id = ?').bind(personaId),
     db.prepare('DELETE FROM acceso_categoria WHERE persona_id = ?').bind(personaId),
+    db.prepare('UPDATE enlace_mcp SET activo = 0 WHERE persona_id = ?').bind(personaId),
   ];
 }
 

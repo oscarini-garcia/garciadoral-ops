@@ -27,6 +27,37 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Claude, por MCP (1.97.0).** La agenda se sirve a Claude como servidor MCP
+  desde el propio Worker, en `/mcp/<enlace>`: cada persona crea el suyo en
+  Ajustes › Claude y lo pega en Claude como conector personalizado
+  (`docs/conectar-claude.md`). **El enlace es la credencial y no se guarda**:
+  `enlace_mcp` (migración `0030`, corriente; `specs/modelo-datos.md` §2.11)
+  tiene solo la mitad al azar, y la otra es un HMAC con `SESION_SECRETO` que se
+  recalcula para comprobarlo y para volver a enseñarlo
+  (`api/src/mcp/enlace.js`); uno vivo por persona, se comprueba la cuenta en
+  cada petición y `restosDeCuenta` lo apaga en la baja. **El protocolo**
+  (`api/src/mcp/protocolo.js`) es sin estado y habla las dos épocas: el saludo
+  con `initialize` hasta la 2025-11-25 y, desde la 2026-07-28, `server/discover`
+  con la versión en cada petición, `resultType` y `ttlMs`/`cacheScope`; se probó
+  con los clientes de los SDK oficiales 1.32.1 y 2.3.1, este en los dos modos.
+  **Las diez herramientas** (`api/src/asistente.js`, cinco `ver_*` y cinco
+  `apuntar_*`) leen la instantánea del dueño del enlace y escriben por
+  `aplicarLote`, sacado de `recibirCambios` para que la cola del teléfono y
+  Claude no puedan escribir de dos maneras; lo leído se compone con `lineaDe`,
+  `lineaDeLio`, `arranquesEntre` y `derivadosDe`, ahora exportados, sin otra
+  copia de las reglas. Apuntar dos veces lo mismo no lo duplica, un nombre o un
+  sitio dudoso vuelve para preguntar, y crear un sitio o sustituir una cena
+  piden `crear_sitio`/`reemplazar` explícitos. Y `ver_mejoras` es el transporte
+  que faltaba para las mejoras: quien trabaje en el repositorio con Claude Code
+  puede leerlas con su enlace. Las pruebas de esto corren contra SQLite de
+  verdad con todas las migraciones (`api/test/apoyo/d1.js`, sobre
+  `node:sqlite`). En Ajustes, las filas de verbos del apartado llevan
+  `.acciones.en-su-sitio`: pegajosas al pie, como las de un formulario, tapaban
+  la explicación. Queda: **desde Claude no se edita ni se borra** —ni marcar
+  algo hecho, ni comentar, ni dar una mejora por hecha—; **los vuelos repetidos
+  solo se juntan si la línea es idéntica**; y **la conexión desde claude.ai, el
+  escritorio y el móvil está sin probar de verdad**: aquí solo con los clientes
+  de los SDK.
 - **Días que no hay, «por su cuenta» y la receta (1.96.0).** Decidido como
   A1 · B1 · C1 en `specs/propuesta-recurrentes-y-recetas.html`. **«No hay …
   este día» pregunta antes**, y el día cancelado ya no desaparece: las vistas
