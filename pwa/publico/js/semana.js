@@ -441,19 +441,36 @@ export function instanciasEn(instantanea, desde, hasta, { conCanceladas = false 
 }
 
 /**
- * Un vuelo en dos momentos: el despegue a su hora de salida y el aterrizaje a
- * la de llegada, cada uno en su día. Como una sola instancia de la salida a la
- * llegada solo se veía la hora de salida, y un vuelo que llega de madrugada
- * salía además como «(cont.)» al día siguiente. `tramo` es lo que lee la
- * línea para poner 🛫 o 🛬; un vuelo sin hora de llegada se queda como estaba.
+ * Un vuelo que cruza de día, en dos momentos: el despegue a su hora de salida
+ * y el aterrizaje a la de llegada, cada uno en su día. Como una sola instancia
+ * de la salida a la llegada, un vuelo que llega de madrugada salía además como
+ * «(cont.)» al día siguiente. Pero el que despega y aterriza el mismo día es
+ * una sola línea, con la llegada detrás (`tramo: 'vuelo'`): partido, en la
+ * vista del día salía dos veces seguidas y se leía como repetido. `tramo` es
+ * lo que lee la línea para poner 🛫 o 🛬; un vuelo sin hora de llegada se
+ * queda como estaba.
  */
 function partirVuelo(instancia, desde, hasta) {
   if (!presentarVuelo(instancia.evento) || !(instancia.fin > instancia.inicio)) return [instancia];
+  if (iso(instancia.inicio) === iso(instancia.fin)) return [{ ...instancia, tramo: 'vuelo' }];
   const dentro = (momento) => soloFecha(momento) >= soloFecha(desde) && soloFecha(momento) <= soloFecha(hasta);
   return [
     { ...instancia, fin: instancia.inicio, tramo: 'salida' },
     { ...instancia, inicio: instancia.fin, fin: instancia.fin, tramo: 'llegada' },
   ].filter((parte) => dentro(parte.inicio));
+}
+
+/**
+ * El despegue y el aterrizaje de un vuelo, para los avisos de vuelo: un vuelo
+ * del mismo día va en una instancia y suena dos veces igual que el que cruza
+ * de día.
+ */
+export function momentosDeVuelo(instancia) {
+  if (instancia.tramo !== 'vuelo') return instancia.tramo ? [instancia] : [];
+  return [
+    { ...instancia, fin: instancia.inicio, tramo: 'salida' },
+    { ...instancia, inicio: instancia.fin, tramo: 'llegada' },
+  ];
 }
 
 /**

@@ -27,6 +27,16 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Un vuelo del mismo día, una línea (1.99.1).** Visto en el teléfono: en
+  «Día» cada vuelo salía dos veces seguidas, 🛫 a la salida y 🛬 a la llegada,
+  y se leía como repetido. `partirVuelo` (`pwa/publico/js/semana.js`) solo
+  parte ya el vuelo que cruza de día; el que despega y aterriza el mismo día
+  es una instancia con `tramo: 'vuelo'`, ✈️ y «llega 07:58» detrás del
+  paréntesis (`textoDeLinea`). Los avisos al despegar y al aterrizar no
+  cambian: `avisosDeVuelo` (`app.js`) los saca de `momentosDeVuelo`, que
+  vuelve a dar las dos partes con el mismo `tramo` de antes, así que el
+  identificador de cada aviso es el mismo. Esto corrige el «cada vuelo sale
+  dos veces» de la 1.87.0 de más abajo.
 - **Festivos (1.99.0).** Decidido como A1 · B1 · C1 · D3 · E1 en
   `specs/propuesta-festivos.html`. **Los oficiales salen de
   `datos/festivos.json`**, una tabla por año copiada de los calendarios
