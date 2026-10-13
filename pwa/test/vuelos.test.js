@@ -16,7 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { crearVista, presentarVuelo, sinVuelosRepetidos, tituloDeVuelo } from '../publico/js/modelo.js';
-import { instanciasEn } from '../publico/js/semana.js';
+import { instanciasEn, momentosDeVuelo } from '../publico/js/semana.js';
 
 /** Las notas tal como las escribe Flighty. */
 const NOTAS = 'Air France 1248 Paris to Barcelona ↗ 19:03 CEST ↘ 20:46 CEST '
@@ -134,11 +134,21 @@ test('entre dos copias se queda la que lleva la vuelta escrita', () => {
   assert.deepEqual(sinVuelosRepetidos([ida('a1', 'c1'), conVuelta]).map((e) => e.id), ['a2']);
 });
 
-test('un vuelo sale dos veces: al despegar y al aterrizar, cada uno a su hora', () => {
+test('un vuelo del mismo día sale una vez, y suena al despegar y al aterrizar', () => {
+  // El caso de la pantalla: partido en dos, en la vista del día el despegue y
+  // el aterrizaje salían seguidos y se leían como el vuelo repetido.
   const datos = { personas: [], tipos_evento: [], eventos: [ida('a1', 'c1')], plugins: {} };
   const partes = instanciasEn(datos, new Date(2026, 9, 5), new Date(2026, 9, 11));
-  assert.deepEqual(partes.map((p) => [p.tramo, p.inicio.getHours(), p.inicio.getMinutes()]),
+  assert.deepEqual(partes.map((p) => [p.tramo, p.inicio.getHours(), p.fin.getHours()]), [['vuelo', 7, 9]]);
+  assert.deepEqual(partes.flatMap(momentosDeVuelo).map((p) => [p.tramo, p.inicio.getHours(), p.inicio.getMinutes()]),
     [['salida', 7, 35], ['llegada', 9, 40]]);
+});
+
+test('un vuelo que cruza de día sale dos veces, cada parte en su día', () => {
+  const nocturno = { ...ida('n1', 'c1'), inicio: '2026-10-07T23:10', fin: '2026-10-08T01:05' };
+  const datos = { personas: [], tipos_evento: [], eventos: [nocturno], plugins: {} };
+  const partes = instanciasEn(datos, new Date(2026, 9, 7), new Date(2026, 9, 8));
+  assert.deepEqual(partes.map((p) => [p.tramo, p.inicio.getDate()]), [['salida', 7], ['llegada', 8]]);
 });
 
 test('un vuelo que llega de madrugada aterriza al día siguiente', () => {

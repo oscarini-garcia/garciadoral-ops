@@ -45,7 +45,7 @@ import {
   toque,
   versionInstalada,
 } from './native.js';
-import { formatearHace, hoy, instanciasEn, iso, sumarDias } from './semana.js';
+import { formatearHace, hoy, instanciasEn, iso, momentosDeVuelo, sumarDias } from './semana.js';
 import { VERSION_APP } from './version.js';
 import { NOVEDADES } from './novedades.js';
 import { hayLio, inicioDeVentana, resolverPropuesta, rotuloDeTurno, turnosDe } from './lio.js';
@@ -365,7 +365,7 @@ function avisosDeVuelo(datos, instancias) {
   if (!quiereVuelos()) return [];
   const vista = crearVista(datos);
   return instancias
-    .filter((instancia) => instancia.tramo)
+    .flatMap(momentosDeVuelo)
     .map((instancia) => {
       const despega = instancia.tramo === 'salida';
       const hora = `${String(instancia.inicio.getHours()).padStart(2, '0')}:${String(instancia.inicio.getMinutes()).padStart(2, '0')}`;
