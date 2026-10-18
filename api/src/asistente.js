@@ -50,7 +50,7 @@ import { festivoQueAnula } from './festivos.js';
 import { TOPE_DE_MEJORA } from './repositorio.js';
 
 /** Cómo se presenta este servidor en la lista de conectores de Claude. */
-export const SERVIDOR = { name: 'agenda-familiar', title: 'Agenda de casa', version: '1.1.0' };
+export const SERVIDOR = { name: 'agenda-familiar', title: 'Agenda de casa', version: '1.2.0' };
 
 /** Lo más que se consulta de una vez: un mes cabe, un año no se lee. */
 const MAXIMO_DIAS = 31;
@@ -705,20 +705,43 @@ async function apuntarEvento(argumentos, contexto) {
  * ocultación que no hay. Solo cuentan quienes tienen cuenta, que son los únicos
  * que pueden ver nada.
  */
-function quienesVen(registro, ideaId) {
-  const idea = (registro.ideas || []).find((i) => i.id === ideaId);
+function quienesVen(registro, id, clase = 'idea') {
+  const fila = (registro[clase === 'idea' ? 'ideas' : 'regalos'] || []).find((i) => i.id === id);
   const conCuenta = (registro.personas || []).filter((p) => p.tiene_cuenta && activo(p));
   const nombre = (p) => p.apodo || p.nombre;
-  if (!idea) return { laVen: [], noLaVen: [] };
+  if (!fila) return { laVen: [], noLaVen: [] };
   return {
-    laVen: conCuenta.filter((p) => visible(registro, idea, 'idea', p)).map(nombre),
-    noLaVen: conCuenta.filter((p) => !visible(registro, idea, 'idea', p)).map(nombre),
+    laVen: conCuenta.filter((p) => visible(registro, fila, clase, p)).map(nombre),
+    noLaVen: conCuenta.filter((p) => !visible(registro, fila, clase, p)).map(nombre),
   };
 }
 
-function quienLaVe(registro, ideaId) {
-  const { laVen, noLaVen } = quienesVen(registro, ideaId);
+function quienLaVe(registro, id, clase = 'idea') {
+  const { laVen, noLaVen } = quienesVen(registro, id, clase);
   return [`La ven: ${enumerar(laVen) || 'nadie más que tú'}.`, ...(noLaVen.length ? [`Oculta para: ${enumerar(noLaVen)}.`] : [])];
+}
+
+/** Los de casa: entre ellos se elige quién ve una idea o un regalo. */
+const deCasa = (instantanea) => (instantanea.personas || [])
+  .filter((p) => p.tiene_cuenta && activo(p) && p.circulo === 'familia');
+
+/**
+ * «la_ven» como lista de identificadores
+ * (specs/propuesta-regalos-para-mi-y-para-otros.html, C1 · D1). Sin el
+ * argumento, todos los de casa; quien escribe va siempre, y quien lo recibe no
+ * lo ve aunque se nombre, porque eso lo decide la regla del destinatario.
+ */
+function venDeArgumento(instantanea, argumento, lector) {
+  const casa = deCasa(instantanea);
+  if (argumento === undefined || argumento === null) return [...new Set([lector.id, ...casa.map((p) => p.id)])];
+  const ids = listaDe(argumento).map((dicho) => {
+    const persona = buscarPersona(instantanea, dicho, lector.id);
+    if (!casa.some((p) => p.id === persona.id)) {
+      throw new Rechazo(`«la_ven» se elige entre los de casa: ${enumerar(casa.map((p) => p.apodo || p.nombre))}.`);
+    }
+    return persona.id;
+  });
+  return [...new Set([lector.id, ...ids])];
 }
 
 async function apuntarIdea(argumentos, contexto) {
@@ -762,8 +785,8 @@ async function apuntarIdea(argumentos, contexto) {
       precio_max: precio,
       establecimiento,
       enlace,
-      // «También las niñas» solo lo escribe quien administra, como en la pantalla.
-      ...(lector.rol === 'administrador' ? { para_todos: argumentos.para_todos === true && !deseo ? 1 : 0 } : {}),
+      // Quién la ve, entre los de casa; lo que uno pide para sí lo ve toda la casa.
+      ...(deseo ? {} : { ven: venDeArgumento(instantanea, argumentos.la_ven, lector) }),
       orientaciones: destinatarios.map((p) => ({ persona_id: p.id })),
       tipo: deseo ? 'deseo' : 'sugerencia',
       estado: 'activa',
@@ -774,7 +797,7 @@ async function apuntarIdea(argumentos, contexto) {
 
   if (deseo) {
     const { laVen } = quienesVen(registro, id);
-    return `Apuntado en tus deseos: «${titulo}». Lo ven ${enumerar(laVen) || 'solo tú'}; a ti no se te dirá si alguien lo coge.`
+    return `Apuntado en «Para mí»: «${titulo}». Lo ven ${enumerar(laVen) || 'solo tú'}; a ti no se te dirá si alguien lo coge.`
       + `\nReferencia: ${refDe('idea', id)}`;
   }
   return [
@@ -978,7 +1001,7 @@ const DETALLES = {
     const regalos = (instantanea.regalos || []).filter((r) => r.idea_id === idea.id && activo(r));
     const firma = firmaDe(instantanea, idea);
     return [
-      `${idea.tipo === 'deseo' ? 'Deseo' : 'Idea'} «${idea.titulo}» [${refDe('idea', idea.id)}]`,
+      `${idea.tipo === 'deseo' ? 'Lo que pide' : 'Idea'} «${idea.titulo}» [${refDe('idea', idea.id)}]`,
       para.length ? `${idea.tipo === 'deseo' ? 'Lo pide' : 'Para'}: ${enumerar(para)}.` : null,
       idea.descripcion ? `Descripción: ${idea.descripcion}` : null,
       typeof idea.precio_max === 'number' ? `Precio: unos ${importe(idea.precio_max)}.` : null,
@@ -1182,7 +1205,7 @@ async function editarIdea(argumentos, contexto) {
   const { leer, lector } = contexto;
   const instantanea = await leer();
   const { fila: idea, id } = deTipo(porRef(instantanea, argumentos.ref), 'idea');
-  sinNadaQueCambiar(argumentos, ['titulo', 'descripcion', 'precio', 'donde_se_compra', 'enlace', 'para', 'para_todos']);
+  sinNadaQueCambiar(argumentos, ['titulo', 'descripcion', 'precio', 'donde_se_compra', 'enlace', 'para', 'la_ven']);
 
   const campos = {};
   if (llega(argumentos, 'titulo')) campos.titulo = tituloDe(argumentos.titulo, 'titulo');
@@ -1191,7 +1214,7 @@ async function editarIdea(argumentos, contexto) {
   if (llega(argumentos, 'donde_se_compra')) campos.establecimiento = textoDe(argumentos.donde_se_compra, 'donde_se_compra', TOPE_DE_TITULO);
   if (llega(argumentos, 'enlace')) campos.enlace = textoDe(argumentos.enlace, 'enlace', 1000);
   if (llega(argumentos, 'para')) {
-    if (idea.tipo === 'deseo') throw new Rechazo('Un deseo es de quien lo pide: no se cambia para quién es.');
+    if (idea.tipo === 'deseo') throw new Rechazo('Lo que alguien pide para sí es suyo: no se cambia para quién es.');
     const personas = [...new Map(listaDe(argumentos.para).map((n) => {
       const persona = buscarPersona(instantanea, n, lector.id);
       return [persona.id, persona];
@@ -1199,17 +1222,16 @@ async function editarIdea(argumentos, contexto) {
     if (!personas.length) throw new Rechazo('«para» no puede quedarse vacío');
     // Para quien la apunta y nadie más, la ocultación se la quitaría de delante.
     if (personas.length === 1 && personas[0].id === lector.id) {
-      throw new Rechazo('Una idea no puede pasar a ser solo para ti: si lo quieres tú, apúntalo como deseo con apuntar_idea.');
+      throw new Rechazo('Una idea no puede pasar a ser solo para ti: si lo quieres tú, apúntalo para ti con apuntar_idea y va a «Para mí».');
     }
     campos.orientaciones = [
       ...personas.map((p) => ({ persona_id: p.id })),
       ...(idea.orientaciones || []).filter((o) => o.etiqueta_id).map((o) => ({ etiqueta_id: o.etiqueta_id })),
     ];
   }
-  if (llega(argumentos, 'para_todos')) {
-    if (lector.rol !== 'administrador') throw new Rechazo('«para_todos» solo lo cambia quien administra');
-    if (idea.tipo === 'deseo') throw new Rechazo('Un deseo ya lo ve toda la casa.');
-    campos.para_todos = argumentos.para_todos === true ? 1 : 0;
+  if (llega(argumentos, 'la_ven')) {
+    if (idea.tipo === 'deseo') throw new Rechazo('Lo que alguien pide para sí lo ve toda la casa.');
+    campos.ven = venDeArgumento(instantanea, argumentos.la_ven, lector);
   }
 
   const registro = await escribir(contexto, [{ tipo: 'idea', id, campos }]);
@@ -1225,7 +1247,7 @@ async function editarRegalo(argumentos, contexto) {
   const { leer, lector } = contexto;
   const instantanea = await leer();
   const { id } = deTipo(porRef(instantanea, argumentos.ref), 'regalo');
-  sinNadaQueCambiar(argumentos, ['estado', 'se_encarga', 'coste']);
+  sinNadaQueCambiar(argumentos, ['estado', 'se_encarga', 'coste', 'la_ven']);
 
   const campos = {};
   if (llega(argumentos, 'estado')) {
@@ -1237,9 +1259,13 @@ async function editarRegalo(argumentos, contexto) {
     campos.responsable_id = !quien || quien === 'nadie' ? null : buscarPersona(instantanea, argumentos.se_encarga, lector.id).id;
   }
   if (llega(argumentos, 'coste')) campos.coste_real = eurosDe(argumentos.coste, 'coste');
+  if (llega(argumentos, 'la_ven')) campos.ven = venDeArgumento(instantanea, argumentos.la_ven, lector);
 
-  await escribir(contexto, [{ tipo: 'regalo', id, campos }]);
-  return (await asiQueda(contexto, 'regalo', id)).join('\n');
+  const registro = await escribir(contexto, [{ tipo: 'regalo', id, campos }]);
+  return [
+    ...(await asiQueda(contexto, 'regalo', id)),
+    ...(llega(argumentos, 'la_ven') ? quienLaVe(registro, id, 'regalo') : []),
+  ].join('\n');
 }
 
 async function editarApunte(argumentos, contexto) {
@@ -1551,7 +1577,7 @@ export function herramientasDe(contexto) {
     {
       nombre: 'ver_regalos',
       titulo: 'Ver ideas y regalos',
-      descripcion: 'Ideas de regalo, lo que cada uno ha pedido (deseos) y los regalos en marcha, por persona. '
+      descripcion: 'Ideas de regalo, lo que cada uno ha pedido para sí («Para mí» en la aplicación) y los regalos en marcha, por persona. '
         + 'Solo lo que la cuenta de quien pregunta puede ver: lo que se prepara para ella no sale nunca, como en '
         + `la aplicación. Con «para», solo esa persona.${CON_REFERENCIAS}`,
       entrada: {
@@ -1616,10 +1642,12 @@ export function herramientasDe(contexto) {
     {
       nombre: 'apuntar_idea',
       titulo: 'Apuntar una idea de regalo',
-      descripcion: 'Apunta una idea de regalo para alguien, como en Regalos › Ideas. Queda oculta para la '
-        + 'persona a quien va dirigida: no la verá ni sabrá que existe. Si es solo para quien habla, se guarda '
-        + 'como algo que pide (un deseo), que sí ve el resto. Ejemplo: «apunta para Ana una idea de regalo de un '
-        + 'bolso» → para ["Ana"], titulo «Bolso». La respuesta dice quién la ve y para quién queda oculta.',
+      descripcion: 'Apunta una idea de regalo para alguien, como en Regalos › Para otros. Queda oculta para la '
+        + 'persona a quien va dirigida: no la verá ni sabrá que existe. Con «la_ven» se elige quién más la ve '
+        + 'entre los de casa; sin él, la ven todos los de casa menos quien la recibe. Si es solo para quien '
+        + 'habla, se guarda en «Para mí», como algo que pide, y lo ve toda la casa. Ejemplo: «apunta para Ana '
+        + 'una idea de regalo de un bolso» → para ["Ana"], titulo «Bolso». La respuesta dice quién la ve y para '
+        + 'quién queda oculta.',
       entrada: {
         type: 'object',
         properties: {
@@ -1629,11 +1657,8 @@ export function herramientasDe(contexto) {
           precio: { type: 'number', minimum: 0, description: 'Precio aproximado, en euros.' },
           donde_se_compra: cadena('Tienda o dónde se compra.'),
           enlace: cadena('Enlace a la tienda.'),
-          para_todos: {
-            type: 'boolean',
-            description: 'Solo cuenta si quien habla administra: true para que lo vean también quienes no '
-              + 'administran (las niñas). Por defecto, no lo ven.',
-          },
+          la_ven: nombres('Quién la ve, entre los de casa (p. ej. ["Ana", "Óscar"]). Quien la apunta la ve '
+            + 'siempre y quien la recibe nunca. Sin esto, todos los de casa.'),
         },
         required: ['titulo', 'para'],
         additionalProperties: false,
@@ -1745,9 +1770,9 @@ export function herramientasDe(contexto) {
     {
       nombre: 'editar_idea',
       titulo: 'Cambiar una idea de regalo',
-      descripcion: 'Cambia una idea de regalo, o algo que alguien ha pedido (un deseo): título, descripción, '
-        + 'precio, tienda, enlace y, en una idea, para quién es. Cambiar «para» cambia quién la ve, y la respuesta '
-        + 'lo dice. Un deseo sigue siendo de quien lo pidió.',
+      descripcion: 'Cambia una idea de regalo, o algo que alguien ha pedido para sí: título, descripción, '
+        + 'precio, tienda, enlace y, en una idea, para quién es y quién la ve. Cambiar quién la ve cambia también '
+        + 'sus regalos, y la respuesta lo dice. Lo que alguien pide para sí sigue siendo suyo y lo ve toda la casa.',
       entrada: {
         type: 'object',
         properties: {
@@ -1758,10 +1783,8 @@ export function herramientasDe(contexto) {
           donde_se_compra: cadena('Tienda o dónde se compra; vacío para quitarlo.'),
           enlace: cadena('Enlace a la tienda; vacío para quitarlo.'),
           para: nombres('Para quién: la lista entera, que sustituye a la que había.'),
-          para_todos: {
-            type: 'boolean',
-            description: 'Solo quien administra: true para que la vean también quienes no administran (las niñas).',
-          },
+          la_ven: nombres('Quién la ve, entre los de casa: la lista entera, que sustituye a la que había. '
+            + 'Quien la apuntó la ve siempre y quien la recibe nunca.'),
         },
         required: ['ref'],
         additionalProperties: false,
@@ -1773,8 +1796,8 @@ export function herramientasDe(contexto) {
       nombre: 'editar_regalo',
       titulo: 'Cambiar un regalo',
       descripcion: 'Cambia un regalo en marcha: su estado (por_comprar; listo, cuando ya está comprado; '
-        + 'entregado, cuando ya se ha dado), quién se encarga y cuánto ha costado. Entregarlo cierra la idea de '
-        + 'la que salió, como en la aplicación.',
+        + 'entregado, cuando ya se ha dado), quién se encarga, cuánto ha costado y quién lo ve. Entregarlo cierra '
+        + 'la idea de la que salió, como en la aplicación.',
       entrada: {
         type: 'object',
         properties: {
@@ -1782,6 +1805,7 @@ export function herramientasDe(contexto) {
           estado: { type: 'string', enum: Object.keys(ESTADO_PEDIDO), description: 'por_comprar, listo o entregado.' },
           se_encarga: cadena('Quién se encarga: un nombre, o «nadie».'),
           coste: euros('Lo que ha costado, en euros; null para quitarlo.'),
+          la_ven: nombres('Quién lo ve, entre los de casa: la lista entera. Quien lo recibe no lo ve nunca.'),
         },
         required: ['ref'],
         additionalProperties: false,

@@ -233,6 +233,8 @@ Debajo, un enlace a su ficha, que es donde está todo lo demás.
 
 ### 6.2 La pantalla de regalos, como se construyó
 
+> **Retirada en la 1.100.0** (`propuesta-regalos-para-mi-y-para-otros.html`, A1 · B1 · C1 · D1 · E1). La pestaña tiene ahora tres apartados —**Para mí**, **Para otros** y **Ocasiones**—, y a un regalo se llega desde su ocasión. Lo que recogía «Ya pasaron» lo dice la tarjeta de la ocasión: si su fecha pasó con algo sin comprar, la pastilla dice «N sin comprar» en vez de la fecha. Cada apartado lleva bajo el conmutador una línea que dice quién ve lo que hay en él, y el «+» es la primera fila de la lista —«+ Pedir algo», «+ Apuntar una idea»—: Regalos no tiene botón flotante. Lo que sigue se conserva como registro.
+
 Entre Ideas y Ocasiones hay una tercera sección, y existe porque el ciclo se contaba a trozos. Una **idea** se apunta suelta; en un cumpleaños o en una fecha señalada se convierte en un **regalo** para alguien; el regalo espera mientras se compra; y termina cuando se entrega o cuando su ocasión se da por cerrada. De ese ciclo, la aplicación enseñaba el principio —el banco de ideas— y el contenedor —la ocasión—, pero no la parte de en medio, que es donde está el trabajo: qué falta por comprar y quién lo lleva. Para responder a eso había que abrir las ocasiones una por una y sumar de cabeza.
 
 Por dentro siguen siendo dos entidades y no tres. Se estudió fundirlas —una idea con estados sería justo lo que se cuenta— y no conviene: una idea sirve para varias personas y varios años, un regalo es de una persona y de una fecha; el regalo tiene responsable, coste y ocasión, que en una idea están vacíos siempre; y sobre todo se ocultan de manera distinta, que es la pieza central del modelo. Lo que se funde es el relato, no las filas.
@@ -285,6 +287,8 @@ Van bajo un rótulo —«Quién se encarga»— igual que las personas en Ideas 
 
 ### 6.3 La pantalla de deseos, como se construyó
 
+> **Desde la 1.100.0 se llama «Para mí»**, y «deseo» no se dice en ninguna pantalla: es «lo que pides». Lo ve toda la casa y no tiene selector de quién lo ve.
+
 Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo suyo y de prestado. No es lo mismo que lo demás: **el banco de ideas es lo que la casa le regala a alguien, y esto es lo único de la pestaña que habla de uno mismo.** Pasa a ser un apartado propio, el primero de los cuatro.
 
 ```
@@ -314,6 +318,8 @@ Lo que uno pide para sí mismo estaba al final de la lista de ideas, en un grupo
 **Lo que alguien ha pedido sale al prepararle un regalo.** Es el otro medio cambio, y estaba cojo desde el principio: los deseos no están en el banco de ideas —un deseo es de quien lo escribe—, así que el selector de regalos no los ofrecía y solo se podían coger entrando en la ficha de esa persona, justo cuando lo que se estaba haciendo era prepararle el cumpleaños. Ahora encabezan la lista del selector, en su propio grupo —«Lo que pide Marta»—, porque una cosa que te han pedido gana a cualquier idea. En esas líneas no se escribe de quién es la idea: lo dice el rótulo, y en su lugar va el precio, que es lo que ayuda a decidir.
 
 ### 6.4 El banco de ideas, como se construyó
+
+> **Desde la 1.100.0 se llama «Para otros».** Al apuntar una idea se elige quién la ve entre los de casa, uno por uno: de origen todos, quien la apunta fijo y quien la recibe tachado, porque no la ve nunca. Lo mismo en el detalle de un regalo, que nace con lo de su idea.
 
 **Dos apartados —Seleccionadas y Disponibles—, y las seleccionadas primero.** Una idea seleccionada es la que ya se ha llevado a una ocasión. Sigue en el banco a propósito —retirarla de la vista invitaría a que otra persona la registrase por su cuenta—, pero mezclada con las demás obligaba a mirar la marca de cada una para saber con cuáles se puede contar todavía. Los dos se pliegan y los dos arrancan abiertos, como los de Ocasiones: plegar sirve para quitar de en medio lo que hoy estorbe, no es el estado en el que se abre la pantalla. Un apartado vacío no se dibuja.
 

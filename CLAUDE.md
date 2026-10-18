@@ -27,6 +27,32 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Regalos: para mí y para otros (1.100.0).** Decidido como A1 · B1 · C1 ·
+  D1 · E1 en `specs/propuesta-regalos-para-mi-y-para-otros.html`. La pestaña
+  tiene tres apartados —«Para mí», «Para otros» y Ocasiones— y **el apartado
+  Regalos se retiró** (`vistaRegalos`, sus filtros y «Ya pasaron»): a un regalo
+  se llega desde su ocasión, y la tarjeta de una ocasión abierta cuya fecha
+  pasó con algo sin comprar dice «N sin comprar» en vez de la fecha. Cada
+  apartado lleva bajo el conmutador una línea de quién lo ve (`AYUDA`,
+  `.ayuda-apartado`), y **el «+» es la primera fila de la lista**
+  (`filaDeAnadir`, `.fila-anadir`): Regalos ya no tiene botón flotante
+  (`fab: null`). **Quién lo ve, uno por uno**: columna `ven` en `idea` y
+  `regalo` (migración `0032`, `.unavez`), una lista JSON de los de casa; la
+  elige cualquiera al apuntar (`campoQuienLoVe`), de origen todos, quien apunta
+  fijo y quien recibe tachado. La regla (`quedaFuera`) está en los tres
+  sitios —`api/src/visibilidad.js`, `scripts/agenda/visibilidad.py`,
+  `pwa/publico/js/demo.js`—; sin lista manda la de `para_todos`, que se queda
+  para los teléfonos sin actualizar, y la migración tradujo lo apuntado sin
+  cambiar lo que veía cada uno. Un regalo nace con la lista de su idea, y el
+  Worker propaga a sus regalos el cambio de la idea (`aplicarCambio`). Claude
+  cambia `para_todos` por `la_ven` en `apuntar_idea`, `editar_idea` y
+  `editar_regalo` (`SERVIDOR.version` 1.2.0). «Deseo» no se dice en ninguna
+  pantalla ni en lo que contesta Claude; las claves internas (`deseos`,
+  `tipo: 'deseo'`) siguen. Queda: **quien administra ya no lo ve todo** si no
+  se le marca; **quien tiene cuenta y no es de casa** no se puede elegir y deja
+  de ver lo que tenga lista; la lista de conjunto «Por comprar · Listos» de
+  todas las ocasiones no tiene sustituto (E1 era lo mínimo); y `specs/ux.md`
+  §6.2 a §6.4 llevan solo una nota encima de lo que describían.
 - **Festivos (1.99.0).** Decidido como A1 · B1 · C1 · D3 · E1 en
   `specs/propuesta-festivos.html`. **Los oficiales salen de
   `datos/festivos.json`**, una tabla por año copiada de los calendarios

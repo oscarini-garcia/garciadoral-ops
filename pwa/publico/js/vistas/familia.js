@@ -503,7 +503,7 @@ export function abrirFicha(personaId, ctx) {
         ? el('button', {
             class: 'enlace-discreto', type: 'button',
             onclick: () => abrirFormularioIdea(ctx, { paraPersona: ctx.vista.yo.id }),
-          }, ['Añadir un deseo'])
+          }, ['Pedir algo'])
         : null,
     ]));
 

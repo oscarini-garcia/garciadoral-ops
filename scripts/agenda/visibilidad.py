@@ -69,18 +69,23 @@ def _destinatarios(agenda: Agenda, elemento: object) -> set[str]:
     raise TypeError(f"elemento no soportado por la función de visibilidad: {type(elemento)!r}")
 
 
-def _es_de_los_mayores(agenda: Agenda, elemento: object, observador: Persona) -> bool:
-    """¿Lo apuntó un administrador y quien mira no lo es?
+def _queda_fuera(agenda: Agenda, elemento: object, observador: Persona) -> bool:
+    """¿Lo ha dejado fuera quien lo apuntó?
 
-    Lo que escribe un administrador —una idea o un regalo— no lo ve quien no lo
-    es, salvo que se haya marcado `para_todos`
-    (specs/propuesta-formularios-fechas-regalos.html, C1). El deseo propio no
-    entra: es justo lo que los demás necesitan ver para regalarlo.
+    Una idea o un regalo lleva la lista de los de casa que lo ven
+    (specs/propuesta-regalos-para-mi-y-para-otros.html, C1 · D1); quien lo
+    apunta lo ve siempre. Lo que uno pide para sí no lleva lista. Sin lista, la
+    regla de antes: lo que escribe un administrador no lo ve quien no lo es,
+    salvo `para_todos` (specs/propuesta-formularios-fechas-regalos.html, C1).
     """
     if not isinstance(elemento, (Idea, Regalo)):
         return False
     if isinstance(elemento, Idea) and elemento.tipo == "deseo":
         return False
+    if elemento.autor_id == observador.id:
+        return False
+    if elemento.ven is not None:
+        return observador.id not in elemento.ven
     if elemento.para_todos or observador.es_administrador:
         return False
     autor = agenda.persona(elemento.autor_id) if elemento.autor_id else None
@@ -111,7 +116,7 @@ def visible(agenda: Agenda, elemento: object, observador: Persona | str | None) 
         ):
             return False
 
-    if _es_de_los_mayores(agenda, elemento, observador):
+    if _queda_fuera(agenda, elemento, observador):
         return False
 
     if observador.id in _destinatarios(agenda, elemento):

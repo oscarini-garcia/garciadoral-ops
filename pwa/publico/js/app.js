@@ -54,7 +54,7 @@ import {
   abrirDetalleEvento, abrirTurnoDeLio, bloqueDePropuesta, bloqueDePropuestaDeDia, escribirDiaDeTrato, pintarAgenda, reiniciarAgenda, tituloDeAgenda, volverAHoyEnAgenda,
 } from './vistas/semana.js';
 import {
-  abrirDetalleIdea, abrirDetalleRegalo, nuevoDesdeRegalos, pintarRegalos, reiniciarRegalos,
+  abrirDetalleIdea, abrirDetalleRegalo, pintarRegalos, reiniciarRegalos,
 } from './vistas/regalos.js';
 import { pintarFamilia, reiniciarFamilia } from './vistas/familia.js';
 import { abrirBandeja as abrirBandejaDeSolicitudes } from './bandeja.js';
@@ -78,7 +78,9 @@ const PESTANAS = {
   // de semana— y no directamente el formulario: los dos plugins escritos se
   // crean desde donde se piensa (specs/propuesta-plugins-hojas.html, H2).
   semana: { titulo: tituloDeAgenda, pintar: pintarAgenda, fab: (ctx) => abrirMenuDeNuevo(ctx) },
-  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: (ctx) => nuevoDesdeRegalos(ctx) },
+  // Sin botón flotante: el «+» de Regalos es la primera fila de cada lista y
+  // dice lo que crea (specs/propuesta-regalos-para-mi-y-para-otros.html, A1).
+  regalos: { titulo: 'Regalos', pintar: pintarRegalos, fab: null },
   // La pestaña se llama Gente en la barra; la clave conserva el nombre del
   // módulo que la pinta, que es de donde sale. Y va sin botón flotante: la
   // pantalla lleva un «+» dentro de cada círculo, y uno encima que hiciera otra
@@ -1459,7 +1461,7 @@ function formularioDeRedaccion(ajustes) {
     campo('Instrucción', apunte, 'También en tandas de cinco, con el porqué detrás de la raya: el porqué es lo que se guarda como detalle del apunte, y es lo que separa una lista de obviedades de algo que aporta. Se le dan el sitio, de qué clase se le pide, lo que ya hay apuntado ahí y quiénes son de casa. Vacío, vuelve el encargo de origen.'),
 
     el('h4', { class: 'subtitulo-ajuste', texto: 'La frase con la que abre Hoy' }),
-    campo('Instrucción', chispa, 'El único encargo que nadie pide: sale solo al abrir, una vez al día, y se pasa a la siguiente tocándola. También en tandas de cinco, una por línea: se piden de golpe y el teléfono las va enseñando, así que si reescribes esto conserva esa forma. Se le dan el día, lo que hay apuntado hoy, lo que viene en la semana y un tema sacado al azar de lo que esta casa hace de verdad. Aquí es donde se sube o se baja el nivel de guasa, y donde conviene dejarle prohibidos los tacos y las exclamaciones —sin decírselo se suelta— y prohibido nombrar regalos, ideas y deseos, que es la pantalla que se lee con alguien al lado. Vacío, vuelve el encargo de origen.'),
+    campo('Instrucción', chispa, 'El único encargo que nadie pide: sale solo al abrir, una vez al día, y se pasa a la siguiente tocándola. También en tandas de cinco, una por línea: se piden de golpe y el teléfono las va enseñando, así que si reescribes esto conserva esa forma. Se le dan el día, lo que hay apuntado hoy, lo que viene en la semana y un tema sacado al azar de lo que esta casa hace de verdad. Aquí es donde se sube o se baja el nivel de guasa, y donde conviene dejarle prohibidos los tacos y las exclamaciones —sin decírselo se suelta— y prohibido nombrar regalos, ideas y lo que cada uno pide, que es la pantalla que se lee con alguien al lado. Vacío, vuelve el encargo de origen.'),
 
     el('h4', { class: 'subtitulo-ajuste', texto: 'La voz de Lío' }),
     campo('Instrucción', lio, 'El único encargo que habla en primera persona: el que se queja es el perro. También en tandas de cinco, una por línea. Se le dan los dos turnos de hoy, de quién son, cuáles quedaron sin marcar y los días seguidos que lleva saliendo. Conviene dejarle claro que se queja pero no riñe de verdad —quien lo lee es quien no marcó, y lo lee desayunando— y que no invente quién lo sacó, que eso es un dato. Vacío, vuelve el encargo de origen.'),

@@ -169,6 +169,9 @@ class Idea:
     # Lo que apunta un administrador lo ven los demás solo si esto está puesto
     # (specs/propuesta-formularios-fechas-regalos.html, C1).
     para_todos: bool = False
+    # Quién la ve, persona a persona; `None` es la regla de antes
+    # (specs/propuesta-regalos-para-mi-y-para-otros.html, C1 · D1).
+    ven: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -283,6 +286,7 @@ class Regalo:
     activo: bool = True
     autor_id: str | None = None
     para_todos: bool = False
+    ven: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -495,6 +499,19 @@ def _extra(valor: Any) -> dict[str, Any]:
     return dict(valor) if isinstance(valor, dict) else {}
 
 
+def _lista_de_ven(valor: object) -> tuple[str, ...] | None:
+    """Quién lo ve: la lista que viaja, o el texto JSON de la base; si no hay
+    lista, `None`, y manda la regla de antes."""
+    if isinstance(valor, str):
+        try:
+            valor = json.loads(valor)
+        except ValueError:
+            return None
+    if not isinstance(valor, list):
+        return None
+    return tuple(v for v in valor if isinstance(v, str))
+
+
 def _momento(valor: Any) -> datetime | None:
     if valor in (None, ""):
         return None
@@ -631,6 +648,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             fecha_modificacion=_momento(bruto.get("fecha_modificacion")),
             activa=bool(bruto.get("activa", True)),
             para_todos=bool(bruto.get("para_todos", False)),
+            ven=_lista_de_ven(bruto.get("ven")),
         )
         for orientacion in bruto.get("orientaciones", []):
             agenda.orientaciones.append(
@@ -684,6 +702,7 @@ def cargar_agenda(datos: dict[str, Any], catalogos: dict[str, Any] | None = None
             activo=bool(bruto.get("activo", True)),
             autor_id=bruto.get("autor_id"),
             para_todos=bool(bruto.get("para_todos", False)),
+            ven=_lista_de_ven(bruto.get("ven")),
         )
 
     for bruto in datos.get("comentarios", []):

@@ -326,9 +326,13 @@ visible(elemento, observador):
     si categoría.regla = restringida y observador ∉ acceso(categoría)
         devolver falso
 
-    si elemento es idea o regalo, no es deseo, no es para_todos,
-       su autor es administrador y observador.rol ≠ administrador
-        devolver falso
+    si elemento es idea o regalo, no es deseo y observador ≠ elemento.autor
+        si elemento.ven existe
+            si observador ∉ elemento.ven
+                devolver falso
+        si no, si no es para_todos, su autor es administrador
+               y observador.rol ≠ administrador
+            devolver falso
 
     si observador ∈ destinatarios(elemento)
         devolver falso
@@ -344,6 +348,8 @@ El conjunto `destinatarios` se resuelve de forma distinta según el objeto:
 Los comentarios no evalúan la función por sí mismos: heredan el resultado del objeto al que pertenecen.
 
 **Lo que apunta un administrador, solo para los administradores** (`propuesta-formularios-fechas-regalos.html`, C1). Una idea o un regalo escrito por un administrador no lo ve quien no lo es, salvo que lleve `para_todos` —«También las niñas» en el formulario—, que es lo que se regala entre todos. Se añadió porque la regla del destinatario sola no bastaba: el mismo regalo para las dos niñas, apuntado dos veces, le enseñaba a cada una el de la otra, que era el suyo. El deseo propio no entra: lo que pide un administrador para sí es justo lo que los demás necesitan ver. La columna llega con la `0026` y vale cero de origen, así que lo que ya habían apuntado los administradores dejó de verse para las niñas hasta que se marque. Está en los tres sitios de siempre —`api/src/visibilidad.js`, `scripts/agenda/visibilidad.py` y `pwa/publico/js/demo.js`— y sus pruebas.
+
+**Quién lo ve, uno por uno** (`propuesta-regalos-para-mi-y-para-otros.html`, C1 · D1). Desde la `0032`, una idea o un regalo lleva `ven`: la lista, en JSON, de los de casa que lo ven. La elige quien lo apunta, sea quien sea; de origen son todos los de casa. Quien lo apuntó lo ve siempre y quien lo recibe nunca, porque eso lo decide la cláusula del destinatario, que va después. Lo que uno pide para sí no lleva lista. Un regalo nace con la lista de su idea, y cambiarla en la idea la cambia en sus regalos. Sin lista —lo escrito desde un teléfono que aún no la conoce— manda la regla anterior de `para_todos`, y la migración tradujo lo ya apuntado sin cambiar lo que veía cada uno. Con lista, **quien administra deja de verlo todo**: ve lo que le han abierto.
 
 El orden de las comprobaciones importa. La cláusula del deseo precede a la del destinatario, porque de lo contrario una persona dejaría de ver su propia lista de deseos en el instante de crearla.
 
