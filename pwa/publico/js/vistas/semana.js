@@ -19,7 +19,7 @@ import {
 import { guardar, redactarDia, redactarPeriodo, retirar } from '../sincronizacion.js';
 import { REPETICIONES, estaActivo, nuevoId, presentarVuelo, redaccionDisponible, textoDeEstado } from '../modelo.js';
 import {
-  INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA, diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia, instanciasEn, iso, isoConHora, lunesDe, parsearMomento, quienDelDia, repartirPorDia, soloFecha, sumarDias,
+  INICIALES_DIA, MESES_LARGOS, NOMBRES_DIA, TECHO_EVENTOS_DIA, diaDeEvento, diasDeLaSemana, formatearFechaLarga, formatearHora, formatearRango, horaDe, hoy, idDiaDeEvento, indiceDia, instanciasEn, iso, isoConHora, lunesDe, parsearMomento, quienDelDia, repartirPorDia, soloFecha, sumarDias,
 } from '../semana.js';
 import {
   POR_SU_CUENTA, ajustesDe, columnasDeQuien, comoCambiar, comoOtro, esOtro, esPorSuCuenta, inicialesDeOtro, nombreDeOtro, otrosRecientes, partesDelReparto, pluginDeEvento, proponerCambioDeDia, recordarOtro, resolverTratoDeDia, retirarTratoDeDia, tratoDeDia,
@@ -903,8 +903,9 @@ export function textoDeLinea(aparicion, ctx) {
   const plugin = pluginDeEvento(evento);
   const id = String(evento.id || '');
   const linea = {
-    // Un vuelo sale dos veces: 🛫 al despegar y 🛬 al aterrizar, cada uno a
-    // su hora (`partirVuelo` en semana.js).
+    // Un vuelo que cruza de día sale dos veces: 🛫 al despegar y 🛬 al
+    // aterrizar, cada uno a su hora; el del mismo día, una vez y con la
+    // llegada detrás (`partirVuelo` en semana.js).
     emoji: aparicion.instancia?.tramo === 'salida' ? '🛫' : aparicion.instancia?.tramo === 'llegada' ? '🛬' : cara.emoji,
     titulo: cara.titulo,
     de: null,
@@ -942,6 +943,7 @@ export function textoDeLinea(aparicion, ctx) {
   } else if (plugin === 'viajes') {
     const dueno = ctx.vista.duenyoDelCalendario?.(evento) || null;
     if (dueno) linea.parentesis = dueno.apodo || dueno.nombre;
+    if (aparicion.instancia?.tramo === 'vuelo') linea.de = `llega ${formatearHora(aparicion.instancia.fin)}`;
   } else if (plugin === 'finde') {
     const primerDia = evento.extra?.primer_dia || null;
     linea.de = primerDia && iso(dia) < primerDia
