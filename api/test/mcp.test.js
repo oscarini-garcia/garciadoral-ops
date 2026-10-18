@@ -344,43 +344,47 @@ test('«el miércoles que viene, médico de Lío» queda como lo deja el formula
   );
 });
 
-test('«apunta para Ana una idea de regalo de un bolso»: Ana no la ve, y las niñas tampoco', async () => {
+test('«apunta para Ana una idea de regalo de un bolso»: Ana no la ve, y el resto de casa sí', async () => {
   const env = casa();
   const deOscar = await enlaceDe(env, 'p-oscar');
 
   const { texto, error } = await usar(env, deOscar, 'apuntar_idea', { para: ['Ana'], titulo: 'Bolso', precio: 80 });
   assert.equal(error, false, texto);
   assert.match(texto, /Idea apuntada para Ana: «Bolso», unos 80 €/);
-  assert.match(texto, /La ven: Óscar\./);
-  assert.match(texto, /Oculta para: .*Ana/);
+  // Sin «la_ven», todos los de casa menos quien la recibe; Carmen no es de casa.
+  assert.match(texto, /La ven: Falu, Marta y Óscar\.\nOculta para: Ana y Carmen\./);
 
   const [idea] = env.DB.filas('SELECT * FROM idea');
   assert.equal(idea.tipo, 'sugerencia');
   assert.equal(idea.autor_id, 'p-oscar');
-  assert.equal(idea.para_todos, 0);
+  assert.deepEqual(JSON.parse(idea.ven).sort(), ['p-ana', 'p-mariona', 'p-marta', 'p-oscar']);
   assert.deepEqual(env.DB.filas('SELECT persona_id FROM orientacion_idea'), [{ persona_id: 'p-ana' }]);
 
-  // Óscar la ve; Ana no, ni preguntando por sí misma; Marta tampoco, porque la
-  // apuntó un administrador sin «también las niñas».
+  // Óscar y Marta la ven; Ana no, ni preguntando por sí misma.
   assert.match((await usar(env, deOscar, 'ver_regalos', { para: 'Ana' })).texto, /Idea: Bolso/);
   const deAna = await enlaceDe(env, 'p-ana');
   assert.doesNotMatch((await usar(env, deAna, 'ver_regalos')).texto, /Bolso/);
   assert.doesNotMatch((await usar(env, deAna, 'ver_regalos', { para: 'Ana' })).texto, /Bolso/);
   const deMarta = await enlaceDe(env, 'p-marta');
-  assert.doesNotMatch((await usar(env, deMarta, 'ver_regalos', { para: 'Ana' })).texto, /Bolso/);
+  assert.match((await usar(env, deMarta, 'ver_regalos', { para: 'Ana' })).texto, /Bolso/);
 
-  // Con `para_todos`, las niñas sí; Ana sigue sin verla.
-  await usar(env, deOscar, 'apuntar_idea', { para: ['Ana'], titulo: 'Pulsera', para_todos: true });
-  assert.match((await usar(env, deMarta, 'ver_regalos', { para: 'Ana' })).texto, /Pulsera/);
+  // Con «la_ven», solo quien se nombra y quien la apunta; Ana sigue sin verla
+  // aunque se la nombre, y quien no es de casa no se puede elegir.
+  const pulsera = await usar(env, deOscar, 'apuntar_idea', { para: ['Ana'], titulo: 'Pulsera', la_ven: ['Falu', 'Ana'] });
+  assert.match(pulsera.texto, /La ven: Falu y Óscar\.\nOculta para: Ana, Carmen y Marta\./);
+  assert.doesNotMatch((await usar(env, deMarta, 'ver_regalos', { para: 'Ana' })).texto, /Pulsera/);
   assert.doesNotMatch((await usar(env, deAna, 'ver_regalos')).texto, /Pulsera/);
+  const deFuera = await usar(env, deOscar, 'apuntar_idea', { para: ['Ana'], titulo: 'Anillo', la_ven: ['Carmen'] });
+  assert.equal(deFuera.error, true);
+  assert.match(deFuera.texto, /se elige entre los de casa/);
 });
 
-test('lo que uno apunta para sí es un deseo, y lo ven los demás', async () => {
+test('lo que uno apunta para sí va a «Para mí», y lo ven los demás', async () => {
   const env = casa();
   const deMarta = await enlaceDe(env, 'p-marta');
 
   const { texto } = await usar(env, deMarta, 'apuntar_idea', { para: 'yo', titulo: 'Botas de montar' });
-  assert.match(texto, /Apuntado en tus deseos/);
+  assert.match(texto, /Apuntado en «Para mí»/);
   assert.equal(env.DB.filas('SELECT tipo FROM idea')[0].tipo, 'deseo');
 
   const deOscar = await enlaceDe(env, 'p-oscar');
@@ -732,8 +736,8 @@ test('una idea, un apunte y una mejora se corrigen, y la idea dice quién la ve'
   });
   assert.equal(cambiada.error, false, cambiada.texto);
   assert.match(cambiada.texto, /^Cambiada\. Así queda:\nIdea «Bolso de piel»/);
-  // Las dos a quienes va, y quienes no administran: la apuntó un administrador.
-  assert.match(cambiada.texto, /La ven: Óscar\.\nOculta para: Ana, Carmen, Falu y Marta\.$/);
+  // Las dos a quienes va, y quien no es de casa.
+  assert.match(cambiada.texto, /La ven: Falu y Óscar\.\nOculta para: Ana, Carmen y Marta\.$/);
   const [idea] = env.DB.filas('SELECT * FROM idea');
   assert.equal(idea.titulo, 'Bolso de piel');
   assert.equal(idea.precio_max, null);
@@ -742,20 +746,23 @@ test('una idea, un apunte y una mejora se corrigen, y la idea dice quién la ve'
     [{ persona_id: 'p-ana' }, { persona_id: 'p-marta' }],
   );
 
-  // Solo para quien la apunta no puede ser: eso es un deseo.
+  // Solo para quien la apunta no puede ser: eso va a «Para mí».
   const paraMi = await usar(env, deOscar, 'editar_idea', { ref: bolso, para: ['yo'] });
   assert.equal(paraMi.error, true);
-  assert.match(paraMi.texto, /apúntalo como deseo/);
+  assert.match(paraMi.texto, /va a «Para mí»/);
 
-  // «También las niñas» es de quien administra, y un deseo es de quien lo pide.
+  // Quién la ve lo elige cualquiera en lo suyo; lo que uno pide es suyo.
   const libro = refDe((await usar(env, deMarta, 'apuntar_idea', { para: ['Pilar'], titulo: 'Libro' })).texto);
-  const todos = await usar(env, deMarta, 'editar_idea', { ref: libro, para_todos: true });
-  assert.equal(todos.error, true);
-  assert.match(todos.texto, /solo lo cambia quien administra/);
+  const soloAna = await usar(env, deMarta, 'editar_idea', { ref: libro, la_ven: ['Ana'] });
+  assert.equal(soloAna.error, false, soloAna.texto);
+  assert.match(soloAna.texto, /La ven: Ana y Marta\.\nOculta para: Carmen, Falu y Óscar\.$/);
   const botas = refDe((await usar(env, deMarta, 'apuntar_idea', { para: 'yo', titulo: 'Botas' })).texto);
   const deseoAjeno = await usar(env, deOscar, 'editar_idea', { ref: botas, para: ['Ana'] });
   assert.equal(deseoAjeno.error, true);
-  assert.match(deseoAjeno.texto, /Un deseo es de quien lo pide/);
+  assert.match(deseoAjeno.texto, /pide para sí es suyo/);
+  const deseoOculto = await usar(env, deMarta, 'editar_idea', { ref: botas, la_ven: ['Ana'] });
+  assert.equal(deseoOculto.error, true);
+  assert.match(deseoOculto.texto, /lo ve toda la casa/);
 
   // Ponerse uno mismo entre quienes la reciben la esconde de su cuenta, y se dice.
   const conmigo = await usar(env, deOscar, 'editar_idea', { ref: bolso, para: ['Ana', 'yo'] });

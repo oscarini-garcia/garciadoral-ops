@@ -6,10 +6,11 @@
  * señalada y allí se convierte en un **regalo**, que espera a que alguien lo
  * compre y termina cuando se entrega o cuando su ocasión se da por cerrada.
  *
- * Las tres secciones se llaman como las tres cosas que se vienen a hacer aquí:
- * apuntar algo suelto, mirar qué falta por comprar, o preparar una fecha
- * concreta. Por dentro son dos entidades y no tres —un regalo cuelga de una
- * ocasión—, pero quien mira no tiene por qué saberlo (specs/ux.md §6).
+ * Tres apartados, por para quién es: **Para mí** —lo que uno pide—, **Para
+ * otros** —las ideas para regalar— y **Ocasiones**, que es donde las ideas se
+ * hacen regalos. El apartado de los regalos sueltos se retiró: a un regalo se
+ * llega desde su ocasión (specs/propuesta-regalos-para-mi-y-para-otros.html,
+ * A1 · B1 · C1 · D1 · E1).
  */
 
 import {
@@ -35,37 +36,46 @@ const TOPE_SIN_BUSCADOR = 12;
 
 let seccion = 'ideas';
 let filtroPersona = null;
-let filtroRegalos = 'todos';
 
 /**
  * Qué apartado está plegado. Se conserva entre repintados porque la pantalla se
  * rehace en cada sincronización: sin esto, plegar los cumpleaños duraría hasta
  * que llegase la siguiente instantánea.
  */
-let plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, disponibles: false };
+let plegado = { senaladas: false, cumples: false, seleccionadas: false, disponibles: false };
 
 export function reiniciarRegalos() {
   seccion = 'ideas';
   filtroPersona = null;
-  filtroRegalos = 'todos';
-  plegado = { senaladas: false, cumples: false, pasados: true, seleccionadas: false, disponibles: false };
+  plegado = { senaladas: false, cumples: false, seleccionadas: false, disponibles: false };
 }
 
 /**
- * Los cuatro apartados. Los tres últimos van en el orden del ciclo —se apunta,
- * se compra, se celebra— y **Deseos va el primero** porque no es un paso de ese
- * ciclo: es el único sitio de la pestaña que habla de uno mismo, y ponerlo en
- * medio partiría la historia por la mitad.
- *
- * Se abre en Ideas y no en el primero: lo que se viene a hacer aquí casi siempre
- * es regalarle algo a alguien.
+ * Los tres apartados, por para quién es lo que hay dentro. **Para mí** va el
+ * primero porque es lo único de la pestaña que habla de uno mismo; se abre en
+ * **Para otros**, que es a lo que casi siempre se viene: regalarle algo a
+ * alguien. Las claves internas siguen siendo `deseos` e `ideas`.
  */
 const SECCIONES = [
-  ['deseos', 'Deseos'],
-  ['ideas', 'Ideas'],
-  ['regalos', 'Regalos'],
+  ['deseos', 'Para mí'],
+  ['ideas', 'Para otros'],
   ['ocasiones', 'Ocasiones'],
 ];
+
+/**
+ * Lo que explica cada apartado, siempre a la vista bajo el conmutador (B1):
+ * quién ve lo que hay en él, que es lo que no se adivina mirando.
+ */
+const AYUDA = {
+  deseos: ['Lo que te gustaría que te regalasen. ', 'Lo ve toda la casa', ', y no sabrás si alguien lo coge.'],
+  ideas: ['Ideas para regalar. ', 'La persona para la que es no la ve nunca', '; los demás, según «Quién lo ve».'],
+  ocasiones: ['Cumpleaños y fechas señaladas. Dentro de cada una, ', 'lo que se le regala a cada persona', '.'],
+};
+
+const ayudaDe = (clave) => {
+  const [antes, fuerte, despues] = AYUDA[clave];
+  return el('p', { class: 'ayuda-apartado' }, [antes, el('strong', { texto: fuerte }), despues]);
+};
 
 export function pintarRegalos(pantalla, subcabecera, ctx) {
   vaciar(subcabecera).append(
@@ -84,14 +94,13 @@ export function pintarRegalos(pantalla, subcabecera, ctx) {
   // Aire entre el conmutador y lo primero de la pantalla, que aquí casi siempre
   // es otra fila de pastillas.
   pantalla.classList.add('pantalla-regalos');
+  pantalla.append(ayudaDe(seccion));
   if (seccion === 'ideas' || seccion === 'deseos') {
     // El cuerpo se estira hasta el final de la pantalla aunque haya tres ideas:
     // el hueco de debajo es donde se apunta la siguiente, y para eso tiene que
     // existir como sitio al que llegar con el dedo.
     pantalla.classList.add('pantalla-ideas');
     pantalla.append(seccion === 'deseos' ? vistaDeseos(ctx) : vistaIdeas(ctx));
-  } else if (seccion === 'regalos') {
-    pantalla.append(vistaRegalos(ctx));
   } else {
     pantalla.append(vistaOcasiones(ctx));
   }
@@ -100,15 +109,15 @@ export function pintarRegalos(pantalla, subcabecera, ctx) {
 export const seccionActual = () => seccion;
 
 /**
- * Qué crea el botón flotante, que es uno para toda la pestaña.
- *
- * En Deseos apunta un deseo —nace contigo puesto como destinatario, que es lo
- * que lo convierte en uno—; en cualquier otro apartado, una idea. Un botón que
- * hiciera siempre lo mismo obligaría a corregir el «para quién» justo en el
- * apartado que existe para no tener que decirlo.
+ * El «+» de Regalos es la primera fila de la lista y dice lo que crea (A1): el
+ * botón flotante no está en esta pestaña. En «Para mí» pide algo para uno
+ * mismo; en «Para otros», una idea, para quien esté filtrado si hay alguien.
  */
-export function nuevoDesdeRegalos(ctx) {
-  return abrirFormularioIdea(ctx, seccion === 'deseos' ? { paraPersona: ctx.vista.yo.id } : {});
+function filaDeAnadir(texto, accion) {
+  return el('button', {
+    class: 'fila-anadir', type: 'button',
+    onclick: () => { toque(); accion(); },
+  }, [el('span', { class: 'fila-anadir-mas', 'aria-hidden': 'true', texto: '+' }), texto]);
 }
 
 // ----------------------------------------------------------------- Ideas --
@@ -127,6 +136,8 @@ function vistaIdeas(ctx) {
     ctx.vista.banco().flatMap((idea) => (idea.orientaciones || []).map((o) => o.persona_id)),
   );
   const personas = ctx.vista.personas().filter((p) => conIdeas.has(p.id) || p.id === filtroPersona);
+
+  contenedor.append(filaDeAnadir('Apuntar una idea', () => abrirFormularioIdea(ctx, { paraPersona: filtroPersona })));
 
   contenedor.append(el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: 'Para quién' }),
@@ -181,8 +192,8 @@ function vistaIdeas(ctx) {
     contenedor.append(el('p', {
       class: 'vacio',
       texto: filtroPersona
-        ? 'Ninguna idea para esa persona todavía. Dos toques en el hueco apuntan una.'
-        : 'Nada por aquí todavía. Dos toques en el hueco apuntan una idea en diez segundos.',
+        ? 'Ninguna idea para esa persona todavía.'
+        : 'Nada por aquí todavía.',
     }));
   }
 
@@ -220,6 +231,8 @@ function vistaDeseos(ctx) {
   const contenedor = el('div', { class: 'cuerpo-ideas' });
   const mios = ctx.vista.deseosDe(ctx.vista.yo.id);
 
+  contenedor.append(filaDeAnadir('Pedir algo', () => abrirFormularioIdea(ctx, { paraPersona: ctx.vista.yo.id })));
+
   const grupo = el('div', { class: 'grupo' }, [
     el('p', { class: 'grupo-titulo', texto: `${mios.length} ${mios.length === 1 ? 'cosa pedida' : 'cosas pedidas'}` }),
   ]);
@@ -227,15 +240,10 @@ function vistaDeseos(ctx) {
   if (!mios.length) {
     grupo.append(el('p', {
       class: 'vacio',
-      texto: 'Nada pedido todavía. Dos toques en el hueco apuntan lo que te gustaría que te regalasen.',
+      texto: 'Nada pedido todavía.',
     }));
   }
   for (const idea of mios) grupo.append(tarjetaDeIdea(idea, ctx));
-
-  grupo.append(el('p', {
-    class: 'pista',
-    texto: 'Esto lo ve tu familia en tu ficha, y les sale al prepararte un regalo. Si alguien te lo acaba regalando no te enterarás por aquí: eso se coordina sin ti.',
-  }));
 
   contenedor.append(grupo);
   contenedor.append(dobleToque(
@@ -307,144 +315,7 @@ function tarjetaDeIdea(idea, ctx) {
   ]);
 }
 
-// --------------------------------------------------------------- Regalos --
-
-/**
- * Los tres cortes de la lista, que van bajo un rótulo —«Quién se encarga»— igual
- * que las personas en Ideas van bajo «Para quién».
- *
- * El rótulo hace el trabajo de explicar, y por eso las pastillas pueden ser de
- * una palabra: «Todos · Yo · Nadie» se lee como una escala y entra en una línea
- * hasta en un teléfono estrecho. Decían «Los que llevo yo» y «Sin nadie», que
- * hablaban de llevar —que suena a llevarlo en la mano el día de la fiesta— y no
- * decían sin qué. Lo que se nombra es otra cosa: que alguien se ha hecho cargo
- * de ese regalo, o que todavía no (specs/ux.md §6.2).
- */
-const FILTROS_REGALO = [
-  { clave: 'todos', texto: 'Todos', vale: () => true },
-  { clave: 'mios', texto: 'Yo', vale: (regalo, yo) => regalo.responsable_id === yo },
-  { clave: 'nadie', texto: 'Nadie', vale: (regalo) => !regalo.responsable_id },
-];
-
-/**
- * La segunda mitad de la vida de una idea: lo que ya está cogido para alguien.
- *
- * Se ordena por estado y no por ocasión porque la pregunta que se trae aquí es
- * «¿qué me falta por comprar?», y esa se contesta de una vez para todas las
- * fechas. Por ocasión ya está la pantalla de al lado.
- *
- * Lo que se va quedando atrás **no desaparece solo**. Pasada la fecha, los
- * regalos bajan a un apartado plegado al final, con lo que se quedó sin comprar
- * señalado; se archivan de verdad —y pasan al histórico de quien los recibió—
- * cuando alguien da la ocasión por cerrada. Archivar es esconder, y esconder
- * solo lo que se ha terminado a medias sería esconder justamente lo que hay que
- * mirar (specs/ux.md §6.2).
- */
-function vistaRegalos(ctx) {
-  const contenedor = el('div', {});
-  const filtro = FILTROS_REGALO.find((f) => f.clave === filtroRegalos) || FILTROS_REGALO[0];
-
-  contenedor.append(el('div', { class: 'grupo' }, [
-    el('p', { class: 'grupo-titulo', texto: 'Quién se encarga' }),
-    el('div', { class: 'opciones' }, FILTROS_REGALO.map((cual) => el('button', {
-      class: 'opcion', type: 'button',
-      'aria-pressed': cual.clave === filtro.clave ? 'true' : 'false',
-      onclick: () => { filtroRegalos = cual.clave; ctx.refrescar(); },
-    }, [cual.texto]))),
-  ]));
-
-  const todos = ctx.vista.regalosEnMarcha()
-    .sort((a, b) => String(a.ocasion.fecha).localeCompare(String(b.ocasion.fecha)));
-  const enJuego = todos.filter(({ regalo }) => filtro.vale(regalo, ctx.vista.yo.id));
-
-  const dia = iso(hoy());
-  const pasados = enJuego.filter(({ ocasion }) => String(ocasion.fecha) < dia);
-  const porDelante = enJuego.filter(({ ocasion }) => String(ocasion.fecha) >= dia);
-  const porComprar = porDelante.filter(({ regalo }) => estadoDeRegalo(regalo) === 'pendiente');
-  const listos = porDelante.filter(({ regalo }) => estadoDeRegalo(regalo) !== 'pendiente');
-
-  const grupo = (rotulo, cuales) => (cuales.length
-    ? el('div', { class: 'grupo' }, [
-      el('p', { class: 'grupo-titulo', texto: `${rotulo} · ${cuales.length}` }),
-      ...cuales.map((par) => filaDeRegalo(par, ctx)),
-    ])
-    : null);
-
-  // Sin el filtrado, un grupo vacío entraría como el texto «null»: `append` no
-  // descarta lo que no es un nodo, al revés que los hijos de `el`.
-  contenedor.append(...[grupo('Por comprar', porComprar), grupo('Listos', listos)].filter(Boolean));
-
-  if (!porDelante.length) {
-    contenedor.append(el('p', {
-      class: 'vacio',
-      texto: !todos.length
-        ? 'Todavía no hay ningún regalo en marcha. Un regalo nace de una idea: se apunta en Ideas y se lleva a un cumpleaños o a una fecha señalada.'
-        : !enJuego.length ? 'Ninguno con ese filtro. Los demás siguen ahí, en «Todos».'
-          : 'Nada por delante. Lo único que queda es de una fecha que ya pasó.',
-    }));
-  }
-
-  if (pasados.length) {
-    const bloque = acordeon('Ya pasaron', (cuerpo) => {
-      cuerpo.append(el('p', {
-        class: 'pista',
-        texto: 'Su fecha se fue y su ocasión sigue abierta. Se van de aquí al darla por cerrada, que es lo que los manda al histórico de quien los recibió.',
-      }));
-      for (const par of pasados) cuerpo.append(filaDeRegalo(par, ctx, { pasada: true }));
-    }, { abierta: !plegado.pasados, nota: String(pasados.length) });
-
-    bloque.addEventListener('toggle', () => { plegado.pasados = !bloque.open; });
-    contenedor.append(bloque);
-  }
-
-  return contenedor;
-}
-
-/**
- * Una línea de la lista: qué es, quién se encarga y para cuándo.
- *
- * La pastilla de la derecha dice **quién se encarga**, que es lo que hay que
- * repartir y lo que ordena los tres filtros de arriba. Con dos excepciones, que
- * son los dos casos en los que el estado dice algo que el rótulo del grupo no
- * dice ya: lo que se quedó sin comprar cuando la fecha pasó, y lo entregado,
- * que dentro de «Listos» es el único que se distingue de los demás.
- */
-function filaDeRegalo({ regalo, ocasion }, ctx, { pasada = false } = {}) {
-  const idea = regalo.idea_id ? ctx.vista.idea(regalo.idea_id) : null;
-  const estado = estadoDeRegalo(regalo);
-  const quien = regalo.responsable_id === ctx.vista.yo.id ? 'te encargas tú'
-    : regalo.responsable_id ? `se encarga ${ctx.vista.nombre(regalo.responsable_id)}`
-      : 'sin encargado';
-
-  // «sin comprar» y no «se quedó sin comprar»: dentro de «Ya pasaron» el tiempo
-  // verbal lo pone el rótulo, y la pastilla larga parte el título en dos líneas.
-  const marca = pasada && estado === 'pendiente' ? { texto: 'sin comprar', tono: 'aviso' }
-    : estado === 'entregado' ? { texto: 'entregado', tono: 'regalo' }
-      : { texto: quien, tono: regalo.responsable_id ? null : 'aviso' };
-
-  const para = [regalo.destinatario_principal_id, ...(regalo.codestinatarios || [])]
-    .filter(Boolean).map((id) => ctx.vista.nombre(id));
-
-  return el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirDetalleRegalo(regalo.id, ctx) }, [
-    el('div', { class: 'tarjeta-fila' }, [
-      el('h3', { texto: idea?.titulo || 'Regalo' }),
-      el('span', { class: 'etiqueta empujar', 'data-tono': marca.tono, texto: marca.texto }),
-    ]),
-    el('p', {
-      texto: [
-        para.length ? `para ${para.join(' y ')}` : 'sin destinatario',
-        ocasion.nombre,
-        cuandoLaOcasion(ocasion.fecha),
-        // Lo comprado dice cuánto costó; lo que falta por comprar, no: ahí el
-        // importe todavía no existe y el hueco no cuenta nada.
-        estado !== 'pendiente' && typeof regalo.coste_real === 'number' ? formatearImporte(regalo.coste_real) : null,
-        // Cuando la pastilla la ocupa el estado, quién se encarga baja aquí: sigue
-        // haciendo falta para saber a quién preguntarle.
-        marca.texto !== quien && regalo.responsable_id ? quien : null,
-      ].filter(Boolean).join(' · '),
-    }),
-  ]);
-}
+// ------------------------------------------------------------- Ocasiones --
 
 /**
  * Cuánto falta, contado como se cuenta hablando. Es la regla del cumpleaños: de
@@ -463,8 +334,6 @@ function cuandoLaOcasion(fecha) {
   if (dias < -1 && dias >= -60) return `hace ${-dias} días`;
   return fechaCorta(fecha);
 }
-
-// ------------------------------------------------------------- Ocasiones --
 
 /**
  * Dos tipos de ocasión, y por eso dos apartados.
@@ -666,20 +535,27 @@ function tarjetaDeOcasion(ocasion, ctx) {
   const mios = regalos.filter((r) => r.responsable_id === ctx.vista.yo.id && r.estado === 'pendiente').length;
 
   const gente = ocasion.participantes?.length || 0;
+  // Lo que se quedó sin comprar cuando la fecha ya pasó, que recogía «Ya
+  // pasaron» en el apartado que se retiró (E1): la pastilla lo dice en vez de
+  // la fecha, que baja a la línea de debajo contada como se cuenta hablando.
+  const pasadaSinComprar = ocasion.estado === 'abierta' && pendientes && String(ocasion.fecha) < iso(hoy());
   const tarjeta = el('button', { class: 'tarjeta', type: 'button', onclick: () => abrirOcasion(ocasion.id, ctx) }, [
     el('div', { class: 'tarjeta-fila' }, [
       el('h3', { texto: ocasion.nombre }),
-      el('span', { class: 'etiqueta empujar', texto: fechaCorta(ocasion.fecha) }),
+      pasadaSinComprar
+        ? el('span', { class: 'etiqueta empujar', 'data-tono': 'aviso', texto: `${pendientes} sin comprar` })
+        : el('span', { class: 'etiqueta empujar', texto: fechaCorta(ocasion.fecha) }),
     ]),
     el('p', {
       texto: [
+        pasadaSinComprar ? cuandoLaOcasion(ocasion.fecha) : null,
         `${gente} ${gente === 1 ? 'persona' : 'personas'}`,
         // Sin ningún regalo no se dice «todo comprado», que suena a que está
         // hecho cuando lo que pasa es que no se ha empezado.
         ...(regalos.length
           ? [
             `${regalos.length} ${regalos.length === 1 ? 'regalo' : 'regalos'}`,
-            pendientes ? `${pendientes} por comprar` : 'todo comprado',
+            pasadaSinComprar ? null : pendientes ? `${pendientes} por comprar` : 'todo comprado',
             mios ? `te encargas de ${mios}` : null,
           ]
           : ['sin regalos todavía']),
@@ -1263,13 +1139,13 @@ export function abrirDetalleIdea(ideaId, ctx) {
     // aparta, y se reactiva desde la misma hoja. En tono discreto por lo mismo.
     // Sobre lo ya descartado no aparece: ahí el verbo es el otro.
     idea.estado === 'descartada' ? null : botonIcono('descartar', {
-      etiqueta: esDeseoPropio(idea, ctx) ? 'Descartar el deseo' : 'Descartar la idea',
+      etiqueta: esDeseoPropio(idea, ctx) ? 'Descartar lo pedido' : 'Descartar la idea',
       tono: 'discreto',
       onclick: async () => {
         await guardar('idea', idea.id, { estado: 'descartada' });
         toque('media');
         cerrarHoja();
-        avisar(esDeseoPropio(idea, ctx) ? 'Deseo descartado' : 'Idea descartada');
+        avisar(esDeseoPropio(idea, ctx) ? 'Descartado de «Para mí»' : 'Idea descartada');
         ctx.refrescar();
       },
     }),
@@ -1315,7 +1191,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
     estado: estadoDeRegalo(regalo),
     responsable_id: regalo.responsable_id || null,
     coste_real: typeof regalo.coste_real === 'number' ? regalo.coste_real : null,
-    para_todos: Boolean(regalo.para_todos),
+    ven: venDe(regalo, ctx),
   };
 
   // Adónde va, arriba y en un verbo: lleva al cumpleaños cuando la ocasión es
@@ -1383,8 +1259,12 @@ export function abrirDetalleRegalo(regaloId, ctx) {
       borrador.coste_real = coste.value.trim() === '' ? null : Number(coste.value);
     });
     cuerpo.append(campo('Lo que costó', coste, 'Opcional. Es lo que permite saber después en qué se fue una ocasión.'));
-    const quienLoVe = campoParaTodos(ctx, borrador.para_todos, (valor) => { borrador.para_todos = valor; });
-    if (quienLoVe) cuerpo.append(quienLoVe);
+    cuerpo.append(campoQuienLoVe(ctx, {
+      ven: borrador.ven,
+      autorId: regalo.autor_id || ctx.vista.yo.id,
+      destinatarios: [regalo.destinatario_principal_id, ...(regalo.codestinatarios || [])].filter(Boolean),
+      alCambiar: (ids) => { borrador.ven = ids; },
+    }).nodo);
 
     cuerpo.append(el('div', { class: 'acciones' }, [
       el('button', {
@@ -1394,7 +1274,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
             estado: borrador.estado,
             responsable_id: borrador.responsable_id,
             coste_real: Number.isFinite(borrador.coste_real) ? borrador.coste_real : null,
-            ...(ctx.vista.esAdministrador() ? { para_todos: borrador.para_todos ? 1 : 0 } : {}),
+            ven: borrador.ven,
           });
           if (borrador.responsable_id) recordarElegidos('responsable', [borrador.responsable_id]);
           toque('media');
@@ -1696,40 +1576,80 @@ async function asegurarOcasionDe(evento, ctx) {
   return ctx.vista.ocasion(id) || { id, participantes };
 }
 
+/** Los de casa: entre ellos se elige quién ve una idea o un regalo. */
+const deCasa = (ctx) => ctx.vista.personasDe('familia').filter((p) => p.tiene_cuenta);
+
 /**
- * Quién ve lo que apunta un administrador
- * (`specs/propuesta-formularios-fechas-regalos.html`, C1).
- *
- * Sin marcar, solo los administradores: el mismo regalo para las dos niñas le
- * enseñaba a una el suyo. Se abre para lo que se regala entre todos. Solo se
- * ofrece a quien administra, que es a quien afecta; el destinatario no lo ve
- * nunca, se marque o no.
+ * Quién ve algo que ya existe: su lista si la tiene, y si no —lo apuntado antes
+ * de que hubiera lista— lo que decía la regla de antes, para que el selector
+ * enseñe la verdad: lo de quien administra sin «También las niñas», para los
+ * administradores; lo demás, para todos los de casa.
  */
-function campoParaTodos(ctx, valor, alCambiar) {
-  if (!ctx.vista.esAdministrador()) return null;
-  let actual = Boolean(valor);
+function venDe(elemento, ctx) {
+  const casa = deCasa(ctx);
+  if (Array.isArray(elemento?.ven)) return elemento.ven;
+  const autor = ctx.vista.persona(elemento?.autor_id);
+  if (!elemento || elemento.para_todos || autor?.rol !== 'administrador') return casa.map((p) => p.id);
+  return casa.filter((p) => p.rol === 'administrador').map((p) => p.id);
+}
+
+/**
+ * «Quién lo ve»: los de casa, uno por uno
+ * (`specs/propuesta-regalos-para-mi-y-para-otros.html`, C1 · D1).
+ *
+ * Lo elige cualquiera en lo que apunta. Quien lo apuntó va marcado y no se
+ * puede quitar —no se apunta algo que uno mismo no vea—, y quien lo recibe sale
+ * tachado: no lo ve nunca, esté marcado o no. Devuelve el campo y cómo avisarle
+ * de que han cambiado los destinatarios, que en el formulario de la idea se
+ * eligen justo encima.
+ */
+function campoQuienLoVe(ctx, { ven, autorId, destinatarios = [], alCambiar }) {
+  const elegidos = new Set([...ven, autorId]);
+  let reciben = new Set(destinatarios);
   const fila = el('div', { class: 'opciones' });
+  const pista = el('p', { class: 'pista' });
+
   const pintar = () => {
     vaciar(fila);
-    for (const opcion of [
-      { valor: false, texto: 'Solo los mayores' },
-      { valor: true, texto: 'También las niñas' },
-    ]) {
+    for (const persona of deCasa(ctx)) {
+      const recibe = reciben.has(persona.id);
+      const autor = persona.id === autorId;
       fila.append(el('button', {
-        class: 'opcion', type: 'button', 'aria-pressed': opcion.valor === actual ? 'true' : 'false',
-        onclick: () => { actual = opcion.valor; alCambiar(actual); pintar(); },
-      }, [opcion.texto]));
+        class: `opcion${recibe ? ' opcion-tachada' : ''}`, type: 'button',
+        'aria-pressed': !recibe && elegidos.has(persona.id) ? 'true' : 'false',
+        disabled: recibe || autor,
+        onclick: () => {
+          if (elegidos.has(persona.id)) elegidos.delete(persona.id);
+          else elegidos.add(persona.id);
+          alCambiar([...elegidos]);
+          pintar();
+        },
+      }, [autor && autorId === ctx.vista.yo.id ? `${persona.nombre} · tú` : persona.nombre]));
     }
+    const nombres = deCasa(ctx).filter((p) => reciben.has(p.id)).map((p) => p.nombre);
+    pista.textContent = nombres.length
+      ? (nombres.length === 1
+        ? `${nombres[0]} no lo ve nunca: es quien lo recibe.`
+        : `${nombres.join(' y ')} no lo ven nunca: son quienes lo reciben.`)
+      : 'Quien lo recibe no lo ve nunca.';
   };
   pintar();
-  return campo('Quién lo ve', fila, 'Para lo que se regala entre todos, que lo vean también las niñas. Quien lo recibe no lo ve nunca.');
+  alCambiar([...elegidos]);
+
+  const nodo = campo('Quién lo ve', fila);
+  nodo.append(pista);
+  return {
+    nodo,
+    destinatarios: (ids) => { reciben = new Set(ids); pintar(); },
+  };
 }
 
 async function crearRegalo(ctx, { ocasionId, destinatario, idea }) {
   recordarElegidos('regalo', [destinatario]);
   await guardar('regalo', nuevoId(), {
-    // Un regalo que sale de una idea abierta a todos sigue abierto.
-    para_todos: idea?.para_todos ? 1 : 0,
+    // Lo ven los mismos que su idea; sin idea, todos los de casa (C1). Lo que
+    // uno pide para sí no tiene lista: el regalo que sale de ahí, todos.
+    ven: idea && idea.tipo !== 'deseo' ? venDe(idea, ctx) : deCasa(ctx).map((p) => p.id),
     ocasion_id: ocasionId,
     idea_id: idea?.id || null,
     destinatario_principal_id: destinatario,
@@ -1887,7 +1807,7 @@ function confirmarBorradoDeIdea(idea, ctx, { alCancelar = null } = {}) {
   abrirHoja(`Borrar ${idea.titulo}`, (cuerpo) => {
     cuerpo.append(el('p', {
       texto: esDeseo
-        ? 'Se retira de tus deseos. Para volver a pedirlo habrá que escribirlo otra vez.'
+        ? 'Se retira de «Para mí». Para volver a pedirlo habrá que escribirlo otra vez.'
         : 'Se retira del banco de ideas. Para volver a usarla habrá que escribirla otra vez.',
     }));
 
@@ -1920,7 +1840,7 @@ function confirmarBorradoDeIdea(idea, ctx, { alCancelar = null } = {}) {
           cerrarHoja();
           // La confirmación repite el verbo del botón: «Borrar» no puede
           // confirmar con «retirada», que aquí es otra cosa.
-          avisar(esDeseo ? 'Deseo borrado' : 'Idea borrada');
+          avisar(esDeseo ? 'Borrado de «Para mí»' : 'Idea borrada');
           ctx.refrescar();
         },
       }, ['Borrar']),
@@ -2005,7 +1925,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     && !etiquetas.length;
 
   const borrarIdea = existente ? botonIcono('borrar', {
-    etiqueta: esDeseoPropio(existente, ctx) ? 'Borrar el deseo' : 'Borrar la idea',
+    etiqueta: esDeseoPropio(existente, ctx) ? 'Borrar lo pedido' : 'Borrar la idea',
     tono: 'peligro',
     // Se pregunta antes, y cancelar devuelve al formulario: la hoja es una sola,
     // así que la pregunta se come lo que hubiera abierto y hay que reponerlo.
@@ -2017,7 +1937,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
   // El título dice qué se está apuntando: desde Deseos se viene a pedir algo,
   // no a apuntarle una idea a otro.
   const esUnDeseo = existente ? esDeseoPropio(existente, ctx) : paraPersona === ctx.vista.yo.id;
-  abrirHoja(existente ? (esUnDeseo ? 'Editar el deseo' : 'Editar idea')
+  abrirHoja(existente ? (esUnDeseo ? 'Editar lo que pides' : 'Editar idea')
     : esUnDeseo ? 'Pedir algo' : 'Apuntar una idea', (cuerpo) => {
     const titulo = entrada({ value: existente?.titulo || '' });
     enfocarAlAbrir(titulo);
@@ -2088,17 +2008,26 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       // antes de guardar: lo que se escribe deja de ser una idea para regalar y
       // pasa a ser lo que uno pide, que vive en otro sitio.
       pistaDeseo.setAttribute('data-tono', 'aviso');
-      pistaDeseo.textContent = 'Solo estás tú: esto se guarda como algo que pides. Va a Deseos y a tu ficha, no al banco de ideas para regalar.';
+      pistaDeseo.textContent = 'Solo estás tú: esto se guarda como algo que pides. Va a «Para mí» y a tu ficha, no a las ideas para otros.';
       cuerpo.append(pistaDeseo);
     }
     function avisoDeDeseo() {
       pistaDeseo.hidden = !soloParaMi();
       // Lo que uno pide para sí lo ve toda la casa: no hay nada que elegir.
-      if (quienLoVe) quienLoVe.hidden = soloParaMi();
+      if (quienLoVe) {
+        quienLoVe.nodo.hidden = soloParaMi();
+        quienLoVe.destinatarios(destinatarios);
+      }
     }
-    let paraTodos = Boolean(existente?.para_todos);
-    const quienLoVe = esUnDeseo ? null : campoParaTodos(ctx, paraTodos, (valor) => { paraTodos = valor; });
-    if (quienLoVe) { cuerpo.append(quienLoVe); quienLoVe.hidden = soloParaMi(); }
+    // Quién la ve: de origen, todos los de casa menos quien la recibe (C1).
+    let ven = existente ? venDe(existente, ctx) : deCasa(ctx).map((p) => p.id);
+    const quienLoVe = esUnDeseo ? null : campoQuienLoVe(ctx, {
+      ven,
+      autorId: existente?.autor_id || ctx.vista.yo.id,
+      destinatarios,
+      alCambiar: (ids) => { ven = ids; },
+    });
+    if (quienLoVe) { cuerpo.append(quienLoVe.nodo); quienLoVe.nodo.hidden = soloParaMi(); }
     cuerpo.append(campo('Descripción', descripcion));
 
     // Al editar se abre desplegado y sin enlace: quien corrige viene a por un
@@ -2188,7 +2117,8 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
         precio_max: precio.value ? Number(precio.value) : null,
         establecimiento: establecimiento.value.trim(),
         enlace: enlace.value.trim(),
-        ...(ctx.vista.esAdministrador() ? { para_todos: paraTodos && !soloParaMi() ? 1 : 0 } : {}),
+        // Lo que uno pide para sí no lleva lista: lo ve toda la casa.
+        ven: soloParaMi() || esUnDeseo ? null : ven,
         orientaciones: [
           ...destinatarios.map((persona_id) => ({ persona_id })),
           ...etiquetas.map((etiqueta_id) => ({ etiqueta_id })),
@@ -2218,7 +2148,7 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       toque('media');
       cerrarHoja();
       avisar(existente ? 'Idea actualizada'
-        : soloParaMi() ? 'Apuntado en Deseos' : 'Idea apuntada');
+        : soloParaMi() ? 'Apuntado en «Para mí»' : 'Idea apuntada');
       ctx.refrescar();
     };
 

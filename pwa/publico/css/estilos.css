@@ -379,6 +379,22 @@ textarea:-webkit-autofill:focus {
    tocables pegadas se leen como una sola. Le damos aire a la de abajo. En la
    agenda no hace falta: allí lo que sigue es la rejilla, que ya trae su línea. */
 .pantalla-regalos { padding-top: 26px; }
+/* Lo que explica cada apartado de Regalos: quién ve lo que hay en él
+   (specs/propuesta-regalos-para-mi-y-para-otros.html, B1). En gris, y lo que
+   importa en tinta. */
+.ayuda-apartado { margin: -12px 0 6px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
+/* En «Para mí» y «Para otros» la pantalla reparte su alto entre los hijos; la
+   ayuda no entra en el reparto, o se quedaría con medio hueco del final. */
+.pantalla-ideas > .ayuda-apartado { flex: 0 0 auto; }
+.ayuda-apartado strong { color: var(--ink); font-weight: 600; }
+/* El «+» de Regalos, primera fila de la lista y con lo que crea escrito (A1):
+   el molde de la fila de escribir de Sitios, con su raya debajo. */
+.fila-anadir {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 46px;
+  padding: 0; margin: 0 0 6px; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: var(--tinta); font: inherit; font-size: 16px; font-weight: 600; text-align: left;
+}
+.fila-anadir-mas { font-size: 22px; line-height: 1; font-weight: 500; }
 
 /* La agenda estira su cuerpo hasta el final de la pantalla: el deslizamiento
    que pasa de semana se escucha ahí, y por debajo del domingo es donde el
@@ -1473,6 +1489,10 @@ a.enlace-discreto { display: inline-flex; align-items: center; align-self: flex-
 }
 .opcion[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--paper); }
 .opcion-quitar { margin-left: 6px; opacity: .75; }
+/* En «Quién lo ve», quien recibe la idea: no la ve nunca, y no se puede marcar. */
+.opcion-tachada { text-decoration: line-through; border-style: dashed; color: var(--ink-faint); background: transparent; }
+/* Quien la apuntó va marcado y fijo: el botón no hace nada, pero se lee igual. */
+.opcion[aria-pressed="true"]:disabled { opacity: 1; }
 /* Las clases de un sitio que todavía no tienen nada: el mismo borde
    discontinuo del «+» de «Para quién», con el ancho de una pastilla normal
    porque aquí el texto es «+ Ir» y no un carácter suelto. */

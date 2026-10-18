@@ -13,6 +13,7 @@ import { esDeLaCasa, guardarCuadro, leerCuadro } from './lio.js';
 import { guardarPlugin, leerPlugins } from './plugins.js';
 import { festivosDelRegistro } from './festivos.js';
 import { VEREDICTOS, guardarCocina, leerCocina } from './cenas.js';
+import { venDe } from './visibilidad.js';
 
 const CAMPOS = {
   persona: [
@@ -44,11 +45,14 @@ const CAMPOS = {
   idea: [
     'tipo', 'titulo', 'descripcion', 'categoria_id', 'precio_min', 'precio_max',
     'enlace', 'establecimiento', 'estado', 'autor_id', 'activa', 'para_todos',
+    // Quién la ve, persona a persona (`api/migraciones/0032_quien_lo_ve.unavez.sql`).
+    'ven',
   ],
   ocasion: ['nombre', 'fecha', 'estado', 'evento_id', 'autor_id', 'activa'],
   regalo: [
     'ocasion_id', 'idea_id', 'destinatario_principal_id', 'compartido',
     'responsable_id', 'coste_real', 'estado', 'categoria_id', 'autor_id', 'activo', 'para_todos',
+    'ven',
   ],
   comentario: ['objeto_tipo', 'objeto_id', 'autor_id', 'texto', 'activo'],
   paseo: ['fecha', 'turno', 'asignado_id', 'hecho_por_id', 'hecho_en', 'activo'],
@@ -243,6 +247,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
       ...i,
       activa: bool(i.activa),
       para_todos: bool(i.para_todos),
+      ven: venDe(i),
       orientaciones: (porIdea.get(i.id) || []).map((o) =>
         o.persona_id ? { persona_id: o.persona_id } : { etiqueta_id: o.etiqueta_id },
       ),
@@ -260,6 +265,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
       ...r,
       compartido: bool(r.compartido),
       para_todos: bool(r.para_todos),
+      ven: venDe(r),
       activo: bool(r.activo),
       codestinatarios: (porRegalo.get(r.id) || []).map((c) => c.persona_id),
     })),
@@ -686,6 +692,8 @@ export async function aplicarCambio(db, actor, cambio) {
   if ('extra' in propuestos && propuestos.extra !== null && typeof propuestos.extra === 'object') {
     propuestos.extra = JSON.stringify(propuestos.extra);
   }
+  // Y `ven`, como lista de identificadores; vacía o ausente es la regla de antes.
+  if ('ven' in propuestos) propuestos.ven = venDe(propuestos)?.length ? JSON.stringify(venDe(propuestos)) : null;
 
   if (anterior && anterior.actualizado_en > ahora) {
     // El servidor tiene una versión más reciente. Se descarta la que llega,
@@ -741,5 +749,16 @@ export async function aplicarCambio(db, actor, cambio) {
   }
 
   await guardarRelaciones(db, tipo, id, campos);
+
+  // Quién ve una idea lo ven también sus regalos: si no, el regalo le
+  // enseñaría a alguien lo que la idea le esconde
+  // (specs/propuesta-regalos-para-mi-y-para-otros.html, pegas).
+  if (tipo === 'idea' && anterior && 'ven' in propuestos
+    && String(propuestos.ven ?? '') !== String(anterior.ven ?? '')) {
+    await db
+      .prepare('UPDATE regalo SET ven = ?, actualizado_en = ? WHERE idea_id = ? AND activo = 1')
+      .bind(propuestos.ven, ahora, id)
+      .run();
+  }
   return { aplicado: true, novedad };
 }
