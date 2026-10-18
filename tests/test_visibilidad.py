@@ -187,6 +187,46 @@ class Visibilidad(unittest.TestCase):
         self.assertFalse(visible(agenda, agenda.ideas["i2"], "p-marta"))
         self.assertTrue(visible(agenda, agenda.ideas["i3"], "p-lucia"))
 
+    def test_con_lista_lo_ven_quienes_estan_y_quien_lo_apunto(self):
+        """Quién lo ve, uno por uno: la lista manda sobre la regla de antes, y
+        quien lo recibe sigue sin verlo aunque esté en ella
+        (specs/propuesta-regalos-para-mi-y-para-otros.html, C1 · D1)."""
+        agenda = agenda_minima(
+            ideas=[
+                {
+                    "id": "i1",
+                    "titulo": "Auriculares",
+                    "autor_id": "p-oscar",
+                    "ven": ["p-lucia", "p-marta"],
+                    "orientaciones": [{"persona_id": "p-marta"}],
+                },
+                {
+                    "id": "i2",
+                    "tipo": "deseo",
+                    "titulo": "Botas",
+                    "autor_id": "p-marta",
+                    "ven": ["p-marta"],
+                },
+            ],
+            ocasiones=[{"id": "o1", "nombre": "Navidad", "fecha": "2026-12-25"}],
+            regalos=[
+                {
+                    "id": "g1",
+                    "ocasion_id": "o1",
+                    "autor_id": "p-ana",
+                    "destinatario_principal_id": "p-oscar",
+                    "ven": '["p-marta"]',
+                }
+            ],
+        )
+        self.assertTrue(visible(agenda, agenda.ideas["i1"], "p-oscar"))
+        self.assertTrue(visible(agenda, agenda.ideas["i1"], "p-lucia"))
+        self.assertFalse(visible(agenda, agenda.ideas["i1"], "p-marta"))
+        self.assertFalse(visible(agenda, agenda.ideas["i1"], "p-ana"))
+        self.assertTrue(visible(agenda, agenda.ideas["i2"], "p-lucia"))
+        self.assertTrue(visible(agenda, agenda.regalos["g1"], "p-marta"))
+        self.assertFalse(visible(agenda, agenda.regalos["g1"], "p-lucia"))
+
     def test_el_deseo_es_visible_para_su_autor(self):
         """La cláusula del deseo precede a la del destinatario: de lo contrario
         una persona dejaría de ver su lista en el instante de crearla (§6)."""

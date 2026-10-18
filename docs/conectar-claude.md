@@ -88,18 +88,18 @@ comprueba que conecta.
 |---|---|
 | `ver_agenda` | Lo que hay entre dos fechas (como mucho un mes): eventos, recurrentes con quién lleva y recoge, cumpleaños y santos, quién está fuera y, en casa, los turnos de Lío y la cena de cada noche. Empieza diciendo qué día es hoy en Madrid. |
 | `ver_gente` | Las personas por círculos, con apodo, parentesco, edad, cumpleaños y santo. |
-| `ver_regalos` | Ideas, deseos y regalos en marcha por persona; lo que se prepara para quien pregunta no sale nunca. |
+| `ver_regalos` | Ideas, lo que cada uno pide para sí y regalos en marcha por persona; lo que se prepara para quien pregunta no sale nunca. |
 | `ver_sitios` | Los sitios y sus apuntes: llevar, hacer, ir y saber. Solo para quien vive en casa. |
 | `ver_mejoras` | Las mejoras apuntadas sobre la propia aplicación. |
 | `apuntar_evento` | Un evento, con los mismos campos que «Nuevo evento». |
-| `apuntar_idea` | Una idea de regalo para alguien, oculta para esa persona; o un deseo, si es para uno mismo. |
+| `apuntar_idea` | Una idea de regalo para alguien, oculta para esa persona, y con `la_ven` quién más la ve entre los de casa; o, si es para uno mismo, algo que se pide, que va a «Para mí». |
 | `apuntar_en_sitio` | Un apunte en un sitio; si el sitio no existe, Claude pregunta antes de crearlo. |
 | `apuntar_cena` | Lo que se cena una noche; no sustituye lo que ya hubiera sin preguntar. |
 | `apuntar_mejora` | Una mejora para la aplicación, que se ve en Ajustes › Mejoras. |
 | `ver_detalle` | Todo lo de una cosa: cuándo, de quién, notas, estado, quién la apuntó y sus comentarios. |
 | `editar_evento` | Cambia un evento: título, día, hora, hasta cuándo, tipo, sitio, notas, de quién es y quién va. |
-| `editar_idea` | Cambia una idea o un deseo; si cambia para quién es, la respuesta dice quién la ve ahora. |
-| `editar_regalo` | El estado de un regalo (por comprar, listo, entregado), quién se encarga y cuánto costó. |
+| `editar_idea` | Cambia una idea o algo pedido; si cambia para quién es o quién la ve, la respuesta dice quién la ve ahora, y sus regalos cambian con ella. |
+| `editar_regalo` | El estado de un regalo (por comprar, listo, entregado), quién se encarga, cuánto costó y, con `la_ven`, quién lo ve. |
 | `editar_apunte` | Corrige un apunte de un sitio: el texto, el detalle o la clase. |
 | `editar_mejora` | Cambia el texto de una mejora. |
 | `borrar` | Borra algo; de lo que se repite, con una fecha quita solo ese día. |

@@ -91,7 +91,7 @@ tener que recorrer la aplicación entera cada vez.
 - **viajes.js** — El calendario de viajes: descarga del feed, reconciliación y sello.
   CALENDARIO_VIAJES · idDeViaje · reconciliarViajes · sincronizarViajes
 - **visibilidad.js** — Función de visibilidad, aplicada en el servidor antes de transmitir.
-  destinatariosDeIdea · destinatariosDeRegalo · destinatariosDeEvento · visible
+  destinatariosDeIdea · destinatariosDeRegalo · destinatariosDeEvento · venDe · visible
   visiblePublicamente
 
 ### `api/src/portero/` · El portero: entrar con Apple, esperar y aprobar, sin saber del hogar
@@ -191,9 +191,9 @@ tener que recorrer la aplicación entera cada vez.
   tiposVisibles · quienesVan · abrirMenuDeNuevo · abrirFormularioActividad
   abrirFormularioEscapada · …y 1 más
 - **regalos.js** — Regalos: las ideas, los regalos y las ocasiones.
-  reiniciarRegalos · pintarRegalos · seccionActual · nuevoDesdeRegalos · marcaDeSeleccionada
-  personaDelCumple · ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea
-  …y 3 más
+  reiniciarRegalos · pintarRegalos · seccionActual · marcaDeSeleccionada · personaDelCumple
+  ocasionDeEvento · abrirOcasion · abrirCumple · abrirDetalleIdea · abrirDetalleRegalo
+  …y 2 más
 - **semana.js** — La agenda: semana y mes sobre los mismos datos.
   reiniciarAgenda · volverAHoyEnAgenda · tituloDeAgenda · pintarAgenda · fechaQuePropone
   abrirLioDelDia · filaDeTurno · resumenDeTurno · abrirTurnoDeLio · bloqueDePropuesta
@@ -301,7 +301,7 @@ Leído de las citas a `specs/` que el código lleva en sus comentarios.
   `pwa/publico/js/sincronizacion.js` §1 · `pwa/publico/js/sitios.js` §12.1
   `pwa/publico/js/ui.js` §1, §3 · `pwa/publico/js/vistas/familia.js` §3, §7, §7.1, §11
   `pwa/publico/js/vistas/hoy.js` §6.5, §10.3, §11
-  `pwa/publico/js/vistas/regalos.js` §2, §3, §6, §6.1, §6.2, §6.3
+  `pwa/publico/js/vistas/regalos.js` §2, §3, §6.1, §6.2, §6.3
   `pwa/publico/js/vistas/semana.js` §6.2, §10, §10.1
   `pwa/publico/js/vistas/sitios.js` §12.1 · `scripts/agenda/lio.py` §10.3
   `scripts/agenda/modelo.py` §7.1 · `scripts/agenda/semana.py` §10.2
@@ -327,7 +327,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**451** en total.
+**457** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -341,7 +341,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_semana.py` — 13
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
-- `tests/test_visibilidad.py` — 14
+- `tests/test_visibilidad.py` — 15
 - `api/test/apns.test.js` — 11
 - `api/test/avisos.test.js` — 30
 - `api/test/cenas.test.js` — 10
@@ -352,6 +352,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/mcp.test.js` — 34
 - `api/test/mejoras.test.js` — 4
 - `api/test/plugins.test.js` — 12
+- `api/test/quien-lo-ve.test.js` — 2
 - `api/test/receta.test.js` — 3
 - `api/test/recordatorios.test.js` — 8
 - `api/test/redaccion-chispa.test.js` — 9
@@ -366,7 +367,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `api/test/solicitud-aviso.test.js` — 4
 - `api/test/solicitudes.test.js` — 17
 - `api/test/viajes.test.js` — 12
-- `api/test/visibilidad.test.js` — 16
+- `api/test/visibilidad.test.js` — 19
 
 Lo que ejecuta la integración continua:
 

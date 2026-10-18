@@ -27,17 +27,19 @@ function destinatarios(registro, elemento, clase) {
 }
 
 /**
- * ¿Es algo que apuntó un administrador y que quien mira no debe ver?
+ * ¿Lo ha dejado fuera quien lo apuntó?
  *
- * Lo que escribe un administrador —una idea o un regalo— no lo ve quien no lo
- * es, salvo que se haya marcado `para_todos`: lo que se regala entre todos
- * (`specs/propuesta-formularios-fechas-regalos.html`, C1). El deseo propio no
- * entra: lo que pide un administrador para sí es justo lo que las niñas
- * necesitan ver para regalárselo.
+ * Una idea o un regalo lleva la lista de los de casa que lo ven (`ven`,
+ * `specs/propuesta-regalos-para-mi-y-para-otros.html`, C1 · D1); quien lo
+ * apunta lo ve siempre. Lo que uno pide para sí no lleva lista. Sin lista, la
+ * regla de antes: lo que escribe un administrador no lo ve quien no lo es,
+ * salvo `para_todos` (`specs/propuesta-formularios-fechas-regalos.html`, C1).
  */
-function esDeLosMayores(registro, elemento, clase, observador) {
+function quedaFuera(registro, elemento, clase, observador) {
   if (clase !== 'idea' && clase !== 'regalo') return false;
   if (clase === 'idea' && elemento.tipo === 'deseo') return false;
+  if (elemento.autor_id === observador.id) return false;
+  if (Array.isArray(elemento.ven)) return !elemento.ven.includes(observador.id);
   if (elemento.para_todos === true || elemento.para_todos === 1) return false;
   if (observador.rol === 'administrador') return false;
   const autor = registro.personas.find((p) => p.id === elemento.autor_id);
@@ -59,7 +61,7 @@ function visible(registro, elemento, clase, observador) {
     }
   }
 
-  if (esDeLosMayores(registro, elemento, clase, observador)) return false;
+  if (quedaFuera(registro, elemento, clase, observador)) return false;
 
   return !destinatarios(registro, elemento, clase).has(observador.id);
 }

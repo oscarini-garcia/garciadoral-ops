@@ -219,3 +219,38 @@ test('lo que apuntan las niñas sigue como antes', () => {
   assert.equal(visible(r, r.ideas[0], 'idea', OSCAR), true);
   assert.equal(visible(r, r.ideas[0], 'idea', ANA), false);
 });
+
+// ------------------------------------------------- Quién lo ve, uno por uno --
+// specs/propuesta-regalos-para-mi-y-para-otros.html, C1 · D1.
+
+test('con lista, lo ven quienes están en ella y quien lo apuntó, y nunca quien lo recibe', () => {
+  const r = registro({
+    ideas: [{
+      id: 'i1', titulo: 'Auriculares', autor_id: 'p-oscar', ven: ['p-lucia', 'p-marta'],
+      orientaciones: [{ persona_id: 'p-marta' }],
+    }],
+  });
+  const [idea] = r.ideas;
+  assert.equal(visible(r, idea, 'idea', OSCAR), true);
+  assert.equal(visible(r, idea, 'idea', LUCIA), true);
+  assert.equal(visible(r, idea, 'idea', MARTA), false);
+  // Quien administra ya no lo ve todo: Ana no está en la lista.
+  assert.equal(visible(r, idea, 'idea', ANA), false);
+});
+
+test('la lista manda sobre la regla de antes, y vale también llegada como texto', () => {
+  const r = registro({
+    regalos: [{ id: 'g1', autor_id: 'p-ana', destinatario_principal_id: 'p-oscar', para_todos: false, ven: '["p-marta"]' }],
+  });
+  assert.equal(visible(r, r.regalos[0], 'regalo', MARTA), true);
+  assert.equal(visible(r, r.regalos[0], 'regalo', LUCIA), false);
+  assert.equal(visible(r, r.regalos[0], 'regalo', ANA), true);
+});
+
+test('lo que uno pide para sí no tiene lista: lo ve toda la casa', () => {
+  const r = registro({
+    ideas: [{ id: 'i1', tipo: 'deseo', titulo: 'Botas', autor_id: 'p-marta', ven: ['p-marta'], orientaciones: [{ persona_id: 'p-marta' }] }],
+  });
+  assert.equal(visible(r, r.ideas[0], 'idea', LUCIA), true);
+  assert.equal(visible(r, r.ideas[0], 'idea', OSCAR), true);
+});

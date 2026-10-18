@@ -18,6 +18,17 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.100.0',
+    fecha: '2026-10-18',
+    titulo: 'Para mí y para otros',
+    lineas: [
+      'Regalos tiene tres apartados: «Para mí», con lo que pides; «Para otros», con las ideas para regalar; y Ocasiones.',
+      'Cada apartado dice arriba quién ve lo que hay en él, y el «+» es la primera fila de la lista.',
+      'Al apuntar una idea eliges quién la ve entre los de casa. Quien la recibe no la ve nunca.',
+      'El apartado Regalos se ha ido: a un regalo se llega desde su ocasión, y la ocasión que pasó con algo sin comprar lo avisa.',
+    ],
+  },
+  {
     version: '1.99.0',
     fecha: '2026-10-11',
     titulo: 'Festivos',
