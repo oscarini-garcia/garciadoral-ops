@@ -34,6 +34,8 @@
  *   POST   /api/sitio/emoji · cinco emojis para el nombre de un sitio
  *   POST   /api/cena/proponer · cenas para una noche, o una por noche de la semana
  *   POST   /api/cena/receta · ingredientes y pasos de una receta del recetario
+ *   POST   /api/adjunto     · sube una foto o un PDF a una idea o un regalo
+ *   GET    /api/adjunto     · los bytes de un adjunto (?id=…, &miniatura=1)
  *   GET    /api/ia          · configuración de la redacción (administradores)
  *   POST   /api/ia          · guarda clave, modelo e instrucción (administradores)
  *   POST   /api/ia/chispa   · cinco frases para la pantalla de Hoy
@@ -81,6 +83,7 @@ import { cuentas } from './cuentas.js';
 import { hayRevocacionConfigurada, revocarEnApple } from './portero/revocacion.js';
 import { derivarEstados } from './derivar.js';
 import { componerInstantanea } from './filtrado.js';
+import { bytesDe, prepararAdjunto } from './adjuntos.js';
 import { empujar, empujarSolicitud } from './avisos.js';
 import { hayApnsConfigurado } from './apns.js';
 import { servirMcp } from './mcp/protocolo.js';
@@ -969,6 +972,67 @@ async function proponerCenas(peticion, env) {
 }
 
 /**
+ * Sube un adjunto a una idea o un regalo. Llega en JSON, con los bytes en
+ * base64 y ya reducidos en el teléfono (`api/src/adjuntos.js`). Solo se adjunta
+ * a lo que quien sube ve, y la respuesta es la ficha, sin los bytes, que es lo
+ * que la instantánea traerá en la siguiente sincronización.
+ */
+async function subirAdjunto(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const cuerpo = await peticion.json().catch(() => null);
+  if (!cuerpo) return json({ error: 'falta el adjunto' }, 400);
+
+  const registro = await leerRegistro(env.DB);
+  const visibles = componerInstantanea(registro, lector);
+  const yaHay = (registro.adjuntos || [])
+    .filter((a) => a.objeto_tipo === cuerpo.objeto_tipo && a.objeto_id === cuerpo.objeto_id).length;
+  const fila = prepararAdjunto(cuerpo, lector, visibles, {
+    id: crypto.randomUUID(), ahora: new Date().toISOString(), yaHay,
+  });
+  await env.DB
+    .prepare(`INSERT INTO adjunto (id, objeto_tipo, objeto_id, nombre, tipo_mime, tamano, ancho, alto,
+      datos, miniatura, autor_id, activo, creado_en, actualizado_en)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(
+      fila.id, fila.objeto_tipo, fila.objeto_id, fila.nombre, fila.tipo_mime, fila.tamano, fila.ancho, fila.alto,
+      fila.datos, fila.miniatura, fila.autor_id, fila.activo, fila.creado_en, fila.actualizado_en,
+    )
+    .run();
+  const { datos, miniatura, ...ficha } = fila;
+  return json({ adjunto: { ...ficha, activo: true } });
+}
+
+/**
+ * Los bytes de un adjunto, o de su miniatura con `&miniatura=1`. Se comprueba
+ * contra la instantánea de quien lo pide: un identificador conocido no basta
+ * para ver la foto de una idea que no se ve.
+ */
+async function descargarAdjunto(peticion, env) {
+  const lector = await lectorAutenticado(peticion, env);
+  const url = new URL(peticion.url);
+  const id = url.searchParams.get('id') || '';
+  const miniatura = url.searchParams.get('miniatura') === '1';
+
+  const registro = await leerRegistro(env.DB);
+  const visibles = componerInstantanea(registro, lector);
+  if (!(visibles.adjuntos || []).some((a) => a.id === id)) return json({ error: 'no encontrado' }, 404);
+
+  const fila = await env.DB
+    .prepare('SELECT tipo_mime, datos, miniatura FROM adjunto WHERE id = ? AND activo = 1')
+    .bind(id)
+    .first();
+  if (!fila) return json({ error: 'no encontrado' }, 404);
+  const usarMiniatura = miniatura && fila.miniatura;
+  return new Response(bytesDe(usarMiniatura ? fila.miniatura : fila.datos), {
+    headers: {
+      'Content-Type': usarMiniatura ? 'image/jpeg' : fila.tipo_mime,
+      // Un adjunto no cambia nunca: lo que cambia es que se quite.
+      'Cache-Control': 'private, max-age=31536000, immutable',
+    },
+  });
+}
+
+/**
  * Los ingredientes y los pasos de una receta del recetario
  * (specs/propuesta-recurrentes-y-recetas.html, C1).
  *
@@ -1294,6 +1358,8 @@ const RUTAS = [
   ['POST', '/api/sitio/emoji', sugerirEmojiDeSitio],
   ['POST', '/api/cena/proponer', proponerCenas],
   ['POST', '/api/cena/receta', escribirReceta],
+  ['POST', '/api/adjunto', subirAdjunto],
+  ['GET', '/api/adjunto', descargarAdjunto],
   ['POST', '/api/cumple/felicitar', felicitarUnCumple],
   ['GET', '/api/ia', leerAjustesDeIa],
   ['POST', '/api/ia', guardarAjustesDeIa],

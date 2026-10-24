@@ -2250,3 +2250,22 @@ table.presupuesto td:not(:first-child) { text-align: right; }
 .receta-escrita .enlace-discreto { align-self: flex-start; }
 .receta-pedir { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; }
 .receta-pedir .icono-svg svg { width: 15px; height: 15px; color: var(--tinta); }
+
+/* Los adjuntos de una idea o un regalo: una tira de miniaturas y, detrás,
+   «Hacer foto» y «Adjuntar». Sin rótulo, como los comentarios. */
+.adjuntos { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.adjuntos-tira { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.adjuntos-tira:empty { display: none; }
+.adjunto {
+  flex: none; width: 72px; height: 72px; border-radius: 10px; border: 1px solid var(--line);
+  background: var(--paper-3) center / cover no-repeat; display: grid; place-items: center;
+}
+.adjunto-pdf { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--ink-soft); }
+.adjunto-subiendo { background: var(--paper-2); animation: adjunto-latido 1s ease-in-out infinite alternate; }
+.adjunto-fallido { background-image: none !important; }
+@keyframes adjunto-latido { from { opacity: .5; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .adjunto-subiendo { animation: none; } }
+.adjuntos-verbos { display: flex; gap: 8px; flex-wrap: wrap; }
+.adjuntos-boton { display: inline-flex; align-items: center; gap: 6px; }
+.adjuntos-boton .icono-svg svg { width: 16px; height: 16px; color: var(--ink-soft); }
+.adjunto-grande { display: block; width: 100%; height: auto; max-height: 70vh; object-fit: contain; border-radius: 10px; background: var(--paper-2); }

@@ -46,6 +46,9 @@ tener que recorrer la aplicación entera cada vez.
 
 ### `api/src/` · Worker de Cloudflare: filtra antes de transmitir
 
+- **adjuntos.js** — Adjuntos de una idea o de un regalo: fotos y algún PDF, guardados en D1.
+  ADJUNTABLES · TIPOS_ADMITIDOS · TOPE_DE_ADJUNTO · TOPE_DE_MINIATURA · TOPE_POR_OBJETO
+  FICHA · bytesDeBase64 · prepararAdjunto · adjuntosVisibles · bytesDe
 - **apns.js** — El transporte hasta el teléfono: APNs con autenticación por token.
   hayApnsConfigurado · tokenDeProveedor · olvidarTokenDeProveedor · enviarAviso
 - **asistente.js** — Lo que Claude puede hacer con la agenda: consultar, apuntar, cambiar y comentar, como quien…
@@ -120,6 +123,8 @@ tener que recorrer la aplicación entera cada vez.
 
 - **acceso.js** — La puerta: la pantalla de acceso y la sala de espera.
   iniciarAcceso · mostrarAcceso · volverALaEspera
+- **adjuntos.js** — Los adjuntos de una idea o un regalo: hacer una foto, elegirla del carrete o adjuntar un…
+  adjuntosDe · prepararArchivo · bloqueDeAdjuntos
 - **aeropuertos.js** — De código de aeropuerto a ciudad.
   AEROPUERTOS · ciudadDeAeropuerto
 - **almacen.js** — Almacén local.
@@ -152,7 +157,7 @@ tener que recorrer la aplicación entera cada vez.
 - **native.js** — Puente con la cáscara nativa de iOS.
   esNativo · toque · compartir · copiar · comprobarActualizacion · versionInstalada
   autorizacionDeAppleNativa · nombreDe · programarRecordatorios · cancelarRecordatorios
-  …y 9 más
+  …y 11 más
 - **novedades.js** — Qué cambió cada versión, en el idioma de quien la usa — el registro detrás de las tarjetas…
   NOVEDADES
 - **plugins.js** — Los plugins de la agenda: qué hay, en qué familia está cada uno y qué mandos comparten…
@@ -166,7 +171,7 @@ tener que recorrer la aplicación entera cada vez.
   codigoDeAutorizacion · eliminarLaCuenta
 - **sincronizacion.js** — Motor de sincronización: interfaz optimista sobre una cola persistente.
   instantanea · estado · suscribir · iniciar · detener · guardar · retirar
-  listarSolicitudes · resolverSolicitud · redactarDia · …y 22 más
+  listarSolicitudes · resolverSolicitud · redactarDia · …y 25 más
 - **sitios.js** — Sitios: las clases de un apunte, el voto y el orden en que se leen.
   CLASES · esLista · CLASE_POR_DEFECTO · IDS_CLASE · clasePorId · idVoto · haySitios
   lugaresDe · nombreDeLugar · lugarPorId · …y 13 más
@@ -239,6 +244,8 @@ tener que recorrer la aplicación entera cada vez.
 - `POST /api/sitio/emoji` — cinco emojis para el nombre de un sitio
 - `POST /api/cena/proponer` — cenas para una noche, o una por noche de la semana
 - `POST /api/cena/receta` — ingredientes y pasos de una receta del recetario
+- `POST /api/adjunto` — sube una foto o un PDF a una idea o un regalo
+- `GET  /api/adjunto` — los bytes de un adjunto (?id=…, &miniatura=1)
 - `POST /api/cumple/felicitar` — cinco felicitaciones para quien cumple
 - `GET  /api/ia` — configuración de la redacción (administradores)
 - `POST /api/ia` — guarda clave, modelo e instrucción (administradores)
@@ -327,7 +334,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 
 ## Pruebas
 
-**457** en total.
+**462** en total.
 
 - `tests/test_aeropuertos.py` — 4
 - `tests/test_configuracion.py` — 13
@@ -342,6 +349,7 @@ Worker (`api/wrangler.toml`, `[vars]` y secretos):
 - `tests/test_service_worker.py` — 2
 - `tests/test_version.py` — 1
 - `tests/test_visibilidad.py` — 15
+- `api/test/adjuntos.test.js` — 5
 - `api/test/apns.test.js` — 11
 - `api/test/avisos.test.js` — 30
 - `api/test/cenas.test.js` — 10
