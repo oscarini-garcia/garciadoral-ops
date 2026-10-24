@@ -141,6 +141,30 @@ if (existsSync(rutaPlist)) {
   }
 }
 
+// 4 ter) Los permisos de cámara y de fotos, para los adjuntos de ideas y
+// regalos. Sin estas dos claves iOS cierra la aplicación en el momento en que
+// se pide la cámara o el carrete, sin preguntar nada: no es un permiso
+// denegado, es un cierre. El texto es lo que se lee en el cuadro de permiso.
+if (existsSync(rutaPlist)) {
+  const PERMISOS = {
+    NSCameraUsageDescription: 'Para hacer fotos y adjuntarlas a una idea o a un regalo.',
+    NSPhotoLibraryUsageDescription: 'Para elegir fotos del carrete y adjuntarlas a una idea o a un regalo.',
+  };
+  let plist = readFileSync(rutaPlist, 'utf8');
+  const faltan = Object.entries(PERMISOS).filter(([clave]) => !plist.includes(`<key>${clave}</key>`));
+  const cierre = plist.lastIndexOf('</dict>');
+  if (!faltan.length) {
+    console.log('[patch-ios] Los permisos de cámara y fotos ya estaban declarados.');
+  } else if (cierre === -1) {
+    console.warn('[patch-ios] ⚠ Info.plist no tiene la forma esperada; declare la cámara y las fotos en Xcode.');
+  } else {
+    const declaracion = faltan.map(([clave, texto]) => `\t<key>${clave}</key>\n\t<string>${texto}</string>\n`).join('');
+    plist = plist.slice(0, cierre) + declaracion + plist.slice(cierre);
+    writeFileSync(rutaPlist, plist);
+    console.log('[patch-ios] Permisos de cámara y fotos declarados ✅');
+  }
+}
+
 // 4 bis) El nombre que se ve bajo el icono.
 //
 // Capacitor escribe `appName` en el Info.plist **al generar** el proyecto, y

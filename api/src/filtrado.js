@@ -15,6 +15,7 @@
 
 import { visible } from './visibilidad.js';
 import { comentariosVisibles } from './comentables.js';
+import { adjuntosVisibles } from './adjuntos.js';
 import { esDeLaCasa } from './lio.js';
 import { circuloAdmite, circuloDe, pluginDeEvento } from './plugins.js';
 
@@ -70,6 +71,10 @@ export function componerInstantanea(registro, observador) {
     apunte: new Set(apuntes.map((a) => a.id)),
   });
 
+  // Los adjuntos, igual que los comentarios: viajan si viaja su idea o su
+  // regalo, y solo su ficha.
+  const adjuntos = adjuntosVisibles(registro.adjuntos, { ideas, regalos });
+
   // Las ocasiones son contenedores y se transmiten enteras; lo que se recorta
   // son sus regalos. El presupuesto queda reservado a los administradores
   // (spec funcional §6.3), así que ni siquiera viaja al resto de dispositivos.
@@ -115,6 +120,7 @@ export function componerInstantanea(registro, observador) {
     ocasiones,
     regalos,
     comentarios,
+    adjuntos,
     lugares,
     apuntes,
     votos,

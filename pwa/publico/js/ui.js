@@ -147,6 +147,9 @@ const ICONOS = {
     + '<path d="M3.4 16.6 12 21.3l8.6-4.7"/>',
   // El «‹» y el «›» del calendario propio, dibujados para que no dependan de
   // la fuente como los del paso de periodo.
+  // La cámara y el clip de los adjuntos de una idea o un regalo.
+  camara: '<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.8l1.5-2h4.4l1.5 2h1.8A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.4"/>',
+  clip: '<path d="m20 11.5-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.2 8.2a1.7 1.7 0 0 1-2.4-2.4l7.4-7.4"/>',
   // Una hoja de calendario: «Ir a un día» en la agenda.
   calendario: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4M16 3v4"/>',
   izquierda: '<path d="m14.5 6-6 6 6 6"/>',

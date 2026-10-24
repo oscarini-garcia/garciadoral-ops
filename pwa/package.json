@@ -1,6 +1,6 @@
 {
   "name": "agenda-familiar",
-  "version": "1.100.1",
+  "version": "1.101.0",
   "private": true,
   "type": "module",
   "description": "Agenda Familiar — aplicación web y cáscara iOS con actualizaciones OTA",
@@ -15,13 +15,14 @@
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",
-    "@capawesome/capacitor-badge": "^7.0.1",
+    "@capacitor/camera": "^7.0.5",
     "@capacitor/core": "^7.0.0",
     "@capacitor/haptics": "^7.0.0",
     "@capacitor/ios": "^7.0.0",
     "@capacitor/local-notifications": "^7.0.0",
     "@capacitor/push-notifications": "^7.0.0",
     "@capacitor/share": "^7.0.0",
+    "@capawesome/capacitor-badge": "^7.0.1",
     "@capgo/capacitor-updater": "^7.0.0"
   },
   "devDependencies": {

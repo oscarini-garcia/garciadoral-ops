@@ -14,7 +14,7 @@
 // Los módulos y los estilos se sirven de la caché antes que de la red, así que
 // un cambio en ellos no llega a quien ya tiene la aplicación abierta hasta que
 // esta constante cambia: es lo que reinstala el armazón y borra el anterior.
-const VERSION = 'agenda-v118';
+const VERSION = 'agenda-v119';
 
 const ARMAZON = [
   '/',
@@ -29,6 +29,7 @@ const ARMAZON = [
   '/manifest.webmanifest',
   '/css/estilos.css',
   '/js/acceso.js',
+  '/js/adjuntos.js',
   '/js/aeropuertos.js',
   '/js/app.js',
   '/js/almacen.js',

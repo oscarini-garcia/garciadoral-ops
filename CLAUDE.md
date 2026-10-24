@@ -27,6 +27,34 @@ Lo único de todo esto que se escribe a mano, porque no se deduce del código.
 Actualízalo al terminar un trabajo: qué queda abierto y qué decisión está
 pendiente. El hook lo inyecta al final del mapa.
 
+- **Adjuntos en ideas y regalos (1.101.0).** Fotos —hechas con la cámara o
+  elegidas del carrete— y PDF, en la hoja de una idea y de un regalo
+  (`bloqueDeAdjuntos` en `pwa/publico/js/adjuntos.js`, antes de los
+  comentarios). **Se guardan en D1 y no en R2**, en base64 en la tabla
+  `adjunto` (migración `0033`, corriente), para no añadir un almacén a una casa
+  de cuatro: la foto se reduce en el teléfono a 1600 puntos de lado en JPEG y
+  lleva miniatura de 320 aparte; tope de 1,2 MB por adjunto (una fila de D1 no
+  pasa de 2 MB) y de doce por objeto (`api/src/adjuntos.js`). **La instantánea
+  lleva solo la ficha** (`FICHA`); los bytes se piden con `GET
+  /api/adjunto?id=…[&miniatura=1]`, que comprueba la instantánea de quien
+  pide, y se pintan como URL de objeto porque un `<img>` no manda la
+  credencial (`urlDeAdjunto` en `sincronizacion.js`). Un adjunto hereda la
+  visibilidad de su objeto, como un comentario (`adjuntosVisibles` en
+  `filtrado.js`). **Subir no va por la cola** —los bytes no caben y sin red no
+  hay a dónde subir—: `POST /api/adjunto` y la ficha entra ya en la
+  instantánea; quitar sí va por la cola (`adjunto: ['activo']`), y solo lo
+  hace quien lo subió o un administrador. **La cámara en el iPhone necesita
+  `NSCameraUsageDescription` y `NSPhotoLibraryUsageDescription`**, que añade
+  `pwa/scripts/patch-ios.mjs`, y pedirla sin ellas cierra la aplicación. Por eso
+  en la app la cámara y el carrete van por `@capacitor/camera`
+  (`fotoNativa`), y que el plugin esté (`hayCamaraNativa` en `native.js`) es
+  lo que dice que la build es nueva y lleva los permisos: en una build
+  anterior solo se ofrece PDF, con una línea que lo explica. Hace falta
+  archivar una build nueva desde el Mac (`npx cap sync ios` instala el
+  plugin); por OTA llega la pantalla, no el permiso. En Safari, los selectores
+  de archivo de siempre, y funciona ya. Queda: si la base crece
+  demasiado con fotos, pasar los bytes a R2 sin tocar la ficha; y la
+  demostración guarda las fotos solo en memoria.
 - **Un vuelo del mismo día, una línea (1.100.1).** Visto en el teléfono: en
   «Día» cada vuelo salía dos veces seguidas, 🛫 a la salida y 🛬 a la llegada,
   y se leía como repetido. `partirVuelo` (`pwa/publico/js/semana.js`) solo

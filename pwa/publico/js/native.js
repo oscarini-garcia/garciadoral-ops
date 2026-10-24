@@ -698,3 +698,43 @@ export async function iniciarNativo() {
 
   comprobarActualizacion(); // en segundo plano; se aplica en la próxima apertura
 }
+
+// ------------------------------------------------------------------ Cámara --
+
+/**
+ * ¿Lleva esta app de iPhone el plugin de la cámara? Solo lo llevan las builds
+ * archivadas después de la 1.101.0, que son también las que declaran los
+ * permisos de cámara y fotos (`pwa/scripts/patch-ios.mjs`). Pedir la cámara
+ * desde una build anterior cerraría la aplicación, así que esto es lo que
+ * decide si se ofrece (`js/adjuntos.js`).
+ */
+export function hayCamaraNativa() {
+  try {
+    return esNativo() && puente()?.isPluginAvailable?.('Camera') === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Una foto de la cámara (`'camara'`) o del carrete (`'carrete'`), ya reducida
+ * a 1600 puntos de lado y en JPEG, como base64. `null` si se cancela.
+ */
+export async function fotoNativa(origen) {
+  const camara = plugin('Camera');
+  if (!camara) return null;
+  try {
+    const foto = await camara.getPhoto({
+      source: origen === 'camara' ? 'CAMERA' : 'PHOTOS',
+      resultType: 'base64',
+      quality: 82,
+      width: 1600,
+      height: 1600,
+      correctOrientation: true,
+      saveToGallery: false,
+    });
+    return foto?.base64String ? { base64: foto.base64String, formato: foto.format || 'jpeg' } : null;
+  } catch {
+    return null;
+  }
+}
