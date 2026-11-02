@@ -1,5 +1,5 @@
 // Aplica al proyecto iOS generado por Capacitor lo que no cabe en la web: el
-// arreglo del rebote del scroll, la declaración de que esto es una aplicación de
+// mínimo de iOS 26, el uso en el Mac, el arreglo del rebote del scroll, la declaración de que esto es una aplicación de
 // iPhone, el cumplimiento de exportación y el entitlement de los avisos remotos.
 // Es idempotente y se engancha a `npm run sync:ios`.
 //
@@ -10,6 +10,7 @@
 // `.pbxproj`**. Si no se registra, no se compila, el storyboard apunta a una
 // clase que no existe y la aplicación arranca en pantalla negra.
 
+import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -18,6 +19,62 @@ const APP_IOS = 'ios/App/App';
 if (!existsSync(APP_IOS)) {
   console.log('[patch-ios] ios/ no existe todavía — ejecuta "npx cap add ios" en el Mac. Omitido.');
   process.exit(0);
+}
+
+// 0) El mínimo de iOS: 26.0.
+//
+// Capacitor 7 genera el proyecto y el Podfile con iOS 14.0, y el Xcode actual
+// ya no lo admite: cada pod falla con «The iOS deployment target
+// 'IPHONEOS_DEPLOYMENT_TARGET' is set to 14.0, but the range of supported
+// deployment target versions is…». En casa todos los teléfonos llevan iOS 26,
+// así que el mínimo es ese, y no el más bajo que Xcode acepte. Se sube en los tres sitios donde
+// vive —el Podfile, el proyecto de la app y cada pod, por el `post_install`— y,
+// si el Podfile cambia, se vuelven a instalar los pods, porque `cap sync` ya
+// los instaló con el mínimo de antes.
+const MINIMO_IOS = '26.0';
+const rutaPodfile = 'ios/App/Podfile';
+const rutaProyecto = 'ios/App/App.xcodeproj/project.pbxproj';
+const menor = (version) => Number.parseFloat(version) < Number.parseFloat(MINIMO_IOS);
+
+if (existsSync(rutaPodfile)) {
+  const antes = readFileSync(rutaPodfile, 'utf8');
+  let podfile = antes.replace(/platform :ios, '([\d.]+)'/, (linea, version) => (
+    menor(version) ? `platform :ios, '${MINIMO_IOS}'` : linea
+  ));
+  const forzar = [
+    '  installer.pods_project.targets.each do |target|',
+    '    target.build_configurations.each do |config|',
+    `      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '${MINIMO_IOS}'`,
+    '    end',
+    '  end',
+  ].join('\n');
+  if (!podfile.includes("build_settings['IPHONEOS_DEPLOYMENT_TARGET']")) {
+    podfile = /post_install do \|installer\|\n/.test(podfile)
+      ? podfile.replace(/post_install do \|installer\|\n/, (cabeza) => `${cabeza}${forzar}\n`)
+      : `${podfile.trimEnd()}\n\npost_install do |installer|\n${forzar}\nend\n`;
+  }
+  if (podfile !== antes) {
+    writeFileSync(rutaPodfile, podfile);
+    console.log(`[patch-ios] Mínimo de iOS ${MINIMO_IOS} en el Podfile ✅`);
+    try {
+      execSync('pod install', { cwd: 'ios/App', stdio: 'inherit' });
+    } catch {
+      console.warn('[patch-ios] ⚠ No se pudo ejecutar «pod install»; ejecútelo a mano en ios/App.');
+    }
+  } else {
+    console.log(`[patch-ios] El Podfile ya pedía iOS ${MINIMO_IOS}.`);
+  }
+}
+
+if (existsSync(rutaProyecto)) {
+  const antes = readFileSync(rutaProyecto, 'utf8');
+  const proyecto = antes.replace(/IPHONEOS_DEPLOYMENT_TARGET = ([\d.]+);/g, (linea, version) => (
+    menor(version) ? `IPHONEOS_DEPLOYMENT_TARGET = ${MINIMO_IOS};` : linea
+  ));
+  if (proyecto !== antes) {
+    writeFileSync(rutaProyecto, proyecto);
+    console.log(`[patch-ios] Mínimo de iOS ${MINIMO_IOS} en el proyecto de la app ✅`);
+  }
 }
 
 // 1) El controlador que desactiva el rebote.
@@ -42,7 +99,6 @@ if (!existsSync(rutaControlador) || readFileSync(rutaControlador, 'utf8') !== fu
 }
 
 // 2) Registrarlo en el proyecto de Xcode.
-const rutaProyecto = 'ios/App/App.xcodeproj/project.pbxproj';
 
 if (existsSync(rutaProyecto)) {
   let proyecto = readFileSync(rutaProyecto, 'utf8');
@@ -109,6 +165,29 @@ if (existsSync(rutaProyecto)) {
       proyecto.replaceAll('TARGETED_DEVICE_FAMILY = "1,2"', 'TARGETED_DEVICE_FAMILY = 1'),
     );
     console.log('[patch-ios] Solo iPhone: no se pedirán capturas de iPad ✅');
+  }
+}
+
+// 3 bis) También en el Mac.
+//
+// Una aplicación de iPhone corre tal cual en un Mac con Apple Silicon
+// («Designed for iPhone»): no es Mac Catalyst ni pide otra interfaz, y sigue
+// siendo solo de iPhone. Se declara aquí para que no dependa de que alguien
+// lo marque en Xcode; en App Store Connect hay que dejar además marcada la
+// disponibilidad en Mac, y en TestFlight se instala desde la app TestFlight
+// del Mac.
+if (existsSync(rutaProyecto)) {
+  const antes = readFileSync(rutaProyecto, 'utf8');
+  const proyecto = antes.includes('SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD')
+    ? antes.replaceAll('SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;', 'SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;')
+    : antes.replace(/^(\s*)TARGETED_DEVICE_FAMILY = ([^;]+);/gm, (linea, sangria) => (
+      `${sangria}SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;\n${linea}`
+    ));
+  if (proyecto !== antes) {
+    writeFileSync(rutaProyecto, proyecto);
+    console.log('[patch-ios] También en el Mac (Designed for iPhone) ✅');
+  } else {
+    console.log('[patch-ios] Ya estaba disponible en el Mac.');
   }
 }
 
