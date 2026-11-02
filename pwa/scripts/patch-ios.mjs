@@ -34,12 +34,14 @@ if (!existsSync(APP_IOS)) {
 const MINIMO_IOS = '26.0';
 const rutaPodfile = 'ios/App/Podfile';
 const rutaProyecto = 'ios/App/App.xcodeproj/project.pbxproj';
-const menor = (version) => Number.parseFloat(version) < Number.parseFloat(MINIMO_IOS);
+// Exactamente ese, ni más ni menos: subirlo a mano en Xcode deja fuera
+// teléfonos sin necesidad, y el parche lo devuelve a su sitio.
+const distinta = (version) => Number.parseFloat(version) !== Number.parseFloat(MINIMO_IOS);
 
 if (existsSync(rutaPodfile)) {
   const antes = readFileSync(rutaPodfile, 'utf8');
   let podfile = antes.replace(/platform :ios, '([\d.]+)'/, (linea, version) => (
-    menor(version) ? `platform :ios, '${MINIMO_IOS}'` : linea
+    distinta(version) ? `platform :ios, '${MINIMO_IOS}'` : linea
   ));
   const forzar = [
     '  installer.pods_project.targets.each do |target|',
@@ -48,6 +50,10 @@ if (existsSync(rutaPodfile)) {
     '    end',
     '  end',
   ].join('\n');
+  podfile = podfile.replace(
+    /build_settings\['IPHONEOS_DEPLOYMENT_TARGET'\] = '[\d.]+'/g,
+    `build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '${MINIMO_IOS}'`,
+  );
   if (!podfile.includes("build_settings['IPHONEOS_DEPLOYMENT_TARGET']")) {
     podfile = /post_install do \|installer\|\n/.test(podfile)
       ? podfile.replace(/post_install do \|installer\|\n/, (cabeza) => `${cabeza}${forzar}\n`)
@@ -69,7 +75,7 @@ if (existsSync(rutaPodfile)) {
 if (existsSync(rutaProyecto)) {
   const antes = readFileSync(rutaProyecto, 'utf8');
   const proyecto = antes.replace(/IPHONEOS_DEPLOYMENT_TARGET = ([\d.]+);/g, (linea, version) => (
-    menor(version) ? `IPHONEOS_DEPLOYMENT_TARGET = ${MINIMO_IOS};` : linea
+    distinta(version) ? `IPHONEOS_DEPLOYMENT_TARGET = ${MINIMO_IOS};` : linea
   ));
   if (proyecto !== antes) {
     writeFileSync(rutaProyecto, proyecto);
