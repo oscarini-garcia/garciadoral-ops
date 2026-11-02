@@ -18,6 +18,14 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.101.1',
+    fecha: '2026-11-02',
+    titulo: 'Fotos al apuntar una idea',
+    lineas: [
+      'Al apuntar una idea ya se pueden hacer o elegir fotos; se suben solas al pulsar «Crear».',
+    ],
+  },
+  {
     version: '1.101.0',
     fecha: '2026-10-24',
     titulo: 'Fotos en ideas y regalos',

@@ -52,7 +52,11 @@ pendiente. El hook lo inyecta al final del mapa.
   anterior solo se ofrece PDF, con una línea que lo explica. Hace falta
   archivar una build nueva desde el Mac (`npx cap sync ios` instala el
   plugin); por OTA llega la pantalla, no el permiso. En Safari, los selectores
-  de archivo de siempre, y funciona ya. Queda: si la base crece
+  de archivo de siempre, y funciona ya. **Y desde la 1.101.1 también al
+  apuntarla** (`adjuntosDelFormulario`): en una idea nueva las fotos esperan en
+  el formulario y `subirTras(id)` las sube tras «Crear», sincronizando antes y
+  reintentando mientras el Worker aún no ve la idea; al editar, la fila de la
+  hoja. Queda: si la base crece
   demasiado con fotos, pasar los bytes a R2 sin tocar la ficha; y la
   demostración guarda las fotos solo en memoria.
 - **iOS 26 como mínimo, y también en el Mac.** El Xcode actual ya no compila

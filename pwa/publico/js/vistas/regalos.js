@@ -27,7 +27,7 @@ import {
   parsearMomento, proximoAniversario,
 } from '../semana.js';
 import { abrirFicha, abrirFormularioPersona } from './familia.js';
-import { bloqueDeAdjuntos } from '../adjuntos.js';
+import { adjuntosDelFormulario, bloqueDeAdjuntos } from '../adjuntos.js';
 import { bloqueDeComentarios } from '../comentarios.js';
 import { copiar, toque } from '../native.js';
 
@@ -2033,6 +2033,10 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
     });
     if (quienLoVe) { cuerpo.append(quienLoVe.nodo); quienLoVe.nodo.hidden = soloParaMi(); }
     cuerpo.append(campo('Descripción', descripcion));
+    // Fotos y PDF ya al apuntarla: en una idea nueva esperan aquí y suben
+    // después de «Crear» (`adjuntosDelFormulario`).
+    const fotos = adjuntosDelFormulario('idea', existente?.id || null, ctx);
+    cuerpo.append(fotos.nodo);
 
     // Al editar se abre desplegado y sin enlace: quien corrige viene a por un
     // campo concreto, y esconderlo detrás de un enlace sobra.
@@ -2143,7 +2147,10 @@ export function abrirFormularioIdea(ctx, { id = null, paraPersona = null } = {})
       // El tipo, el estado y la autoría no se reescriben al editar: una idea que
       // ya está en curso no vuelve a activa por corregirle el precio, y quien la
       // apuntó sigue siendo quien la apuntó.
-      await guardar('idea', existente ? existente.id : nuevoId(), campos);
+      const ideaId = existente ? existente.id : nuevoId();
+      await guardar('idea', ideaId, campos);
+      // Las fotos se suben solas, sin hacer esperar a la hoja.
+      fotos.subirTras(ideaId);
       recordarElegidos('regalo', destinatarios);
       // Lo que se acaba de apuntar tiene que verse. Con un filtro puesto para
       // otra persona no saldría en la lista, y guardar algo que no aparece por

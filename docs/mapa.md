@@ -124,7 +124,7 @@ tener que recorrer la aplicación entera cada vez.
 - **acceso.js** — La puerta: la pantalla de acceso y la sala de espera.
   iniciarAcceso · mostrarAcceso · volverALaEspera
 - **adjuntos.js** — Los adjuntos de una idea o un regalo: hacer una foto, elegirla del carrete o adjuntar un…
-  adjuntosDe · prepararArchivo · bloqueDeAdjuntos
+  adjuntosDe · prepararArchivo · bloqueDeAdjuntos · adjuntosDelFormulario
 - **aeropuertos.js** — De código de aeropuerto a ciudad.
   AEROPUERTOS · ciudadDeAeropuerto
 - **almacen.js** — Almacén local.

@@ -9,7 +9,7 @@
  */
 
 import { abrirHoja, avisar, botonIcono, cerrarHoja, el, icono } from './ui.js';
-import { quitarAdjunto, subirAdjunto, urlDeAdjunto } from './sincronizacion.js';
+import { quitarAdjunto, sincronizar, subirAdjunto, urlDeAdjunto } from './sincronizacion.js';
 import { esNativo, fotoNativa, hayCamaraNativa, toque } from './native.js';
 
 const LADO_FOTO = 1600;
@@ -133,6 +133,20 @@ export function bloqueDeAdjuntos(objetoTipo, objetoId, ctx) {
     }
   };
 
+  const verbos = verbosDeAdjuntar(subir);
+  pintarTira();
+  nodo.append(tira, verbos);
+  return nodo;
+}
+
+/**
+ * Los botones de adjuntar: «Hacer foto» y «Adjuntar» en el navegador; en la
+ * app de iPhone con el plugin de la cámara, la cámara y el carrete nativos y
+ * PDF; y en una app anterior, sin los permisos declarados, **solo PDF**: el
+ * selector de fotos de iOS ofrece hacer una, y sin el permiso eso cierra la
+ * aplicación. `subir` recibe una lista de funciones que preparan cada cosa.
+ */
+function verbosDeAdjuntar(subir) {
   const deArchivos = (archivos) => subir(archivos.map((a) => () => prepararArchivo(a)));
   const boton = (dibujo, texto, accion) => el('button', {
     class: 'boton-mini adjuntos-boton', type: 'button', onclick: accion,
@@ -169,9 +183,68 @@ export function bloqueDeAdjuntos(objetoTipo, objetoId, ctx) {
       verbos.append(el('p', { class: 'pista', texto: 'Las fotos llegan con la próxima versión de la app de iPhone.' }));
     }
   }
-  pintarTira();
-  nodo.append(tira, verbos);
-  return nodo;
+  return verbos;
+}
+
+/**
+ * Adjuntos en el formulario de una idea. Si la idea ya existe, es la misma
+ * fila que en su hoja y sube en el acto. Si es nueva, todavía no hay a qué
+ * adjuntar —el Worker solo acepta fotos de una idea que ya ve—, así que las
+ * fotos esperan aquí, en miniatura, y `subirTras(id)` las sube después de
+ * «Crear», en cuanto la idea ha llegado al servidor.
+ */
+export function adjuntosDelFormulario(objetoTipo, objetoId, ctx) {
+  if (objetoId) return { nodo: bloqueDeAdjuntos(objetoTipo, objetoId, ctx), subirTras: async () => {} };
+
+  const pendientes = [];
+  const nodo = el('div', { class: 'adjuntos' });
+  const tira = el('div', { class: 'adjuntos-tira' });
+  const pintar = () => {
+    tira.replaceChildren(...pendientes.map((p, i) => {
+      const esPdf = p.tipo_mime === 'application/pdf';
+      const boton = el('button', {
+        class: 'adjunto', type: 'button', 'aria-label': 'Quitar esta foto',
+        onclick: () => { toque(); pendientes.splice(i, 1); pintar(); },
+      }, [esPdf ? el('span', { class: 'adjunto-pdf', texto: 'PDF' }) : null].filter(Boolean));
+      if (!esPdf && p.miniatura) boton.style.backgroundImage = `url("data:image/jpeg;base64,${p.miniatura}")`;
+      return boton;
+    }));
+  };
+  const recoger = async (preparadores) => {
+    for (const preparar of preparadores) {
+      try {
+        pendientes.push(await preparar());
+        toque();
+      } catch (error) {
+        avisar(`No se ha podido adjuntar: ${error.message || error}`);
+      }
+      pintar();
+    }
+  };
+  nodo.append(tira, verbosDeAdjuntar(recoger));
+
+  /** Sube lo pendiente a la idea recién creada. La idea viaja por la cola, así
+   *  que se sincroniza antes y se reintenta mientras el servidor aún no la ve. */
+  const subirTras = async (id) => {
+    if (!pendientes.length) return;
+    let subidas = 0;
+    for (const preparado of pendientes) {
+      for (let intento = 0; intento < 5; intento += 1) {
+        try {
+          await sincronizar();
+          await subirAdjunto({ objeto_tipo: objetoTipo, objeto_id: id, ...preparado });
+          subidas += 1;
+          break;
+        } catch (error) {
+          if (intento === 4) avisar(`No se ha podido subir una foto: ${error.message || error}`);
+          else await new Promise((resolver) => { setTimeout(resolver, 1500); });
+        }
+      }
+    }
+    if (subidas) avisar(subidas === 1 ? 'Foto adjuntada' : `${subidas} fotos adjuntadas`);
+    ctx.refrescar();
+  };
+  return { nodo, subirTras };
 }
 
 function miniatura(adjunto, ctx) {
