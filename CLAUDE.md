@@ -58,7 +58,8 @@ pendiente. El hook lo inyecta al final del mapa.
 - **iOS 26 como mínimo, y también en el Mac.** El Xcode actual ya no compila
   con el iOS 14.0 que deja Capacitor 7 en el Podfile y en el proyecto: cada pod
   fallaba con «IPHONEOS_DEPLOYMENT_TARGET is set to 14.0». `patch-ios.mjs`
-  sube el mínimo a **26.0** —decidido así porque en casa todos llevan iOS 26— en
+  fija el mínimo en **26.0** —exactamente, no solo «como poco»: si en Xcode se
+  sube a 27, el parche lo devuelve— —decidido así porque en casa todos llevan iOS 26— en
   el Podfile, en el proyecto de la app y en cada pod (un `post_install` que lo
   fuerza), y vuelve a ejecutar `pod install` si el Podfile cambia, porque
   `cap sync` ya los instaló antes del parche. Y declara
