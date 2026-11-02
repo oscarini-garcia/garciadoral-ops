@@ -66,7 +66,9 @@ pendiente. El hook lo inyecta al final del mapa.
   `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES`: la app de iPhone corre tal
   cual en un Mac con Apple Silicon, sin Mac Catalyst y sin dejar de ser solo de
   iPhone. Y fija la versión de la app en **1.3** (`VERSION_DE_LA_APP`,
-  `MARKETING_VERSION`); el número de build sigue subiéndose a mano. Queda:
+  `MARKETING_VERSION`) y el build en **2** (`BUILD_DE_LA_APP`,
+  `CURRENT_PROJECT_VERSION`), que hay que subir en el script antes de cada
+  subida a TestFlight. Queda:
   marcar la disponibilidad en Mac en App Store Connect, y que un
   teléfono sin iOS 26 ya no puede instalar builds nuevas.
 - **Un vuelo del mismo día, una línea (1.100.1).** Visto en el teléfono: en
