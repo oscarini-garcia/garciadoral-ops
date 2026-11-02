@@ -38,6 +38,7 @@ const PLURAL = {
   trato_dia: 'tratos_dia',
   receta: 'recetas',
   cena: 'cenas',
+  adjunto: 'adjuntos',
 };
 
 let configuracion = { base: '', token: '', demostracion: false };
@@ -461,6 +462,59 @@ export async function proponerCenas(fechas, { hay = '', descartadas = [] } = {})
   });
   return propuestas || [];
 }
+
+// ------------------------------------------------------------ Adjuntos --
+
+/** Los bytes ya pedidos, como URL de objeto, para no volver a pedirlos. En la
+ *  demostración son también el único sitio donde viven. */
+const urlsDeAdjuntos = new Map();
+
+/**
+ * Sube un adjunto a una idea o un regalo. A diferencia del resto, no va por la
+ * cola: los bytes no caben en ella, y sin red no hay a dónde subirlos. La ficha
+ * que devuelve el Worker se pone ya en la instantánea, para que se vea sin
+ * esperar a la siguiente sincronización.
+ */
+export async function subirAdjunto(campos) {
+  let ficha;
+  if (configuracion.demostracion) {
+    ficha = {
+      id: `demo-${Date.now()}`, objeto_tipo: campos.objeto_tipo, objeto_id: campos.objeto_id,
+      nombre: campos.nombre, tipo_mime: campos.tipo_mime, ancho: campos.ancho, alto: campos.alto,
+      autor_id: instantaneaActual?.yo?.id, activo: true, creado_en: ahora(),
+    };
+    urlsDeAdjuntos.set(`${ficha.id}:0`, `data:${campos.tipo_mime};base64,${campos.datos}`);
+    if (campos.miniatura) urlsDeAdjuntos.set(`${ficha.id}:1`, `data:image/jpeg;base64,${campos.miniatura}`);
+  } else {
+    if (!navigator.onLine) throw new Error('hace falta conexión para adjuntar');
+    ({ adjunto: ficha } = await peticion('/api/adjunto', { method: 'POST', body: JSON.stringify(campos) }));
+  }
+  instantaneaActual.adjuntos = [...(instantaneaActual.adjuntos || []), ficha];
+  await guardarInstantanea(instantaneaActual);
+  anunciar();
+  return ficha;
+}
+
+/**
+ * La URL con la que pintar un adjunto, o su miniatura. Una etiqueta `<img>` no
+ * puede mandar la credencial, así que los bytes se piden aquí y se pintan como
+ * URL de objeto.
+ */
+export async function urlDeAdjunto(id, { miniatura = false } = {}) {
+  const clave = `${id}:${miniatura ? 1 : 0}`;
+  if (urlsDeAdjuntos.has(clave)) return urlsDeAdjuntos.get(clave);
+  if (configuracion.demostracion) return urlsDeAdjuntos.get(`${id}:0`) || null;
+  const respuesta = await fetch(`${configuracion.base}/api/adjunto?id=${encodeURIComponent(id)}${miniatura ? '&miniatura=1' : ''}`, {
+    headers: { Authorization: `Bearer ${configuracion.token}` },
+  });
+  if (!respuesta.ok) throw new Error(`la API respondió ${respuesta.status}`);
+  const url = URL.createObjectURL(await respuesta.blob());
+  urlsDeAdjuntos.set(clave, url);
+  return url;
+}
+
+/** Quita un adjunto: por la cola, como cualquier otro borrado. */
+export const quitarAdjunto = (id) => guardar('adjunto', id, { activo: 0 });
 
 /**
  * Los ingredientes y los pasos de una receta del recetario, escritos por la IA

@@ -27,6 +27,7 @@ import {
   parsearMomento, proximoAniversario,
 } from '../semana.js';
 import { abrirFicha, abrirFormularioPersona } from './familia.js';
+import { bloqueDeAdjuntos } from '../adjuntos.js';
 import { bloqueDeComentarios } from '../comentarios.js';
 import { copiar, toque } from '../native.js';
 
@@ -1125,6 +1126,8 @@ export function abrirDetalleIdea(ideaId, ctx) {
     // enseñaba: la tabla, el filtro del Worker y `especificacion.md` §5.3
     // hablaban de idea, regalo y evento, y solo los eventos lo dibujaban. Aquí
     // es donde se acuerda si la talla es la 39 o la 40.
+    // Fotos y PDF, antes de los comentarios: son parte de la idea.
+    cuerpo.append(bloqueDeAdjuntos('idea', idea.id, ctx));
     cuerpo.append(bloqueDeComentarios('idea', idea.id, ctx, { vistoHasta: ctx.vista.vistoHasta('idea', idea.id) }));
 
     // Borrar no vive aquí: es una operación de edición, y está donde se edita.
@@ -1289,6 +1292,7 @@ export function abrirDetalleRegalo(regaloId, ctx) {
     // El hilo va debajo de los verbos y no encima: aquí se viene a marcar cómo
     // va, y lo que se hable —quién lo compra al final, dónde estaba más barato—
     // se lee después de haber hecho lo que se venía a hacer.
+    cuerpo.append(bloqueDeAdjuntos('regalo', regalo.id, ctx));
     cuerpo.append(bloqueDeComentarios('regalo', regalo.id, ctx, { vistoHasta: ctx.vista.vistoHasta('regalo', regalo.id) }));
   }, [verLaOcasion, quitar]);
 }

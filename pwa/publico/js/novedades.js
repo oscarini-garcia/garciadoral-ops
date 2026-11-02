@@ -18,6 +18,16 @@
  */
 export const NOVEDADES = [
   {
+    version: '1.101.0',
+    fecha: '2026-10-24',
+    titulo: 'Fotos en ideas y regalos',
+    lineas: [
+      'Una idea o un regalo admite fotos y PDF: «Hacer foto» abre la cámara y «Adjuntar» elige del carrete o de archivos.',
+      'Las fotos se ven en miniatura en la hoja; al tocarlas se abren grandes, y quien las puso puede quitarlas.',
+      'Siguen la misma regla que la idea: quien no ve la idea no ve sus fotos.',
+    ],
+  },
+  {
     version: '1.100.1',
     fecha: '2026-10-18',
     titulo: 'Un vuelo, una línea',

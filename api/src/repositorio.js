@@ -14,6 +14,7 @@ import { guardarPlugin, leerPlugins } from './plugins.js';
 import { festivosDelRegistro } from './festivos.js';
 import { VEREDICTOS, guardarCocina, leerCocina } from './cenas.js';
 import { venDe } from './visibilidad.js';
+import { FICHA } from './adjuntos.js';
 
 const CAMPOS = {
   persona: [
@@ -75,6 +76,9 @@ const CAMPOS = {
   cena: [
     'fecha', 'receta_id', 'texto', 'ninas_receta_id', 'ninas_texto', 'veredicto', 'autor_id', 'activo',
   ],
+  // Un adjunto se crea por `POST /api/adjunto`, con sus bytes; por la cola solo
+  // se puede quitar (`api/migraciones/0033_adjuntos.sql`).
+  adjunto: ['activo'],
 };
 
 /** Campos cuyo conflicto se conserva para revisión en lugar de descartarse en
@@ -140,7 +144,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     paseos, tratos, tratosDia, cuadroLio,
     lugares, apuntes, votos, vistos, calendarios, mejoras,
     diasDeEvento, ausencias, plugins,
-    recetas, cenas, cocina,
+    recetas, cenas, cocina, adjuntos,
   ] = await Promise.all([
     filas(db, `SELECT * FROM persona ${activo('activa')} ORDER BY nombre`),
     filas(db, `SELECT * FROM atributo_persona ${activo('activo')}`),
@@ -192,6 +196,8 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
     filasSiLaTablaEsta(db, `SELECT * FROM receta ${activo('activo')} ORDER BY nombre`),
     filasSiLaTablaEsta(db, `SELECT * FROM cena ${activo('activo')} ORDER BY fecha`),
     leerCocina(db),
+    // Los adjuntos llegan con la 0033: la ficha, nunca los bytes.
+    filasSiLaTablaEsta(db, `SELECT ${FICHA} FROM adjunto ${activo('activo')} ORDER BY creado_en`),
   ]);
 
   const agrupar = (lista, clave) => {
@@ -270,6 +276,7 @@ export async function leerRegistro(db, { soloActivos = true } = {}) {
       codestinatarios: (porRegalo.get(r.id) || []).map((c) => c.persona_id),
     })),
     comentarios: comentarios.map((c) => ({ ...c, activo: bool(c.activo) })),
+    adjuntos: adjuntos.map((a) => ({ ...a, activo: bool(a.activo) })),
     conflictos,
     // Lío: el cuadro es la regla y los paseos son las excepciones escritas. Van
     // los dos porque sin el cuadro un día sin fila no diría nada, y sin las
@@ -449,6 +456,15 @@ function comprobarPermiso(tipo, actor, anterior, campos) {
     }
     if (anterior.estado !== 'pendiente' && resuelve) {
       throw new Rechazo(`esa propuesta ya está ${anterior.estado}`);
+    }
+  }
+
+  // Un adjunto no nace por aquí —llega con sus bytes por `POST /api/adjunto`—,
+  // y lo quita quien lo subió o un administrador, como un apunte.
+  if (tipo === 'adjunto') {
+    if (!anterior) throw new Rechazo('un adjunto se sube desde la propia idea o el propio regalo');
+    if (anterior.autor_id !== actor.id && actor.rol !== 'administrador') {
+      throw new Rechazo('un adjunto lo quita quien lo subió');
     }
   }
 
