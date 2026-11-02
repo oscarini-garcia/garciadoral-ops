@@ -84,17 +84,21 @@ if (existsSync(rutaProyecto)) {
 }
 
 // 0 bis) La versión que se ve en la App Store y en TestFlight
-// (`MARKETING_VERSION`). Se fija aquí para que no se pierda en el siguiente
-// `cap add ios`. El número de build (`CURRENT_PROJECT_VERSION`) no se toca: ese
-// sube a mano en cada subida.
+// (`MARKETING_VERSION`) y el número de build (`CURRENT_PROJECT_VERSION`). Se
+// fijan aquí para que no se pierdan en el siguiente `cap add ios`. **El build
+// tiene que subir en cada subida a TestFlight**, aunque la versión no cambie:
+// App Store Connect rechaza un build repetido. Se cambia aquí, antes de archivar.
 const VERSION_DE_LA_APP = '1.3';
+const BUILD_DE_LA_APP = '2';
 
 if (existsSync(rutaProyecto)) {
   const antes = readFileSync(rutaProyecto, 'utf8');
-  const proyecto = antes.replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${VERSION_DE_LA_APP};`);
+  const proyecto = antes
+    .replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${VERSION_DE_LA_APP};`)
+    .replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, `CURRENT_PROJECT_VERSION = ${BUILD_DE_LA_APP};`);
   if (proyecto !== antes) {
     writeFileSync(rutaProyecto, proyecto);
-    console.log(`[patch-ios] Versión ${VERSION_DE_LA_APP} ✅`);
+    console.log(`[patch-ios] Versión ${VERSION_DE_LA_APP} (${BUILD_DE_LA_APP}) ✅`);
   }
 }
 
