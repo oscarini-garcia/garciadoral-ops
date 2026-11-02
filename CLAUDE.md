@@ -36,7 +36,9 @@ pendiente. El hook lo inyecta al final del mapa.
   `cap sync` ya los instaló antes del parche. Y declara
   `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES`: la app de iPhone corre tal
   cual en un Mac con Apple Silicon, sin Mac Catalyst y sin dejar de ser solo de
-  iPhone. Queda: marcar la disponibilidad en Mac en App Store Connect, y que un
+  iPhone. Y fija la versión de la app en **1.3** (`VERSION_DE_LA_APP`,
+  `MARKETING_VERSION`); el número de build sigue subiéndose a mano. Queda:
+  marcar la disponibilidad en Mac en App Store Connect, y que un
   teléfono sin iOS 26 ya no puede instalar builds nuevas.
 - **Un vuelo del mismo día, una línea (1.100.1).** Visto en el teléfono: en
   «Día» cada vuelo salía dos veces seguidas, 🛫 a la salida y 🛬 a la llegada,

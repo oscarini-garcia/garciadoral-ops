@@ -77,6 +77,21 @@ if (existsSync(rutaProyecto)) {
   }
 }
 
+// 0 bis) La versión que se ve en la App Store y en TestFlight
+// (`MARKETING_VERSION`). Se fija aquí para que no se pierda en el siguiente
+// `cap add ios`. El número de build (`CURRENT_PROJECT_VERSION`) no se toca: ese
+// sube a mano en cada subida.
+const VERSION_DE_LA_APP = '1.3';
+
+if (existsSync(rutaProyecto)) {
+  const antes = readFileSync(rutaProyecto, 'utf8');
+  const proyecto = antes.replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${VERSION_DE_LA_APP};`);
+  if (proyecto !== antes) {
+    writeFileSync(rutaProyecto, proyecto);
+    console.log(`[patch-ios] Versión ${VERSION_DE_LA_APP} ✅`);
+  }
+}
+
 // 1) El controlador que desactiva el rebote.
 const rutaControlador = join(APP_IOS, 'MainViewController.swift');
 const fuente = `import Capacitor
